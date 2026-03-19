@@ -2,7 +2,17 @@ import { motion, useScroll, useTransform, AnimatePresence, useMotionValue, useSp
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import AppHeader from "@/components/AppHeader";
-import DecorativeBackground from "@/components/DecorativeBackground";
+import DecorativeBackground, {
+  HeroDecorations,
+  VisionDecorations,
+  StepsDecorations,
+  FeaturesDecorations,
+  SupportDecorations,
+  CTADecorations,
+  FooterDecorations,
+  EgyptianDividerLine,
+} from "@/components/DecorativeBackground";
+import { useTheme } from "@/contexts/ThemeContext";
 import { 
   MessageSquare, Shield, BarChart3, Zap, Users, ArrowLeft, 
   CheckCircle2, Globe, ClipboardCheck, Eye, 
