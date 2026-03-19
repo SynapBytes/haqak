@@ -152,19 +152,44 @@ const CitizenDashboard = () => {
       let finalIssueType = issueType;
       let isFlagged = false;
       let aiSummary: string | null = null;
+      let priority = "normal";
+
+      // Get sender name from profile
+      const { data: senderProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .single();
+
+      const senderName = senderProfile?.full_name || "";
+
+      // Prepare files info for AI
+      const filesInfo = files.map(f => ({
+        fileName: f.name,
+        fileType: f.type,
+      }));
 
       try {
         toast.info("جاري التصنيف التلقائي بالذكاء الاصطناعي... ✨");
         const { data: classifyData, error: classifyError } = await supabase.functions.invoke("classify-issue", {
-          body: { title, description },
+          body: { title, description, senderName, files: filesInfo },
         });
+
         if (!classifyError && classifyData) {
+          // Check if AI rejected the complaint
+          if (classifyData.status === "rejected") {
+            toast.error(classifyData.rejectionReason || "تم رفض الشكوى");
+            setSubmitting(false);
+            return;
+          }
+
           finalTitle = classifyData.refined_title || title;
-          finalDescription = classifyData.refined_description || description;
-          finalCategory = classifyData.category || category;
-          finalIssueType = classifyData.issue_type || issueType;
-          isFlagged = classifyData.is_flagged || false;
+          finalDescription = classifyData.refined_description || classifyData.text || description;
+          finalCategory = classifyData.issueCategory || category;
+          finalIssueType = classifyData.category === "group" ? "collective" : "individual";
+          isFlagged = classifyData.foulWordsRemoved || false;
           aiSummary = classifyData.summary || null;
+          priority = classifyData.priority || "normal";
         }
       } catch {
         console.warn("AI classification failed, proceeding with original data");
@@ -184,12 +209,20 @@ const CitizenDashboard = () => {
       }).select("id").single();
       if (error) throw error;
 
-      // Step 3: If flagged, apply weekly ban
+      // Step 3: If flagged, apply progressive ban (7 days first, 30 days second)
       if (isFlagged) {
+        const { data: currentProfile } = await supabase
+          .from("profiles")
+          .select("banned_until")
+          .eq("user_id", user.id)
+          .single();
+
+        const hadPreviousBan = currentProfile?.banned_until && new Date(currentProfile.banned_until) > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+        const banDays = hadPreviousBan ? 30 : 7;
         const banUntil = new Date();
-        banUntil.setDate(banUntil.getDate() + 7);
+        banUntil.setDate(banUntil.getDate() + banDays);
         await supabase.from("profiles").update({ banned_until: banUntil.toISOString() }).eq("user_id", user.id);
-        toast.warning("تم تسجيل مخالفة بسبب ألفاظ غير لائقة. حسابك موقوف لمدة أسبوع.");
+        toast.warning(`تم تسجيل مخالفة بسبب ألفاظ غير لائقة. حسابك موقوف لمدة ${banDays} يوم.`);
       }
 
       // Step 4: Upload files
@@ -200,10 +233,11 @@ const CitizenDashboard = () => {
       // Step 5: Notify MPs
       const { data: mpRoles } = await supabase.from("user_roles").select("user_id").eq("role", "mp");
       if (mpRoles) {
+        const priorityLabel = priority === "urgent" ? "🔴 عاجلة" : priority === "humanitarian" ? "🟡 إنسانية" : "";
         for (const mp of mpRoles) {
           await supabase.from("notifications").insert({
             user_id: mp.user_id,
-            title: "مشكلة جديدة",
+            title: priorityLabel ? `مشكلة جديدة ${priorityLabel}` : "مشكلة جديدة",
             message: `تم استلام مشكلة جديدة: ${finalTitle}`,
             issue_id: insertedIssue?.id,
           });
