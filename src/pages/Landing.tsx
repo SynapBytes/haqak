@@ -559,10 +559,10 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* ═══════════ TESTIMONIALS ═══════════ */}
-      <section className="relative py-24 md:py-32 overflow-hidden">
+      {/* ═══════════ CONTACT / SUPPORT ═══════════ */}
+      <section id="support" className="relative py-24 md:py-32 overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
-          <GradientOrb className="w-[400px] h-[400px] bg-success/[0.04] top-20 -right-40" />
+          <GradientOrb className="w-[400px] h-[400px] bg-accent/[0.04] top-20 -right-40" />
         </div>
 
         <div className="container px-4 relative">
@@ -570,61 +570,30 @@ const Landing = () => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12"
           >
             <motion.span
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/[0.08] text-success text-xs font-bold tracking-wider mb-5 border border-success/10"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/[0.08] text-accent text-xs font-bold tracking-wider mb-5 border border-accent/10"
             >
-              آراء المستخدمين
+              تواصل معنا
             </motion.span>
             <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
-              ماذا يقول <span className="bg-gradient-to-l from-success to-primary bg-clip-text text-transparent">المواطنون</span>؟
+              نحن هنا <span className="bg-gradient-to-l from-accent to-primary bg-clip-text text-transparent">لمساعدتك</span>
             </h2>
-            <p className="text-muted-foreground max-w-lg mx-auto text-base md:text-lg">تجارب حقيقية من مستخدمي منصة صوتك</p>
+            <p className="text-muted-foreground max-w-lg mx-auto text-base md:text-lg">أرسل لنا استفسارك أو ملاحظاتك وسنرد عليك في أقرب وقت</p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-3 gap-5 max-w-5xl mx-auto">
-            {testimonials.map((t, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.12, duration: 0.5 }}
-                whileHover={{ y: -4 }}
-                className="relative bg-card border border-border rounded-3xl p-7 hover:shadow-xl transition-all duration-300 group"
-              >
-                {/* Quote mark */}
-                <div className="absolute top-5 left-5 text-6xl text-accent/10 font-serif leading-none select-none group-hover:text-accent/20 transition-colors">
-                  "
-                </div>
-
-                <div className="relative z-10">
-                  <div className="flex gap-1 mb-5">
-                    {Array.from({ length: t.rating }).map((_, j) => (
-                      <Star key={j} className="w-4 h-4 text-warning fill-warning" />
-                    ))}
-                  </div>
-                  <p className="text-foreground text-[15px] leading-[1.9] mb-6 font-medium">{t.text}</p>
-                  <div className="flex items-center gap-3 pt-5 border-t border-border/50">
-                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-accent/10 to-primary/10 flex items-center justify-center border border-accent/10">
-                      <span className="text-sm font-bold text-accent">{t.name.charAt(0)}</span>
-                    </div>
-                    <div>
-                      <div className="font-bold text-foreground text-sm">{t.name}</div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {t.location}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-xl mx-auto"
+          >
+            <SupportForm />
+          </motion.div>
         </div>
       </section>
 
