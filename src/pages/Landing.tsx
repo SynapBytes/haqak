@@ -228,6 +228,7 @@ const Landing = () => {
 
       {/* ═══════════ HERO ═══════════ */}
       <section ref={heroRef} className="relative min-h-[90vh] flex items-center">
+        <HeroDecorations isDark={isDark} />
         {/* Animated gradient mesh background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <GradientOrb className="w-[600px] h-[600px] bg-accent/[0.07] -top-40 -left-40" />
