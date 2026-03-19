@@ -114,6 +114,48 @@ const partners = [
   { name: "المواطنون", icon: Heart },
 ];
 
+/* ─── Hero Stats Card (real data) ─── */
+const HeroStatsCard = () => {
+  const [weeklyCount, setWeeklyCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      const { count } = await supabase
+        .from("issues")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", oneWeekAgo.toISOString());
+      setWeeklyCount(count ?? 0);
+    };
+    fetchStats();
+  }, []);
+
+  if (weeklyCount === null || weeklyCount === 0) return null;
+
+  const arabicNum = weeklyCount.toLocaleString("ar-EG");
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8, x: -30 }}
+      animate={{ opacity: 1, scale: 1, x: 0 }}
+      transition={{ delay: 1.5, duration: 0.5 }}
+      whileHover={{ scale: 1.05 }}
+      className="absolute -bottom-4 -right-6 bg-card backdrop-blur-xl border border-accent/20 rounded-2xl p-3 shadow-lg"
+    >
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+          <TrendingUp className="w-4 h-4 text-accent" />
+        </div>
+        <div>
+          <div className="text-xs font-bold text-foreground">+{arabicNum} مشكلة</div>
+          <div className="text-[10px] text-muted-foreground">هذا الأسبوع</div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 /* ─── Support Form ─── */
 const SupportForm = () => {
   const [name, setName] = useState("");
