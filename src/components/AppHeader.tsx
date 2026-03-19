@@ -1,7 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, LogIn, LogOut, Menu, X, MessageSquare, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, LogIn, LogOut, Menu, X, MessageSquare, ShieldCheck, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import NotificationBell from "./NotificationBell";
 import { useState } from "react";
 
