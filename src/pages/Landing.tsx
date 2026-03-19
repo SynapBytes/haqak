@@ -1,7 +1,9 @@
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, type Transition } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import AppHeader from "@/components/AppHeader";
+
+const easeOut = "easeOut" as const;
 import { 
   MessageSquare, Shield, BarChart3, Zap, Users, ArrowLeft, 
   CheckCircle2, Globe, ClipboardCheck, Eye, TrendingUp, 
