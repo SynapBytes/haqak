@@ -303,7 +303,7 @@ const Landing = () => {
                   transition={{ delay: 0.5, duration: 0.6 }}
                   className="text-lg md:text-xl text-muted-foreground mb-10 max-w-xl leading-relaxed"
                 >
-                  منصة <span className="text-foreground font-semibold">"Sutak"</span> تربط المواطنين بأعضاء مجلس النواب مباشرة.
+                  منصة <span className="text-foreground font-semibold">"صوتك"</span> تربط المواطنين بأعضاء مجلس النواب مباشرة.
                   قدّم مشكلتك بسهولة، تابع حلها، وأكّد النتيجة.
                 </motion.p>
 
