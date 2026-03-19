@@ -2,7 +2,17 @@ import { motion, useScroll, useTransform, AnimatePresence, useMotionValue, useSp
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import AppHeader from "@/components/AppHeader";
-import DecorativeBackground from "@/components/DecorativeBackground";
+import DecorativeBackground, {
+  HeroDecorations,
+  VisionDecorations,
+  StepsDecorations,
+  FeaturesDecorations,
+  SupportDecorations,
+  CTADecorations,
+  FooterDecorations,
+  EgyptianDividerLine,
+} from "@/components/DecorativeBackground";
+import { useTheme } from "@/contexts/ThemeContext";
 import { 
   MessageSquare, Shield, BarChart3, Zap, Users, ArrowLeft, 
   CheckCircle2, Globe, ClipboardCheck, Eye, 
@@ -194,6 +204,8 @@ const SupportForm = () => {
 
 
 const Landing = () => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 100]);
@@ -216,6 +228,7 @@ const Landing = () => {
 
       {/* ═══════════ HERO ═══════════ */}
       <section ref={heroRef} className="relative min-h-[90vh] flex items-center">
+        <HeroDecorations isDark={isDark} />
         {/* Animated gradient mesh background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <GradientOrb className="w-[600px] h-[600px] bg-accent/[0.07] -top-40 -left-40" />
@@ -477,8 +490,11 @@ const Landing = () => {
         </motion.div>
       </section>
 
+      <EgyptianDividerLine isDark={isDark} />
+
       {/* ═══════════ VISION SECTION ═══════════ */}
       <section className="relative z-10 py-16 md:py-20">
+        <VisionDecorations isDark={isDark} />
         <div className="container px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -512,8 +528,11 @@ const Landing = () => {
         </div>
       </section>
 
+      <EgyptianDividerLine isDark={isDark} />
+
       {/* ═══════════ HOW IT WORKS ═══════════ */}
       <section className="relative py-24 md:py-32">
+        <StepsDecorations isDark={isDark} />
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-l from-transparent via-border to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-l from-transparent via-border to-transparent" />
@@ -588,8 +607,11 @@ const Landing = () => {
         </div>
       </section>
 
+      <EgyptianDividerLine isDark={isDark} />
+
       {/* ═══════════ FEATURES - BENTO GRID ═══════════ */}
       <section className="relative py-24 md:py-32 bg-gradient-to-b from-card/0 via-card/50 to-card/0">
+        <FeaturesDecorations isDark={isDark} />
         <div className="container px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -644,8 +666,11 @@ const Landing = () => {
         </div>
       </section>
 
+      <EgyptianDividerLine isDark={isDark} />
+
       {/* ═══════════ CONTACT / SUPPORT ═══════════ */}
       <section id="support" className="relative py-24 md:py-32 overflow-hidden">
+        <SupportDecorations isDark={isDark} />
         <div className="absolute inset-0 pointer-events-none">
           <GradientOrb className="w-[400px] h-[400px] bg-accent/[0.04] top-20 -right-40" />
         </div>
@@ -720,6 +745,7 @@ const Landing = () => {
           viewport={{ once: true }}
           className="relative overflow-hidden rounded-[2rem] max-w-4xl mx-auto"
         >
+          <CTADecorations isDark={isDark} />
           {/* Background */}
           <div className="absolute inset-0 bg-gradient-to-br from-accent via-info to-primary opacity-90" />
           <div className="absolute inset-0 opacity-10" style={{
@@ -755,7 +781,8 @@ const Landing = () => {
       </section>
 
       {/* ═══════════ FOOTER ═══════════ */}
-      <footer className="border-t border-border py-12 bg-card/30">
+      <footer className="relative border-t border-border py-12 bg-card/30">
+        <FooterDecorations isDark={isDark} />
         <div className="container px-4">
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">

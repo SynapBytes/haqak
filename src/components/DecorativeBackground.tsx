@@ -1,135 +1,312 @@
 import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
+
+// Egyptian artwork imports
 import ornament1 from "@/assets/egyptian-ornament-1.png";
 import ornament2 from "@/assets/egyptian-ornament-2.png";
 import ornament3 from "@/assets/egyptian-ornament-3.png";
 import egyptianScene from "@/assets/egyptian-scene.png";
+import egyptianAnkh from "@/assets/egyptian-ankh.png";
+import egyptianPapyrus from "@/assets/egyptian-papyrus.png";
+import egyptianNefertiti from "@/assets/egyptian-nefertiti.png";
+import egyptianDivider from "@/assets/egyptian-divider.png";
+import egyptianCobra from "@/assets/egyptian-cobra.png";
+import egyptianBorder from "@/assets/egyptian-border.png";
 
+/** Shared image styling helper */
+const deco = (isDark: boolean, opacity: [number, number]) => ({
+  opacity: isDark ? opacity[0] : opacity[1],
+  filter: isDark
+    ? "brightness(1.4) drop-shadow(0 0 30px rgba(200,149,60,0.2))"
+    : "sepia(0.15) brightness(1.05)",
+});
+
+/** Reusable floating Egyptian ornament */
+const EgyptianOrnament = ({
+  src,
+  className,
+  isDark,
+  opacity = [0.15, 0.1],
+  animateProps,
+  transition = {},
+}: {
+  src: string;
+  className: string;
+  isDark: boolean;
+  opacity?: [number, number];
+  animateProps?: Record<string, number[]>;
+  transition?: object;
+}) => (
+  <motion.img
+    src={src}
+    alt=""
+    className={`absolute select-none pointer-events-none ${className}`}
+    style={deco(isDark, opacity)}
+    initial={{ opacity: 0 }}
+    whileInView={{ opacity: isDark ? opacity[0] : opacity[1] }}
+    viewport={{ once: true, margin: "-50px" }}
+    animate={animateProps}
+    transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", ...transition }}
+    draggable={false}
+    loading="lazy"
+  />
+);
+
+/** Golden divider between sections */
+export const EgyptianDividerLine = ({ isDark }: { isDark: boolean }) => (
+  <div className="relative w-full overflow-hidden pointer-events-none" style={{ height: "40px" }}>
+    <motion.img
+      src={egyptianDivider}
+      alt=""
+      className="w-full h-full object-cover select-none"
+      style={{
+        opacity: isDark ? 0.15 : 0.1,
+        filter: isDark ? "brightness(1.3)" : "sepia(0.1)",
+      }}
+      initial={{ opacity: 0, scaleX: 0.5 }}
+      whileInView={{ opacity: isDark ? 0.15 : 0.1, scaleX: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 1, ease: "easeOut" }}
+      draggable={false}
+    />
+  </div>
+);
+
+/** ═══ HERO section decorations ═══ */
+export const HeroDecorations = ({ isDark }: { isDark: boolean }) => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+    {/* Eye of Horus — top right */}
+    <EgyptianOrnament
+      src={ornament2}
+      className="top-4 -right-8 w-[160px] md:w-[220px] lg:w-[280px]"
+      isDark={isDark}
+      opacity={[0.13, 0.08]}
+      animateProps={{ y: [0, -8, 0], rotate: [0, 2, 0] }}
+    />
+    {/* Pyramids & Nile — bottom center */}
+    <EgyptianOrnament
+      src={egyptianScene}
+      className="-bottom-6 left-1/2 -translate-x-1/2 w-[400px] md:w-[600px] lg:w-[800px]"
+      isDark={isDark}
+      opacity={[0.1, 0.06]}
+      animateProps={{ y: [0, -4, 0] }}
+      transition={{ duration: 20 }}
+    />
+    {/* Scarab winged — top left */}
+    <EgyptianOrnament
+      src={ornament3}
+      className="-top-4 -left-16 w-[180px] md:w-[250px] lg:w-[320px]"
+      isDark={isDark}
+      opacity={[0.1, 0.06]}
+      animateProps={{ y: [0, 6, 0] }}
+      transition={{ duration: 18, delay: 3 }}
+    />
+    {/* Ankh — bottom right */}
+    <EgyptianOrnament
+      src={egyptianAnkh}
+      className="bottom-[10%] right-[5%] w-[60px] md:w-[90px]"
+      isDark={isDark}
+      opacity={[0.1, 0.06]}
+      animateProps={{ y: [0, -10, 0], rotate: [0, 5, 0] }}
+      transition={{ duration: 12, delay: 1 }}
+    />
+    {/* Lotus — bottom left */}
+    <EgyptianOrnament
+      src={ornament1}
+      className="bottom-[15%] -left-8 w-[100px] md:w-[140px]"
+      isDark={isDark}
+      opacity={[0.08, 0.05]}
+      animateProps={{ y: [0, 8, 0] }}
+      transition={{ duration: 14, delay: 5 }}
+    />
+  </div>
+);
+
+/** ═══ VISION section decorations ═══ */
+export const VisionDecorations = ({ isDark }: { isDark: boolean }) => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+    {/* Nefertiti — right side */}
+    <EgyptianOrnament
+      src={egyptianNefertiti}
+      className="top-1/2 -translate-y-1/2 -right-12 w-[140px] md:w-[200px] lg:w-[250px]"
+      isDark={isDark}
+      opacity={[0.1, 0.06]}
+      animateProps={{ y: [0, -6, 0] }}
+      transition={{ duration: 16 }}
+    />
+    {/* Ankh — left side */}
+    <EgyptianOrnament
+      src={egyptianAnkh}
+      className="top-[20%] -left-6 w-[70px] md:w-[100px]"
+      isDark={isDark}
+      opacity={[0.08, 0.05]}
+      animateProps={{ y: [0, 8, 0], rotate: [0, -3, 0] }}
+      transition={{ duration: 14, delay: 2 }}
+    />
+  </div>
+);
+
+/** ═══ HOW IT WORKS section decorations ═══ */
+export const StepsDecorations = ({ isDark }: { isDark: boolean }) => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+    {/* Pharaoh mask — right */}
+    <EgyptianOrnament
+      src={egyptianCobra}
+      className="top-[10%] -right-16 w-[130px] md:w-[180px] lg:w-[220px]"
+      isDark={isDark}
+      opacity={[0.1, 0.06]}
+      animateProps={{ y: [0, -5, 0] }}
+      transition={{ duration: 18 }}
+    />
+    {/* Lotus — left bottom */}
+    <EgyptianOrnament
+      src={ornament1}
+      className="bottom-[5%] -left-10 w-[100px] md:w-[150px]"
+      isDark={isDark}
+      opacity={[0.08, 0.05]}
+      animateProps={{ y: [0, 6, 0], rotate: [0, 3, 0] }}
+      transition={{ duration: 16, delay: 4 }}
+    />
+    {/* Eye of Horus small — center top */}
+    <EgyptianOrnament
+      src={ornament2}
+      className="top-[5%] left-1/2 -translate-x-1/2 w-[60px] md:w-[80px]"
+      isDark={isDark}
+      opacity={[0.06, 0.04]}
+      animateProps={{ rotate: [0, 5, 0] }}
+      transition={{ duration: 20, delay: 2 }}
+    />
+  </div>
+);
+
+/** ═══ FEATURES section decorations ═══ */
+export const FeaturesDecorations = ({ isDark }: { isDark: boolean }) => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+    {/* Scarab — left */}
+    <EgyptianOrnament
+      src={ornament3}
+      className="top-1/2 -translate-y-1/2 -left-20 w-[160px] md:w-[220px] lg:w-[280px]"
+      isDark={isDark}
+      opacity={[0.08, 0.05]}
+      animateProps={{ y: [0, -8, 0] }}
+      transition={{ duration: 20 }}
+    />
+    {/* Ankh — right top */}
+    <EgyptianOrnament
+      src={egyptianAnkh}
+      className="top-[10%] -right-4 w-[60px] md:w-[80px]"
+      isDark={isDark}
+      opacity={[0.08, 0.05]}
+      animateProps={{ y: [0, 10, 0] }}
+      transition={{ duration: 14, delay: 3 }}
+    />
+    {/* Nefertiti — bottom right small */}
+    <EgyptianOrnament
+      src={egyptianNefertiti}
+      className="bottom-[5%] right-[3%] w-[80px] md:w-[120px]"
+      isDark={isDark}
+      opacity={[0.06, 0.04]}
+      animateProps={{ y: [0, -5, 0] }}
+      transition={{ duration: 16, delay: 6 }}
+    />
+  </div>
+);
+
+/** ═══ SUPPORT/CONTACT section decorations ═══ */
+export const SupportDecorations = ({ isDark }: { isDark: boolean }) => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+    {/* Papyrus scroll — left */}
+    <EgyptianOrnament
+      src={egyptianPapyrus}
+      className="top-1/2 -translate-y-1/2 -left-16 w-[150px] md:w-[220px] lg:w-[280px]"
+      isDark={isDark}
+      opacity={[0.12, 0.08]}
+      animateProps={{ y: [0, -6, 0], rotate: [0, 2, 0] }}
+      transition={{ duration: 18 }}
+    />
+    {/* Pharaoh border — right */}
+    <EgyptianOrnament
+      src={egyptianBorder}
+      className="top-[20%] -right-20 w-[100px] md:w-[150px] rotate-90"
+      isDark={isDark}
+      opacity={[0.08, 0.05]}
+      animateProps={{ y: [0, 5, 0] }}
+      transition={{ duration: 14, delay: 2 }}
+    />
+    {/* Lotus — bottom center */}
+    <EgyptianOrnament
+      src={ornament1}
+      className="bottom-[5%] left-1/2 -translate-x-1/2 w-[80px] md:w-[100px]"
+      isDark={isDark}
+      opacity={[0.06, 0.04]}
+      animateProps={{ y: [0, 6, 0] }}
+      transition={{ duration: 12, delay: 4 }}
+    />
+  </div>
+);
+
+/** ═══ CTA section decorations ═══ */
+export const CTADecorations = ({ isDark }: { isDark: boolean }) => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 rounded-[2rem]">
+    {/* Eye of Horus — top right */}
+    <EgyptianOrnament
+      src={ornament2}
+      className="top-4 -right-6 w-[80px] md:w-[120px]"
+      isDark={isDark}
+      opacity={[0.15, 0.12]}
+      animateProps={{ rotate: [0, 5, 0] }}
+      transition={{ duration: 16 }}
+    />
+    {/* Ankh — bottom left */}
+    <EgyptianOrnament
+      src={egyptianAnkh}
+      className="bottom-4 -left-4 w-[50px] md:w-[70px]"
+      isDark={isDark}
+      opacity={[0.12, 0.1]}
+      animateProps={{ y: [0, -5, 0] }}
+      transition={{ duration: 12, delay: 2 }}
+    />
+  </div>
+);
+
+/** ═══ FOOTER section decorations ═══ */
+export const FooterDecorations = ({ isDark }: { isDark: boolean }) => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+    {/* Pyramids scene — center bottom */}
+    <EgyptianOrnament
+      src={egyptianScene}
+      className="bottom-0 left-1/2 -translate-x-1/2 w-[300px] md:w-[500px]"
+      isDark={isDark}
+      opacity={[0.06, 0.04]}
+    />
+  </div>
+);
+
+/** Main wrapper — no longer fixed, just provides subtle global ambient */
 const DecorativeBackground = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      {/* ── Warm ambient glow ── */}
+      {/* Subtle warm ambient glow only */}
       <div
-        className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full"
+        className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full"
         style={{
-          background: `radial-gradient(circle, rgba(200,149,60,${isDark ? 0.06 : 0.04}) 0%, transparent 70%)`,
-        }}
-      />
-      <div
-        className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full"
-        style={{
-          background: `radial-gradient(circle, rgba(34,197,94,${isDark ? 0.04 : 0.03}) 0%, transparent 70%)`,
-        }}
-      />
-
-      {/* ── Lotus ornament - top right ── */}
-      <motion.img
-        src={ornament1}
-        alt=""
-        className="absolute -top-8 -right-8 w-[220px] md:w-[300px] select-none"
-        style={{
-          opacity: isDark ? 0.12 : 0.08,
-          filter: isDark ? "brightness(1.3) drop-shadow(0 0 30px rgba(200,149,60,0.2))" : "none",
-        }}
-        animate={{ y: [0, -8, 0], rotate: [0, 2, 0] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-        draggable={false}
-      />
-
-      {/* ── Eye of Horus - left middle ── */}
-      <motion.img
-        src={ornament2}
-        alt=""
-        className="absolute top-[40%] -left-12 w-[180px] md:w-[240px] select-none"
-        style={{
-          opacity: isDark ? 0.1 : 0.06,
-          filter: isDark ? "brightness(1.3) drop-shadow(0 0 25px rgba(200,149,60,0.15))" : "none",
-        }}
-        animate={{ y: [0, 10, 0], rotate: [0, -3, 0] }}
-        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        draggable={false}
-      />
-
-      {/* ── Scarab winged - bottom right ── */}
-      <motion.img
-        src={ornament3}
-        alt=""
-        className="absolute bottom-[15%] -right-16 w-[250px] md:w-[350px] select-none"
-        style={{
-          opacity: isDark ? 0.1 : 0.06,
-          filter: isDark ? "brightness(1.2) drop-shadow(0 0 30px rgba(200,149,60,0.15))" : "none",
-        }}
-        animate={{ y: [0, -6, 0] }}
-        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 4 }}
-        draggable={false}
-      />
-
-      {/* ── Pyramids scene - bottom center ── */}
-      <motion.img
-        src={egyptianScene}
-        alt=""
-        className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[500px] md:w-[700px] select-none"
-        style={{
-          opacity: isDark ? 0.08 : 0.05,
-          filter: isDark ? "brightness(1.3) drop-shadow(0 0 40px rgba(200,149,60,0.1))" : "none",
-        }}
-        animate={{ y: [0, -5, 0] }}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        draggable={false}
-      />
-
-      {/* ── Lotus ornament mirror - bottom left ── */}
-      <motion.img
-        src={ornament1}
-        alt=""
-        className="absolute bottom-[55%] -left-16 w-[140px] md:w-[180px] select-none"
-        style={{
-          opacity: isDark ? 0.07 : 0.04,
-          transform: "scaleX(-1)",
-          filter: isDark ? "brightness(1.2) drop-shadow(0 0 20px rgba(200,149,60,0.1))" : "none",
-        }}
-        animate={{ y: [0, 8, 0] }}
-        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 6 }}
-        draggable={false}
-      />
-
-      {/* ── Eye of Horus - top left small ── */}
-      <motion.img
-        src={ornament2}
-        alt=""
-        className="absolute top-[10%] left-[15%] w-[80px] md:w-[110px] select-none"
-        style={{
-          opacity: isDark ? 0.06 : 0.035,
-          filter: isDark ? "brightness(1.3)" : "none",
-        }}
-        animate={{ rotate: [0, 5, 0] }}
-        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-        draggable={false}
-      />
-
-      {/* ── Subtle golden line separator ── */}
-      <div
-        className="absolute top-[30%] left-[10%] right-[10%] h-px"
-        style={{
-          background: `linear-gradient(90deg, transparent, rgba(200,149,60,${isDark ? 0.08 : 0.05}), transparent)`,
+          background: `radial-gradient(circle, rgba(200,149,60,${isDark ? 0.04 : 0.025}) 0%, transparent 70%)`,
         }}
       />
       <div
-        className="absolute top-[65%] left-[5%] right-[5%] h-px"
+        className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full"
         style={{
-          background: `linear-gradient(90deg, transparent, rgba(200,149,60,${isDark ? 0.06 : 0.04}), transparent)`,
+          background: `radial-gradient(circle, rgba(34,197,94,${isDark ? 0.03 : 0.02}) 0%, transparent 70%)`,
         }}
       />
-
-      {/* ── Dark mode extra glow ── */}
       {isDark && (
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full"
           style={{
-            background: "radial-gradient(circle, rgba(200,149,60,0.03) 0%, transparent 60%)",
+            background: "radial-gradient(circle, rgba(200,149,60,0.02) 0%, transparent 60%)",
           }}
         />
       )}
