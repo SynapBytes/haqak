@@ -529,10 +529,6 @@ const Landing = () => {
       {/* ═══════════ HOW IT WORKS ═══════════ */}
       <section className="relative py-24 md:py-32">
         <StepsDecorations isDark={isDark} />
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-l from-transparent via-border to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-l from-transparent via-border to-transparent" />
-        </div>
 
         <div className="container px-4">
           <motion.div
