@@ -1,1 +1,4 @@
 project_id = "fggdokryjdedzzfqinil"
+
+[functions.classify-issue]
+verify_jwt = false
