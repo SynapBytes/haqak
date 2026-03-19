@@ -275,9 +275,19 @@ const Landing = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1, duration: 0.6 }}
-                    className="block"
+                    className="block relative"
                   >
-                    صوتك يوصل.
+                    <span className="relative inline-block">
+                      صوتك يوصل.
+                      <motion.span
+                        className="absolute inset-0 bg-gradient-to-l from-transparent via-[#e8c566]/40 to-transparent bg-[length:200%_100%] bg-clip-text"
+                        style={{
+                          WebkitTextStroke: "0.5px rgba(200,149,60,0.15)",
+                        }}
+                        animate={{ backgroundPosition: ["200% 0", "-200% 0"] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "linear", repeatDelay: 2 }}
+                      />
+                    </span>
                   </motion.span>
                   <motion.span
                     initial={{ opacity: 0, y: 20 }}
