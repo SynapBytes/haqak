@@ -123,13 +123,16 @@ const ChatDrawer = ({ issueId, issueTitle, citizenUserId, citizenPhone, isMP, on
       setIsClosed(false);
       toast.success("تم بدء المحادثة");
 
-      // Notify citizen
+      // Notify citizen (in-app + push)
+      const notifTitle = "محادثة جديدة";
+      const notifBody = `النائب بدأ محادثة بخصوص: ${issueTitle}`;
       await supabase.from("notifications").insert({
         user_id: citizenUserId,
-        title: "محادثة جديدة",
-        message: `النائب بدأ محادثة بخصوص: ${issueTitle}`,
+        title: notifTitle,
+        message: notifBody,
         issue_id: issueId,
       });
+      sendPushToUser(citizenUserId, notifTitle, notifBody, { issue_id: issueId });
     } catch (err: any) {
       if (err.message?.includes("unique")) {
         toast.error("توجد محادثة بالفعل لهذه المشكلة");
