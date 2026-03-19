@@ -27,14 +27,14 @@ const EgyptianOrnament = ({
   className,
   isDark,
   opacity = [0.15, 0.1],
-  animate = {},
+  animateProps,
   transition = {},
 }: {
   src: string;
   className: string;
   isDark: boolean;
   opacity?: [number, number];
-  animate?: object;
+  animateProps?: Record<string, number[]>;
   transition?: object;
 }) => (
   <motion.img
@@ -45,7 +45,7 @@ const EgyptianOrnament = ({
     initial={{ opacity: 0 }}
     whileInView={{ opacity: isDark ? opacity[0] : opacity[1] }}
     viewport={{ once: true, margin: "-50px" }}
-    animate={animate}
+    animate={animateProps}
     transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", ...transition }}
     draggable={false}
     loading="lazy"
