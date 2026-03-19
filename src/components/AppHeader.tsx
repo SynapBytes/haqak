@@ -10,6 +10,7 @@ const AppHeader = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { session, profile, role, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
