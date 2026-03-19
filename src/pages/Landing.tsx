@@ -275,7 +275,7 @@ const Landing = () => {
                     transition={{ delay: 0.1, duration: 0.6 }}
                     className="block"
                   >
-                    Sutak يوصل.
+                    صوتك يوصل.
                   </motion.span>
                   <motion.span
                     initial={{ opacity: 0, y: 20 }}
@@ -303,7 +303,7 @@ const Landing = () => {
                   transition={{ delay: 0.5, duration: 0.6 }}
                   className="text-lg md:text-xl text-muted-foreground mb-10 max-w-xl leading-relaxed"
                 >
-                  منصة <span className="text-foreground font-semibold">"Sutak"</span> تربط المواطنين بأعضاء مجلس النواب مباشرة.
+                  منصة <span className="text-foreground font-semibold">"صوتك"</span> تربط المواطنين بأعضاء مجلس النواب مباشرة.
                   قدّم مشكلتك بسهولة، تابع حلها، وأكّد النتيجة.
                 </motion.p>
 
@@ -475,7 +475,7 @@ const Landing = () => {
             className="text-center mb-12"
           >
             <h2 className="text-2xl md:text-4xl font-bold text-foreground tracking-tight">
-              لماذا نبني <span className="bg-gradient-to-l from-accent to-primary bg-clip-text text-transparent">Sutak</span>؟
+              لماذا نبني <span className="bg-gradient-to-l from-accent to-primary bg-clip-text text-transparent">صوتك</span>؟
             </h2>
           </motion.div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
@@ -594,7 +594,7 @@ const Landing = () => {
               المميزات
             </motion.span>
             <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
-              لماذا <span className="bg-gradient-to-l from-primary to-accent bg-clip-text text-transparent">Sutak</span>؟
+              لماذا <span className="bg-gradient-to-l from-primary to-accent bg-clip-text text-transparent">صوتك</span>؟
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto text-base md:text-lg">مميزات تجعل التواصل المدني أسهل وأكثر فعالية</p>
           </motion.div>
@@ -728,7 +728,7 @@ const Landing = () => {
             <p className="text-white/80 text-lg mb-10 max-w-md mx-auto leading-relaxed">
               سجّل حسابك وقدّم مشكلتك الأولى في أقل من دقيقة.
               <br />
-              Sutak يستحق أن يُسمع.
+              صوتك يستحق أن يُسمع.
             </p>
             <MagneticButton className="inline-block">
               <Link to="/auth">
@@ -748,9 +748,9 @@ const Landing = () => {
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
               <div className="flex items-center gap-3">
-                <img src="/logo-sawtak.png" alt="Sutak" className="w-10 h-10 rounded-2xl shadow-md object-contain" />
+                <img src="/logo-sawtak.png" alt="صوتك" className="w-10 h-10 rounded-2xl shadow-md object-contain" />
                 <div>
-                  <span className="font-bold text-lg text-foreground block">Sutak</span>
+                  <span className="font-bold text-lg text-foreground block">صوتك</span>
                   <span className="text-xs text-muted-foreground">منصة التواصل المدني</span>
                 </div>
               </div>
@@ -767,7 +767,7 @@ const Landing = () => {
               </div>
             </div>
             <div className="pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <p className="text-xs text-muted-foreground">© ٢٠٢٦ Sutak — جميع الحقوق محفوظة</p>
+              <p className="text-xs text-muted-foreground">© ٢٠٢٦ صوتك — جميع الحقوق محفوظة</p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
                 جميع الخدمات تعمل بكفاءة

@@ -57,7 +57,7 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
 
             <img
               src="/logo-sawtak.png"
-              alt="Sutak"
+              alt="صوتك"
               className="w-24 h-24 md:w-28 md:h-28 rounded-2xl object-contain drop-shadow-[0_0_40px_rgba(200,149,60,0.3)]"
             />
           </motion.div>
@@ -77,10 +77,10 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
                 WebkitTextFillColor: "transparent",
               }}
             >
-              Sutak
+              صوتك
             </h1>
             <p className="text-sm text-[#8a9bb5] mt-2 font-light tracking-wide">
-              Civic Communication Platform
+              منصة التواصل المدني
             </p>
           </motion.div>
 
