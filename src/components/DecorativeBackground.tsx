@@ -81,7 +81,7 @@ export const HeroDecorations = ({ isDark }: { isDark: boolean }) => (
       className="top-4 -right-8 w-[160px] md:w-[220px] lg:w-[280px]"
       isDark={isDark}
       opacity={[0.13, 0.08]}
-      animate={{ y: [0, -8, 0], rotate: [0, 2, 0] }}
+      animateProps={{ y: [0, -8, 0], rotate: [0, 2, 0] }}
     />
     {/* Pyramids & Nile — bottom center */}
     <EgyptianOrnament
@@ -89,7 +89,7 @@ export const HeroDecorations = ({ isDark }: { isDark: boolean }) => (
       className="-bottom-6 left-1/2 -translate-x-1/2 w-[400px] md:w-[600px] lg:w-[800px]"
       isDark={isDark}
       opacity={[0.1, 0.06]}
-      animate={{ y: [0, -4, 0] }}
+      animateProps={{ y: [0, -4, 0] }}
       transition={{ duration: 20 }}
     />
     {/* Scarab winged — top left */}
@@ -98,7 +98,7 @@ export const HeroDecorations = ({ isDark }: { isDark: boolean }) => (
       className="-top-4 -left-16 w-[180px] md:w-[250px] lg:w-[320px]"
       isDark={isDark}
       opacity={[0.1, 0.06]}
-      animate={{ y: [0, 6, 0] }}
+      animateProps={{ y: [0, 6, 0] }}
       transition={{ duration: 18, delay: 3 }}
     />
     {/* Ankh — bottom right */}
@@ -107,7 +107,7 @@ export const HeroDecorations = ({ isDark }: { isDark: boolean }) => (
       className="bottom-[10%] right-[5%] w-[60px] md:w-[90px]"
       isDark={isDark}
       opacity={[0.1, 0.06]}
-      animate={{ y: [0, -10, 0], rotate: [0, 5, 0] }}
+      animateProps={{ y: [0, -10, 0], rotate: [0, 5, 0] }}
       transition={{ duration: 12, delay: 1 }}
     />
     {/* Lotus — bottom left */}
@@ -116,7 +116,7 @@ export const HeroDecorations = ({ isDark }: { isDark: boolean }) => (
       className="bottom-[15%] -left-8 w-[100px] md:w-[140px]"
       isDark={isDark}
       opacity={[0.08, 0.05]}
-      animate={{ y: [0, 8, 0] }}
+      animateProps={{ y: [0, 8, 0] }}
       transition={{ duration: 14, delay: 5 }}
     />
   </div>
@@ -131,7 +131,7 @@ export const VisionDecorations = ({ isDark }: { isDark: boolean }) => (
       className="top-1/2 -translate-y-1/2 -right-12 w-[140px] md:w-[200px] lg:w-[250px]"
       isDark={isDark}
       opacity={[0.1, 0.06]}
-      animate={{ y: [0, -6, 0] }}
+      animateProps={{ y: [0, -6, 0] }}
       transition={{ duration: 16 }}
     />
     {/* Ankh — left side */}
@@ -140,7 +140,7 @@ export const VisionDecorations = ({ isDark }: { isDark: boolean }) => (
       className="top-[20%] -left-6 w-[70px] md:w-[100px]"
       isDark={isDark}
       opacity={[0.08, 0.05]}
-      animate={{ y: [0, 8, 0], rotate: [0, -3, 0] }}
+      animateProps={{ y: [0, 8, 0], rotate: [0, -3, 0] }}
       transition={{ duration: 14, delay: 2 }}
     />
   </div>
@@ -155,7 +155,7 @@ export const StepsDecorations = ({ isDark }: { isDark: boolean }) => (
       className="top-[10%] -right-16 w-[130px] md:w-[180px] lg:w-[220px]"
       isDark={isDark}
       opacity={[0.1, 0.06]}
-      animate={{ y: [0, -5, 0] }}
+      animateProps={{ y: [0, -5, 0] }}
       transition={{ duration: 18 }}
     />
     {/* Lotus — left bottom */}
@@ -164,7 +164,7 @@ export const StepsDecorations = ({ isDark }: { isDark: boolean }) => (
       className="bottom-[5%] -left-10 w-[100px] md:w-[150px]"
       isDark={isDark}
       opacity={[0.08, 0.05]}
-      animate={{ y: [0, 6, 0], rotate: [0, 3, 0] }}
+      animateProps={{ y: [0, 6, 0], rotate: [0, 3, 0] }}
       transition={{ duration: 16, delay: 4 }}
     />
     {/* Eye of Horus small — center top */}
@@ -173,7 +173,7 @@ export const StepsDecorations = ({ isDark }: { isDark: boolean }) => (
       className="top-[5%] left-1/2 -translate-x-1/2 w-[60px] md:w-[80px]"
       isDark={isDark}
       opacity={[0.06, 0.04]}
-      animate={{ rotate: [0, 5, 0] }}
+      animateProps={{ rotate: [0, 5, 0] }}
       transition={{ duration: 20, delay: 2 }}
     />
   </div>
@@ -188,7 +188,7 @@ export const FeaturesDecorations = ({ isDark }: { isDark: boolean }) => (
       className="top-1/2 -translate-y-1/2 -left-20 w-[160px] md:w-[220px] lg:w-[280px]"
       isDark={isDark}
       opacity={[0.08, 0.05]}
-      animate={{ y: [0, -8, 0] }}
+      animateProps={{ y: [0, -8, 0] }}
       transition={{ duration: 20 }}
     />
     {/* Ankh — right top */}
@@ -197,7 +197,7 @@ export const FeaturesDecorations = ({ isDark }: { isDark: boolean }) => (
       className="top-[10%] -right-4 w-[60px] md:w-[80px]"
       isDark={isDark}
       opacity={[0.08, 0.05]}
-      animate={{ y: [0, 10, 0] }}
+      animateProps={{ y: [0, 10, 0] }}
       transition={{ duration: 14, delay: 3 }}
     />
     {/* Nefertiti — bottom right small */}
@@ -206,7 +206,7 @@ export const FeaturesDecorations = ({ isDark }: { isDark: boolean }) => (
       className="bottom-[5%] right-[3%] w-[80px] md:w-[120px]"
       isDark={isDark}
       opacity={[0.06, 0.04]}
-      animate={{ y: [0, -5, 0] }}
+      animateProps={{ y: [0, -5, 0] }}
       transition={{ duration: 16, delay: 6 }}
     />
   </div>
@@ -221,7 +221,7 @@ export const SupportDecorations = ({ isDark }: { isDark: boolean }) => (
       className="top-1/2 -translate-y-1/2 -left-16 w-[150px] md:w-[220px] lg:w-[280px]"
       isDark={isDark}
       opacity={[0.12, 0.08]}
-      animate={{ y: [0, -6, 0], rotate: [0, 2, 0] }}
+      animateProps={{ y: [0, -6, 0], rotate: [0, 2, 0] }}
       transition={{ duration: 18 }}
     />
     {/* Pharaoh border — right */}
@@ -230,7 +230,7 @@ export const SupportDecorations = ({ isDark }: { isDark: boolean }) => (
       className="top-[20%] -right-20 w-[100px] md:w-[150px] rotate-90"
       isDark={isDark}
       opacity={[0.08, 0.05]}
-      animate={{ y: [0, 5, 0] }}
+      animateProps={{ y: [0, 5, 0] }}
       transition={{ duration: 14, delay: 2 }}
     />
     {/* Lotus — bottom center */}
@@ -239,7 +239,7 @@ export const SupportDecorations = ({ isDark }: { isDark: boolean }) => (
       className="bottom-[5%] left-1/2 -translate-x-1/2 w-[80px] md:w-[100px]"
       isDark={isDark}
       opacity={[0.06, 0.04]}
-      animate={{ y: [0, 6, 0] }}
+      animateProps={{ y: [0, 6, 0] }}
       transition={{ duration: 12, delay: 4 }}
     />
   </div>
@@ -254,7 +254,7 @@ export const CTADecorations = ({ isDark }: { isDark: boolean }) => (
       className="top-4 -right-6 w-[80px] md:w-[120px]"
       isDark={isDark}
       opacity={[0.15, 0.12]}
-      animate={{ rotate: [0, 5, 0] }}
+      animateProps={{ rotate: [0, 5, 0] }}
       transition={{ duration: 16 }}
     />
     {/* Ankh — bottom left */}
@@ -263,7 +263,7 @@ export const CTADecorations = ({ isDark }: { isDark: boolean }) => (
       className="bottom-4 -left-4 w-[50px] md:w-[70px]"
       isDark={isDark}
       opacity={[0.12, 0.1]}
-      animate={{ y: [0, -5, 0] }}
+      animateProps={{ y: [0, -5, 0] }}
       transition={{ duration: 12, delay: 2 }}
     />
   </div>
