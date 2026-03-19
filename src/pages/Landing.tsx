@@ -98,7 +98,7 @@ const visionPoints = [
   { icon: Target, title: "رؤيتنا", description: "ربط كل مواطن مصري بنائبه مباشرة، لخلق قناة تواصل حقيقية وفعّالة.", color: "text-accent" },
   { icon: Rocket, title: "مهمتنا", description: "تمكين المواطنين من إيصال صوتهم بسهولة ومتابعة حل مشاكلهم خطوة بخطوة.", color: "text-primary" },
   { icon: Heart, title: "قيمنا", description: "الشفافية، المصداقية، وحماية خصوصية المواطنين هي أساس كل ما نبنيه.", color: "text-success" },
-  { icon: Sparkles, title: "التقنية", description: "نستخدم الذكاء الاصطناعي لتصنيف المشاكل وتوجيهها للنائب المختص تلقائياً.", color: "text-warning" },
+  { icon: Sparkles, title: "الإدارة الذكية", description: "فريق الإدارة يصنّف المشاكل ويوجّهها للنائب المختص تلقائياً بدقة واحترافية.", color: "text-warning" },
 ];
 
 const steps = [
