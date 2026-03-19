@@ -57,7 +57,7 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
 
             <img
               src="/logo-sawtak.png"
-              alt="صوتك"
+              alt="Sutak"
               className="w-24 h-24 md:w-28 md:h-28 rounded-2xl object-contain drop-shadow-[0_0_40px_rgba(200,149,60,0.3)]"
             />
           </motion.div>
