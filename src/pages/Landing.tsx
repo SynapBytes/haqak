@@ -6,9 +6,12 @@ import {
   MessageSquare, Shield, BarChart3, Zap, Users, ArrowLeft, 
   CheckCircle2, Globe, ClipboardCheck, Eye, 
   FileCheck, Headphones, Star, ChevronLeft, ArrowUpLeft,
-  Phone, MapPin, Building2, Award, TrendingUp
+  Phone, MapPin, Building2, Award, TrendingUp, Mail, Send,
+  Rocket, Target, Heart, Sparkles
 } from "lucide-react";
 import { useRef, useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 /* ─── Floating Particle Component ─── */
 const FloatingParticle = ({ delay, x, y, size, color }: { delay: number; x: string; y: string; size: number; color: string }) => (
@@ -29,21 +32,6 @@ const FloatingParticle = ({ delay, x, y, size, color }: { delay: number; x: stri
   />
 );
 
-/* ─── Animated Counter ─── */
-const AnimatedNumber = ({ value, suffix = "" }: { value: string; suffix?: string }) => {
-  const [display, setDisplay] = useState(value);
-  return (
-    <motion.span
-      initial={{ opacity: 0, scale: 0.5 }}
-      whileInView={{ opacity: 1, scale: 1 }}
-      viewport={{ once: true }}
-      transition={{ type: "spring", stiffness: 100, damping: 15 }}
-      className="tabular-nums"
-    >
-      {display}{suffix}
-    </motion.span>
-  );
-};
 
 /* ─── Magnetic Button Wrapper ─── */
 const MagneticButton = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => {
@@ -95,11 +83,11 @@ const features = [
   { icon: ClipboardCheck, title: "مراجعة دقيقة ومهنية", description: "فريق متخصص يراجع ويصنّف كل مشكلة ويعيد صياغتها باحترافية قبل عرضها.", gradient: "from-accent/20 to-primary/5" },
 ];
 
-const stats = [
-  { value: "٢,٤٥٠+", label: "مشكلة تم حلها", icon: CheckCircle2, color: "text-success" },
-  { value: "١٥٠+", label: "نائب مشارك", icon: Users, color: "text-accent" },
-  { value: "٩٨%", label: "نسبة رضا المواطنين", icon: Star, color: "text-warning" },
-  { value: "٢٧", label: "محافظة مغطّاة", icon: MapPin, color: "text-primary" },
+const visionPoints = [
+  { icon: Target, title: "رؤيتنا", description: "ربط كل مواطن مصري بنائبه مباشرة، لخلق قناة تواصل حقيقية وفعّالة.", color: "text-accent" },
+  { icon: Rocket, title: "مهمتنا", description: "تمكين المواطنين من إيصال صوتهم بسهولة ومتابعة حل مشاكلهم خطوة بخطوة.", color: "text-primary" },
+  { icon: Heart, title: "قيمنا", description: "الشفافية، المصداقية، وحماية خصوصية المواطنين هي أساس كل ما نبنيه.", color: "text-success" },
+  { icon: Sparkles, title: "التقنية", description: "نستخدم الذكاء الاصطناعي لتصنيف المشاكل وتوجيهها للنائب المختص تلقائياً.", color: "text-warning" },
 ];
 
 const steps = [
@@ -109,20 +97,101 @@ const steps = [
   { num: "٤", title: "تابع الحل", desc: "استلم إشعارات فورية وأكّد الحل", icon: Eye, color: "from-success to-success/70" },
 ];
 
-const testimonials = [
-  { name: "أحمد محمد", location: "القاهرة", text: "قدّمت مشكلة المياه في منطقتنا وتم حلها خلال أسبوع. منصة ممتازة وسهلة الاستخدام!", rating: 5 },
-  { name: "فاطمة علي", location: "الإسكندرية", text: "أخيراً صوتنا بيوصل للنواب بشكل مباشر وبنتابع الحل خطوة بخطوة. شكراً صوتك!", rating: 5 },
-  { name: "محمود حسن", location: "الجيزة", text: "النائب تواصل معايا شخصياً وتم إصلاح الطريق في أقل من شهر. تجربة رائعة.", rating: 5 },
-];
-
 const partners = [
-  { name: "مجلس النواب", icon: Building2 },
-  { name: "المحليات", icon: MapPin },
-  { name: "وزارة التنمية", icon: Award },
+  { name: "أعضاء مجلس النواب", icon: Building2 },
   { name: "المجتمع المدني", icon: Users },
+  { name: "المواطنون", icon: Heart },
 ];
 
-/* ─── Component ─── */
+/* ─── Support Form ─── */
+const SupportForm = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      toast.error("يرجى ملء جميع الحقول");
+      return;
+    }
+    setSending(true);
+    try {
+      // Store in a simple way - could be enhanced with a support_tickets table later
+      const { error } = await supabase.from("notifications").insert({
+        user_id: "00000000-0000-0000-0000-000000000000",
+        title: `دعم فني: ${name}`,
+        message: `من: ${name} (${email})\n\n${message}`,
+      });
+      if (error) throw error;
+      toast.success("تم إرسال رسالتك بنجاح! سنرد عليك قريباً.");
+      setName("");
+      setEmail("");
+      setMessage("");
+    } catch {
+      // Fallback: open mailto
+      window.location.href = `mailto:support@sotak.app?subject=${encodeURIComponent(`دعم فني: ${name}`)}&body=${encodeURIComponent(message)}`;
+      toast.success("جاري فتح البريد الإلكتروني...");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-card border border-border rounded-3xl p-8 space-y-5 shadow-xl">
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2">الاسم</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="اسمك الكريم"
+            className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2">البريد الإلكتروني</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="example@email.com"
+            dir="ltr"
+            className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">رسالتك</label>
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="اكتب استفسارك أو ملاحظاتك هنا..."
+          rows={4}
+          className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all resize-none"
+        />
+      </div>
+      <Button
+        type="submit"
+        disabled={sending}
+        className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90 h-12 text-base font-semibold rounded-xl shadow-lg shadow-accent/20"
+      >
+        {sending ? (
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+            <Send className="w-4 h-4" />
+          </motion.div>
+        ) : (
+          <Send className="w-4 h-4" />
+        )}
+        {sending ? "جاري الإرسال..." : "إرسال"}
+      </Button>
+    </form>
+  );
+};
+
+
 const Landing = () => {
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
@@ -274,12 +343,7 @@ const Landing = () => {
                   <div className="w-px h-4 bg-border" />
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-accent" />
-                    <span>مجاني ١٠٠٪</span>
-                  </div>
-                  <div className="w-px h-4 bg-border" />
-                  <div className="flex items-center gap-1.5">
-                    <Zap className="w-4 h-4 text-warning" />
-                    <span>رد خلال ٤٨ ساعة</span>
+                    <span>مجاني للمواطنين</span>
                   </div>
                 </motion.div>
               </motion.div>
@@ -401,36 +465,38 @@ const Landing = () => {
         </motion.div>
       </section>
 
-      {/* ═══════════ STATS MARQUEE ═══════════ */}
-      <section className="relative z-10 py-8">
+      {/* ═══════════ VISION SECTION ═══════════ */}
+      <section className="relative z-10 py-16 md:py-20">
         <div className="container px-4">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4"
+            className="text-center mb-12"
           >
-            {stats.map((stat, i) => (
+            <h2 className="text-2xl md:text-4xl font-bold text-foreground tracking-tight">
+              لماذا نبني <span className="bg-gradient-to-l from-accent to-primary bg-clip-text text-transparent">صوتك</span>؟
+            </h2>
+          </motion.div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
+            {visionPoints.map((point, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
-                whileHover={{ y: -4, scale: 1.02 }}
-                className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-5 md:p-6 text-center shadow-sm hover:shadow-xl transition-all duration-300 group cursor-default"
+                whileHover={{ y: -4 }}
+                className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-6 text-center hover:shadow-xl transition-all duration-300 group cursor-default"
               >
-                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br from-card to-muted flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 border border-border/50`}>
-                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-card to-muted flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 border border-border/50">
+                  <point.icon className={`w-7 h-7 ${point.color}`} />
                 </div>
-                <div className={`text-3xl md:text-4xl font-bold mb-1 ${stat.color}`}>
-                  <AnimatedNumber value={stat.value} />
-                </div>
-                <div className="text-sm text-muted-foreground font-medium">{stat.label}</div>
+                <h3 className={`text-lg font-bold mb-2 ${point.color}`}>{point.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{point.description}</p>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -566,10 +632,10 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* ═══════════ TESTIMONIALS ═══════════ */}
-      <section className="relative py-24 md:py-32 overflow-hidden">
+      {/* ═══════════ CONTACT / SUPPORT ═══════════ */}
+      <section id="support" className="relative py-24 md:py-32 overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
-          <GradientOrb className="w-[400px] h-[400px] bg-success/[0.04] top-20 -right-40" />
+          <GradientOrb className="w-[400px] h-[400px] bg-accent/[0.04] top-20 -right-40" />
         </div>
 
         <div className="container px-4 relative">
@@ -577,61 +643,30 @@ const Landing = () => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12"
           >
             <motion.span
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/[0.08] text-success text-xs font-bold tracking-wider mb-5 border border-success/10"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/[0.08] text-accent text-xs font-bold tracking-wider mb-5 border border-accent/10"
             >
-              آراء المستخدمين
+              تواصل معنا
             </motion.span>
             <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
-              ماذا يقول <span className="bg-gradient-to-l from-success to-primary bg-clip-text text-transparent">المواطنون</span>؟
+              نحن هنا <span className="bg-gradient-to-l from-accent to-primary bg-clip-text text-transparent">لمساعدتك</span>
             </h2>
-            <p className="text-muted-foreground max-w-lg mx-auto text-base md:text-lg">تجارب حقيقية من مستخدمي منصة صوتك</p>
+            <p className="text-muted-foreground max-w-lg mx-auto text-base md:text-lg">أرسل لنا استفسارك أو ملاحظاتك وسنرد عليك في أقرب وقت</p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-3 gap-5 max-w-5xl mx-auto">
-            {testimonials.map((t, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.12, duration: 0.5 }}
-                whileHover={{ y: -4 }}
-                className="relative bg-card border border-border rounded-3xl p-7 hover:shadow-xl transition-all duration-300 group"
-              >
-                {/* Quote mark */}
-                <div className="absolute top-5 left-5 text-6xl text-accent/10 font-serif leading-none select-none group-hover:text-accent/20 transition-colors">
-                  "
-                </div>
-
-                <div className="relative z-10">
-                  <div className="flex gap-1 mb-5">
-                    {Array.from({ length: t.rating }).map((_, j) => (
-                      <Star key={j} className="w-4 h-4 text-warning fill-warning" />
-                    ))}
-                  </div>
-                  <p className="text-foreground text-[15px] leading-[1.9] mb-6 font-medium">{t.text}</p>
-                  <div className="flex items-center gap-3 pt-5 border-t border-border/50">
-                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-accent/10 to-primary/10 flex items-center justify-center border border-accent/10">
-                      <span className="text-sm font-bold text-accent">{t.name.charAt(0)}</span>
-                    </div>
-                    <div>
-                      <div className="font-bold text-foreground text-sm">{t.name}</div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {t.location}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-xl mx-auto"
+          >
+            <SupportForm />
+          </motion.div>
         </div>
       </section>
 
@@ -726,7 +761,7 @@ const Landing = () => {
                 <span className="w-1 h-1 rounded-full bg-border" />
                 <Link to="/auth" className="hover:text-foreground transition-colors">إنشاء حساب</Link>
                 <span className="w-1 h-1 rounded-full bg-border" />
-                <span>الدعم الفني</span>
+                <a href="#support" className="hover:text-foreground transition-colors cursor-pointer">الدعم الفني</a>
               </div>
             </div>
             <div className="pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3">
