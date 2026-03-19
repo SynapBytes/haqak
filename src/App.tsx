@@ -16,6 +16,7 @@ import MPProfilePage from "./pages/MPProfilePage";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import ResetPassword from "./pages/ResetPassword";
 import PushNotificationProvider from "@/components/PushNotificationProvider";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/citizen" element={<ProtectedRoute requiredRole="citizen"><CitizenDashboard /></ProtectedRoute>} />
                 <Route path="/mp" element={<ProtectedRoute requiredRole="mp"><MPDashboard /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
