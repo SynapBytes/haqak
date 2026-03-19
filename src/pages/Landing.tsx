@@ -728,7 +728,7 @@ const Landing = () => {
             <p className="text-white/80 text-lg mb-10 max-w-md mx-auto leading-relaxed">
               سجّل حسابك وقدّم مشكلتك الأولى في أقل من دقيقة.
               <br />
-              Sutak يستحق أن يُسمع.
+              صوتك يستحق أن يُسمع.
             </p>
             <MagneticButton className="inline-block">
               <Link to="/auth">
