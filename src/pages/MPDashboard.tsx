@@ -361,6 +361,20 @@ const MPDashboard = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Chat Drawer */}
+      <AnimatePresence>
+        {chatIssue && chatIssue.user_id && (
+          <ChatDrawer
+            issueId={chatIssue.id}
+            issueTitle={chatIssue.title}
+            citizenUserId={chatIssue.user_id}
+            citizenPhone={citizenPhones[chatIssue.user_id]}
+            isMP={true}
+            onClose={() => setChatIssue(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
