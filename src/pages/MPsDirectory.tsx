@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Search, MapPin, Building2, TrendingUp, CheckCircle2, Users,
-  Loader2, ChevronLeft, Shield, BarChart3, Eye
+  Loader2, ChevronLeft, Shield, BarChart3, Eye, SendHorizonal
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MPItem {
   user_id: string;
