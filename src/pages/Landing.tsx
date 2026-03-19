@@ -660,8 +660,6 @@ const Landing = () => {
         </div>
       </section>
 
-      <EgyptianDividerLine isDark={isDark} />
-
       {/* ═══════════ CONTACT / SUPPORT ═══════════ */}
       <section id="support" className="relative py-24 md:py-32 overflow-hidden">
         <SupportDecorations isDark={isDark} />
