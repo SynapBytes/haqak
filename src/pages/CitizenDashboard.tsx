@@ -77,6 +77,16 @@ const CitizenDashboard = () => {
 
   useEffect(() => { fetchIssues(); }, [user]);
 
+  // Auto-open form when navigated from MP directory
+  useEffect(() => {
+    if (mpIdParam && mpNameParam) {
+      setAssignedMpId(mpIdParam);
+      setAssignedMpName(decodeURIComponent(mpNameParam));
+      setShowForm(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [mpIdParam, mpNameParam]);
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
