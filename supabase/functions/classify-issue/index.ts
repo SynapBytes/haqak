@@ -27,6 +27,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
         messages: [
           {
             role: "system",
@@ -34,6 +35,8 @@ serve(async (req) => {
 1. إعادة صياغة المشكلة بلغة عربية فصحى واضحة ومختصرة
 2. تصنيف المشكلة في واحدة من هذه الفئات: مياه، طرق، مرافق عامة، صحة، نظافة، تعليم، كهرباء، أخرى
 3. تلخيص المشكلة في جملة واحدة للنائب
+4. تحديد نوع المشكلة: فردية (تخص مواطن واحد) أو جماعية (تخص مجموعة أو منطقة)
+5. فحص المحتوى: إذا كان النص يحتوي على ألفاظ غير لائقة أو مسيئة، أعد صياغته بشكل محترم واضبط is_flagged = true
 
 أجب بصيغة JSON فقط بدون أي نص إضافي.`
           },
@@ -51,15 +54,24 @@ serve(async (req) => {
               parameters: {
                 type: "object",
                 properties: {
-                  refined_title: { type: "string", description: "العنوان المُعاد صياغته" },
-                  refined_description: { type: "string", description: "الوصف المُعاد صياغته" },
+                  refined_title: { type: "string", description: "العنوان المُعاد صياغته بلغة محترمة" },
+                  refined_description: { type: "string", description: "الوصف المُعاد صياغته بلغة محترمة" },
                   category: {
                     type: "string",
                     enum: ["مياه", "طرق", "مرافق عامة", "صحة", "نظافة", "تعليم", "كهرباء", "أخرى"]
                   },
-                  summary: { type: "string", description: "ملخص في جملة واحدة للنائب" }
+                  summary: { type: "string", description: "ملخص في جملة واحدة للنائب" },
+                  issue_type: {
+                    type: "string",
+                    enum: ["individual", "collective"],
+                    description: "فردية أو جماعية"
+                  },
+                  is_flagged: {
+                    type: "boolean",
+                    description: "هل يحتوي على محتوى غير لائق تم تنقيته"
+                  }
                 },
-                required: ["refined_title", "refined_description", "category", "summary"],
+                required: ["refined_title", "refined_description", "category", "summary", "issue_type", "is_flagged"],
                 additionalProperties: false
               }
             }
