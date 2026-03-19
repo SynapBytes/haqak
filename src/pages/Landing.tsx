@@ -275,7 +275,7 @@ const Landing = () => {
                     transition={{ delay: 0.1, duration: 0.6 }}
                     className="block"
                   >
-                    صوتك يوصل.
+                    Sutak يوصل.
                   </motion.span>
                   <motion.span
                     initial={{ opacity: 0, y: 20 }}
