@@ -7,15 +7,17 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Landing from "./pages/Landing";
 import CitizenDashboard from "./pages/CitizenDashboard";
 import MPDashboard from "./pages/MPDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode; requiredRole?: "citizen" | "mp" }) {
+function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode; requiredRole?: "citizen" | "mp" | "admin" }) {
   const { session, role, loading, profile } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" /></div>;
   if (!session) return <Navigate to="/auth" replace />;
+  if (requiredRole === "admin" && role !== "admin") return <Navigate to="/" replace />;
   if (requiredRole === "mp" && role === "mp" && !profile?.is_approved) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -42,6 +44,7 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/citizen" element={<ProtectedRoute requiredRole="citizen"><CitizenDashboard /></ProtectedRoute>} />
               <Route path="/mp" element={<ProtectedRoute requiredRole="mp"><MPDashboard /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
