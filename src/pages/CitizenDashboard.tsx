@@ -54,7 +54,19 @@ const CitizenDashboard = () => {
         is_flagged: (d as any).is_flagged || false,
         citizen_confirmed: (d as any).citizen_confirmed || false,
         ai_summary: d.ai_summary || undefined,
+        user_id: d.user_id,
       })));
+
+      // Check which issues have conversations
+      const { data: convs } = await supabase
+        .from("chat_conversations")
+        .select("issue_id")
+        .in("issue_id", data.map((d) => d.id));
+      if (convs) {
+        const map: Record<string, boolean> = {};
+        convs.forEach((c: any) => { map[c.issue_id] = true; });
+        setConversationMap(map);
+      }
     }
     setLoading(false);
   };
