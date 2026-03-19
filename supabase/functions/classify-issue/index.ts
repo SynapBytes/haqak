@@ -17,89 +17,63 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          {
-            role: "system",
-            content: `أنت مساعد ذكي لتصنيف وإعادة صياغة شكاوى المواطنين المصريين. مهمتك:
+    const systemPrompt = `أنت مساعد ذكي لتصنيف وإعادة صياغة شكاوى المواطنين المصريين. مهمتك:
 1. إعادة صياغة المشكلة بلغة عربية فصحى واضحة ومختصرة
 2. تصنيف المشكلة في واحدة من هذه الفئات: مياه، طرق، مرافق عامة، صحة، نظافة، تعليم، كهرباء، أخرى
 3. تلخيص المشكلة في جملة واحدة للنائب
 4. تحديد نوع المشكلة: فردية (تخص مواطن واحد) أو جماعية (تخص مجموعة أو منطقة)
 5. فحص المحتوى: إذا كان النص يحتوي على ألفاظ غير لائقة أو مسيئة، أعد صياغته بشكل محترم واضبط is_flagged = true
 
-أجب بصيغة JSON فقط بدون أي نص إضافي.`
+أجب بصيغة JSON فقط بالشكل التالي:
+{
+  "refined_title": "العنوان المُعاد صياغته",
+  "refined_description": "الوصف المُعاد صياغته",
+  "category": "الفئة",
+  "summary": "ملخص في جملة واحدة",
+  "issue_type": "individual أو collective",
+  "is_flagged": true أو false
+}`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: `${systemPrompt}\n\nالعنوان: ${title}\nالوصف: ${description}` }],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
           },
-          {
-            role: "user",
-            content: `العنوان: ${title}\nالوصف: ${description}`
-          }
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "classify_issue",
-              description: "Classify and reformulate a citizen issue",
-              parameters: {
-                type: "object",
-                properties: {
-                  refined_title: { type: "string", description: "العنوان المُعاد صياغته بلغة محترمة" },
-                  refined_description: { type: "string", description: "الوصف المُعاد صياغته بلغة محترمة" },
-                  category: {
-                    type: "string",
-                    enum: ["مياه", "طرق", "مرافق عامة", "صحة", "نظافة", "تعليم", "كهرباء", "أخرى"]
-                  },
-                  summary: { type: "string", description: "ملخص في جملة واحدة للنائب" },
-                  issue_type: {
-                    type: "string",
-                    enum: ["individual", "collective"],
-                    description: "فردية أو جماعية"
-                  },
-                  is_flagged: {
-                    type: "boolean",
-                    description: "هل يحتوي على محتوى غير لائق تم تنقيته"
-                  }
-                },
-                required: ["refined_title", "refined_description", "category", "summary", "issue_type", "is_flagged"],
-                additionalProperties: false
-              }
-            }
-          }
-        ],
-        tool_choice: { type: "function", function: { name: "classify_issue" } },
-      }),
-    });
+        }),
+      }
+    );
 
     if (!response.ok) {
+      const errText = await response.text();
+      console.error("Gemini API error:", response.status, errText);
+
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "تم تجاوز حد الطلبات، حاول لاحقاً" }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "يرجى إضافة رصيد للاستمرار" }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw new Error(`AI gateway error: ${response.status}`);
+      throw new Error(`Gemini API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) throw new Error("No tool call in response");
+    const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!textContent) throw new Error("No content in Gemini response");
 
-    const result = JSON.parse(toolCall.function.arguments);
+    const result = JSON.parse(textContent);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
