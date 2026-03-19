@@ -14,14 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      issue_actions: {
+        Row: {
+          action_type: string
+          created_at: string
+          id: string
+          issue_id: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          id?: string
+          issue_id: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          id?: string
+          issue_id?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "issue_actions_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "issues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      issue_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_type: string | null
+          id: string
+          issue_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_type?: string | null
+          id?: string
+          issue_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_type?: string | null
+          id?: string
+          issue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "issue_attachments_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "issues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       issues: {
         Row: {
           ai_summary: string | null
           assigned_mp_id: string | null
           category: string
+          citizen_confirmed: boolean
           created_at: string
           description: string
           id: string
+          is_flagged: boolean
+          issue_type: string
           location: string
           mp_notes: string | null
           status: string
@@ -33,9 +106,12 @@ export type Database = {
           ai_summary?: string | null
           assigned_mp_id?: string | null
           category: string
+          citizen_confirmed?: boolean
           created_at?: string
           description: string
           id?: string
+          is_flagged?: boolean
+          issue_type?: string
           location: string
           mp_notes?: string | null
           status?: string
@@ -47,9 +123,12 @@ export type Database = {
           ai_summary?: string | null
           assigned_mp_id?: string | null
           category?: string
+          citizen_confirmed?: boolean
           created_at?: string
           description?: string
           id?: string
+          is_flagged?: boolean
+          issue_type?: string
           location?: string
           mp_notes?: string | null
           status?: string
@@ -58,6 +137,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          issue_id: string | null
+          message: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          issue_id?: string | null
+          message: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          issue_id?: string | null
+          message?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "issues"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
