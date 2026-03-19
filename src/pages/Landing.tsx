@@ -8,9 +8,9 @@ import DecorativeBackground, {
   StepsDecorations,
   FeaturesDecorations,
   SupportDecorations,
+  PartnersDecorations,
   CTADecorations,
   FooterDecorations,
-  EgyptianDividerLine,
 } from "@/components/DecorativeBackground";
 import { useTheme } from "@/contexts/ThemeContext";
 import { 
@@ -490,8 +490,6 @@ const Landing = () => {
         </motion.div>
       </section>
 
-      <EgyptianDividerLine isDark={isDark} />
-
       {/* ═══════════ VISION SECTION ═══════════ */}
       <section className="relative z-10 py-16 md:py-20">
         <VisionDecorations isDark={isDark} />
@@ -528,15 +526,9 @@ const Landing = () => {
         </div>
       </section>
 
-      <EgyptianDividerLine isDark={isDark} />
-
       {/* ═══════════ HOW IT WORKS ═══════════ */}
       <section className="relative py-24 md:py-32">
         <StepsDecorations isDark={isDark} />
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-l from-transparent via-border to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-l from-transparent via-border to-transparent" />
-        </div>
 
         <div className="container px-4">
           <motion.div
@@ -607,8 +599,6 @@ const Landing = () => {
         </div>
       </section>
 
-      <EgyptianDividerLine isDark={isDark} />
-
       {/* ═══════════ FEATURES - BENTO GRID ═══════════ */}
       <section className="relative py-24 md:py-32 bg-gradient-to-b from-card/0 via-card/50 to-card/0">
         <FeaturesDecorations isDark={isDark} />
@@ -666,8 +656,6 @@ const Landing = () => {
         </div>
       </section>
 
-      <EgyptianDividerLine isDark={isDark} />
-
       {/* ═══════════ CONTACT / SUPPORT ═══════════ */}
       <section id="support" className="relative py-24 md:py-32 overflow-hidden">
         <SupportDecorations isDark={isDark} />
@@ -708,7 +696,8 @@ const Landing = () => {
       </section>
 
       {/* ═══════════ PARTNERS / TRUST ═══════════ */}
-      <section className="py-16 border-y border-border bg-card/30">
+      <section className="relative py-16 border-y border-border bg-card/30">
+        <PartnersDecorations isDark={isDark} />
         <div className="container px-4">
           <motion.div
             initial={{ opacity: 0 }}
