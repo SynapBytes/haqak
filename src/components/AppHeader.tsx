@@ -1,7 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, LayoutDashboard, LogIn, LogOut, User } from "lucide-react";
+import { MessageSquare, LayoutDashboard, LogIn, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import NotificationBell from "./NotificationBell";
 
 const AppHeader = () => {
   const location = useLocation();
@@ -47,7 +48,8 @@ const AppHeader = () => {
         </nav>
 
         {session ? (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <NotificationBell />
             <span className="text-sm text-muted-foreground hidden sm:block">
               {profile?.full_name || "مستخدم"}
             </span>
