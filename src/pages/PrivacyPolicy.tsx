@@ -66,7 +66,7 @@ const PrivacyPolicy = () => {
           </div>
           <h1 className="mb-4 text-3xl font-bold tracking-tight text-foreground md:text-5xl">سياسة الخصوصية</h1>
           <p className="mx-auto max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
-            توضح هذه الصفحة كيف نتعامل مع بياناتك عند استخدام منصة صوتك، وما هي حقوقك وآليات حماية معلوماتك.
+            توضح هذه الصفحة كيف نتعامل مع بياناتك عند استخدام منصة Sutak، وما هي حقوقك وآليات حماية معلوماتك.
           </p>
         </motion.div>
 

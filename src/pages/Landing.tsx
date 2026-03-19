@@ -767,7 +767,7 @@ const Landing = () => {
               </div>
             </div>
             <div className="pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <p className="text-xs text-muted-foreground">© ٢٠٢٦ صوتك — جميع الحقوق محفوظة</p>
+              <p className="text-xs text-muted-foreground">© ٢٠٢٦ Sutak — جميع الحقوق محفوظة</p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
                 جميع الخدمات تعمل بكفاءة

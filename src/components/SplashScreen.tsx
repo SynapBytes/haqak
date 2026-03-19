@@ -77,7 +77,7 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
                 WebkitTextFillColor: "transparent",
               }}
             >
-              صوتك
+              Sutak
             </h1>
             <p className="text-sm text-[#8a9bb5] mt-2 font-light tracking-wide">
               منصة التواصل المدني
