@@ -21,8 +21,6 @@ interface MPProfile {
   constituency: string | null;
   governorate: string | null;
   center: string | null;
-  contact_phone: string | null;
-  phone: string | null;
 }
 
 interface IssueStats {
