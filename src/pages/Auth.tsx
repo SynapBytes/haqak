@@ -7,6 +7,11 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { User, ShieldCheck, LogIn, ArrowRight, Eye, EyeOff, Lock, Mail, Phone, IdCard, Fingerprint, KeyRound } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
+import ornament2 from "@/assets/egyptian-ornament-2.png";
+import egyptianAnkh from "@/assets/egyptian-ankh.png";
+import egyptianNefertiti from "@/assets/egyptian-nefertiti.png";
+import ornament1 from "@/assets/egyptian-ornament-1.png";
 
 type AuthMode = "login" | "signup-citizen" | "signup-mp" | "forgot-password";
 
