@@ -7,6 +7,11 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { User, ShieldCheck, LogIn, ArrowRight, Eye, EyeOff, Lock, Mail, Phone, IdCard, Fingerprint, KeyRound } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
+import ornament2 from "@/assets/egyptian-ornament-2.png";
+import egyptianAnkh from "@/assets/egyptian-ankh.png";
+import egyptianNefertiti from "@/assets/egyptian-nefertiti.png";
+import ornament1 from "@/assets/egyptian-ornament-1.png";
 
 type AuthMode = "login" | "signup-citizen" | "signup-mp" | "forgot-password";
 
@@ -117,29 +122,32 @@ const Auth = () => {
 
   const { title, subtitle, icon: ModeIcon, gradient } = modeConfig[mode];
 
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const decoStyle = (op: [number, number]) => ({
+    opacity: isDark ? op[0] : op[1],
+    filter: isDark
+      ? "brightness(1.08) drop-shadow(0 0 34px rgba(200,149,60,0.38))"
+      : "drop-shadow(0 14px 28px rgba(200,149,60,0.18))",
+  });
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <AppHeader />
 
-      {/* Background decorations */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-accent/[0.05] blur-3xl"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.15, 1], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -bottom-40 -right-40 w-[400px] h-[400px] rounded-full bg-primary/[0.05] blur-3xl"
-        />
-        <div
-          className="absolute inset-0 opacity-[0.02]"
-          style={{
-            backgroundImage: "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)",
-            backgroundSize: "60px 60px",
-          }}
-        />
+      {/* Egyptian decorations */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        {/* عين حورس — أعلى يمين */}
+        <img src={ornament2} alt="" className="absolute top-10 right-6 w-[140px] md:w-[200px] lg:w-[260px] select-none" style={decoStyle([0.22, 0.13])} draggable={false} />
+        {/* نفرتيتي — أسفل يسار */}
+        <img src={egyptianNefertiti} alt="" className="absolute bottom-8 left-4 w-[130px] md:w-[190px] lg:w-[240px] select-none" style={decoStyle([0.2, 0.12])} draggable={false} />
+        {/* العنخ — أعلى يسار */}
+        <img src={egyptianAnkh} alt="" className="absolute top-20 left-8 w-[70px] md:w-[100px] lg:w-[130px] select-none" style={decoStyle([0.18, 0.1])} draggable={false} />
+        {/* لوتس — أسفل يمين */}
+        <img src={ornament1} alt="" className="absolute bottom-12 right-8 w-[100px] md:w-[150px] lg:w-[180px] select-none" style={decoStyle([0.16, 0.09])} draggable={false} />
+        {/* Ambient glow */}
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-3xl" style={{ background: `radial-gradient(circle, hsl(var(--warning) / ${isDark ? 0.08 : 0.04}), transparent 70%)` }} />
+        <div className="absolute -bottom-40 -right-40 w-[400px] h-[400px] rounded-full blur-3xl" style={{ background: `radial-gradient(circle, hsl(var(--primary) / ${isDark ? 0.06 : 0.03}), transparent 70%)` }} />
       </div>
 
       <div className="container py-8 md:py-16 flex justify-center px-4 relative z-10">
