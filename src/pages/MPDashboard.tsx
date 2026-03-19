@@ -321,6 +321,20 @@ const MPDashboard = () => {
                   {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   حفظ التحديث
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    if (selectedIssue?.user_id) {
+                      await fetchCitizenPhone(selectedIssue.user_id);
+                    }
+                    setChatIssue(selectedIssue);
+                    setSelectedIssue(null);
+                  }}
+                  className="w-full gap-2 h-11"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  محادثة المواطن
+                </Button>
               </div>
 
               <div className="border-t border-border pt-4">
