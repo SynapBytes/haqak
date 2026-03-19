@@ -32,21 +32,6 @@ const FloatingParticle = ({ delay, x, y, size, color }: { delay: number; x: stri
   />
 );
 
-/* ─── Animated Counter ─── */
-const AnimatedNumber = ({ value, suffix = "" }: { value: string; suffix?: string }) => {
-  const [display, setDisplay] = useState(value);
-  return (
-    <motion.span
-      initial={{ opacity: 0, scale: 0.5 }}
-      whileInView={{ opacity: 1, scale: 1 }}
-      viewport={{ once: true }}
-      transition={{ type: "spring", stiffness: 100, damping: 15 }}
-      className="tabular-nums"
-    >
-      {display}{suffix}
-    </motion.span>
-  );
-};
 
 /* ─── Magnetic Button Wrapper ─── */
 const MagneticButton = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => {
