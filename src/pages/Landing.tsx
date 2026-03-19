@@ -118,7 +118,95 @@ const partners = [
   { name: "المواطنون", icon: Heart },
 ];
 
-/* ─── Component ─── */
+/* ─── Support Form ─── */
+const SupportForm = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      toast.error("يرجى ملء جميع الحقول");
+      return;
+    }
+    setSending(true);
+    try {
+      // Store in a simple way - could be enhanced with a support_tickets table later
+      const { error } = await supabase.from("notifications").insert({
+        user_id: "00000000-0000-0000-0000-000000000000",
+        title: `دعم فني: ${name}`,
+        message: `من: ${name} (${email})\n\n${message}`,
+      });
+      if (error) throw error;
+      toast.success("تم إرسال رسالتك بنجاح! سنرد عليك قريباً.");
+      setName("");
+      setEmail("");
+      setMessage("");
+    } catch {
+      // Fallback: open mailto
+      window.location.href = `mailto:support@sotak.app?subject=${encodeURIComponent(`دعم فني: ${name}`)}&body=${encodeURIComponent(message)}`;
+      toast.success("جاري فتح البريد الإلكتروني...");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-card border border-border rounded-3xl p-8 space-y-5 shadow-xl">
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2">الاسم</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="اسمك الكريم"
+            className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2">البريد الإلكتروني</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="example@email.com"
+            dir="ltr"
+            className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">رسالتك</label>
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="اكتب استفسارك أو ملاحظاتك هنا..."
+          rows={4}
+          className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all resize-none"
+        />
+      </div>
+      <Button
+        type="submit"
+        disabled={sending}
+        className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90 h-12 text-base font-semibold rounded-xl shadow-lg shadow-accent/20"
+      >
+        {sending ? (
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+            <Send className="w-4 h-4" />
+          </motion.div>
+        ) : (
+          <Send className="w-4 h-4" />
+        )}
+        {sending ? "جاري الإرسال..." : "إرسال"}
+      </Button>
+    </form>
+  );
+};
+
+
 const Landing = () => {
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
