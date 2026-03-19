@@ -603,8 +603,6 @@ const Landing = () => {
         </div>
       </section>
 
-      <EgyptianDividerLine isDark={isDark} />
-
       {/* ═══════════ FEATURES - BENTO GRID ═══════════ */}
       <section className="relative py-24 md:py-32 bg-gradient-to-b from-card/0 via-card/50 to-card/0">
         <FeaturesDecorations isDark={isDark} />
