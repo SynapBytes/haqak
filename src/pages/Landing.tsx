@@ -392,36 +392,38 @@ const Landing = () => {
         </motion.div>
       </section>
 
-      {/* ═══════════ STATS MARQUEE ═══════════ */}
-      <section className="relative z-10 py-8">
+      {/* ═══════════ VISION SECTION ═══════════ */}
+      <section className="relative z-10 py-16 md:py-20">
         <div className="container px-4">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4"
+            className="text-center mb-12"
           >
-            {stats.map((stat, i) => (
+            <h2 className="text-2xl md:text-4xl font-bold text-foreground tracking-tight">
+              لماذا نبني <span className="bg-gradient-to-l from-accent to-primary bg-clip-text text-transparent">صوتك</span>؟
+            </h2>
+          </motion.div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
+            {visionPoints.map((point, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
-                whileHover={{ y: -4, scale: 1.02 }}
-                className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-5 md:p-6 text-center shadow-sm hover:shadow-xl transition-all duration-300 group cursor-default"
+                whileHover={{ y: -4 }}
+                className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-6 text-center hover:shadow-xl transition-all duration-300 group cursor-default"
               >
-                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br from-card to-muted flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 border border-border/50`}>
-                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-card to-muted flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 border border-border/50">
+                  <point.icon className={`w-7 h-7 ${point.color}`} />
                 </div>
-                <div className={`text-3xl md:text-4xl font-bold mb-1 ${stat.color}`}>
-                  <AnimatedNumber value={stat.value} />
-                </div>
-                <div className="text-sm text-muted-foreground font-medium">{stat.label}</div>
+                <h3 className={`text-lg font-bold mb-2 ${point.color}`}>{point.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{point.description}</p>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
