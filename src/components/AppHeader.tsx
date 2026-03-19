@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, LogIn, LogOut, Menu, X, MessageSquare, ShieldCheck, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, LogIn, LogOut, Menu, X, MessageSquare, ShieldCheck, Sun, Moon, User, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import NotificationBell from "./NotificationBell";
@@ -34,7 +34,17 @@ const AppHeader = () => {
             <>
               <Link to="/citizen">
                 <Button variant={isActive("/citizen") ? "secondary" : "ghost"} size="sm" className="gap-2">
-                  <MessageSquare className="w-4 h-4" /> لوحة المواطن
+                  <MessageSquare className="w-4 h-4" /> مشاكلي
+                </Button>
+              </Link>
+              <Link to="/mps">
+                <Button variant={isActive("/mps") ? "secondary" : "ghost"} size="sm" className="gap-2">
+                  <Users className="w-4 h-4" /> النواب
+                </Button>
+              </Link>
+              <Link to="/profile">
+                <Button variant={isActive("/profile") ? "secondary" : "ghost"} size="sm" className="gap-2">
+                  <User className="w-4 h-4" /> حسابي
                 </Button>
               </Link>
               {(role === "mp" || role === "admin") && (
@@ -67,12 +77,16 @@ const AppHeader = () => {
 
           {session ? (
             <div className="hidden md:flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
-                  <span className="text-xs font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
+              <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xs font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
+                  )}
                 </div>
                 <span className="text-sm text-muted-foreground max-w-[120px] truncate">{profile?.full_name || "مستخدم"}</span>
-              </div>
+              </Link>
               <Button variant="outline" size="sm" className="gap-2" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4" /> خروج
               </Button>
@@ -100,14 +114,28 @@ const AppHeader = () => {
           {session ? (
             <>
               <div className="flex items-center gap-2 pb-3 mb-2 border-b border-border">
-                <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
-                  <span className="text-xs font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
+                <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xs font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
+                  )}
                 </div>
                 <span className="text-sm text-foreground font-medium">{profile?.full_name || "مستخدم"}</span>
               </div>
               <Link to="/citizen" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant={isActive("/citizen") ? "secondary" : "ghost"} size="sm" className="w-full justify-start gap-2">
-                  <MessageSquare className="w-4 h-4" /> لوحة المواطن
+                  <MessageSquare className="w-4 h-4" /> مشاكلي
+                </Button>
+              </Link>
+              <Link to="/mps" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant={isActive("/mps") ? "secondary" : "ghost"} size="sm" className="w-full justify-start gap-2">
+                  <Users className="w-4 h-4" /> دليل النواب
+                </Button>
+              </Link>
+              <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant={isActive("/profile") ? "secondary" : "ghost"} size="sm" className="w-full justify-start gap-2">
+                  <User className="w-4 h-4" /> الملف الشخصي
                 </Button>
               </Link>
               {(role === "mp" || role === "admin") && (

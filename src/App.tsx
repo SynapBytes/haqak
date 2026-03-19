@@ -9,6 +9,8 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import SplashScreen from "@/components/SplashScreen";
 import Landing from "./pages/Landing";
 import CitizenDashboard from "./pages/CitizenDashboard";
+import CitizenProfile from "./pages/CitizenProfile";
+import MPsDirectory from "./pages/MPsDirectory";
 import MPDashboard from "./pages/MPDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Auth from "./pages/Auth";
@@ -58,6 +60,8 @@ function App() {
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/citizen" element={<ProtectedRoute requiredRole="citizen"><CitizenDashboard /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><CitizenProfile /></ProtectedRoute>} />
+                <Route path="/mps" element={<ProtectedRoute><MPsDirectory /></ProtectedRoute>} />
                 <Route path="/mp" element={<ProtectedRoute requiredRole="mp"><MPDashboard /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
                 <Route path="/mp-profile/:id" element={<MPProfilePage />} />
