@@ -415,81 +415,62 @@ const Landing = () => {
                 </motion.div>
               </motion.div>
 
-              {/* Visual element - Glass card mockup */}
+              {/* Welcome visual card */}
               <motion.div
                 initial={{ opacity: 0, x: -40, rotateY: -10 }}
                 animate={{ opacity: 1, x: 0, rotateY: 0 }}
                 transition={{ delay: 0.5, duration: 0.8 }}
                 className="hidden lg:block relative"
               >
-                <div className="relative perspective-1000">
-                  {/* Main glass card */}
-                  <motion.div
-                    whileHover={{ y: -8, rotateZ: -1 }}
-                    transition={{ type: "spring", stiffness: 200 }}
-                    className="relative bg-card/60 backdrop-blur-xl border border-border/50 rounded-3xl p-6 shadow-2xl"
-                  >
+                <motion.div
+                  whileHover={{ y: -8, rotateZ: -1 }}
+                  transition={{ type: "spring", stiffness: 200 }}
+                  className="relative bg-card/60 backdrop-blur-xl border border-border/50 rounded-3xl p-8 shadow-2xl overflow-hidden"
+                >
+                  {/* Decorative gradient blob */}
+                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-accent/10 rounded-full blur-2xl pointer-events-none" />
+                  <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
+
+                  <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-5">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center">
-                        <MessageSquare className="w-5 h-5 text-white" />
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-accent/20">
+                        <Heart className="w-6 h-6 text-white" />
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-foreground">مشكلة جديدة</div>
-                        <div className="text-xs text-muted-foreground">منذ دقيقتين</div>
+                        <div className="text-base font-bold text-foreground">أهلاً بيك في صوتك</div>
+                        <div className="text-xs text-muted-foreground">صوتك مسموع.. ومشكلتك مهمة</div>
                       </div>
-                      <div className="mr-auto px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium">
-                        قيد المراجعة
-                      </div>
-                    </div>
-                    <div className="space-y-3 mb-5">
-                      <div className="h-3 bg-muted rounded-full w-full" />
-                      <div className="h-3 bg-muted rounded-full w-4/5" />
-                      <div className="h-3 bg-muted rounded-full w-3/5" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-lg bg-warning/10 text-warning text-xs font-medium">طرق</span>
-                      <span className="px-3 py-1 rounded-lg bg-muted text-muted-foreground text-xs">الجيزة</span>
                     </div>
 
-                    {/* Progress bar */}
-                    <div className="mt-5 pt-4 border-t border-border/50">
-                      <div className="flex justify-between text-xs mb-2">
-                        <span className="text-muted-foreground">تقدم المعالجة</span>
-                        <span className="text-accent font-bold">٦٥٪</span>
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="space-y-3 mb-6">
+                      {[
+                        { icon: FileCheck, text: "سجّل مشكلتك في ثوانٍ", color: "text-accent" },
+                        { icon: Shield, text: "بياناتك محمية بالكامل", color: "text-success" },
+                        { icon: Eye, text: "تابع حالة مشكلتك لحظة بلحظة", color: "text-info" },
+                      ].map((item, i) => (
                         <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: "65%" }}
-                          transition={{ delay: 1.5, duration: 1.2, ease: "easeOut" }}
-                          className="h-full bg-gradient-to-l from-accent to-primary rounded-full"
-                        />
-                      </div>
+                          key={i}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 1 + i * 0.2, duration: 0.4 }}
+                          className="flex items-center gap-3 bg-muted/30 rounded-xl px-4 py-2.5"
+                        >
+                          <item.icon className={`w-4 h-4 ${item.color} shrink-0`} />
+                          <span className="text-sm text-foreground">{item.text}</span>
+                        </motion.div>
+                      ))}
                     </div>
-                  </motion.div>
 
-                  {/* Floating mini notification card */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8, x: 30 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    transition={{ delay: 1.2, duration: 0.5 }}
-                    whileHover={{ scale: 1.05 }}
-                    className="absolute -top-6 -left-8 bg-card backdrop-blur-xl border border-success/20 rounded-2xl p-3 shadow-lg"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
-                        <CheckCircle2 className="w-4 h-4 text-success" />
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-foreground">تم الحل ✓</div>
-                        <div className="text-[10px] text-muted-foreground">مشكلة المياه</div>
-                      </div>
-                    </div>
-                  </motion.div>
-
-                  {/* Floating stats card - real data */}
-                  <HeroStatsCard />
-                </div>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 1.8, duration: 0.5 }}
+                      className="text-center text-xs text-muted-foreground border-t border-border/50 pt-4"
+                    >
+                      🇪🇬 من المواطن للنائب.. بدون وسيط
+                    </motion.div>
+                  </div>
+                </motion.div>
               </motion.div>
             </div>
           </div>
