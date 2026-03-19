@@ -10,6 +10,7 @@ interface Profile {
   phone: string;
   registration_number: string | null;
   is_approved: boolean;
+  avatar_url: string | null;
 }
 
 interface AuthContextType {
