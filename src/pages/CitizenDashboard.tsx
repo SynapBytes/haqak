@@ -388,10 +388,6 @@ const CitizenDashboard = () => {
                     )}
                   </div>
 
-                  <Button type="button" variant="outline" className="w-full gap-2 h-11 rounded-xl border-accent/20 text-accent hover:bg-accent/5" onClick={handleClassify} disabled={classifying || !title || !description}>
-                    {classifying ? <Loader2 className="w-4 h-4 animate-spin" /> : "✨"}
-                    صنّف تلقائياً
-                  </Button>
 
                   <Button type="submit" disabled={submitting} className="w-full gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 h-12 rounded-xl font-semibold shadow-lg shadow-accent/20 text-base">
                     {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
