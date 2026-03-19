@@ -666,8 +666,11 @@ const Landing = () => {
         </div>
       </section>
 
+      <EgyptianDividerLine isDark={isDark} />
+
       {/* ═══════════ CONTACT / SUPPORT ═══════════ */}
       <section id="support" className="relative py-24 md:py-32 overflow-hidden">
+        <SupportDecorations isDark={isDark} />
         <div className="absolute inset-0 pointer-events-none">
           <GradientOrb className="w-[400px] h-[400px] bg-accent/[0.04] top-20 -right-40" />
         </div>
