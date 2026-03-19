@@ -594,7 +594,7 @@ const Landing = () => {
               المميزات
             </motion.span>
             <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
-              لماذا <span className="bg-gradient-to-l from-primary to-accent bg-clip-text text-transparent">Sutak</span>؟
+              لماذا <span className="bg-gradient-to-l from-primary to-accent bg-clip-text text-transparent">صوتك</span>؟
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto text-base md:text-lg">مميزات تجعل التواصل المدني أسهل وأكثر فعالية</p>
           </motion.div>
