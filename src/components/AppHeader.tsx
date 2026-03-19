@@ -1,7 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, LogIn, LogOut, Menu, X, MessageSquare, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, LogIn, LogOut, Menu, X, MessageSquare, ShieldCheck, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import NotificationBell from "./NotificationBell";
 import { useState } from "react";
 
@@ -9,6 +10,7 @@ const AppHeader = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { session, profile, role, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
@@ -55,7 +57,14 @@ const AppHeader = () => {
           )}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={toggleTheme}
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            aria-label="تبديل الوضع"
+          >
+            {theme === "dark" ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
+          </button>
           {session && <NotificationBell />}
 
           {session ? (
