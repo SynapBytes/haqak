@@ -180,6 +180,7 @@ const CitizenDashboard = () => {
         issue_type: finalIssueType,
         is_flagged: isFlagged,
         ai_summary: aiSummary,
+        ...(assignedMpId ? { assigned_mp_id: assignedMpId } : {}),
       }).select("id").single();
       if (error) throw error;
 
