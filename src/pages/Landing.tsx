@@ -748,9 +748,7 @@ const Landing = () => {
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-md">
-                  <span className="text-white font-bold text-base">ص</span>
-                </div>
+                <img src="/logo-sawtak.png" alt="صوتك" className="w-10 h-10 rounded-2xl shadow-md object-contain" />
                 <div>
                   <span className="font-bold text-lg text-foreground block">صوتك</span>
                   <span className="text-xs text-muted-foreground">منصة التواصل المدني</span>
