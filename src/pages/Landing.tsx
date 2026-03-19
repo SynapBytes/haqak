@@ -475,7 +475,7 @@ const Landing = () => {
             className="text-center mb-12"
           >
             <h2 className="text-2xl md:text-4xl font-bold text-foreground tracking-tight">
-              لماذا نبني <span className="bg-gradient-to-l from-accent to-primary bg-clip-text text-transparent">صوتك</span>؟
+              لماذا نبني <span className="bg-gradient-to-l from-accent to-primary bg-clip-text text-transparent">Sutak</span>؟
             </h2>
           </motion.div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
