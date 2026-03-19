@@ -9,6 +9,7 @@ import CitizenDashboard from "./pages/CitizenDashboard";
 import MPDashboard from "./pages/MPDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Auth from "./pages/Auth";
+import MPProfilePage from "./pages/MPProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ function App() {
               <Route path="/citizen" element={<ProtectedRoute requiredRole="citizen"><CitizenDashboard /></ProtectedRoute>} />
               <Route path="/mp" element={<ProtectedRoute requiredRole="mp"><MPDashboard /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/mp-profile/:id" element={<MPProfilePage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
