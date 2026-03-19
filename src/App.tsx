@@ -16,6 +16,7 @@ import MPProfilePage from "./pages/MPProfilePage";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import PushNotificationProvider from "@/components/PushNotificationProvider";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ function App() {
           {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
           <BrowserRouter>
             <AuthProvider>
+              <PushNotificationProvider />
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/auth" element={<Auth />} />
