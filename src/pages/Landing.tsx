@@ -490,8 +490,6 @@ const Landing = () => {
         </motion.div>
       </section>
 
-      <EgyptianDividerLine isDark={isDark} />
-
       {/* ═══════════ VISION SECTION ═══════════ */}
       <section className="relative z-10 py-16 md:py-20">
         <VisionDecorations isDark={isDark} />
