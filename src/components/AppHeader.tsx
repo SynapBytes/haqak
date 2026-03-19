@@ -24,9 +24,7 @@ const AppHeader = () => {
     <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50">
       <div className="container flex items-center justify-between h-14 md:h-16 px-4">
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-            <span className="text-white font-bold text-sm">ص</span>
-          </div>
+          <img src="/logo-sawtak.png" alt="صوتك" className="w-9 h-9 rounded-xl shadow-sm group-hover:shadow-md transition-shadow object-contain" />
           <span className="text-xl font-bold text-foreground tracking-tight">صوتك</span>
         </Link>
 
