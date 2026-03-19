@@ -34,7 +34,7 @@
     --input: 214 20% 90%;
     --ring: 217 91% 60%;
 
-    --radius: 0.5rem;
+    --radius: 0.625rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -110,13 +110,13 @@
   }
 
   p, span, div {
-    line-height: 1.6;
+    line-height: 1.7;
   }
 }
 
 @layer components {
   .status-badge {
-    @apply px-3 py-1 text-xs font-medium rounded-full inline-flex items-center gap-1;
+    @apply px-3 py-1 text-xs font-medium rounded-full inline-flex items-center gap-1.5;
   }
 
   .status-received {
@@ -135,10 +135,16 @@
   }
 
   .civic-card {
-    @apply bg-card border border-border p-6 rounded-2xl transition-all duration-200;
+    @apply bg-card border border-border p-5 md:p-6 rounded-2xl transition-all duration-200;
   }
 
   .civic-card-hover {
-    @apply civic-card hover:border-accent/30 hover:shadow-sm;
+    @apply civic-card hover:border-accent/30 hover:shadow-sm cursor-pointer;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out forwards;
   }
 }
