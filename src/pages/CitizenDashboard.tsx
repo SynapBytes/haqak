@@ -214,6 +214,7 @@ const CitizenDashboard = () => {
       setShowForm(false);
       setTitle(""); setDescription(""); setCategory(""); setLocation("");
       setIssueType("individual"); setFiles([]);
+      setAssignedMpId(null); setAssignedMpName(null);
       fetchIssues();
     } catch (err: any) {
       toast.error(err.message || "خطأ في إرسال المشكلة");
