@@ -8,9 +8,9 @@ import DecorativeBackground, {
   StepsDecorations,
   FeaturesDecorations,
   SupportDecorations,
+  PartnersDecorations,
   CTADecorations,
   FooterDecorations,
-  EgyptianDividerLine,
 } from "@/components/DecorativeBackground";
 import { useTheme } from "@/contexts/ThemeContext";
 import { 
