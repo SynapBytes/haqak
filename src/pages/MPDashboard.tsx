@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import AppHeader from "@/components/AppHeader";
 import IssueCard from "@/components/IssueCard";
+import ChatDrawer from "@/components/ChatDrawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
   Search, Filter, BarChart3, AlertCircle, CheckCircle2, Clock, Loader2,
-  X, Users, User, FileText, TrendingUp, PieChart
+  X, Users, User, FileText, TrendingUp, PieChart, MessageCircle, Phone
 } from "lucide-react";
 import type { Issue } from "@/components/IssueCard";
 import type { IssueStatus } from "@/components/StatusBadge";
@@ -38,6 +39,8 @@ const MPDashboard = () => {
   const [newStatus, setNewStatus] = useState<IssueStatus>("received");
   const [actionLogs, setActionLogs] = useState<ActionLog[]>([]);
   const [updating, setUpdating] = useState(false);
+  const [chatIssue, setChatIssue] = useState<Issue | null>(null);
+  const [citizenPhones, setCitizenPhones] = useState<Record<string, string>>({});
 
   const fetchIssues = async () => {
     const { data } = await supabase
@@ -58,9 +61,20 @@ const MPDashboard = () => {
         is_flagged: (d as any).is_flagged || false,
         citizen_confirmed: (d as any).citizen_confirmed || false,
         ai_summary: d.ai_summary || undefined,
+        user_id: d.user_id,
       })));
     }
     setLoading(false);
+  };
+
+  const fetchCitizenPhone = async (userId: string) => {
+    if (citizenPhones[userId]) return citizenPhones[userId];
+    const { data } = await supabase.from("profiles").select("phone").eq("user_id", userId).single();
+    if (data) {
+      setCitizenPhones((prev) => ({ ...prev, [userId]: data.phone }));
+      return data.phone;
+    }
+    return undefined;
   };
 
   useEffect(() => { fetchIssues(); }, []);
@@ -307,6 +321,20 @@ const MPDashboard = () => {
                   {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   حفظ التحديث
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    if (selectedIssue?.user_id) {
+                      await fetchCitizenPhone(selectedIssue.user_id);
+                    }
+                    setChatIssue(selectedIssue);
+                    setSelectedIssue(null);
+                  }}
+                  className="w-full gap-2 h-11"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  محادثة المواطن
+                </Button>
               </div>
 
               <div className="border-t border-border pt-4">
@@ -331,6 +359,20 @@ const MPDashboard = () => {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Chat Drawer */}
+      <AnimatePresence>
+        {chatIssue && chatIssue.user_id && (
+          <ChatDrawer
+            issueId={chatIssue.id}
+            issueTitle={chatIssue.title}
+            citizenUserId={chatIssue.user_id}
+            citizenPhone={citizenPhones[chatIssue.user_id]}
+            isMP={true}
+            onClose={() => setChatIssue(null)}
+          />
         )}
       </AnimatePresence>
     </div>

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import AppHeader from "@/components/AppHeader";
 import IssueCard from "@/components/IssueCard";
+import ChatDrawer from "@/components/ChatDrawer";
 import StatusBadge from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Plus, X, Send, Loader2, ImagePlus, CheckCircle2 } from "lucide-react";
+import { Plus, X, Send, Loader2, ImagePlus, CheckCircle2, MessageCircle } from "lucide-react";
 import type { Issue } from "@/components/IssueCard";
 
 const categories = ["مياه", "طرق", "مرافق عامة", "صحة", "نظافة", "تعليم", "كهرباء", "أخرى"];
@@ -29,6 +30,8 @@ const CitizenDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [chatIssue, setChatIssue] = useState<Issue | null>(null);
+  const [conversationMap, setConversationMap] = useState<Record<string, boolean>>({});
 
   const fetchIssues = async () => {
     if (!user) return;
@@ -51,7 +54,19 @@ const CitizenDashboard = () => {
         is_flagged: (d as any).is_flagged || false,
         citizen_confirmed: (d as any).citizen_confirmed || false,
         ai_summary: d.ai_summary || undefined,
+        user_id: d.user_id,
       })));
+
+      // Check which issues have conversations
+      const { data: convs } = await supabase
+        .from("chat_conversations")
+        .select("issue_id")
+        .in("issue_id", data.map((d) => d.id));
+      if (convs) {
+        const map: Record<string, boolean> = {};
+        convs.forEach((c: any) => { map[c.issue_id] = true; });
+        setConversationMap(map);
+      }
     }
     setLoading(false);
   };
@@ -301,19 +316,38 @@ const CitizenDashboard = () => {
             {issues.map((issue, i) => (
               <motion.div key={issue.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                 <IssueCard issue={issue} />
-                {issue.status === "resolved" && !issue.citizen_confirmed && (
-                  <div className="mt-2 flex justify-end">
+                <div className="mt-2 flex justify-end gap-2">
+                  {conversationMap[issue.id] && (
+                    <Button size="sm" variant="outline" className="gap-2 text-accent border-accent/30 hover:bg-accent/10" onClick={() => setChatIssue(issue)}>
+                      <MessageCircle className="w-4 h-4" />
+                      المحادثة
+                    </Button>
+                  )}
+                  {issue.status === "resolved" && !issue.citizen_confirmed && (
                     <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/10" onClick={() => handleConfirmResolution(issue.id)}>
                       <CheckCircle2 className="w-4 h-4" />
                       تأكيد حل المشكلة
                     </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Chat Drawer */}
+      <AnimatePresence>
+        {chatIssue && chatIssue.user_id && (
+          <ChatDrawer
+            issueId={chatIssue.id}
+            issueTitle={chatIssue.title}
+            citizenUserId={chatIssue.user_id}
+            isMP={false}
+            onClose={() => setChatIssue(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -14,6 +14,79 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_conversations: {
+        Row: {
+          citizen_user_id: string
+          closed_at: string | null
+          created_at: string
+          id: string
+          is_closed: boolean
+          issue_id: string
+          mp_user_id: string
+        }
+        Insert: {
+          citizen_user_id: string
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          is_closed?: boolean
+          issue_id: string
+          mp_user_id: string
+        }
+        Update: {
+          citizen_user_id?: string
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          is_closed?: boolean
+          issue_id?: string
+          mp_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_conversations_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: true
+            referencedRelation: "issues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          sender_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          sender_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       issue_actions: {
         Row: {
           action_type: string
