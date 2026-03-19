@@ -46,6 +46,7 @@ const MPProfilePage = () => {
       setLoading(true);
 
       // Fetch MP profile
+      // Only select public-safe fields (no phone/contact_phone for public view)
       const { data: profileData } = await supabase
         .from("profiles")
         .select("user_id, full_name, avatar_url, constituency, governorate, center")
