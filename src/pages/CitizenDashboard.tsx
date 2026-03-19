@@ -25,7 +25,6 @@ const CitizenDashboard = () => {
   const [location, setLocation] = useState("");
   const [issueType, setIssueType] = useState<"individual" | "collective">("individual");
   const [submitting, setSubmitting] = useState(false);
-  const [classifying, setClassifying] = useState(false);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState<File[]>([]);
@@ -72,28 +71,6 @@ const CitizenDashboard = () => {
 
   useEffect(() => { fetchIssues(); }, [user]);
 
-  const handleClassify = async () => {
-    if (!title || !description) return;
-    setClassifying(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("classify-issue", {
-        body: { title, description },
-      });
-      if (error) throw error;
-      if (data) {
-        if (data.refined_title) setTitle(data.refined_title);
-        if (data.refined_description) setDescription(data.refined_description);
-        if (data.category) setCategory(data.category);
-        if (data.issue_type) setIssueType(data.issue_type);
-        if (data.is_flagged) toast.info("تم تنقيح بعض العبارات غير اللائقة تلقائياً");
-        toast.success("تم تصنيف المشكلة بالذكاء الاصطناعي ✨");
-      }
-    } catch {
-      toast.error("تعذر التصنيف التلقائي");
-    } finally {
-      setClassifying(false);
-    }
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
@@ -388,10 +365,6 @@ const CitizenDashboard = () => {
                     )}
                   </div>
 
-                  <Button type="button" variant="outline" className="w-full gap-2 h-11 rounded-xl border-accent/20 text-accent hover:bg-accent/5" onClick={handleClassify} disabled={classifying || !title || !description}>
-                    {classifying ? <Loader2 className="w-4 h-4 animate-spin" /> : "✨"}
-                    صنّف تلقائياً
-                  </Button>
 
                   <Button type="submit" disabled={submitting} className="w-full gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 h-12 rounded-xl font-semibold shadow-lg shadow-accent/20 text-base">
                     {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
