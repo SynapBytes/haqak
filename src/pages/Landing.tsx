@@ -607,8 +607,11 @@ const Landing = () => {
         </div>
       </section>
 
+      <EgyptianDividerLine isDark={isDark} />
+
       {/* ═══════════ FEATURES - BENTO GRID ═══════════ */}
       <section className="relative py-24 md:py-32 bg-gradient-to-b from-card/0 via-card/50 to-card/0">
+        <FeaturesDecorations isDark={isDark} />
         <div className="container px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
