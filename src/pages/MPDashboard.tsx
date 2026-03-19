@@ -39,6 +39,8 @@ const MPDashboard = () => {
   const [newStatus, setNewStatus] = useState<IssueStatus>("received");
   const [actionLogs, setActionLogs] = useState<ActionLog[]>([]);
   const [updating, setUpdating] = useState(false);
+  const [chatIssue, setChatIssue] = useState<Issue | null>(null);
+  const [citizenPhones, setCitizenPhones] = useState<Record<string, string>>({});
 
   const fetchIssues = async () => {
     const { data } = await supabase
