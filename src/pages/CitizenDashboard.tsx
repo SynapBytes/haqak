@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import AppHeader from "@/components/AppHeader";
 import IssueCard from "@/components/IssueCard";
+import ChatDrawer from "@/components/ChatDrawer";
 import StatusBadge from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Plus, X, Send, Loader2, ImagePlus, CheckCircle2 } from "lucide-react";
+import { Plus, X, Send, Loader2, ImagePlus, CheckCircle2, MessageCircle } from "lucide-react";
 import type { Issue } from "@/components/IssueCard";
 
 const categories = ["مياه", "طرق", "مرافق عامة", "صحة", "نظافة", "تعليم", "كهرباء", "أخرى"];
