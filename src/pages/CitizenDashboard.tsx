@@ -25,7 +25,7 @@ const CitizenDashboard = () => {
   const [location, setLocation] = useState("");
   const [issueType, setIssueType] = useState<"individual" | "collective">("individual");
   const [submitting, setSubmitting] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [issues, setIssues] = useState<Issue[]>([]);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState<File[]>([]);
