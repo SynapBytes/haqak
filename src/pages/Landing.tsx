@@ -526,8 +526,6 @@ const Landing = () => {
         </div>
       </section>
 
-      <EgyptianDividerLine isDark={isDark} />
-
       {/* ═══════════ HOW IT WORKS ═══════════ */}
       <section className="relative py-24 md:py-32">
         <StepsDecorations isDark={isDark} />
