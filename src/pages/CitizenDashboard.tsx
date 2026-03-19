@@ -72,28 +72,6 @@ const CitizenDashboard = () => {
 
   useEffect(() => { fetchIssues(); }, [user]);
 
-  const handleClassify = async () => {
-    if (!title || !description) return;
-    setClassifying(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("classify-issue", {
-        body: { title, description },
-      });
-      if (error) throw error;
-      if (data) {
-        if (data.refined_title) setTitle(data.refined_title);
-        if (data.refined_description) setDescription(data.refined_description);
-        if (data.category) setCategory(data.category);
-        if (data.issue_type) setIssueType(data.issue_type);
-        if (data.is_flagged) toast.info("تم تنقيح بعض العبارات غير اللائقة تلقائياً");
-        toast.success("تم تصنيف المشكلة بالذكاء الاصطناعي ✨");
-      }
-    } catch {
-      toast.error("تعذر التصنيف التلقائي");
-    } finally {
-      setClassifying(false);
-    }
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
