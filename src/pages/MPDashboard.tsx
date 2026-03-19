@@ -61,9 +61,20 @@ const MPDashboard = () => {
         is_flagged: (d as any).is_flagged || false,
         citizen_confirmed: (d as any).citizen_confirmed || false,
         ai_summary: d.ai_summary || undefined,
+        user_id: d.user_id,
       })));
     }
     setLoading(false);
+  };
+
+  const fetchCitizenPhone = async (userId: string) => {
+    if (citizenPhones[userId]) return citizenPhones[userId];
+    const { data } = await supabase.from("profiles").select("phone").eq("user_id", userId).single();
+    if (data) {
+      setCitizenPhones((prev) => ({ ...prev, [userId]: data.phone }));
+      return data.phone;
+    }
+    return undefined;
   };
 
   useEffect(() => { fetchIssues(); }, []);
