@@ -9,6 +9,7 @@ import CitizenDashboard from "./pages/CitizenDashboard";
 import MPDashboard from "./pages/MPDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Auth from "./pages/Auth";
+import MPProfilePage from "./pages/MPProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
