@@ -700,7 +700,8 @@ const Landing = () => {
       </section>
 
       {/* ═══════════ PARTNERS / TRUST ═══════════ */}
-      <section className="py-16 border-y border-border bg-card/30">
+      <section className="relative py-16 border-y border-border bg-card/30">
+        <PartnersDecorations isDark={isDark} />
         <div className="container px-4">
           <motion.div
             initial={{ opacity: 0 }}
