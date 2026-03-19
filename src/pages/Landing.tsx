@@ -6,8 +6,12 @@ import {
   MessageSquare, Shield, BarChart3, Zap, Users, ArrowLeft, 
   CheckCircle2, Globe, ClipboardCheck, Eye, 
   FileCheck, Headphones, Star, ChevronLeft, ArrowUpLeft,
-  Phone, MapPin, Building2, Award, TrendingUp
+  Phone, MapPin, Building2, Award, TrendingUp, Mail, Send,
+  Rocket, Target, Heart, Sparkles
 } from "lucide-react";
+import { useRef, useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useRef, useState, useEffect, useCallback } from "react";
 
 /* ─── Floating Particle Component ─── */
