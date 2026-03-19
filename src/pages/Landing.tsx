@@ -210,6 +210,7 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-background overflow-hidden">
+      <DecorativeBackground />
       <AppHeader />
 
       {/* ═══════════ HERO ═══════════ */}
