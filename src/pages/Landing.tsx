@@ -688,7 +688,7 @@ const Landing = () => {
                 <span className="w-1 h-1 rounded-full bg-border" />
                 <Link to="/auth" className="hover:text-foreground transition-colors">إنشاء حساب</Link>
                 <span className="w-1 h-1 rounded-full bg-border" />
-                <span>الدعم الفني</span>
+                <a href="#support" className="hover:text-foreground transition-colors cursor-pointer">الدعم الفني</a>
               </div>
             </div>
             <div className="pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3">
