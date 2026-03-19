@@ -112,17 +112,10 @@ const steps = [
   { num: "٤", title: "تابع الحل", desc: "استلم إشعارات فورية وأكّد الحل", icon: Eye, color: "from-success to-success/70" },
 ];
 
-const testimonials = [
-  { name: "أحمد محمد", location: "القاهرة", text: "قدّمت مشكلة المياه في منطقتنا وتم حلها خلال أسبوع. منصة ممتازة وسهلة الاستخدام!", rating: 5 },
-  { name: "فاطمة علي", location: "الإسكندرية", text: "أخيراً صوتنا بيوصل للنواب بشكل مباشر وبنتابع الحل خطوة بخطوة. شكراً صوتك!", rating: 5 },
-  { name: "محمود حسن", location: "الجيزة", text: "النائب تواصل معايا شخصياً وتم إصلاح الطريق في أقل من شهر. تجربة رائعة.", rating: 5 },
-];
-
 const partners = [
-  { name: "مجلس النواب", icon: Building2 },
-  { name: "المحليات", icon: MapPin },
-  { name: "وزارة التنمية", icon: Award },
+  { name: "أعضاء مجلس النواب", icon: Building2 },
   { name: "المجتمع المدني", icon: Users },
+  { name: "المواطنون", icon: Heart },
 ];
 
 /* ─── Component ─── */
