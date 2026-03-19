@@ -44,9 +44,35 @@ const MPDashboard = () => {
   const [citizenPhones, setCitizenPhones] = useState<Record<string, string>>({});
 
   const fetchIssues = async () => {
-    const { data } = await supabase.from("issues").select("*").order("created_at", { ascending: false });
+    // Fetch MP's profile to get their constituency/governorate
+    let mpGovernorate: string | null = null;
+    if (user) {
+      const { data: mpProfile } = await supabase
+        .from("profiles")
+        .select("governorate, constituency")
+        .eq("user_id", user.id)
+        .single();
+      if (mpProfile) {
+        mpGovernorate = mpProfile.governorate;
+      }
+    }
+
+    let query = supabase.from("issues").select("*").order("created_at", { ascending: false });
+    
+    // Filter by MP's governorate if available (MP sees only their constituency issues)
+    // Issues with matching location keyword OR assigned to this MP
+    const { data } = await query;
+    
     if (data) {
-      setIssues(data.map((d) => ({
+      const filtered = mpGovernorate
+        ? data.filter((d) => 
+            d.location?.includes(mpGovernorate!) || 
+            d.assigned_mp_id === user?.id ||
+            !d.assigned_mp_id // Unassigned issues visible to all MPs in their area
+          )
+        : data;
+
+      setIssues(filtered.map((d) => ({
         id: d.id, title: d.title, description: d.description,
         status: d.status as Issue["status"], category: d.category,
         location: d.location, timeAgo: new Date(d.created_at).toLocaleDateString("ar-EG"),
