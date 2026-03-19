@@ -745,6 +745,7 @@ const Landing = () => {
           viewport={{ once: true }}
           className="relative overflow-hidden rounded-[2rem] max-w-4xl mx-auto"
         >
+          <CTADecorations isDark={isDark} />
           {/* Background */}
           <div className="absolute inset-0 bg-gradient-to-br from-accent via-info to-primary opacity-90" />
           <div className="absolute inset-0 opacity-10" style={{
