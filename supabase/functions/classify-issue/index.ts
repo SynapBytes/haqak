@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +10,31 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // --- Auth check ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- Input validation ---
     const { title, description, senderName, files } = await req.json();
     if (!title || !description) {
       return new Response(JSON.stringify({ error: "title and description required" }), {
@@ -17,8 +43,12 @@ serve(async (req) => {
       });
     }
 
-    // If no sender name, reject immediately
-    if (!senderName || senderName.trim() === "") {
+    // Enforce max lengths to prevent prompt injection / abuse
+    const safeTitle = String(title).slice(0, 500);
+    const safeDescription = String(description).slice(0, 5000);
+    const safeSenderName = senderName ? String(senderName).slice(0, 200) : "";
+
+    if (!safeSenderName || safeSenderName.trim() === "") {
       return new Response(JSON.stringify({
         status: "rejected",
         rejectionReason: "الاسم الكامل للمرسل غير موجود. يجب تسجيل الدخول بحساب يحتوي على الاسم الكامل.",
@@ -37,7 +67,7 @@ serve(async (req) => {
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
 
     const filesInfo = (files && files.length > 0)
-      ? `\n\nالملفات المرفقة:\n${files.map((f: any) => `- ${f.fileName} (${f.fileType})`).join("\n")}`
+      ? `\n\nالملفات المرفقة:\n${files.map((f: any) => `- ${String(f.fileName).slice(0, 200)} (${String(f.fileType).slice(0, 50)})`).join("\n")}`
       : "";
 
     const systemPrompt = `أنت مساعد ذكي لمعالجة شكاوى المواطنين المصريين قبل إرسالها للنواب. هدفك تحويل أي شكوى إلى نص واضح، مختصر، رسمي، وجاهز للعرض للنائب.
@@ -77,9 +107,9 @@ serve(async (req) => {
   "foulWordsRemoved": true أو false
 }`;
 
-    const userMessage = `اسم المرسل: ${senderName}
-العنوان: ${title}
-الوصف: ${description}${filesInfo}`;
+    const userMessage = `اسم المرسل: ${safeSenderName}
+العنوان: ${safeTitle}
+الوصف: ${safeDescription}${filesInfo}`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
@@ -119,7 +149,6 @@ serve(async (req) => {
 
     const result = JSON.parse(textContent);
 
-    // Ensure files from input are included if AI didn't return them
     if (files && files.length > 0 && (!result.files || result.files.length === 0)) {
       result.files = files;
     }
@@ -129,7 +158,7 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("classify-issue error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: "حدث خطأ أثناء المعالجة" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
