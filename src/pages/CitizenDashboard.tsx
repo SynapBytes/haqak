@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import IssueCard from "@/components/IssueCard";
 import ChatDrawer from "@/components/ChatDrawer";
@@ -11,14 +12,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Plus, X, Send, Loader2, ImagePlus, CheckCircle2, MessageCircle, AlertCircle, Clock, TrendingUp } from "lucide-react";
+import { Plus, X, Send, SendHorizonal, Loader2, ImagePlus, CheckCircle2, MessageCircle, AlertCircle, Clock, TrendingUp } from "lucide-react";
 import type { Issue } from "@/components/IssueCard";
 
 const categories = ["مياه", "طرق", "مرافق عامة", "صحة", "نظافة", "تعليم", "كهرباء", "أخرى"];
 
 const CitizenDashboard = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mpIdParam = searchParams.get("mp_id");
+  const mpNameParam = searchParams.get("mp_name");
   const [showForm, setShowForm] = useState(false);
+  const [assignedMpId, setAssignedMpId] = useState<string | null>(null);
+  const [assignedMpName, setAssignedMpName] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -70,6 +76,16 @@ const CitizenDashboard = () => {
   };
 
   useEffect(() => { fetchIssues(); }, [user]);
+
+  // Auto-open form when navigated from MP directory
+  useEffect(() => {
+    if (mpIdParam && mpNameParam) {
+      setAssignedMpId(mpIdParam);
+      setAssignedMpName(decodeURIComponent(mpNameParam));
+      setShowForm(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [mpIdParam, mpNameParam]);
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,6 +180,7 @@ const CitizenDashboard = () => {
         issue_type: finalIssueType,
         is_flagged: isFlagged,
         ai_summary: aiSummary,
+        ...(assignedMpId ? { assigned_mp_id: assignedMpId } : {}),
       }).select("id").single();
       if (error) throw error;
 
@@ -197,6 +214,7 @@ const CitizenDashboard = () => {
       setShowForm(false);
       setTitle(""); setDescription(""); setCategory(""); setLocation("");
       setIssueType("individual"); setFiles([]);
+      setAssignedMpId(null); setAssignedMpName(null);
       fetchIssues();
     } catch (err: any) {
       toast.error(err.message || "خطأ في إرسال المشكلة");
@@ -312,6 +330,17 @@ const CitizenDashboard = () => {
                     <X className="w-4 h-4" />
                   </button>
                 </div>
+                {assignedMpName && (
+                  <div className="flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-xl px-4 py-3 mb-2">
+                    <SendHorizonal className="w-4 h-4 text-accent shrink-0" />
+                    <span className="text-sm font-medium text-foreground">
+                      شكوى موجّهة إلى النائب: <span className="text-accent font-bold">{assignedMpName}</span>
+                    </span>
+                    <button type="button" onClick={() => { setAssignedMpId(null); setAssignedMpName(null); }} className="mr-auto text-muted-foreground hover:text-foreground">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-foreground block">عنوان المشكلة</label>

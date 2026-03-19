@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Search, MapPin, Building2, TrendingUp, CheckCircle2, Users,
-  Loader2, ChevronLeft, Shield, BarChart3, Eye
+  Loader2, ChevronLeft, Shield, BarChart3, Eye, SendHorizonal
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MPItem {
   user_id: string;
@@ -23,6 +24,7 @@ interface MPItem {
 
 const MPsDirectory = () => {
   const navigate = useNavigate();
+  const { role } = useAuth();
   const [mps, setMps] = useState<MPItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -254,16 +256,32 @@ const MPsDirectory = () => {
                   </div>
                 </div>
 
-                {/* View Profile */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full gap-2 text-xs h-9 rounded-xl text-accent hover:bg-accent/5 group-hover:bg-accent/5"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  عرض البروفايل
-                  <ChevronLeft className="w-3 h-3 mr-auto group-hover:-translate-x-1 transition-transform" />
-                </Button>
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-1 gap-2 text-xs h-9 rounded-xl text-accent hover:bg-accent/5 group-hover:bg-accent/5"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    البروفايل
+                    <ChevronLeft className="w-3 h-3 mr-auto group-hover:-translate-x-1 transition-transform" />
+                  </Button>
+                  {role === "citizen" && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="flex-1 gap-1.5 text-xs h-9 rounded-xl bg-gradient-to-l from-accent to-primary text-white hover:opacity-90 shadow-md"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/citizen?mp_id=${mp.user_id}&mp_name=${encodeURIComponent(mp.full_name)}`);
+                      }}
+                    >
+                      <SendHorizonal className="w-3.5 h-3.5" />
+                      أرسل شكوى
+                    </Button>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>
