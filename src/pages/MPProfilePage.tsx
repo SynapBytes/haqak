@@ -8,6 +8,11 @@ import {
   Users, TrendingUp, BarChart3, PieChart
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useTheme } from "@/contexts/ThemeContext";
+import ornament3 from "@/assets/egyptian-ornament-3.png";
+import egyptianCobra from "@/assets/egyptian-cobra.png";
+import egyptianAnkh from "@/assets/egyptian-ankh.png";
+import egyptianBorder from "@/assets/egyptian-border.png";
 
 interface MPProfile {
   user_id: string;
