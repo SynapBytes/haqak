@@ -51,6 +51,7 @@ function App() {
           {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
           <BrowserRouter>
             <AuthProvider>
+              <PushNotificationProvider />
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/auth" element={<Auth />} />
