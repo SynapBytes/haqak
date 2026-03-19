@@ -80,7 +80,7 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
               صوتك
             </h1>
             <p className="text-sm text-[#8a9bb5] mt-2 font-light tracking-wide">
-              Civic Communication Platform
+              منصة التواصل المدني
             </p>
           </motion.div>
 
