@@ -30,6 +30,8 @@ const CitizenDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [chatIssue, setChatIssue] = useState<Issue | null>(null);
+  const [conversationMap, setConversationMap] = useState<Record<string, boolean>>({});
 
   const fetchIssues = async () => {
     if (!user) return;
