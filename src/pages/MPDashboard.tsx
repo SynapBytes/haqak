@@ -101,10 +101,13 @@ const MPDashboard = () => {
       const { data: issueData } = await supabase.from("issues").select("user_id, title").eq("id", selectedIssue.id).single();
       if (issueData) {
         const statusLabel = newStatus === "resolved" ? "تم حل مشكلتك" : newStatus === "in-progress" ? "مشكلتك قيد المعالجة" : "تم استلام مشكلتك";
+        const notifMessage = `${issueData.title}: ${actionNote || statusLabel}`;
         await supabase.from("notifications").insert({
           user_id: issueData.user_id, title: statusLabel,
-          message: `${issueData.title}: ${actionNote || statusLabel}`, issue_id: selectedIssue.id,
+          message: notifMessage, issue_id: selectedIssue.id,
         });
+        // Send push notification
+        sendPushToUser(issueData.user_id, statusLabel, notifMessage, { issue_id: selectedIssue.id });
       }
 
       toast.success("تم تحديث حالة المشكلة");
