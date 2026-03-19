@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Plus, X, Send, Loader2, ImagePlus, CheckCircle2, MessageCircle } from "lucide-react";
+import { Plus, X, Send, Loader2, ImagePlus, CheckCircle2, MessageCircle, AlertCircle, Clock, TrendingUp } from "lucide-react";
 import type { Issue } from "@/components/IssueCard";
 
 const categories = ["مياه", "طرق", "مرافق عامة", "صحة", "نظافة", "تعليم", "كهرباء", "أخرى"];
@@ -57,7 +57,6 @@ const CitizenDashboard = () => {
         user_id: d.user_id,
       })));
 
-      // Check which issues have conversations
       const { data: convs } = await supabase
         .from("chat_conversations")
         .select("issue_id")
@@ -151,7 +150,6 @@ const CitizenDashboard = () => {
         await uploadFiles(insertedIssue.id);
       }
 
-      // Create notification for MPs
       const { data: mpRoles } = await supabase.from("user_roles").select("user_id").eq("role", "mp");
       if (mpRoles) {
         for (const mp of mpRoles) {
@@ -195,31 +193,67 @@ const CitizenDashboard = () => {
     resolved: issues.filter((i) => i.status === "resolved").length,
   };
 
+  const statCards = [
+    { status: "received" as const, count: statusCounts.received, icon: AlertCircle, color: "text-accent", bg: "from-accent/10 to-accent/5", label: "بانتظار المراجعة" },
+    { status: "in-progress" as const, count: statusCounts["in-progress"], icon: Clock, color: "text-warning", bg: "from-warning/10 to-warning/5", label: "قيد المعالجة" },
+    { status: "resolved" as const, count: statusCounts.resolved, icon: CheckCircle2, color: "text-success", bg: "from-success/10 to-success/5", label: "تم الحل" },
+  ];
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Background decorations */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-accent/[0.04] blur-3xl"
+        />
+        <motion.div
+          animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.3, 0.15] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-primary/[0.04] blur-3xl"
+        />
+      </div>
+
       <AppHeader />
-      <div className="container py-8">
+      <div className="container py-6 md:py-8 px-4 relative z-10">
+        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-foreground mb-1">مشاكلي</h1>
+            <motion.h1
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight"
+            >
+              مشاكلي
+            </motion.h1>
             <p className="text-muted-foreground text-sm">تابع حالة المشاكل التي أبلغت عنها</p>
           </div>
-          <Button onClick={() => setShowForm(true)} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
-            <Plus className="w-4 h-4" />
-            إبلاغ عن مشكلة
-          </Button>
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button onClick={() => setShowForm(true)} className="gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 shadow-lg shadow-accent/20 rounded-xl h-11 px-6 font-semibold">
+              <Plus className="w-5 h-5" />
+              إبلاغ عن مشكلة
+            </Button>
+          </motion.div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          {([
-            { status: "received" as const, count: statusCounts.received },
-            { status: "in-progress" as const, count: statusCounts["in-progress"] },
-            { status: "resolved" as const, count: statusCounts.resolved },
-          ]).map((item) => (
-            <div key={item.status} className="civic-card text-center">
-              <div className="text-2xl font-bold text-foreground mb-2">{item.count}</div>
-              <StatusBadge status={item.status} />
-            </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-3 gap-3 md:gap-5 mb-8">
+          {statCards.map((item, i) => (
+            <motion.div
+              key={item.status}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              whileHover={{ y: -3, scale: 1.02 }}
+              className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-4 md:p-5 text-center group hover:shadow-xl transition-all duration-300 cursor-default"
+            >
+              <div className={`w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br ${item.bg} flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                <item.icon className={`w-5 h-5 md:w-6 md:h-6 ${item.color}`} />
+              </div>
+              <div className={`text-2xl md:text-3xl font-bold mb-1 ${item.color}`}>{item.count}</div>
+              <div className="text-xs text-muted-foreground font-medium">{item.label}</div>
+            </motion.div>
           ))}
         </div>
 
@@ -227,40 +261,51 @@ const CitizenDashboard = () => {
         <AnimatePresence>
           {showForm && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              className="fixed inset-0 bg-foreground/20 backdrop-blur-md z-50 flex items-center justify-center p-4"
               onClick={() => setShowForm(false)}>
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="bg-card border border-border rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl p-7 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
                 onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-foreground">إبلاغ عن مشكلة جديدة</h2>
-                  <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-accent to-info flex items-center justify-center">
+                      <Plus className="w-5 h-5 text-white" />
+                    </div>
+                    <h2 className="text-xl font-bold text-foreground">إبلاغ عن مشكلة جديدة</h2>
+                  </div>
+                  <button onClick={() => setShowForm(false)} className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">عنوان المشكلة</label>
-                    <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="مثال: انقطاع المياه في حي الأمل" className="text-right" required />
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-foreground block">عنوان المشكلة</label>
+                    <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="مثال: انقطاع المياه في حي الأمل" className="text-right h-11 rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">وصف المشكلة</label>
-                    <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="اكتب تفاصيل المشكلة هنا..." rows={4} className="text-right" required />
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-foreground block">وصف المشكلة</label>
+                    <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="اكتب تفاصيل المشكلة هنا..." rows={4} className="text-right rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">الموقع</label>
-                    <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="مثال: شارع النيل، سوهاج" className="text-right" required />
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-foreground block">الموقع</label>
+                    <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="مثال: شارع النيل، سوهاج" className="text-right h-11 rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-1.5 block">التصنيف</label>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-foreground block">التصنيف</label>
                       <Select value={category} onValueChange={setCategory}>
-                        <SelectTrigger><SelectValue placeholder="اختر التصنيف" /></SelectTrigger>
+                        <SelectTrigger className="h-11 rounded-xl border-border/50"><SelectValue placeholder="اختر التصنيف" /></SelectTrigger>
                         <SelectContent>{categories.map((cat) => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}</SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-1.5 block">نوع المشكلة</label>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-foreground block">نوع المشكلة</label>
                       <Select value={issueType} onValueChange={(v) => setIssueType(v as "individual" | "collective")}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-11 rounded-xl border-border/50"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="individual">فردية</SelectItem>
                           <SelectItem value="collective">جماعية</SelectItem>
@@ -270,32 +315,32 @@ const CitizenDashboard = () => {
                   </div>
 
                   {/* File Upload */}
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">مرفقات (اختياري)</label>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-foreground block">مرفقات (اختياري)</label>
                     <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={handleFileChange} />
-                    <Button type="button" variant="outline" className="w-full gap-2" onClick={() => fileInputRef.current?.click()}>
-                      <ImagePlus className="w-4 h-4" />
+                    <Button type="button" variant="outline" className="w-full gap-2 h-11 rounded-xl border-dashed border-2 border-border/50 hover:border-accent/30 hover:bg-accent/5" onClick={() => fileInputRef.current?.click()}>
+                      <ImagePlus className="w-4 h-4 text-accent" />
                       إرفاق صور أو ملفات ({files.length}/5)
                     </Button>
                     {files.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
                         {files.map((f, i) => (
-                          <div key={i} className="flex items-center gap-1 bg-secondary rounded-md px-2 py-1 text-xs text-secondary-foreground">
+                          <div key={i} className="flex items-center gap-1.5 bg-muted rounded-lg px-3 py-1.5 text-xs text-foreground">
                             <span className="max-w-[100px] truncate">{f.name}</span>
-                            <button type="button" onClick={() => removeFile(i)} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
+                            <button type="button" onClick={() => removeFile(i)} className="text-muted-foreground hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
                           </div>
                         ))}
                       </div>
                     )}
                   </div>
 
-                  <Button type="button" variant="outline" className="w-full gap-2" onClick={handleClassify} disabled={classifying || !title || !description}>
+                  <Button type="button" variant="outline" className="w-full gap-2 h-11 rounded-xl border-accent/20 text-accent hover:bg-accent/5" onClick={handleClassify} disabled={classifying || !title || !description}>
                     {classifying ? <Loader2 className="w-4 h-4 animate-spin" /> : "✨"}
-                    صنّف تلقائياً بالذكاء الاصطناعي
+                    صنّف تلقائياً
                   </Button>
 
-                  <Button type="submit" disabled={submitting} className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
-                    {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  <Button type="submit" disabled={submitting} className="w-full gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 h-12 rounded-xl font-semibold shadow-lg shadow-accent/20 text-base">
+                    {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                     إرسال المشكلة
                   </Button>
                 </form>
@@ -306,28 +351,46 @@ const CitizenDashboard = () => {
 
         {/* Issues List */}
         {loading ? (
-          <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-accent" /></div>
-        ) : issues.length === 0 ? (
-          <div className="civic-card text-center py-12">
-            <p className="text-muted-foreground">لم تقدم أي مشاكل بعد. ابدأ بالإبلاغ عن مشكلتك الأولى!</p>
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2 className="w-10 h-10 animate-spin text-accent" />
+            <span className="text-sm text-muted-foreground">جاري التحميل...</span>
           </div>
+        ) : issues.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-3xl text-center py-16 px-6"
+          >
+            <div className="w-16 h-16 rounded-3xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
+              <TrendingUp className="w-8 h-8 text-accent" />
+            </div>
+            <h3 className="text-lg font-bold text-foreground mb-2">لم تقدم أي مشاكل بعد</h3>
+            <p className="text-muted-foreground text-sm mb-6">ابدأ بالإبلاغ عن مشكلتك الأولى وتابع حلها</p>
+            <Button onClick={() => setShowForm(true)} className="gap-2 bg-gradient-to-l from-accent to-info text-white rounded-xl px-6">
+              <Plus className="w-4 h-4" /> قدّم مشكلتك الأولى
+            </Button>
+          </motion.div>
         ) : (
           <div className="space-y-4">
             {issues.map((issue, i) => (
-              <motion.div key={issue.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+              <motion.div key={issue.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                 <IssueCard issue={issue} />
                 <div className="mt-2 flex justify-end gap-2">
                   {conversationMap[issue.id] && (
-                    <Button size="sm" variant="outline" className="gap-2 text-accent border-accent/30 hover:bg-accent/10" onClick={() => setChatIssue(issue)}>
-                      <MessageCircle className="w-4 h-4" />
-                      المحادثة
-                    </Button>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button size="sm" variant="outline" className="gap-2 text-accent border-accent/20 hover:bg-accent/5 rounded-xl" onClick={() => setChatIssue(issue)}>
+                        <MessageCircle className="w-4 h-4" />
+                        المحادثة
+                      </Button>
+                    </motion.div>
                   )}
                   {issue.status === "resolved" && !issue.citizen_confirmed && (
-                    <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/10" onClick={() => handleConfirmResolution(issue.id)}>
-                      <CheckCircle2 className="w-4 h-4" />
-                      تأكيد حل المشكلة
-                    </Button>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button size="sm" variant="outline" className="gap-2 border-success/20 text-success hover:bg-success/5 rounded-xl" onClick={() => handleConfirmResolution(issue.id)}>
+                        <CheckCircle2 className="w-4 h-4" />
+                        تأكيد حل المشكلة
+                      </Button>
+                    </motion.div>
                   )}
                 </div>
               </motion.div>

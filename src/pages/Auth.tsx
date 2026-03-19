@@ -4,10 +4,9 @@ import { useNavigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, ShieldCheck, LogIn, ArrowRight, Eye, EyeOff, Lock, Mail, Phone, IdCard } from "lucide-react";
+import { User, ShieldCheck, LogIn, ArrowRight, Eye, EyeOff, Lock, Mail, Phone, IdCard, Fingerprint } from "lucide-react";
 
 type AuthMode = "login" | "signup-citizen" | "signup-mp";
 
@@ -72,140 +71,217 @@ const Auth = () => {
   const isSignup = mode !== "login";
 
   const modeConfig = {
-    login: { title: "تسجيل الدخول", subtitle: "سجّل دخولك للوصول إلى حسابك", icon: LogIn },
-    "signup-citizen": { title: "حساب مواطن جديد", subtitle: "سجّل حسابك لتقديم المشاكل ومتابعتها", icon: User },
-    "signup-mp": { title: "حساب نائب جديد", subtitle: "سجّل حسابك كنائب لاستقبال ومعالجة المشاكل", icon: ShieldCheck },
+    login: { title: "تسجيل الدخول", subtitle: "سجّل دخولك للوصول إلى حسابك", icon: LogIn, gradient: "from-accent to-info" },
+    "signup-citizen": { title: "حساب مواطن جديد", subtitle: "سجّل حسابك لتقديم المشاكل ومتابعتها", icon: User, gradient: "from-primary to-accent" },
+    "signup-mp": { title: "حساب نائب جديد", subtitle: "سجّل حسابك كنائب لاستقبال ومعالجة المشاكل", icon: ShieldCheck, gradient: "from-warning to-accent" },
   };
 
-  const { title, subtitle, icon: ModeIcon } = modeConfig[mode];
+  const { title, subtitle, icon: ModeIcon, gradient } = modeConfig[mode];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
       <AppHeader />
-      <div className="container py-8 md:py-12 flex justify-center px-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+
+      {/* Background decorations */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-accent/[0.05] blur-3xl"
+        />
+        <motion.div
+          animate={{ scale: [1, 1.15, 1], opacity: [0.2, 0.4, 0.2] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -bottom-40 -right-40 w-[400px] h-[400px] rounded-full bg-primary/[0.05] blur-3xl"
+        />
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)",
+            backgroundSize: "60px 60px",
+          }}
+        />
+      </div>
+
+      <div className="container py-8 md:py-16 flex justify-center px-4 relative z-10">
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="w-full max-w-md">
           {/* Header */}
-          <div className="mb-6 text-center">
+          <div className="mb-8 text-center">
             <motion.div
               key={mode}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4"
+              initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${gradient} flex items-center justify-center mx-auto mb-5 shadow-xl`}
             >
-              <ModeIcon className="w-8 h-8 text-accent" />
+              <ModeIcon className="w-9 h-9 text-white" />
             </motion.div>
-            <h1 className="text-2xl font-bold text-foreground mb-1">{title}</h1>
+            <motion.h1
+              key={`title-${mode}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-3xl font-bold text-foreground mb-2 tracking-tight"
+            >
+              {title}
+            </motion.h1>
             <p className="text-muted-foreground text-sm">{subtitle}</p>
           </div>
 
-          <Card className="border-border shadow-sm">
-            <CardContent className="pt-6 pb-6">
+          {/* Card */}
+          <motion.div
+            layout
+            className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl overflow-hidden"
+          >
+            <div className="p-7 md:p-8">
               <AnimatePresence mode="wait">
                 <motion.form
                   key={mode}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
                   onSubmit={isSignup ? handleSignup : handleLogin}
-                  className="space-y-4"
+                  className="space-y-5"
                 >
                   {isSignup && (
                     <>
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1.5 block">الاسم الرباعي</label>
-                        <div className="relative">
-                          <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="أحمد محمد علي حسن" required className="text-right pr-10" />
-                          <User className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-foreground block">الاسم الرباعي</label>
+                        <div className="relative group">
+                          <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="أحمد محمد علي حسن" required className="text-right pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
+                            <User className="w-3.5 h-3.5 text-muted-foreground" />
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1.5 block">رقم التليفون</label>
-                        <div className="relative">
-                          <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01xxxxxxxxx" type="tel" required dir="ltr" className="pl-10 text-left" maxLength={11} />
-                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-foreground block">رقم التليفون</label>
+                        <div className="relative group">
+                          <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01xxxxxxxxx" type="tel" required dir="ltr" className="pl-11 text-left h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" maxLength={11} />
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
+                            <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+                          </div>
                         </div>
                       </div>
                       {mode === "signup-mp" && (
-                        <div>
-                          <label className="text-sm font-medium text-foreground mb-1.5 block">رقم القيد البرلماني</label>
-                          <div className="relative">
-                            <Input value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} placeholder="أدخل رقم القيد" required className="text-right pr-10" />
-                            <IdCard className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-semibold text-foreground block">رقم القيد البرلماني</label>
+                          <div className="relative group">
+                            <Input value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} placeholder="أدخل رقم القيد" required className="text-right pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
+                              <IdCard className="w-3.5 h-3.5 text-muted-foreground" />
+                            </div>
                           </div>
                         </div>
                       )}
                     </>
                   )}
 
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">البريد الإلكتروني</label>
-                    <div className="relative">
-                      <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="example@email.com" type="email" required dir="ltr" className="pl-10 text-left" />
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-foreground block">البريد الإلكتروني</label>
+                    <div className="relative group">
+                      <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="example@email.com" type="email" required dir="ltr" className="pl-11 text-left h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
+                        <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">كلمة المرور</label>
-                    <div className="relative">
-                      <Input value={password} onChange={(e) => setPassword(e.target.value)} type={showPassword ? "text" : "password"} placeholder="••••••••" required minLength={8} dir="ltr" className="px-10 text-left" />
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-foreground block">كلمة المرور</label>
+                    <div className="relative group">
+                      <Input value={password} onChange={(e) => setPassword(e.target.value)} type={showPassword ? "text" : "password"} placeholder="••••••••" required minLength={8} dir="ltr" className="px-11 text-left h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
+                        <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                      </div>
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                     {isSignup && (
-                      <div className="mt-2 space-y-1">
-                        <div className={`text-xs flex items-center gap-1 ${password.length >= 8 ? "text-primary" : "text-muted-foreground"}`}>
-                          <span className="w-1.5 h-1.5 rounded-full bg-current" /> 8 أحرف على الأقل
+                      <div className="mt-2.5 space-y-1.5">
+                        <div className={`text-xs flex items-center gap-2 transition-colors ${password.length >= 8 ? "text-success" : "text-muted-foreground"}`}>
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${password.length >= 8 ? "border-success bg-success/10" : "border-muted"}`}>
+                            {password.length >= 8 && <div className="w-1.5 h-1.5 rounded-full bg-success" />}
+                          </div>
+                          8 أحرف على الأقل
                         </div>
-                        <div className={`text-xs flex items-center gap-1 ${/\d/.test(password) && /[a-zA-Z\u0600-\u06FF]/.test(password) ? "text-primary" : "text-muted-foreground"}`}>
-                          <span className="w-1.5 h-1.5 rounded-full bg-current" /> أحرف وأرقام معاً
+                        <div className={`text-xs flex items-center gap-2 transition-colors ${/\d/.test(password) && /[a-zA-Z\u0600-\u06FF]/.test(password) ? "text-success" : "text-muted-foreground"}`}>
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${/\d/.test(password) && /[a-zA-Z\u0600-\u06FF]/.test(password) ? "border-success bg-success/10" : "border-muted"}`}>
+                            {/\d/.test(password) && /[a-zA-Z\u0600-\u06FF]/.test(password) && <div className="w-1.5 h-1.5 rounded-full bg-success" />}
+                          </div>
+                          أحرف وأرقام معاً
                         </div>
                       </div>
                     )}
                   </div>
 
                   {mode === "signup-mp" && (
-                    <div className="p-3 rounded-xl bg-warning/10 border border-warning/20">
-                      <p className="text-xs text-warning flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 shrink-0" />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-4 rounded-2xl bg-gradient-to-br from-warning/[0.08] to-warning/[0.03] border border-warning/15"
+                    >
+                      <p className="text-xs text-warning flex items-center gap-2.5 leading-relaxed">
+                        <div className="w-8 h-8 rounded-xl bg-warning/10 flex items-center justify-center shrink-0">
+                          <ShieldCheck className="w-4 h-4" />
+                        </div>
                         حساب النائب يحتاج موافقة الإدارة قبل التفعيل
                       </p>
-                    </div>
+                    </motion.div>
                   )}
 
-                  <Button type="submit" disabled={loading} className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90 h-11 text-base">
+                  <Button type="submit" disabled={loading} className={`w-full gap-2.5 bg-gradient-to-l ${gradient} text-white hover:opacity-90 h-13 text-base font-semibold rounded-xl shadow-lg transition-all hover:-translate-y-0.5`} style={{ height: '52px' }}>
                     {loading ? (
-                      <div className="w-5 h-5 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin" />
-                    ) : isSignup ? "إنشاء الحساب" : (
-                      <><LogIn className="w-4 h-4" /> تسجيل الدخول</>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : isSignup ? (
+                      <><Fingerprint className="w-5 h-5" /> إنشاء الحساب</>
+                    ) : (
+                      <><LogIn className="w-5 h-5" /> تسجيل الدخول</>
                     )}
                   </Button>
                 </motion.form>
               </AnimatePresence>
+            </div>
 
-              <div className="mt-6 pt-4 border-t border-border">
+            {/* Bottom section */}
+            <div className="px-7 md:px-8 pb-7 md:pb-8">
+              <div className="pt-5 border-t border-border/50">
                 {mode === "login" ? (
-                  <div className="space-y-3">
-                    <p className="text-sm text-muted-foreground text-center">ليس لديك حساب؟</p>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground text-center font-medium">ليس لديك حساب؟</p>
                     <div className="grid grid-cols-2 gap-3">
-                      <Button variant="outline" onClick={() => { setMode("signup-citizen"); resetForm(); }} className="gap-2 h-11">
-                        <User className="w-4 h-4" /> حساب مواطن
-                      </Button>
-                      <Button variant="outline" onClick={() => { setMode("signup-mp"); resetForm(); }} className="gap-2 h-11">
-                        <ShieldCheck className="w-4 h-4" /> حساب نائب
-                      </Button>
+                      <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
+                        <Button variant="outline" onClick={() => { setMode("signup-citizen"); resetForm(); }} className="gap-2 h-12 w-full rounded-xl border-border/50 hover:border-accent/30 hover:bg-accent/5 transition-all">
+                          <User className="w-4 h-4 text-accent" /> حساب مواطن
+                        </Button>
+                      </motion.div>
+                      <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
+                        <Button variant="outline" onClick={() => { setMode("signup-mp"); resetForm(); }} className="gap-2 h-12 w-full rounded-xl border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all">
+                          <ShieldCheck className="w-4 h-4 text-primary" /> حساب نائب
+                        </Button>
+                      </motion.div>
                     </div>
                   </div>
                 ) : (
-                  <Button variant="ghost" className="w-full gap-2" onClick={() => { setMode("login"); resetForm(); }}>
+                  <Button variant="ghost" className="w-full gap-2 h-11 rounded-xl hover:bg-accent/5" onClick={() => { setMode("login"); resetForm(); }}>
                     <ArrowRight className="w-4 h-4" /> لديك حساب؟ سجّل دخولك
                   </Button>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
+
+          {/* Security badge */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="flex items-center justify-center gap-2 mt-6 text-xs text-muted-foreground"
+          >
+            <Lock className="w-3 h-3" />
+            <span>بياناتك مشفّرة ومحمية بالكامل</span>
+          </motion.div>
         </motion.div>
       </div>
     </div>
