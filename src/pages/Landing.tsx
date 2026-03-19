@@ -762,6 +762,10 @@ const Landing = () => {
                 <Link to="/auth" className="hover:text-foreground transition-colors">إنشاء حساب</Link>
                 <span className="w-1 h-1 rounded-full bg-border" />
                 <a href="#support" className="hover:text-foreground transition-colors cursor-pointer">الدعم الفني</a>
+                <span className="w-1 h-1 rounded-full bg-border" />
+                <Link to="/privacy" className="hover:text-foreground transition-colors">الخصوصية</Link>
+                <span className="w-1 h-1 rounded-full bg-border" />
+                <Link to="/terms" className="hover:text-foreground transition-colors">الشروط</Link>
               </div>
             </div>
             <div className="pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3">
