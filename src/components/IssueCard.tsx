@@ -15,6 +15,7 @@ export interface Issue {
   is_flagged?: boolean;
   citizen_confirmed?: boolean;
   ai_summary?: string;
+  user_id?: string;
 }
 
 interface IssueCardProps {
