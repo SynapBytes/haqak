@@ -19,7 +19,12 @@ const categories = ["مياه", "طرق", "مرافق عامة", "صحة", "نظ
 
 const CitizenDashboard = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mpIdParam = searchParams.get("mp_id");
+  const mpNameParam = searchParams.get("mp_name");
   const [showForm, setShowForm] = useState(false);
+  const [assignedMpId, setAssignedMpId] = useState<string | null>(null);
+  const [assignedMpName, setAssignedMpName] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
