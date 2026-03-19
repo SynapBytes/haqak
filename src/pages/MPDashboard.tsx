@@ -95,7 +95,7 @@ const MPDashboard = () => {
     return undefined;
   };
 
-  useEffect(() => { fetchIssues(); }, []);
+  useEffect(() => { fetchIssues(); }, [user]);
 
   const fetchActionLogs = async (issueId: string) => {
     const { data } = await supabase.from("issue_actions").select("*").eq("issue_id", issueId).order("created_at", { ascending: false });

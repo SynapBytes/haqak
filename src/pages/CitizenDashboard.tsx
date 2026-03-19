@@ -134,35 +134,89 @@ const CitizenDashboard = () => {
       toast.error("يرجى ملء جميع الحقول");
       return;
     }
+
+    // Check ban status
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("banned_until")
+      .eq("user_id", user.id)
+      .single();
+    if (profileData?.banned_until) {
+      const bannedUntil = new Date(profileData.banned_until);
+      if (bannedUntil > new Date()) {
+        const remainingDays = Math.ceil((bannedUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        toast.error(`حسابك موقوف لمدة ${remainingDays} يوم بسبب استخدام ألفاظ غير لائقة`);
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
+      // Step 1: Auto-classify with AI
+      let finalTitle = title;
+      let finalDescription = description;
+      let finalCategory = category;
+      let finalIssueType = issueType;
+      let isFlagged = false;
+      let aiSummary: string | null = null;
+
+      try {
+        toast.info("جاري التصنيف التلقائي بالذكاء الاصطناعي... ✨");
+        const { data: classifyData, error: classifyError } = await supabase.functions.invoke("classify-issue", {
+          body: { title, description },
+        });
+        if (!classifyError && classifyData) {
+          finalTitle = classifyData.refined_title || title;
+          finalDescription = classifyData.refined_description || description;
+          finalCategory = classifyData.category || category;
+          finalIssueType = classifyData.issue_type || issueType;
+          isFlagged = classifyData.is_flagged || false;
+          aiSummary = classifyData.summary || null;
+        }
+      } catch {
+        console.warn("AI classification failed, proceeding with original data");
+      }
+
+      // Step 2: Insert issue with AI results
       const { data: insertedIssue, error } = await supabase.from("issues").insert({
         user_id: user.id,
-        title,
-        description,
-        category,
+        title: finalTitle,
+        description: finalDescription,
+        category: finalCategory,
         location,
-        issue_type: issueType,
+        issue_type: finalIssueType,
+        is_flagged: isFlagged,
+        ai_summary: aiSummary,
       }).select("id").single();
       if (error) throw error;
 
+      // Step 3: If flagged, apply weekly ban
+      if (isFlagged) {
+        const banUntil = new Date();
+        banUntil.setDate(banUntil.getDate() + 7);
+        await supabase.from("profiles").update({ banned_until: banUntil.toISOString() }).eq("user_id", user.id);
+        toast.warning("تم تسجيل مخالفة بسبب ألفاظ غير لائقة. حسابك موقوف لمدة أسبوع.");
+      }
+
+      // Step 4: Upload files
       if (files.length > 0 && insertedIssue) {
         await uploadFiles(insertedIssue.id);
       }
 
+      // Step 5: Notify MPs
       const { data: mpRoles } = await supabase.from("user_roles").select("user_id").eq("role", "mp");
       if (mpRoles) {
         for (const mp of mpRoles) {
           await supabase.from("notifications").insert({
             user_id: mp.user_id,
             title: "مشكلة جديدة",
-            message: `تم استلام مشكلة جديدة: ${title}`,
+            message: `تم استلام مشكلة جديدة: ${finalTitle}`,
             issue_id: insertedIssue?.id,
           });
         }
       }
 
-      toast.success("تم إرسال المشكلة بنجاح");
+      toast.success("تم إرسال المشكلة بنجاح وتصنيفها تلقائياً ✨");
       setShowForm(false);
       setTitle(""); setDescription(""); setCategory(""); setLocation("");
       setIssueType("individual"); setFiles([]);
