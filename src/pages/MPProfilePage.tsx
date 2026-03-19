@@ -117,10 +117,34 @@ const MPProfilePage = () => {
     );
   }
 
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const decoStyle = (op: [number, number]) => ({
+    opacity: isDark ? op[0] : op[1],
+    filter: isDark
+      ? "brightness(1.08) drop-shadow(0 0 34px rgba(200,149,60,0.38))"
+      : "drop-shadow(0 14px 28px rgba(200,149,60,0.18))",
+  });
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
       <AppHeader />
-      <div className="container py-8 px-4 max-w-4xl">
+
+      {/* Egyptian decorations */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        {/* الجعران المجنح — أعلى يمين */}
+        <img src={ornament3} alt="" className="absolute top-12 right-4 w-[180px] md:w-[260px] lg:w-[320px] select-none" style={decoStyle([0.2, 0.12])} draggable={false} />
+        {/* قناع الفرعون — أسفل يسار */}
+        <img src={egyptianCobra} alt="" className="absolute bottom-10 left-6 w-[130px] md:w-[180px] lg:w-[230px] select-none" style={decoStyle([0.18, 0.1])} draggable={false} />
+        {/* العنخ — أعلى يسار */}
+        <img src={egyptianAnkh} alt="" className="absolute top-24 left-8 w-[65px] md:w-[95px] lg:w-[120px] select-none" style={decoStyle([0.16, 0.09])} draggable={false} />
+        {/* بوردر فرعوني — أسفل */}
+        <img src={egyptianBorder} alt="" className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[400px] md:w-[600px] select-none" style={decoStyle([0.14, 0.08])} draggable={false} />
+        {/* Ambient glow */}
+        <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full blur-3xl" style={{ background: `radial-gradient(circle, hsl(var(--warning) / ${isDark ? 0.07 : 0.04}), transparent 70%)` }} />
+      </div>
+
+      <div className="container py-8 px-4 max-w-4xl relative z-10">
 
         {/* Profile Header */}
         <motion.div
