@@ -781,7 +781,8 @@ const Landing = () => {
       </section>
 
       {/* ═══════════ FOOTER ═══════════ */}
-      <footer className="border-t border-border py-12 bg-card/30">
+      <footer className="relative border-t border-border py-12 bg-card/30">
+        <FooterDecorations isDark={isDark} />
         <div className="container px-4">
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
