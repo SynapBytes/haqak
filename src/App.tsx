@@ -46,6 +46,7 @@ function App() {
               <Route path="/citizen" element={<ProtectedRoute requiredRole="citizen"><CitizenDashboard /></ProtectedRoute>} />
               <Route path="/mp" element={<ProtectedRoute requiredRole="mp"><MPDashboard /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/mp-profile/:id" element={<MPProfilePage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
