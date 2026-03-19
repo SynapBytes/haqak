@@ -24,6 +24,7 @@ interface MPItem {
 
 const MPsDirectory = () => {
   const navigate = useNavigate();
+  const { role } = useAuth();
   const [mps, setMps] = useState<MPItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
