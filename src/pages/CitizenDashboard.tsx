@@ -316,19 +316,38 @@ const CitizenDashboard = () => {
             {issues.map((issue, i) => (
               <motion.div key={issue.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                 <IssueCard issue={issue} />
-                {issue.status === "resolved" && !issue.citizen_confirmed && (
-                  <div className="mt-2 flex justify-end">
+                <div className="mt-2 flex justify-end gap-2">
+                  {conversationMap[issue.id] && (
+                    <Button size="sm" variant="outline" className="gap-2 text-accent border-accent/30 hover:bg-accent/10" onClick={() => setChatIssue(issue)}>
+                      <MessageCircle className="w-4 h-4" />
+                      المحادثة
+                    </Button>
+                  )}
+                  {issue.status === "resolved" && !issue.citizen_confirmed && (
                     <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/10" onClick={() => handleConfirmResolution(issue.id)}>
                       <CheckCircle2 className="w-4 h-4" />
                       تأكيد حل المشكلة
                     </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Chat Drawer */}
+      <AnimatePresence>
+        {chatIssue && chatIssue.user_id && (
+          <ChatDrawer
+            issueId={chatIssue.id}
+            issueTitle={chatIssue.title}
+            citizenUserId={chatIssue.user_id}
+            isMP={false}
+            onClose={() => setChatIssue(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
