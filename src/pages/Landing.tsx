@@ -445,24 +445,8 @@ const Landing = () => {
                     </div>
                   </motion.div>
 
-                  {/* Floating stats card */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8, x: -30 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    transition={{ delay: 1.5, duration: 0.5 }}
-                    whileHover={{ scale: 1.05 }}
-                    className="absolute -bottom-4 -right-6 bg-card backdrop-blur-xl border border-accent/20 rounded-2xl p-3 shadow-lg"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-                        <TrendingUp className="w-4 h-4 text-accent" />
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-foreground">+٣٢ مشكلة</div>
-                        <div className="text-[10px] text-muted-foreground">هذا الأسبوع</div>
-                      </div>
-                    </div>
-                  </motion.div>
+                  {/* Floating stats card - real data */}
+                  <HeroStatsCard />
                 </div>
               </motion.div>
             </div>
