@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { getFCMToken, onForegroundMessage } from "@/lib/firebase";
+import { subscribeToPush } from "@/lib/webPush";
 import { toast } from "sonner";
 
 export function usePushNotifications() {
@@ -12,37 +12,30 @@ export function usePushNotifications() {
     if (!user || registered.current) return;
 
     const register = async () => {
-      const token = await getFCMToken();
-      if (!token) return;
+      const sub = await subscribeToPush();
+      if (!sub) return;
 
-      // Upsert token
       const { error } = await supabase
-        .from("fcm_tokens" as any)
+        .from("push_subscriptions")
         .upsert(
-          { user_id: user.id, token, updated_at: new Date().toISOString() },
-          { onConflict: "user_id,token" }
+          {
+            user_id: user.id,
+            endpoint: sub.endpoint,
+            p256dh: sub.p256dh,
+            auth: sub.auth,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,endpoint" }
         );
 
       if (error) {
-        console.error("Failed to save FCM token:", error);
+        console.error("Failed to save push subscription:", error);
       } else {
         registered.current = true;
-        console.log("FCM token registered successfully");
+        console.log("Push subscription registered successfully");
       }
     };
 
     register();
-  }, [user]);
-
-  // Foreground notifications
-  useEffect(() => {
-    if (!user) return;
-
-    onForegroundMessage((payload) => {
-      const { title, body } = payload.notification || {};
-      if (title) {
-        toast(title, { description: body });
-      }
-    });
   }, [user]);
 }
