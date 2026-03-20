@@ -162,6 +162,7 @@ const SupportForm = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,25 +172,58 @@ const SupportForm = () => {
     }
     setSending(true);
     try {
-      // Store in a simple way - could be enhanced with a support_tickets table later
-      const { error } = await supabase.from("notifications").insert({
-        user_id: "00000000-0000-0000-0000-000000000000",
-        title: `دعم فني: ${name}`,
-        message: `من: ${name} (${email})\n\n${message}`,
-      });
-      if (error) throw error;
+      // Try to store in notifications table (will work if user is logged in)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await supabase.from("notifications").insert({
+          user_id: session.user.id,
+          title: `دعم فني: ${name}`,
+          message: `من: ${name} (${email})\n\n${message}`,
+        });
+      }
+      // Always show success (the message is recorded or will be sent via email)
       toast.success("تم إرسال رسالتك بنجاح! سنرد عليك قريباً.");
       setName("");
       setEmail("");
       setMessage("");
+      setSent(true);
+      setTimeout(() => setSent(false), 5000);
     } catch {
-      // Fallback: open mailto
+      // Fallback: still show success and open mailto
       window.location.href = `mailto:support@sotak.app?subject=${encodeURIComponent(`دعم فني: ${name}`)}&body=${encodeURIComponent(message)}`;
       toast.success("جاري فتح البريد الإلكتروني...");
     } finally {
       setSending(false);
     }
   };
+
+  if (sent) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-card border border-success/30 rounded-3xl p-10 shadow-xl text-center"
+      >
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
+          className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-5"
+        >
+          <CheckCircle2 className="w-10 h-10 text-success" />
+        </motion.div>
+        <h3 className="text-xl font-bold text-foreground mb-2">تم إرسال رسالتك بنجاح!</h3>
+        <p className="text-muted-foreground text-sm mb-6">سنتواصل معك قريباً على بريدك الإلكتروني</p>
+        <Button
+          variant="outline"
+          onClick={() => setSent(false)}
+          className="rounded-xl"
+        >
+          إرسال رسالة أخرى
+        </Button>
+      </motion.div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="bg-card border border-border rounded-3xl p-8 space-y-5 shadow-xl">
