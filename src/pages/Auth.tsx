@@ -73,6 +73,10 @@ const Auth = () => {
     }
     if (!/^01[0-9]{9}$/.test(phone)) { toast.error("رقم التليفون غير صحيح (يجب أن يبدأ بـ 01 ويكون 11 رقم)"); return; }
     setLoading(true);
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      toast.error("الاتصال بطيء. تحقق من اتصالك بالإنترنت وحاول مرة أخرى");
+    }, 30000);
     try {
       const role = mode === "signup-mp" ? "mp" : "citizen";
       const metadata: Record<string, string> = { full_name: fullName, phone, role };
@@ -82,11 +86,18 @@ const Auth = () => {
         email, password,
         options: { data: metadata, emailRedirectTo: window.location.origin },
       });
+      clearTimeout(timeoutId);
       if (error) throw error;
       toast.success("تم إنشاء الحساب! تحقق من بريدك الإلكتروني لتأكيد الحساب");
       setMode("login"); resetForm();
     } catch (err: any) {
-      toast.error(translateError(err.message || "خطأ في إنشاء الحساب"));
+      clearTimeout(timeoutId);
+      const msg = err.message || "خطأ في إنشاء الحساب";
+      if (msg.includes("fetch") || msg.includes("network") || msg.includes("Failed")) {
+        toast.error("مشكلة في الاتصال بالإنترنت. تأكد من اتصالك وحاول مرة أخرى");
+      } else {
+        toast.error(translateError(msg));
+      }
     } finally {
       setLoading(false);
     }

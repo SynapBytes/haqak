@@ -823,15 +823,15 @@ const Landing = () => {
                   <span className="text-xs text-muted-foreground">منصة التواصل المدني</span>
                 </div>
               </div>
-              <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-6 text-sm text-muted-foreground flex-wrap justify-center md:justify-end">
                 <Link to="/auth" className="hover:text-foreground transition-colors">تسجيل الدخول</Link>
-                <span className="w-1 h-1 rounded-full bg-border" />
+                <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
                 <Link to="/auth" className="hover:text-foreground transition-colors">إنشاء حساب</Link>
-                <span className="w-1 h-1 rounded-full bg-border" />
-                <a href="#support" className="hover:text-foreground transition-colors cursor-pointer">الدعم الفني</a>
-                <span className="w-1 h-1 rounded-full bg-border" />
+                <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
+                <button onClick={() => document.getElementById('support')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-foreground transition-colors cursor-pointer bg-transparent border-none p-0 text-sm text-muted-foreground">الدعم الفني</button>
+                <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
                 <Link to="/privacy" className="hover:text-foreground transition-colors">الخصوصية</Link>
-                <span className="w-1 h-1 rounded-full bg-border" />
+                <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
                 <Link to="/terms" className="hover:text-foreground transition-colors">الشروط</Link>
               </div>
             </div>
