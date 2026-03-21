@@ -33,41 +33,16 @@ const TransparencyDashboard = () => {
 
   useEffect(() => {
     const fetchStats = async () => {
-      // Fetch all issues (public stats - no user filter)
-      const { data, count } = await supabase
-        .from("issues")
-        .select("status, category, location", { count: "exact" });
+      const { data, error } = await supabase.rpc("get_public_issue_stats");
 
-      if (data) {
-        const resolved = data.filter((d) => d.status === "resolved").length;
-        const inProgress = data.filter((d) => d.status === "in-progress").length;
-        const received = data.filter((d) => d.status === "received").length;
-
-        // Group by category
-        const catMap: Record<string, number> = {};
-        data.forEach((d) => { catMap[d.category] = (catMap[d.category] || 0) + 1; });
-        const byCategory = Object.entries(catMap)
-          .map(([name, value]) => ({ name, value }))
-          .sort((a, b) => b.value - a.value);
-
-        // Group by governorate (extract from location text)
-        const govMap: Record<string, number> = {};
-        data.forEach((d) => {
-          const loc = d.location?.split(",")[0]?.trim() || "غير محدد";
-          govMap[loc] = (govMap[loc] || 0) + 1;
-        });
-        const byGovernorate = Object.entries(govMap)
-          .map(([name, value]) => ({ name, value }))
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 10);
-
+      if (data && !error) {
         setStats({
-          total: count || data.length,
-          resolved,
-          inProgress,
-          received,
-          byCategory,
-          byGovernorate,
+          total: data.total || 0,
+          resolved: data.resolved || 0,
+          inProgress: data.in_progress || 0,
+          received: data.received || 0,
+          byCategory: data.by_category || [],
+          byGovernorate: data.by_location || [],
         });
       }
       setLoading(false);
