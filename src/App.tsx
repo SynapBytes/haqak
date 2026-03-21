@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import ResetPassword from "./pages/ResetPassword";
+import TransparencyDashboard from "./pages/TransparencyDashboard";
 import PushNotificationProvider from "@/components/PushNotificationProvider";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,7 @@ function App() {
                 <Route path="/" element={<Landing />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/transparency" element={<TransparencyDashboard />} />
                 <Route path="/citizen" element={<ProtectedRoute requiredRole="citizen"><CitizenDashboard /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><CitizenProfile /></ProtectedRoute>} />
                 <Route path="/mps" element={<ProtectedRoute><MPsDirectory /></ProtectedRoute>} />
