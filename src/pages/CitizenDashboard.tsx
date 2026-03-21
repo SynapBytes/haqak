@@ -253,6 +253,7 @@ const CitizenDashboard = () => {
       setShowForm(false);
       setTitle(""); setDescription(""); setCategory(""); setLocation("");
       setIssueType("individual"); setFiles([]);
+      setLatitude(null); setLongitude(null);
       setAssignedMpId(null); setAssignedMpName(null);
       fetchIssues();
     } catch (err: any) {
