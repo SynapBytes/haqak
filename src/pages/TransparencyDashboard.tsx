@@ -36,13 +36,14 @@ const TransparencyDashboard = () => {
       const { data, error } = await supabase.rpc("get_public_issue_stats");
 
       if (data && !error) {
+        const d = data as any;
         setStats({
-          total: data.total || 0,
-          resolved: data.resolved || 0,
-          inProgress: data.in_progress || 0,
-          received: data.received || 0,
-          byCategory: data.by_category || [],
-          byGovernorate: data.by_location || [],
+          total: d.total || 0,
+          resolved: d.resolved || 0,
+          inProgress: d.in_progress || 0,
+          received: d.received || 0,
+          byCategory: d.by_category || [],
+          byGovernorate: d.by_location || [],
         });
       }
       setLoading(false);
