@@ -192,7 +192,9 @@ export type Database = {
           id: string
           is_flagged: boolean
           issue_type: string
+          latitude: number | null
           location: string
+          longitude: number | null
           mp_notes: string | null
           status: string
           title: string
@@ -209,7 +211,9 @@ export type Database = {
           id?: string
           is_flagged?: boolean
           issue_type?: string
+          latitude?: number | null
           location: string
+          longitude?: number | null
           mp_notes?: string | null
           status?: string
           title: string
@@ -226,7 +230,9 @@ export type Database = {
           id?: string
           is_flagged?: boolean
           issue_type?: string
+          latitude?: number | null
           location?: string
+          longitude?: number | null
           mp_notes?: string | null
           status?: string
           title?: string
@@ -377,6 +383,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_issue_stats: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

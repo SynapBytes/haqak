@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Plus, X, Send, SendHorizonal, Loader2, ImagePlus, CheckCircle2, MessageCircle, AlertCircle, Clock, TrendingUp } from "lucide-react";
 import type { Issue } from "@/components/IssueCard";
+import LocationPicker from "@/components/LocationPicker";
 
 const categories = ["مياه", "طرق", "مرافق عامة", "صحة", "نظافة", "تعليم", "كهرباء", "أخرى"];
 
@@ -36,6 +37,8 @@ const CitizenDashboard = () => {
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [chatIssue, setChatIssue] = useState<Issue | null>(null);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [conversationMap, setConversationMap] = useState<Record<string, boolean>>({});
 
   const fetchIssues = async () => {
@@ -206,6 +209,8 @@ const CitizenDashboard = () => {
         is_flagged: isFlagged,
         ai_summary: aiSummary,
         ...(assignedMpId ? { assigned_mp_id: assignedMpId } : {}),
+        ...(latitude ? { latitude } : {}),
+        ...(longitude ? { longitude } : {}),
       }).select("id").single();
       if (error) throw error;
 
@@ -248,6 +253,7 @@ const CitizenDashboard = () => {
       setShowForm(false);
       setTitle(""); setDescription(""); setCategory(""); setLocation("");
       setIssueType("individual"); setFiles([]);
+      setLatitude(null); setLongitude(null);
       setAssignedMpId(null); setAssignedMpName(null);
       fetchIssues();
     } catch (err: any) {
@@ -387,6 +393,14 @@ const CitizenDashboard = () => {
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-foreground block">الموقع</label>
                     <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="مثال: شارع النيل، سوهاج" className="text-right h-11 rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-foreground block">حدد الموقع على الخريطة (اختياري)</label>
+                    <LocationPicker
+                      latitude={latitude}
+                      longitude={longitude}
+                      onChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
