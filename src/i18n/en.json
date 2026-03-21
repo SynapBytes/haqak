@@ -1,0 +1,113 @@
+{
+  "app_name": "Sawtak",
+  "tagline": "Civic Communication Platform",
+  "nav": {
+    "my_issues": "My Issues",
+    "mps": "MPs",
+    "my_account": "My Account",
+    "mp_dashboard": "MP Dashboard",
+    "admin": "Admin",
+    "login": "Sign In",
+    "logout": "Sign Out",
+    "transparency": "Transparency",
+    "toggle_theme": "Toggle Theme"
+  },
+  "hero": {
+    "badge": "Egypt's First Civic Communication Platform",
+    "title_1": "Your Voice Reaches.",
+    "title_2": "Your Rights Realized.",
+    "subtitle": "Sawtak connects citizens directly with members of parliament — submit your issue, track its resolution, and confirm the outcome. Everything is digital, transparent, and secure.",
+    "cta_citizen": "Register as Citizen",
+    "cta_mp": "Register as MP"
+  },
+  "features": {
+    "easy_report": "Quick & Easy Reporting",
+    "easy_report_desc": "Submit your issue in less than 30 seconds with image upload and instant classification.",
+    "privacy": "Full Privacy & Security",
+    "privacy_desc": "Your data is protected with advanced encryption. No public sharing without your permission.",
+    "analytics": "Detailed Analytics & Reports",
+    "analytics_desc": "Comprehensive statistics to help MPs make faster and more accurate decisions.",
+    "realtime": "Real-time Tracking",
+    "realtime_desc": "Track your issue status in real-time with instant notifications on every update.",
+    "coverage": "Comprehensive Coverage",
+    "coverage_desc": "Connecting citizens with MPs across all governorates and constituencies.",
+    "review": "Professional Review",
+    "review_desc": "A specialized team reviews and classifies every issue professionally before presenting it."
+  },
+  "steps": {
+    "title": "How Does Sawtak Work?",
+    "step1": "Create Account",
+    "step1_desc": "Create a free citizen account in seconds",
+    "step2": "Submit Your Issue",
+    "step2_desc": "Describe the issue and attach up to 5 photos or files",
+    "step3": "Review & Classify",
+    "step3_desc": "The management team reviews, classifies, and routes the issue to the relevant MP",
+    "step4": "Track Resolution",
+    "step4_desc": "Receive instant notifications and confirm the resolution"
+  },
+  "support": {
+    "title": "We're Here to Help",
+    "subtitle": "Send us your inquiry or feedback and we'll get back to you soon",
+    "name": "Name",
+    "email": "Email",
+    "message": "Your Message",
+    "send": "Send",
+    "sending": "Sending...",
+    "success": "Your message was sent successfully!",
+    "success_sub": "We'll contact you soon via email"
+  },
+  "footer": {
+    "login": "Sign In",
+    "register": "Create Account",
+    "support": "Support",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "rights": "© 2026 Sawtak — All rights reserved",
+    "status": "All services running normally"
+  },
+  "dashboard": {
+    "my_issues": "My Issues",
+    "track_issues": "Track the status of issues you reported",
+    "report_issue": "Report an Issue",
+    "waiting": "Awaiting Review",
+    "in_progress": "In Progress",
+    "resolved": "Resolved",
+    "title": "Issue Title",
+    "description": "Issue Description",
+    "location": "Location",
+    "category": "Category",
+    "type": "Issue Type",
+    "individual": "Individual",
+    "collective": "Collective",
+    "attachments": "Attachments (optional)",
+    "submit": "Submit Issue",
+    "map_location": "Pin location on map (optional)",
+    "no_issues": "You haven't submitted any issues yet",
+    "first_issue": "Submit your first issue"
+  },
+  "transparency": {
+    "title": "Transparency Dashboard",
+    "subtitle": "Anonymous public statistics about submitted and resolved issues",
+    "total": "Total Issues",
+    "resolved": "Resolved",
+    "resolution_rate": "Resolution Rate",
+    "pending": "Pending",
+    "by_category": "By Category",
+    "by_status": "By Status",
+    "by_governorate": "By Governorate",
+    "received": "Received",
+    "in_progress": "In Progress"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "back": "Back"
+  },
+  "lang": {
+    "ar": "العربية",
+    "en": "English"
+  }
+}
