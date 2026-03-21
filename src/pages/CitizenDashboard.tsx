@@ -37,6 +37,8 @@ const CitizenDashboard = () => {
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [chatIssue, setChatIssue] = useState<Issue | null>(null);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [conversationMap, setConversationMap] = useState<Record<string, boolean>>({});
 
   const fetchIssues = async () => {
