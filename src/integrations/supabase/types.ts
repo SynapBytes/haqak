@@ -192,7 +192,9 @@ export type Database = {
           id: string
           is_flagged: boolean
           issue_type: string
+          latitude: number | null
           location: string
+          longitude: number | null
           mp_notes: string | null
           status: string
           title: string
@@ -209,7 +211,9 @@ export type Database = {
           id?: string
           is_flagged?: boolean
           issue_type?: string
+          latitude?: number | null
           location: string
+          longitude?: number | null
           mp_notes?: string | null
           status?: string
           title: string
@@ -226,7 +230,9 @@ export type Database = {
           id?: string
           is_flagged?: boolean
           issue_type?: string
+          latitude?: number | null
           location?: string
+          longitude?: number | null
           mp_notes?: string | null
           status?: string
           title?: string
