@@ -391,6 +391,14 @@ const CitizenDashboard = () => {
                     <label className="text-sm font-semibold text-foreground block">الموقع</label>
                     <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="مثال: شارع النيل، سوهاج" className="text-right h-11 rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
                   </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-foreground block">حدد الموقع على الخريطة (اختياري)</label>
+                    <LocationPicker
+                      latitude={latitude}
+                      longitude={longitude}
+                      onChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+                    />
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-sm font-semibold text-foreground block">التصنيف</label>
