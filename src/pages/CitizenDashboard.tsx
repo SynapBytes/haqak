@@ -209,6 +209,8 @@ const CitizenDashboard = () => {
         is_flagged: isFlagged,
         ai_summary: aiSummary,
         ...(assignedMpId ? { assigned_mp_id: assignedMpId } : {}),
+        ...(latitude ? { latitude } : {}),
+        ...(longitude ? { longitude } : {}),
       }).select("id").single();
       if (error) throw error;
 
