@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Plus, X, Send, SendHorizonal, Loader2, ImagePlus, CheckCircle2, MessageCircle, AlertCircle, Clock, TrendingUp } from "lucide-react";
 import type { Issue } from "@/components/IssueCard";
+import LocationPicker from "@/components/LocationPicker";
 
 const categories = ["مياه", "طرق", "مرافق عامة", "صحة", "نظافة", "تعليم", "كهرباء", "أخرى"];
 
