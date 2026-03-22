@@ -12,11 +12,8 @@ async function generateVapidAuth(endpoint: string, p256dh: string, auth: string,
   const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
   if (!VAPID_PRIVATE_KEY) throw new Error("VAPID_PRIVATE_KEY not configured");
 
-  // For Web Push, we need the web-push library or manual crypto
-  // Using the simplified approach with fetch to push service
   const url = new URL(endpoint);
   
-  // Create JWT for VAPID
   const now = Math.floor(Date.now() / 1000);
   const header = btoa(JSON.stringify({ typ: "JWT", alg: "ES256" }))
     .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -27,7 +24,6 @@ async function generateVapidAuth(endpoint: string, p256dh: string, auth: string,
     sub: "mailto:admin@sutak.app",
   })).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
-  // Import VAPID private key
   const privKeyBytes = Uint8Array.from(
     atob(VAPID_PRIVATE_KEY.replace(/-/g, "+").replace(/_/g, "/") + "==".slice(0, (4 - VAPID_PRIVATE_KEY.length % 4) % 4)),
     c => c.charCodeAt(0)
@@ -66,7 +62,35 @@ Deno.serve(async (req) => {
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // --- AUTH CHECK ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const authSupabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await authSupabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const callerId = claimsData.claims.sub as string;
+
+    // --- ROLE CHECK: only MPs and admins can send push to other users ---
+    const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const { user_id, title, body, data } = await req.json();
 
@@ -77,8 +101,24 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const { data: subscriptions, error: subError } = await supabase
+    // If sending to someone else, must be MP or admin
+    if (user_id !== callerId) {
+      const { data: roleData } = await serviceSupabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", callerId)
+        .single();
+
+      if (!roleData || (roleData.role !== "mp" && roleData.role !== "admin")) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // --- SEND PUSH ---
+    const { data: subscriptions, error: subError } = await serviceSupabase
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth")
       .eq("user_id", user_id);
@@ -110,17 +150,16 @@ Deno.serve(async (req) => {
         });
 
         if (pushRes.status === 410 || pushRes.status === 404) {
-          // Subscription expired, remove it
-          await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+          await serviceSupabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
           results.push({ endpoint: sub.endpoint.slice(0, 30), success: false, reason: "expired" });
         } else if (!pushRes.ok) {
-          console.error(`Push failed: ${pushRes.status}`, await pushRes.text());
+          console.error(`Push failed: ${pushRes.status}`);
           results.push({ endpoint: sub.endpoint.slice(0, 30), success: false });
         } else {
           results.push({ endpoint: sub.endpoint.slice(0, 30), success: true });
         }
       } catch (e) {
-        console.error(`Push error for ${sub.endpoint.slice(0, 30)}:`, e);
+        console.error(`Push error:`, e);
         results.push({ endpoint: sub.endpoint.slice(0, 30), success: false });
       }
     }
@@ -132,7 +171,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("send-push-notification error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
