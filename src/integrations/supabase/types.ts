@@ -391,6 +391,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_active_mp: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "citizen" | "mp" | "admin"
