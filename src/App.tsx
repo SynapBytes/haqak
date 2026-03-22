@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -7,34 +7,43 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import SplashScreen from "@/components/SplashScreen";
-import Landing from "./pages/Landing";
-import CitizenDashboard from "./pages/CitizenDashboard";
-import CitizenProfile from "./pages/CitizenProfile";
-import MPsDirectory from "./pages/MPsDirectory";
-import MPDashboard from "./pages/MPDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
-import Auth from "./pages/Auth";
-import MPProfilePage from "./pages/MPProfilePage";
-import NotFound from "./pages/NotFound";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import ResetPassword from "./pages/ResetPassword";
-import TransparencyDashboard from "./pages/TransparencyDashboard";
 import PushNotificationProvider from "@/components/PushNotificationProvider";
+import { useTranslation } from "react-i18next";
+
+// Lazy-loaded pages
+const Landing = lazy(() => import("./pages/Landing"));
+const CitizenDashboard = lazy(() => import("./pages/CitizenDashboard"));
+const CitizenProfile = lazy(() => import("./pages/CitizenProfile"));
+const MPsDirectory = lazy(() => import("./pages/MPsDirectory"));
+const MPDashboard = lazy(() => import("./pages/MPDashboard"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const Auth = lazy(() => import("./pages/Auth"));
+const MPProfilePage = lazy(() => import("./pages/MPProfilePage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 const queryClient = new QueryClient();
 
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
 function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode; requiredRole?: "citizen" | "mp" | "admin" }) {
   const { session, role, loading, profile } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" /></div>;
+  const { t } = useTranslation();
+  if (loading) return <PageLoader />;
   if (!session) return <Navigate to="/auth" replace />;
   if (requiredRole === "admin" && role !== "admin") return <Navigate to="/" replace />;
   if (requiredRole === "mp" && role === "mp" && !profile?.is_approved) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center civic-card max-w-md mx-4">
-          <h2 className="text-xl font-bold text-foreground mb-2">حسابك قيد المراجعة</h2>
-          <p className="text-muted-foreground text-sm">سيتم تفعيل حسابك بعد موافقة الإدارة</p>
+          <h2 className="text-xl font-bold text-foreground mb-2">{t("account_review.title")}</h2>
+          <p className="text-muted-foreground text-sm">{t("account_review.subtitle")}</p>
         </div>
       </div>
     );
@@ -56,21 +65,22 @@ function App() {
           <BrowserRouter>
             <AuthProvider>
               <PushNotificationProvider />
-              <Routes>
-                <Route path="/" element={<Landing />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/transparency" element={<TransparencyDashboard />} />
-                <Route path="/citizen" element={<ProtectedRoute requiredRole="citizen"><CitizenDashboard /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><CitizenProfile /></ProtectedRoute>} />
-                <Route path="/mps" element={<ProtectedRoute><MPsDirectory /></ProtectedRoute>} />
-                <Route path="/mp" element={<ProtectedRoute requiredRole="mp"><MPDashboard /></ProtectedRoute>} />
-                <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
-                <Route path="/mp-profile/:id" element={<MPProfilePage />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="/terms" element={<TermsOfService />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<Landing />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/citizen" element={<ProtectedRoute requiredRole="citizen"><CitizenDashboard /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><CitizenProfile /></ProtectedRoute>} />
+                  <Route path="/mps" element={<ProtectedRoute><MPsDirectory /></ProtectedRoute>} />
+                  <Route path="/mp" element={<ProtectedRoute requiredRole="mp"><MPDashboard /></ProtectedRoute>} />
+                  <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+                  <Route path="/mp-profile/:id" element={<MPProfilePage />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<TermsOfService />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
             </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>

@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, LogIn, LogOut, Menu, X, MessageSquare, ShieldCheck, Sun, Moon, User, Users, BarChart3, Globe } from "lucide-react";
+import { LayoutDashboard, LogIn, LogOut, Menu, X, MessageSquare, ShieldCheck, Sun, Moon, User, Users, Globe } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
@@ -40,11 +40,6 @@ const AppHeader = () => {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1">
-          <Link to="/transparency">
-            <Button variant={isActive("/transparency") ? "secondary" : "ghost"} size="sm" className="gap-2">
-              <BarChart3 className="w-4 h-4" /> {t("nav.transparency")}
-            </Button>
-          </Link>
           {session && (
             <>
               <Link to="/citizen">
@@ -84,8 +79,9 @@ const AppHeader = () => {
           {/* Language Switcher */}
           <button
             onClick={toggleLang}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs font-bold"
-            aria-label="تبديل اللغة"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            aria-label={i18n.language === "ar" ? "Switch to English" : "التبديل للعربية"}
+            title={i18n.language === "ar" ? "English" : "العربية"}
           >
             <Globe className="w-[18px] h-[18px]" />
           </button>
@@ -108,7 +104,7 @@ const AppHeader = () => {
                     <span className="text-xs font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
                   )}
                 </div>
-                <span className="text-sm text-muted-foreground max-w-[120px] truncate">{profile?.full_name || "مستخدم"}</span>
+                <span className="text-sm text-muted-foreground max-w-[120px] truncate">{profile?.full_name || t("nav.my_account")}</span>
               </Link>
               <Button variant="outline" size="sm" className="gap-2" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4" /> {t("nav.logout")}
@@ -134,11 +130,6 @@ const AppHeader = () => {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-card px-4 py-3 space-y-2 animate-fade-in">
-          <Link to="/transparency" onClick={() => setMobileMenuOpen(false)}>
-            <Button variant={isActive("/transparency") ? "secondary" : "ghost"} size="sm" className="w-full justify-start gap-2">
-              <BarChart3 className="w-4 h-4" /> {t("nav.transparency")}
-            </Button>
-          </Link>
           {session ? (
             <>
               <div className="flex items-center gap-2 pb-3 mb-2 border-b border-border">
@@ -149,7 +140,7 @@ const AppHeader = () => {
                     <span className="text-xs font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
                   )}
                 </div>
-                <span className="text-sm text-foreground font-medium">{profile?.full_name || "مستخدم"}</span>
+                <span className="text-sm text-foreground font-medium">{profile?.full_name || t("nav.my_account")}</span>
               </div>
               <Link to="/citizen" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant={isActive("/citizen") ? "secondary" : "ghost"} size="sm" className="w-full justify-start gap-2">
