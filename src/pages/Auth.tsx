@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { User, ShieldCheck, LogIn, ArrowRight, Eye, EyeOff, Lock, Mail, Phone, IdCard, Fingerprint, KeyRound } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 import ornament2 from "@/assets/egyptian-ornament-2.png";
 import egyptianAnkh from "@/assets/egyptian-ankh.png";
 import egyptianNefertiti from "@/assets/egyptian-nefertiti.png";
@@ -15,19 +16,9 @@ import ornament1 from "@/assets/egyptian-ornament-1.png";
 
 type AuthMode = "login" | "signup-citizen" | "signup-mp" | "forgot-password";
 
-const translateError = (msg: string): string => {
-  if (msg.includes("Invalid login credentials")) return "البريد الإلكتروني أو كلمة المرور غير صحيحة";
-  if (msg.includes("Email not confirmed")) return "البريد الإلكتروني غير مؤكد. تحقق من بريدك الوارد";
-  if (msg.includes("User already registered")) return "هذا البريد الإلكتروني مسجل بالفعل";
-  if (msg.includes("Password should be")) return "كلمة المرور ضعيفة جداً";
-  if (msg.includes("Email rate limit")) return "تم إرسال عدد كبير من الرسائل. حاول لاحقاً";
-  if (msg.includes("For security purposes")) return "لأسباب أمنية، انتظر قليلاً قبل المحاولة مرة أخرى";
-  if (msg.includes("Too many requests")) return "محاولات كثيرة. انتظر قليلاً وحاول مرة أخرى";
-  return msg;
-};
-
 const Auth = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<AuthMode>("login");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -40,6 +31,17 @@ const Auth = () => {
 
   const resetForm = () => {
     setEmail(""); setPassword(""); setFullName(""); setPhone(""); setRegistrationNumber("");
+  };
+
+  const translateError = (msg: string): string => {
+    if (msg.includes("Invalid login credentials")) return t("auth.error_credentials");
+    if (msg.includes("Email not confirmed")) return t("auth.error_email_not_confirmed");
+    if (msg.includes("User already registered")) return t("auth.error_already_registered");
+    if (msg.includes("Password should be")) return t("auth.password_weak");
+    if (msg.includes("Email rate limit")) return t("auth.error_rate_limit");
+    if (msg.includes("For security purposes")) return t("auth.error_security_wait");
+    if (msg.includes("Too many requests")) return t("auth.error_too_many");
+    return msg;
   };
 
   const getRoleRedirect = async (userId: string): Promise<string> => {
@@ -55,11 +57,11 @@ const Auth = () => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      toast.success("تم تسجيل الدخول بنجاح");
+      toast.success(t("auth.login_success"));
       const redirect = await getRoleRedirect(data.user.id);
       navigate(redirect);
     } catch (err: any) {
-      toast.error(translateError(err.message || "خطأ في تسجيل الدخول"));
+      toast.error(translateError(err.message || t("auth.login_error")));
     } finally {
       setLoading(false);
     }
@@ -67,15 +69,15 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 8) { toast.error("كلمة المرور يجب أن تكون 8 أحرف على الأقل"); return; }
+    if (password.length < 8) { toast.error(t("auth.password_min_error")); return; }
     if (!/\d/.test(password) || !/[a-zA-Z\u0600-\u06FF]/.test(password)) {
-      toast.error("كلمة المرور يجب أن تحتوي على أحرف وأرقام"); return;
+      toast.error(t("auth.password_mix_error")); return;
     }
-    if (!/^01[0-9]{9}$/.test(phone)) { toast.error("رقم التليفون غير صحيح (يجب أن يبدأ بـ 01 ويكون 11 رقم)"); return; }
+    if (!/^01[0-9]{9}$/.test(phone)) { toast.error(t("auth.phone_invalid")); return; }
     setLoading(true);
     const timeoutId = setTimeout(() => {
       setLoading(false);
-      toast.error("الاتصال بطيء. تحقق من اتصالك بالإنترنت وحاول مرة أخرى");
+      toast.error(t("auth.timeout_error"));
     }, 30000);
     try {
       const role = mode === "signup-mp" ? "mp" : "citizen";
@@ -88,13 +90,13 @@ const Auth = () => {
       });
       clearTimeout(timeoutId);
       if (error) throw error;
-      toast.success("تم إنشاء الحساب! تحقق من بريدك الإلكتروني لتأكيد الحساب");
+      toast.success(t("auth.signup_success"));
       setMode("login"); resetForm();
     } catch (err: any) {
       clearTimeout(timeoutId);
-      const msg = err.message || "خطأ في إنشاء الحساب";
+      const msg = err.message || t("auth.signup_error");
       if (msg.includes("fetch") || msg.includes("network") || msg.includes("Failed")) {
-        toast.error("مشكلة في الاتصال بالإنترنت. تأكد من اتصالك وحاول مرة أخرى");
+        toast.error(t("auth.network_error"));
       } else {
         toast.error(translateError(msg));
       }
@@ -105,17 +107,17 @@ const Auth = () => {
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) { toast.error("أدخل بريدك الإلكتروني"); return; }
+    if (!email) { toast.error(t("auth.enter_email")); return; }
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
-      toast.success("تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني");
+      toast.success(t("auth.forgot_success"));
       setMode("login");
     } catch (err: any) {
-      toast.error(translateError(err.message || "خطأ في إرسال الرابط"));
+      toast.error(translateError(err.message || t("auth.forgot_error")));
     } finally {
       setLoading(false);
     }
@@ -125,10 +127,10 @@ const Auth = () => {
   const isForgot = mode === "forgot-password";
 
   const modeConfig = {
-    login: { title: "تسجيل الدخول", subtitle: "سجّل دخولك للوصول إلى حسابك", icon: LogIn, gradient: "from-accent to-info" },
-    "signup-citizen": { title: "حساب مواطن جديد", subtitle: "سجّل حسابك لتقديم المشاكل ومتابعتها", icon: User, gradient: "from-primary to-accent" },
-    "signup-mp": { title: "حساب نائب جديد", subtitle: "سجّل حسابك كنائب لاستقبال ومعالجة المشاكل", icon: ShieldCheck, gradient: "from-warning to-accent" },
-    "forgot-password": { title: "نسيت كلمة المرور", subtitle: "أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور", icon: KeyRound, gradient: "from-accent to-primary" },
+    login: { title: t("auth.login_title"), subtitle: t("auth.login_subtitle"), icon: LogIn, gradient: "from-accent to-info" },
+    "signup-citizen": { title: t("auth.signup_citizen_title"), subtitle: t("auth.signup_citizen_subtitle"), icon: User, gradient: "from-primary to-accent" },
+    "signup-mp": { title: t("auth.signup_mp_title"), subtitle: t("auth.signup_mp_subtitle"), icon: ShieldCheck, gradient: "from-warning to-accent" },
+    "forgot-password": { title: t("auth.forgot_title"), subtitle: t("auth.forgot_subtitle"), icon: KeyRound, gradient: "from-accent to-primary" },
   };
 
   const { title, subtitle, icon: ModeIcon, gradient } = modeConfig[mode];
@@ -148,15 +150,10 @@ const Auth = () => {
 
       {/* Egyptian decorations */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        {/* عين حورس — أعلى يمين */}
         <img src={ornament2} alt="" className="absolute top-10 right-6 w-[140px] md:w-[200px] lg:w-[260px] select-none" style={decoStyle([0.22, 0.13])} draggable={false} />
-        {/* نفرتيتي — أسفل يسار */}
         <img src={egyptianNefertiti} alt="" className="absolute bottom-8 left-4 w-[130px] md:w-[190px] lg:w-[240px] select-none" style={decoStyle([0.2, 0.12])} draggable={false} />
-        {/* العنخ — أعلى يسار */}
         <img src={egyptianAnkh} alt="" className="absolute top-20 left-8 w-[70px] md:w-[100px] lg:w-[130px] select-none" style={decoStyle([0.18, 0.1])} draggable={false} />
-        {/* لوتس — أسفل يمين */}
         <img src={ornament1} alt="" className="absolute bottom-12 right-8 w-[100px] md:w-[150px] lg:w-[180px] select-none" style={decoStyle([0.16, 0.09])} draggable={false} />
-        {/* Ambient glow */}
         <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-3xl" style={{ background: `radial-gradient(circle, hsl(var(--warning) / ${isDark ? 0.08 : 0.04}), transparent 70%)` }} />
         <div className="absolute -bottom-40 -right-40 w-[400px] h-[400px] rounded-full blur-3xl" style={{ background: `radial-gradient(circle, hsl(var(--primary) / ${isDark ? 0.06 : 0.03}), transparent 70%)` }} />
       </div>
@@ -174,22 +171,14 @@ const Auth = () => {
             >
               <ModeIcon className="w-9 h-9 text-white" />
             </motion.div>
-            <motion.h1
-              key={`title-${mode}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-3xl font-bold text-foreground mb-2 tracking-tight"
-            >
+            <motion.h1 key={`title-${mode}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-3xl font-bold text-foreground mb-2 tracking-tight">
               {title}
             </motion.h1>
             <p className="text-muted-foreground text-sm">{subtitle}</p>
           </div>
 
           {/* Card */}
-          <motion.div
-            layout
-            className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl overflow-hidden"
-          >
+          <motion.div layout className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl overflow-hidden">
             <div className="p-7 md:p-8">
               <AnimatePresence mode="wait">
                 <motion.form
@@ -204,18 +193,18 @@ const Auth = () => {
                   {isSignup && (
                     <>
                       <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-foreground block">الاسم الرباعي</label>
+                        <label className="text-sm font-semibold text-foreground block">{t("auth.full_name")}</label>
                         <div className="relative group">
-                          <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="أحمد محمد علي حسن" required className="text-right pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
+                          <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t("auth.full_name_placeholder")} required className="text-right pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
                           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
                             <User className="w-3.5 h-3.5 text-muted-foreground" />
                           </div>
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-foreground block">رقم التليفون</label>
+                        <label className="text-sm font-semibold text-foreground block">{t("auth.phone")}</label>
                         <div className="relative group">
-                          <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01xxxxxxxxx" type="tel" required dir="ltr" className="pl-11 text-left h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" maxLength={11} />
+                          <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("auth.phone_placeholder")} type="tel" required dir="ltr" className="pl-11 text-left h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" maxLength={11} />
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
                             <Phone className="w-3.5 h-3.5 text-muted-foreground" />
                           </div>
@@ -223,9 +212,9 @@ const Auth = () => {
                       </div>
                       {mode === "signup-mp" && (
                         <div className="space-y-1.5">
-                          <label className="text-sm font-semibold text-foreground block">رقم القيد البرلماني</label>
+                          <label className="text-sm font-semibold text-foreground block">{t("auth.registration_number")}</label>
                           <div className="relative group">
-                            <Input value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} placeholder="أدخل رقم القيد" required className="text-right pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
+                            <Input value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} placeholder={t("auth.registration_number_placeholder")} required className="text-right pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
                               <IdCard className="w-3.5 h-3.5 text-muted-foreground" />
                             </div>
@@ -236,9 +225,9 @@ const Auth = () => {
                   )}
 
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">البريد الإلكتروني</label>
+                    <label className="text-sm font-semibold text-foreground block">{t("auth.email")}</label>
                     <div className="relative group">
-                      <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="example@email.com" type="email" required dir="ltr" className="pl-11 text-left h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
+                      <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("auth.email_placeholder")} type="email" required dir="ltr" className="pl-11 text-left h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
                       <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
                         <Mail className="w-3.5 h-3.5 text-muted-foreground" />
                       </div>
@@ -248,14 +237,10 @@ const Auth = () => {
                   {!isForgot && (
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <label className="text-sm font-semibold text-foreground block">كلمة المرور</label>
+                        <label className="text-sm font-semibold text-foreground block">{t("auth.password")}</label>
                         {mode === "login" && (
-                          <button
-                            type="button"
-                            onClick={() => { setMode("forgot-password"); }}
-                            className="text-xs text-accent hover:underline font-medium"
-                          >
-                            نسيت كلمة المرور؟
+                          <button type="button" onClick={() => setMode("forgot-password")} className="text-xs text-accent hover:underline font-medium">
+                            {t("auth.forgot_password")}
                           </button>
                         )}
                       </div>
@@ -274,13 +259,13 @@ const Auth = () => {
                             <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${password.length >= 8 ? "border-success bg-success/10" : "border-muted"}`}>
                               {password.length >= 8 && <div className="w-1.5 h-1.5 rounded-full bg-success" />}
                             </div>
-                            8 أحرف على الأقل
+                            {t("auth.password_min")}
                           </div>
                           <div className={`text-xs flex items-center gap-2 transition-colors ${/\d/.test(password) && /[a-zA-Z\u0600-\u06FF]/.test(password) ? "text-success" : "text-muted-foreground"}`}>
                             <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${/\d/.test(password) && /[a-zA-Z\u0600-\u06FF]/.test(password) ? "border-success bg-success/10" : "border-muted"}`}>
                               {/\d/.test(password) && /[a-zA-Z\u0600-\u06FF]/.test(password) && <div className="w-1.5 h-1.5 rounded-full bg-success" />}
                             </div>
-                            أحرف وأرقام معاً
+                            {t("auth.password_mix")}
                           </div>
                         </div>
                       )}
@@ -288,16 +273,12 @@ const Auth = () => {
                   )}
 
                   {mode === "signup-mp" && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="p-4 rounded-2xl bg-gradient-to-br from-warning/[0.08] to-warning/[0.03] border border-warning/15"
-                    >
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-gradient-to-br from-warning/[0.08] to-warning/[0.03] border border-warning/15">
                       <p className="text-xs text-warning flex items-center gap-2.5 leading-relaxed">
                         <div className="w-8 h-8 rounded-xl bg-warning/10 flex items-center justify-center shrink-0">
                           <ShieldCheck className="w-4 h-4" />
                         </div>
-                        حساب النائب يحتاج موافقة الإدارة قبل التفعيل
+                        {t("auth.mp_approval_note")}
                       </p>
                     </motion.div>
                   )}
@@ -306,11 +287,11 @@ const Auth = () => {
                     {loading ? (
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : isForgot ? (
-                      <><Mail className="w-5 h-5" /> إرسال رابط الاستعادة</>
+                      <><Mail className="w-5 h-5" /> {t("auth.submit_forgot")}</>
                     ) : isSignup ? (
-                      <><Fingerprint className="w-5 h-5" /> إنشاء الحساب</>
+                      <><Fingerprint className="w-5 h-5" /> {t("auth.submit_signup")}</>
                     ) : (
-                      <><LogIn className="w-5 h-5" /> تسجيل الدخول</>
+                      <><LogIn className="w-5 h-5" /> {t("auth.submit_login")}</>
                     )}
                   </Button>
                 </motion.form>
@@ -322,23 +303,23 @@ const Auth = () => {
               <div className="pt-5 border-t border-border/50">
                 {mode === "login" ? (
                   <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground text-center font-medium">ليس لديك حساب؟</p>
+                    <p className="text-sm text-muted-foreground text-center font-medium">{t("auth.no_account")}</p>
                     <div className="grid grid-cols-2 gap-3">
                       <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
                         <Button variant="outline" onClick={() => { setMode("signup-citizen"); resetForm(); }} className="gap-2 h-12 w-full rounded-xl border-border/50 hover:border-accent/30 hover:bg-accent/5 transition-all">
-                          <User className="w-4 h-4 text-accent" /> حساب مواطن
+                          <User className="w-4 h-4 text-accent" /> {t("auth.signup_citizen")}
                         </Button>
                       </motion.div>
                       <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
                         <Button variant="outline" onClick={() => { setMode("signup-mp"); resetForm(); }} className="gap-2 h-12 w-full rounded-xl border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all">
-                          <ShieldCheck className="w-4 h-4 text-primary" /> حساب نائب
+                          <ShieldCheck className="w-4 h-4 text-primary" /> {t("auth.signup_mp")}
                         </Button>
                       </motion.div>
                     </div>
                   </div>
                 ) : (
                   <Button variant="ghost" className="w-full gap-2 h-11 rounded-xl hover:bg-accent/5" onClick={() => { setMode("login"); resetForm(); }}>
-                    <ArrowRight className="w-4 h-4" /> {isForgot ? "العودة لتسجيل الدخول" : "لديك حساب؟ سجّل دخولك"}
+                    <ArrowRight className="w-4 h-4" /> {isForgot ? t("auth.back_to_login") : t("auth.have_account")}
                   </Button>
                 )}
               </div>
@@ -346,14 +327,9 @@ const Auth = () => {
           </motion.div>
 
           {/* Security badge */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="flex items-center justify-center gap-2 mt-6 text-xs text-muted-foreground"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="flex items-center justify-center gap-2 mt-6 text-xs text-muted-foreground">
             <Lock className="w-3 h-3" />
-            <span>بياناتك مشفّرة ومحمية بالكامل</span>
+            <span>{t("auth.security_note")}</span>
           </motion.div>
         </motion.div>
       </div>
