@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import StatusBadge, { type IssueStatus } from "./StatusBadge";
 import { MapPin, Clock, Users, User, Flag, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 
 export interface Issue {
   id: string;
