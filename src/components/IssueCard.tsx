@@ -51,7 +51,7 @@ const IssueCard = ({ issue, onClick }: IssueCardProps) => {
           {issue.citizen_confirmed && (
             <Badge variant="outline" className="gap-1 text-xs border-success/20 text-success rounded-lg bg-success/[0.06]">
               <CheckCircle2 className="w-3 h-3" />
-              مؤكد
+              {t("issue_card.confirmed")}
             </Badge>
           )}
         </div>
