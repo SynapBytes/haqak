@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import StatusBadge, { type IssueStatus } from "./StatusBadge";
 import { MapPin, Clock, Users, User, Flag, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 
 export interface Issue {
   id: string;
@@ -24,6 +25,7 @@ interface IssueCardProps {
 }
 
 const IssueCard = ({ issue, onClick }: IssueCardProps) => {
+  const { t } = useTranslation();
   return (
     <motion.div
       whileHover={{ y: -3, scale: 1.005 }}
@@ -37,19 +39,19 @@ const IssueCard = ({ issue, onClick }: IssueCardProps) => {
           {issue.issue_type === "collective" && (
             <Badge variant="outline" className="gap-1 text-xs border-accent/20 text-accent rounded-lg bg-accent/[0.06]">
               <Users className="w-3 h-3" />
-              جماعية
+              {t("issue_card.collective")}
             </Badge>
           )}
           {issue.is_flagged && (
             <Badge variant="outline" className="gap-1 text-xs border-destructive/20 text-destructive rounded-lg bg-destructive/[0.06]">
               <Flag className="w-3 h-3" />
-              تم التنقيح
+              {t("issue_card.flagged")}
             </Badge>
           )}
           {issue.citizen_confirmed && (
             <Badge variant="outline" className="gap-1 text-xs border-success/20 text-success rounded-lg bg-success/[0.06]">
               <CheckCircle2 className="w-3 h-3" />
-              مؤكد
+              {t("issue_card.confirmed")}
             </Badge>
           )}
         </div>
@@ -79,7 +81,7 @@ const IssueCard = ({ issue, onClick }: IssueCardProps) => {
         )}
         <span className="flex items-center gap-1 text-xs">
           {issue.issue_type === "collective" ? <Users className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
-          {issue.issue_type === "collective" ? "جماعية" : "فردية"}
+          {issue.issue_type === "collective" ? t("issue_card.collective") : t("issue_card.individual")}
         </span>
       </div>
     </motion.div>

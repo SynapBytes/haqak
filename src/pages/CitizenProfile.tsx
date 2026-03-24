@@ -11,10 +11,13 @@ import {
   User, Phone, Mail, Camera, Loader2, Save, Shield,
   Calendar, CheckCircle2, AlertCircle, Clock, BarChart3
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { stripExifFromFile } from "@/lib/stripExif";
 
 const CitizenProfile = () => {
   const { user, profile, role } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [fullName, setFullName] = useState("");
@@ -62,20 +65,21 @@ const CitizenProfile = () => {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    const cleanFile = await stripExifFromFile(file);
 
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("حجم الصورة يجب ألا يتجاوز 2 ميجابايت");
+      toast.error(t("profile.avatar_size"));
       return;
     }
 
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const ext = cleanFile.name.split(".").pop();
       const path = `${user.id}/avatar.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(path, file, { upsert: true });
+        .upload(path, cleanFile, { upsert: true });
 
       if (uploadError) throw uploadError;
 
@@ -93,9 +97,9 @@ const CitizenProfile = () => {
       if (updateError) throw updateError;
 
       setAvatarUrl(urlWithCacheBust);
-      toast.success("تم تحديث الصورة بنجاح ✨");
+      toast.success(t("profile.avatar_updated"));
     } catch (err: any) {
-      toast.error(err.message || "خطأ في رفع الصورة");
+      toast.error(err.message || t("profile.avatar_error"));
     } finally {
       setUploading(false);
     }
@@ -104,7 +108,7 @@ const CitizenProfile = () => {
   const handleSave = async () => {
     if (!user) return;
     if (!/^01[0-9]{9}$/.test(phone)) {
-      toast.error("رقم التليفون غير صحيح (يجب أن يبدأ بـ 01 ويكون 11 رقم)");
+      toast.error(t("profile.phone_invalid"));
       return;
     }
     setSaving(true);
@@ -114,19 +118,19 @@ const CitizenProfile = () => {
         .update({ full_name: fullName, phone })
         .eq("user_id", user.id);
       if (error) throw error;
-      toast.success("تم حفظ البيانات بنجاح ✅");
+      toast.success(t("profile.saved"));
     } catch (err: any) {
-      toast.error(err.message || "خطأ في حفظ البيانات");
+      toast.error(err.message || t("profile.save_error"));
     } finally {
       setSaving(false);
     }
   };
 
   const statCards = [
-    { label: "إجمالي الشكاوى", value: issueStats.total, icon: BarChart3, color: "text-accent", bg: "from-accent/10 to-accent/5" },
-    { label: "تم الحل", value: issueStats.resolved, icon: CheckCircle2, color: "text-success", bg: "from-success/10 to-success/5" },
-    { label: "قيد المعالجة", value: issueStats.inProgress, icon: Clock, color: "text-warning", bg: "from-warning/10 to-warning/5" },
-    { label: "بانتظار المراجعة", value: issueStats.received, icon: AlertCircle, color: "text-info", bg: "from-info/10 to-info/5" },
+    { label: t("profile.total_issues"), value: issueStats.total, icon: BarChart3, color: "text-accent", bg: "from-accent/10 to-accent/5" },
+    { label: t("profile.resolved"), value: issueStats.resolved, icon: CheckCircle2, color: "text-success", bg: "from-success/10 to-success/5" },
+    { label: t("profile.in_progress"), value: issueStats.inProgress, icon: Clock, color: "text-warning", bg: "from-warning/10 to-warning/5" },
+    { label: t("profile.waiting"), value: issueStats.received, icon: AlertCircle, color: "text-info", bg: "from-info/10 to-info/5" },
   ];
 
   if (loading) {
@@ -151,8 +155,8 @@ const CitizenProfile = () => {
       <AppHeader />
       <div className="container py-6 md:py-8 px-4 max-w-2xl relative z-10">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight">الملف الشخصي</h1>
-          <p className="text-muted-foreground text-sm">عدّل بياناتك الشخصية وصورتك</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight">{t("profile.title")}</h1>
+          <p className="text-muted-foreground text-sm">{t("profile.subtitle")}</p>
         </motion.div>
 
         {/* Avatar Section */}
@@ -190,7 +194,7 @@ const CitizenProfile = () => {
           <h2 className="text-xl font-bold text-foreground">{fullName}</h2>
           <div className="flex items-center justify-center gap-2 mt-1.5">
             <Shield className="w-3.5 h-3.5 text-accent" />
-            <span className="text-sm text-muted-foreground">{role === "mp" ? "نائب" : role === "admin" ? "مسؤول" : "مواطن"}</span>
+            <span className="text-sm text-muted-foreground">{role === "mp" ? t("profile.role_mp") : role === "admin" ? t("profile.role_admin") : t("profile.role_citizen")}</span>
           </div>
           {user?.email && (
             <div className="flex items-center justify-center gap-2 mt-2 text-xs text-muted-foreground">
@@ -228,11 +232,11 @@ const CitizenProfile = () => {
         >
           <h3 className="text-lg font-bold text-foreground mb-5 flex items-center gap-2">
             <User className="w-5 h-5 text-accent" />
-            البيانات الشخصية
+            {t("profile.personal_data")}
           </h3>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-foreground block">الاسم الرباعي</label>
+              <label className="text-sm font-semibold text-foreground block">{t("profile.full_name")}</label>
               <div className="relative">
                 <Input
                   value={fullName}
@@ -245,7 +249,7 @@ const CitizenProfile = () => {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-foreground block">رقم التليفون</label>
+              <label className="text-sm font-semibold text-foreground block">{t("profile.phone")}</label>
               <div className="relative">
                 <Input
                   value={phone}
@@ -260,7 +264,7 @@ const CitizenProfile = () => {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-foreground block">البريد الإلكتروني</label>
+              <label className="text-sm font-semibold text-foreground block">{t("profile.email")}</label>
               <div className="relative">
                 <Input
                   value={user?.email || ""}
@@ -280,7 +284,7 @@ const CitizenProfile = () => {
               className="w-full gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 h-12 rounded-xl font-semibold shadow-lg shadow-accent/20 mt-2"
             >
               {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-              حفظ التغييرات
+              {t("profile.save")}
             </Button>
           </div>
         </motion.div>
@@ -298,7 +302,7 @@ const CitizenProfile = () => {
             onClick={() => navigate("/citizen")}
           >
             <AlertCircle className="w-5 h-5 text-accent" />
-            <span className="text-sm font-semibold">مشاكلي</span>
+            <span className="text-sm font-semibold">{t("profile.my_issues_link")}</span>
           </Button>
           <Button
             variant="outline"
@@ -306,7 +310,7 @@ const CitizenProfile = () => {
             onClick={() => navigate("/mps")}
           >
             <Shield className="w-5 h-5 text-accent" />
-            <span className="text-sm font-semibold">دليل النواب</span>
+            <span className="text-sm font-semibold">{t("profile.mps_directory_link")}</span>
           </Button>
         </motion.div>
       </div>

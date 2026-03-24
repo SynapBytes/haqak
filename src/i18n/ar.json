@@ -135,7 +135,10 @@
     "new_issue_humanitarian": "مشكلة جديدة 🟡 إنسانية",
     "new_issue_notification": "تم استلام مشكلة جديدة: {{title}}",
     "open_chat": "فتح المحادثة",
-    "ai_summary": "ملخص AI"
+    "ai_summary": "ملخص AI",
+    "attach_files": "إرفاق صور أو ملفات",
+    "first_issue_btn": "قدّم مشكلتك الأولى",
+    "error_submit": "خطأ في إرسال المشكلة"
   },
   "mp_dashboard": {
     "title": "لوحة تحكم النائب",
@@ -190,13 +193,17 @@
   },
   "profile": {
     "title": "الملف الشخصي",
+    "subtitle": "عدّل بياناتك الشخصية وصورتك",
     "full_name": "الاسم الكامل",
     "phone": "رقم التليفون",
     "email": "البريد الإلكتروني",
     "save": "حفظ التعديلات",
     "saving": "جاري الحفظ...",
-    "saved": "تم حفظ التعديلات بنجاح",
+    "saved": "تم حفظ التعديلات بنجاح ✅",
     "change_avatar": "تغيير الصورة",
+    "avatar_updated": "تم تحديث الصورة بنجاح ✨",
+    "avatar_error": "خطأ في رفع الصورة",
+    "avatar_size": "حجم الصورة يجب ألا يتجاوز 2 ميجابايت",
     "stats": "إحصائياتي",
     "total_issues": "إجمالي المشاكل",
     "resolved": "محلولة",
@@ -205,7 +212,12 @@
     "member_since": "عضو منذ",
     "role_citizen": "مواطن",
     "role_mp": "نائب",
-    "role_admin": "مسؤول"
+    "role_admin": "مسؤول",
+    "personal_data": "البيانات الشخصية",
+    "my_issues_link": "مشاكلي",
+    "mps_directory_link": "دليل النواب",
+    "phone_invalid": "رقم التليفون غير صحيح (يجب أن يبدأ بـ 01 ويكون 11 رقم)",
+    "save_error": "خطأ في حفظ البيانات"
   },
   "auth": {
     "login_title": "تسجيل الدخول",
@@ -316,6 +328,12 @@
     "education": "تعليم",
     "electricity": "كهرباء",
     "other": "أخرى"
+  },
+  "issue_card": {
+    "collective": "جماعية",
+    "individual": "فردية",
+    "flagged": "تم التنقيح",
+    "confirmed": "مؤكد"
   },
   "chat": {
     "title": "المحادثة",

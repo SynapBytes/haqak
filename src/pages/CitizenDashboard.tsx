@@ -15,11 +15,14 @@ import { toast } from "sonner";
 import { Plus, X, Send, SendHorizonal, Loader2, ImagePlus, CheckCircle2, MessageCircle, AlertCircle, Clock, TrendingUp } from "lucide-react";
 import type { Issue } from "@/components/IssueCard";
 import LocationPicker from "@/components/LocationPicker";
+import { useTranslation } from "react-i18next";
+import { stripExifFromFiles } from "@/lib/stripExif";
 
-const categories = ["مياه", "طرق", "مرافق عامة", "صحة", "نظافة", "تعليم", "كهرباء", "أخرى"];
+const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitation", "education", "electricity", "other"] as const;
 
 const CitizenDashboard = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const mpIdParam = searchParams.get("mp_id");
   const mpNameParam = searchParams.get("mp_name");
@@ -94,7 +97,7 @@ const CitizenDashboard = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
     if (selected.length + files.length > 5) {
-      toast.error("الحد الأقصى 5 ملفات");
+      toast.error(t("dashboard.max_files"));
       return;
     }
     setFiles((prev) => [...prev, ...selected]);
@@ -105,7 +108,8 @@ const CitizenDashboard = () => {
   };
 
   const uploadFiles = async (issueId: string) => {
-    for (const file of files) {
+    const cleanedFiles = await stripExifFromFiles(files);
+    for (const file of cleanedFiles) {
       const ext = file.name.split(".").pop();
       const path = `${user!.id}/${issueId}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
@@ -127,7 +131,7 @@ const CitizenDashboard = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !title || !description || !category || !location) {
-      toast.error("يرجى ملء جميع الحقول");
+      toast.error(t("dashboard.fill_all_fields"));
       return;
     }
 
@@ -141,7 +145,7 @@ const CitizenDashboard = () => {
       const bannedUntil = new Date(profileData.banned_until);
       if (bannedUntil > new Date()) {
         const remainingDays = Math.ceil((bannedUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-        toast.error(`حسابك موقوف لمدة ${remainingDays} يوم بسبب استخدام ألفاظ غير لائقة`);
+        toast.error(t("dashboard.banned_message", { days: remainingDays }));
         return;
       }
     }
@@ -173,7 +177,7 @@ const CitizenDashboard = () => {
       }));
 
       try {
-        toast.info("جاري التصنيف التلقائي بالذكاء الاصطناعي... ✨");
+        toast.info(t("dashboard.classifying_ai"));
         const { data: classifyData, error: classifyError } = await supabase.functions.invoke("classify-issue", {
           body: { title, description, senderName, files: filesInfo },
         });
@@ -227,7 +231,7 @@ const CitizenDashboard = () => {
         const banUntil = new Date();
         banUntil.setDate(banUntil.getDate() + banDays);
         await supabase.from("profiles").update({ banned_until: banUntil.toISOString() }).eq("user_id", user.id);
-        toast.warning(`تم تسجيل مخالفة بسبب ألفاظ غير لائقة. حسابك موقوف لمدة ${banDays} يوم.`);
+        toast.warning(t("dashboard.violation_recorded", { days: banDays }));
       }
 
       // Step 4: Upload files
@@ -249,7 +253,7 @@ const CitizenDashboard = () => {
         }
       }
 
-      toast.success("تم إرسال المشكلة بنجاح وتصنيفها تلقائياً ✨");
+      toast.success(t("dashboard.issue_sent_success"));
       setShowForm(false);
       setTitle(""); setDescription(""); setCategory(""); setLocation("");
       setIssueType("individual"); setFiles([]);
@@ -257,7 +261,7 @@ const CitizenDashboard = () => {
       setAssignedMpId(null); setAssignedMpName(null);
       fetchIssues();
     } catch (err: any) {
-      toast.error(err.message || "خطأ في إرسال المشكلة");
+      toast.error(err.message || t("dashboard.error_submit"));
     } finally {
       setSubmitting(false);
     }
@@ -265,8 +269,8 @@ const CitizenDashboard = () => {
 
   const handleConfirmResolution = async (issueId: string) => {
     const { error } = await supabase.from("issues").update({ citizen_confirmed: true }).eq("id", issueId);
-    if (error) { toast.error("حدث خطأ"); return; }
-    toast.success("تم تأكيد حل المشكلة ✅");
+    if (error) { toast.error(t("common.error")); return; }
+    toast.success(t("dashboard.resolution_confirmed"));
     await supabase.from("issue_actions").insert({
       issue_id: issueId,
       user_id: user!.id,
@@ -283,9 +287,9 @@ const CitizenDashboard = () => {
   };
 
   const statCards = [
-    { status: "received" as const, count: statusCounts.received, icon: AlertCircle, color: "text-accent", bg: "from-accent/10 to-accent/5", label: "بانتظار المراجعة" },
-    { status: "in-progress" as const, count: statusCounts["in-progress"], icon: Clock, color: "text-warning", bg: "from-warning/10 to-warning/5", label: "قيد المعالجة" },
-    { status: "resolved" as const, count: statusCounts.resolved, icon: CheckCircle2, color: "text-success", bg: "from-success/10 to-success/5", label: "تم الحل" },
+    { status: "received" as const, count: statusCounts.received, icon: AlertCircle, color: "text-accent", bg: "from-accent/10 to-accent/5", label: t("dashboard.waiting") },
+    { status: "in-progress" as const, count: statusCounts["in-progress"], icon: Clock, color: "text-warning", bg: "from-warning/10 to-warning/5", label: t("dashboard.in_progress") },
+    { status: "resolved" as const, count: statusCounts.resolved, icon: CheckCircle2, color: "text-success", bg: "from-success/10 to-success/5", label: t("dashboard.resolved") },
   ];
 
   return (
@@ -314,14 +318,14 @@ const CitizenDashboard = () => {
               animate={{ opacity: 1, x: 0 }}
               className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight"
             >
-              مشاكلي
+              {t("dashboard.my_issues")}
             </motion.h1>
-            <p className="text-muted-foreground text-sm">تابع حالة المشاكل التي أبلغت عنها</p>
+            <p className="text-muted-foreground text-sm">{t("dashboard.track_issues")}</p>
           </div>
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button onClick={() => setShowForm(true)} className="gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 shadow-lg shadow-accent/20 rounded-xl h-11 px-6 font-semibold">
               <Plus className="w-5 h-5" />
-              إبلاغ عن مشكلة
+              {t("dashboard.report_issue")}
             </Button>
           </motion.div>
         </div>
@@ -364,7 +368,7 @@ const CitizenDashboard = () => {
                     <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-accent to-info flex items-center justify-center">
                       <Plus className="w-5 h-5 text-white" />
                     </div>
-                    <h2 className="text-xl font-bold text-foreground">إبلاغ عن مشكلة جديدة</h2>
+                    <h2 className="text-xl font-bold text-foreground">{t("dashboard.new_issue")}</h2>
                   </div>
                   <button onClick={() => setShowForm(false)} className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors">
                     <X className="w-4 h-4" />
@@ -374,7 +378,7 @@ const CitizenDashboard = () => {
                   <div className="flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-xl px-4 py-3 mb-2">
                     <SendHorizonal className="w-4 h-4 text-accent shrink-0" />
                     <span className="text-sm font-medium text-foreground">
-                      شكوى موجّهة إلى النائب: <span className="text-accent font-bold">{assignedMpName}</span>
+                      {t("dashboard.issue_to_mp")} <span className="text-accent font-bold">{assignedMpName}</span>
                     </span>
                     <button type="button" onClick={() => { setAssignedMpId(null); setAssignedMpName(null); }} className="mr-auto text-muted-foreground hover:text-foreground">
                       <X className="w-3.5 h-3.5" />
@@ -383,19 +387,19 @@ const CitizenDashboard = () => {
                 )}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">عنوان المشكلة</label>
-                    <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="مثال: انقطاع المياه في حي الأمل" className="text-right h-11 rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
+                    <label className="text-sm font-semibold text-foreground block">{t("dashboard.title")}</label>
+                    <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("dashboard.title_placeholder")} className="text-right h-11 rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">وصف المشكلة</label>
-                    <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="اكتب تفاصيل المشكلة هنا..." rows={4} className="text-right rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
+                    <label className="text-sm font-semibold text-foreground block">{t("dashboard.description")}</label>
+                    <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("dashboard.description_placeholder")} rows={4} className="text-right rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">الموقع</label>
-                    <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="مثال: شارع النيل، سوهاج" className="text-right h-11 rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
+                    <label className="text-sm font-semibold text-foreground block">{t("dashboard.location")}</label>
+                    <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder={t("dashboard.location_placeholder")} className="text-right h-11 rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">حدد الموقع على الخريطة (اختياري)</label>
+                    <label className="text-sm font-semibold text-foreground block">{t("dashboard.map_location")}</label>
                     <LocationPicker
                       latitude={latitude}
                       longitude={longitude}
@@ -404,19 +408,19 @@ const CitizenDashboard = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-foreground block">التصنيف</label>
+                      <label className="text-sm font-semibold text-foreground block">{t("dashboard.category")}</label>
                       <Select value={category} onValueChange={setCategory}>
-                        <SelectTrigger className="h-11 rounded-xl border-border/50"><SelectValue placeholder="اختر التصنيف" /></SelectTrigger>
-                        <SelectContent>{categories.map((cat) => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}</SelectContent>
+                        <SelectTrigger className="h-11 rounded-xl border-border/50"><SelectValue placeholder={t("dashboard.category_placeholder")} /></SelectTrigger>
+                        <SelectContent>{categoryKeys.map((key) => (<SelectItem key={key} value={t(`categories.${key}`)}>{t(`categories.${key}`)}</SelectItem>))}</SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-foreground block">نوع المشكلة</label>
+                      <label className="text-sm font-semibold text-foreground block">{t("dashboard.type")}</label>
                       <Select value={issueType} onValueChange={(v) => setIssueType(v as "individual" | "collective")}>
                         <SelectTrigger className="h-11 rounded-xl border-border/50"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="individual">فردية</SelectItem>
-                          <SelectItem value="collective">جماعية</SelectItem>
+                          <SelectItem value="individual">{t("dashboard.individual")}</SelectItem>
+                          <SelectItem value="collective">{t("dashboard.collective")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -424,11 +428,11 @@ const CitizenDashboard = () => {
 
                   {/* File Upload */}
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">مرفقات (اختياري)</label>
+                    <label className="text-sm font-semibold text-foreground block">{t("dashboard.attachments")}</label>
                     <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={handleFileChange} />
                     <Button type="button" variant="outline" className="w-full gap-2 h-11 rounded-xl border-dashed border-2 border-border/50 hover:border-accent/30 hover:bg-accent/5" onClick={() => fileInputRef.current?.click()}>
                       <ImagePlus className="w-4 h-4 text-accent" />
-                      إرفاق صور أو ملفات ({files.length}/5)
+                      {t("dashboard.attach_files") || "إرفاق صور أو ملفات"} ({files.length}/5)
                     </Button>
                     {files.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
@@ -445,7 +449,7 @@ const CitizenDashboard = () => {
 
                   <Button type="submit" disabled={submitting} className="w-full gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 h-12 rounded-xl font-semibold shadow-lg shadow-accent/20 text-base">
                     {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                    إرسال المشكلة
+                    {t("dashboard.submit")}
                   </Button>
                 </form>
               </motion.div>
@@ -456,8 +460,7 @@ const CitizenDashboard = () => {
         {/* Issues List */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 className="w-10 h-10 animate-spin text-accent" />
-            <span className="text-sm text-muted-foreground">جاري التحميل...</span>
+            <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
           </div>
         ) : issues.length === 0 ? (
           <motion.div
@@ -468,10 +471,10 @@ const CitizenDashboard = () => {
             <div className="w-16 h-16 rounded-3xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
               <TrendingUp className="w-8 h-8 text-accent" />
             </div>
-            <h3 className="text-lg font-bold text-foreground mb-2">لم تقدم أي مشاكل بعد</h3>
-            <p className="text-muted-foreground text-sm mb-6">ابدأ بالإبلاغ عن مشكلتك الأولى وتابع حلها</p>
+            <h3 className="text-lg font-bold text-foreground mb-2">{t("dashboard.no_issues")}</h3>
+            <p className="text-muted-foreground text-sm mb-6">{t("dashboard.first_issue")}</p>
             <Button onClick={() => setShowForm(true)} className="gap-2 bg-gradient-to-l from-accent to-info text-white rounded-xl px-6">
-              <Plus className="w-4 h-4" /> قدّم مشكلتك الأولى
+              <Plus className="w-4 h-4" /> {t("dashboard.first_issue_btn") || t("dashboard.first_issue")}
             </Button>
           </motion.div>
         ) : (
@@ -492,7 +495,7 @@ const CitizenDashboard = () => {
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       <Button size="sm" variant="outline" className="gap-2 border-success/20 text-success hover:bg-success/5 rounded-xl" onClick={() => handleConfirmResolution(issue.id)}>
                         <CheckCircle2 className="w-4 h-4" />
-                        تأكيد حل المشكلة
+                        {t("dashboard.confirm_resolution")}
                       </Button>
                     </motion.div>
                   )}
