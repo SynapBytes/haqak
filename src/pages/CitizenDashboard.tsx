@@ -408,19 +408,19 @@ const CitizenDashboard = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-foreground block">التصنيف</label>
+                      <label className="text-sm font-semibold text-foreground block">{t("dashboard.category")}</label>
                       <Select value={category} onValueChange={setCategory}>
-                        <SelectTrigger className="h-11 rounded-xl border-border/50"><SelectValue placeholder="اختر التصنيف" /></SelectTrigger>
-                        <SelectContent>{categories.map((cat) => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}</SelectContent>
+                        <SelectTrigger className="h-11 rounded-xl border-border/50"><SelectValue placeholder={t("dashboard.category_placeholder")} /></SelectTrigger>
+                        <SelectContent>{categoryKeys.map((key) => (<SelectItem key={key} value={t(`categories.${key}`)}>{t(`categories.${key}`)}</SelectItem>))}</SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-foreground block">نوع المشكلة</label>
+                      <label className="text-sm font-semibold text-foreground block">{t("dashboard.type")}</label>
                       <Select value={issueType} onValueChange={(v) => setIssueType(v as "individual" | "collective")}>
                         <SelectTrigger className="h-11 rounded-xl border-border/50"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="individual">فردية</SelectItem>
-                          <SelectItem value="collective">جماعية</SelectItem>
+                          <SelectItem value="individual">{t("dashboard.individual")}</SelectItem>
+                          <SelectItem value="collective">{t("dashboard.collective")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
