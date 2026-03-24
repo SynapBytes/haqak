@@ -135,7 +135,10 @@
     "new_issue_humanitarian": "مشكلة جديدة 🟡 إنسانية",
     "new_issue_notification": "تم استلام مشكلة جديدة: {{title}}",
     "open_chat": "فتح المحادثة",
-    "ai_summary": "ملخص AI"
+    "ai_summary": "ملخص AI",
+    "attach_files": "إرفاق صور أو ملفات",
+    "first_issue_btn": "قدّم مشكلتك الأولى",
+    "error_submit": "خطأ في إرسال المشكلة"
   },
   "mp_dashboard": {
     "title": "لوحة تحكم النائب",
