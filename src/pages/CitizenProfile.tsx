@@ -284,7 +284,7 @@ const CitizenProfile = () => {
               className="w-full gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 h-12 rounded-xl font-semibold shadow-lg shadow-accent/20 mt-2"
             >
               {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-              حفظ التغييرات
+              {t("profile.save")}
             </Button>
           </div>
         </motion.div>
