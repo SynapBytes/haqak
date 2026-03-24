@@ -232,7 +232,7 @@ const CitizenProfile = () => {
         >
           <h3 className="text-lg font-bold text-foreground mb-5 flex items-center gap-2">
             <User className="w-5 h-5 text-accent" />
-            البيانات الشخصية
+            {t("profile.personal_data")}
           </h3>
           <div className="space-y-4">
             <div className="space-y-1.5">
