@@ -73,12 +73,12 @@ const CitizenProfile = () => {
 
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const ext = cleanFile.name.split(".").pop();
       const path = `${user.id}/avatar.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(path, file, { upsert: true });
+        .upload(path, cleanFile, { upsert: true });
 
       if (uploadError) throw uploadError;
 

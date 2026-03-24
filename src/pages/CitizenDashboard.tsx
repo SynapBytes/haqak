@@ -108,7 +108,8 @@ const CitizenDashboard = () => {
   };
 
   const uploadFiles = async (issueId: string) => {
-    for (const file of files) {
+    const cleanedFiles = await stripExifFromFiles(files);
+    for (const file of cleanedFiles) {
       const ext = file.name.split(".").pop();
       const path = `${user!.id}/${issueId}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
