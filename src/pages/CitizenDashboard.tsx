@@ -253,7 +253,7 @@ const CitizenDashboard = () => {
         }
       }
 
-      toast.success("تم إرسال المشكلة بنجاح وتصنيفها تلقائياً ✨");
+      toast.success(t("dashboard.issue_sent_success"));
       setShowForm(false);
       setTitle(""); setDescription(""); setCategory(""); setLocation("");
       setIssueType("individual"); setFiles([]);
