@@ -329,6 +329,12 @@
     "electricity": "كهرباء",
     "other": "أخرى"
   },
+  "issue_card": {
+    "collective": "جماعية",
+    "individual": "فردية",
+    "flagged": "تم التنقيح",
+    "confirmed": "مؤكد"
+  },
   "chat": {
     "title": "المحادثة",
     "type_message": "اكتب رسالتك...",
