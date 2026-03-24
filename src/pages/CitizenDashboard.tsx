@@ -261,7 +261,7 @@ const CitizenDashboard = () => {
       setAssignedMpId(null); setAssignedMpName(null);
       fetchIssues();
     } catch (err: any) {
-      toast.error(err.message || "خطأ في إرسال المشكلة");
+      toast.error(err.message || t("dashboard.error_submit"));
     } finally {
       setSubmitting(false);
     }
