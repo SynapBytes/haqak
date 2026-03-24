@@ -155,8 +155,8 @@ const CitizenProfile = () => {
       <AppHeader />
       <div className="container py-6 md:py-8 px-4 max-w-2xl relative z-10">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight">الملف الشخصي</h1>
-          <p className="text-muted-foreground text-sm">عدّل بياناتك الشخصية وصورتك</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight">{t("profile.title")}</h1>
+          <p className="text-muted-foreground text-sm">{t("profile.subtitle")}</p>
         </motion.div>
 
         {/* Avatar Section */}
