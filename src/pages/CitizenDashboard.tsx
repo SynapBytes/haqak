@@ -18,7 +18,7 @@ import LocationPicker from "@/components/LocationPicker";
 import { useTranslation } from "react-i18next";
 import { stripExifFromFiles } from "@/lib/stripExif";
 
-const categories = ["مياه", "طرق", "مرافق عامة", "صحة", "نظافة", "تعليم", "كهرباء", "أخرى"];
+const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitation", "education", "electricity", "other"] as const;
 
 const CitizenDashboard = () => {
   const { user } = useAuth();
