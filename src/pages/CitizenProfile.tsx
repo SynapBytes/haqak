@@ -17,6 +17,7 @@ import { stripExifFromFile } from "@/lib/stripExif";
 const CitizenProfile = () => {
   const { user, profile, role } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [fullName, setFullName] = useState("");
