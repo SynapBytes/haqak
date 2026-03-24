@@ -64,6 +64,7 @@ const CitizenProfile = () => {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    const cleanFile = await stripExifFromFile(file);
 
     if (file.size > 2 * 1024 * 1024) {
       toast.error("حجم الصورة يجب ألا يتجاوز 2 ميجابايت");
