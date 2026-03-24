@@ -249,7 +249,7 @@ const CitizenProfile = () => {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-foreground block">رقم التليفون</label>
+              <label className="text-sm font-semibold text-foreground block">{t("profile.phone")}</label>
               <div className="relative">
                 <Input
                   value={phone}
