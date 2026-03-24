@@ -81,7 +81,7 @@ const IssueCard = ({ issue, onClick }: IssueCardProps) => {
         )}
         <span className="flex items-center gap-1 text-xs">
           {issue.issue_type === "collective" ? <Users className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
-          {issue.issue_type === "collective" ? "جماعية" : "فردية"}
+          {issue.issue_type === "collective" ? t("issue_card.collective") : t("issue_card.individual")}
         </span>
       </div>
     </motion.div>
