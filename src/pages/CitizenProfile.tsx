@@ -310,7 +310,7 @@ const CitizenProfile = () => {
             onClick={() => navigate("/mps")}
           >
             <Shield className="w-5 h-5 text-accent" />
-            <span className="text-sm font-semibold">دليل النواب</span>
+            <span className="text-sm font-semibold">{t("profile.mps_directory_link")}</span>
           </Button>
         </motion.div>
       </div>
