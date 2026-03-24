@@ -378,7 +378,7 @@ const CitizenDashboard = () => {
                   <div className="flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-xl px-4 py-3 mb-2">
                     <SendHorizonal className="w-4 h-4 text-accent shrink-0" />
                     <span className="text-sm font-medium text-foreground">
-                      شكوى موجّهة إلى النائب: <span className="text-accent font-bold">{assignedMpName}</span>
+                      {t("dashboard.issue_to_mp")} <span className="text-accent font-bold">{assignedMpName}</span>
                     </span>
                     <button type="button" onClick={() => { setAssignedMpId(null); setAssignedMpName(null); }} className="mr-auto text-muted-foreground hover:text-foreground">
                       <X className="w-3.5 h-3.5" />
