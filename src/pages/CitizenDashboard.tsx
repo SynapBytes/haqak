@@ -22,6 +22,7 @@ const categories = ["مياه", "طرق", "مرافق عامة", "صحة", "نظ
 
 const CitizenDashboard = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const mpIdParam = searchParams.get("mp_id");
   const mpNameParam = searchParams.get("mp_name");
