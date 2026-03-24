@@ -231,7 +231,7 @@ const CitizenDashboard = () => {
         const banUntil = new Date();
         banUntil.setDate(banUntil.getDate() + banDays);
         await supabase.from("profiles").update({ banned_until: banUntil.toISOString() }).eq("user_id", user.id);
-        toast.warning(`تم تسجيل مخالفة بسبب ألفاظ غير لائقة. حسابك موقوف لمدة ${banDays} يوم.`);
+        toast.warning(t("dashboard.violation_recorded", { days: banDays }));
       }
 
       // Step 4: Upload files
