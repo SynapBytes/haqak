@@ -471,10 +471,10 @@ const CitizenDashboard = () => {
             <div className="w-16 h-16 rounded-3xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
               <TrendingUp className="w-8 h-8 text-accent" />
             </div>
-            <h3 className="text-lg font-bold text-foreground mb-2">لم تقدم أي مشاكل بعد</h3>
-            <p className="text-muted-foreground text-sm mb-6">ابدأ بالإبلاغ عن مشكلتك الأولى وتابع حلها</p>
+            <h3 className="text-lg font-bold text-foreground mb-2">{t("dashboard.no_issues")}</h3>
+            <p className="text-muted-foreground text-sm mb-6">{t("dashboard.first_issue")}</p>
             <Button onClick={() => setShowForm(true)} className="gap-2 bg-gradient-to-l from-accent to-info text-white rounded-xl px-6">
-              <Plus className="w-4 h-4" /> قدّم مشكلتك الأولى
+              <Plus className="w-4 h-4" /> {t("dashboard.first_issue_btn") || t("dashboard.first_issue")}
             </Button>
           </motion.div>
         ) : (
