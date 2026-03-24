@@ -39,7 +39,7 @@ const IssueCard = ({ issue, onClick }: IssueCardProps) => {
           {issue.issue_type === "collective" && (
             <Badge variant="outline" className="gap-1 text-xs border-accent/20 text-accent rounded-lg bg-accent/[0.06]">
               <Users className="w-3 h-3" />
-              جماعية
+              {t("issue_card.collective")}
             </Badge>
           )}
           {issue.is_flagged && (
