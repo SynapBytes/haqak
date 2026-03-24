@@ -302,7 +302,7 @@ const CitizenProfile = () => {
             onClick={() => navigate("/citizen")}
           >
             <AlertCircle className="w-5 h-5 text-accent" />
-            <span className="text-sm font-semibold">مشاكلي</span>
+            <span className="text-sm font-semibold">{t("profile.my_issues_link")}</span>
           </Button>
           <Button
             variant="outline"
