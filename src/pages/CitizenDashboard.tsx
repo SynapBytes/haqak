@@ -269,8 +269,8 @@ const CitizenDashboard = () => {
 
   const handleConfirmResolution = async (issueId: string) => {
     const { error } = await supabase.from("issues").update({ citizen_confirmed: true }).eq("id", issueId);
-    if (error) { toast.error("حدث خطأ"); return; }
-    toast.success("تم تأكيد حل المشكلة ✅");
+    if (error) { toast.error(t("common.error")); return; }
+    toast.success(t("dashboard.resolution_confirmed"));
     await supabase.from("issue_actions").insert({
       issue_id: issueId,
       user_id: user!.id,
