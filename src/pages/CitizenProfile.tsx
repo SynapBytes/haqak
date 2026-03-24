@@ -264,7 +264,7 @@ const CitizenProfile = () => {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-foreground block">البريد الإلكتروني</label>
+              <label className="text-sm font-semibold text-foreground block">{t("profile.email")}</label>
               <div className="relative">
                 <Input
                   value={user?.email || ""}
