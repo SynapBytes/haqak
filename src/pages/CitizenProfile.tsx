@@ -236,7 +236,7 @@ const CitizenProfile = () => {
           </h3>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-foreground block">الاسم الرباعي</label>
+              <label className="text-sm font-semibold text-foreground block">{t("profile.full_name")}</label>
               <div className="relative">
                 <Input
                   value={fullName}
