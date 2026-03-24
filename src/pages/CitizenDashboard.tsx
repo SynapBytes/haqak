@@ -495,7 +495,7 @@ const CitizenDashboard = () => {
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       <Button size="sm" variant="outline" className="gap-2 border-success/20 text-success hover:bg-success/5 rounded-xl" onClick={() => handleConfirmResolution(issue.id)}>
                         <CheckCircle2 className="w-4 h-4" />
-                        تأكيد حل المشكلة
+                        {t("dashboard.confirm_resolution")}
                       </Button>
                     </motion.div>
                   )}
