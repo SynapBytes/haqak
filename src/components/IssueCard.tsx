@@ -25,6 +25,7 @@ interface IssueCardProps {
 }
 
 const IssueCard = ({ issue, onClick }: IssueCardProps) => {
+  const { t } = useTranslation();
   return (
     <motion.div
       whileHover={{ y: -3, scale: 1.005 }}
