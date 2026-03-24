@@ -318,9 +318,9 @@ const CitizenDashboard = () => {
               animate={{ opacity: 1, x: 0 }}
               className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight"
             >
-              مشاكلي
+              {t("dashboard.my_issues")}
             </motion.h1>
-            <p className="text-muted-foreground text-sm">تابع حالة المشاكل التي أبلغت عنها</p>
+            <p className="text-muted-foreground text-sm">{t("dashboard.track_issues")}</p>
           </div>
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button onClick={() => setShowForm(true)} className="gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 shadow-lg shadow-accent/20 rounded-xl h-11 px-6 font-semibold">
