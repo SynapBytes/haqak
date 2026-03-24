@@ -131,7 +131,7 @@ const CitizenDashboard = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !title || !description || !category || !location) {
-      toast.error("يرجى ملء جميع الحقول");
+      toast.error(t("dashboard.fill_all_fields"));
       return;
     }
 
