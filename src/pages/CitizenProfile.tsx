@@ -68,7 +68,7 @@ const CitizenProfile = () => {
     const cleanFile = await stripExifFromFile(file);
 
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("حجم الصورة يجب ألا يتجاوز 2 ميجابايت");
+      toast.error(t("profile.avatar_size"));
       return;
     }
 
