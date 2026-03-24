@@ -387,12 +387,12 @@ const CitizenDashboard = () => {
                 )}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">عنوان المشكلة</label>
-                    <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="مثال: انقطاع المياه في حي الأمل" className="text-right h-11 rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
+                    <label className="text-sm font-semibold text-foreground block">{t("dashboard.title")}</label>
+                    <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("dashboard.title_placeholder")} className="text-right h-11 rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">وصف المشكلة</label>
-                    <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="اكتب تفاصيل المشكلة هنا..." rows={4} className="text-right rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
+                    <label className="text-sm font-semibold text-foreground block">{t("dashboard.description")}</label>
+                    <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("dashboard.description_placeholder")} rows={4} className="text-right rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-foreground block">الموقع</label>
