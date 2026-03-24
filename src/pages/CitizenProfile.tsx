@@ -108,7 +108,7 @@ const CitizenProfile = () => {
   const handleSave = async () => {
     if (!user) return;
     if (!/^01[0-9]{9}$/.test(phone)) {
-      toast.error("رقم التليفون غير صحيح (يجب أن يبدأ بـ 01 ويكون 11 رقم)");
+      toast.error(t("profile.phone_invalid"));
       return;
     }
     setSaving(true);
