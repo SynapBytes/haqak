@@ -97,9 +97,9 @@ const CitizenProfile = () => {
       if (updateError) throw updateError;
 
       setAvatarUrl(urlWithCacheBust);
-      toast.success("تم تحديث الصورة بنجاح ✨");
+      toast.success(t("profile.avatar_updated"));
     } catch (err: any) {
-      toast.error(err.message || "خطأ في رفع الصورة");
+      toast.error(err.message || t("profile.avatar_error"));
     } finally {
       setUploading(false);
     }
