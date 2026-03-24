@@ -194,7 +194,7 @@ const CitizenProfile = () => {
           <h2 className="text-xl font-bold text-foreground">{fullName}</h2>
           <div className="flex items-center justify-center gap-2 mt-1.5">
             <Shield className="w-3.5 h-3.5 text-accent" />
-            <span className="text-sm text-muted-foreground">{role === "mp" ? "نائب" : role === "admin" ? "مسؤول" : "مواطن"}</span>
+            <span className="text-sm text-muted-foreground">{role === "mp" ? t("profile.role_mp") : role === "admin" ? t("profile.role_admin") : t("profile.role_citizen")}</span>
           </div>
           {user?.email && (
             <div className="flex items-center justify-center gap-2 mt-2 text-xs text-muted-foreground">
