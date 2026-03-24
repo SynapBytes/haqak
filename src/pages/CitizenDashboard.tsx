@@ -449,7 +449,7 @@ const CitizenDashboard = () => {
 
                   <Button type="submit" disabled={submitting} className="w-full gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 h-12 rounded-xl font-semibold shadow-lg shadow-accent/20 text-base">
                     {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                    إرسال المشكلة
+                    {t("dashboard.submit")}
                   </Button>
                 </form>
               </motion.div>
