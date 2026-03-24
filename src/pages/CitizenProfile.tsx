@@ -127,10 +127,10 @@ const CitizenProfile = () => {
   };
 
   const statCards = [
-    { label: "إجمالي الشكاوى", value: issueStats.total, icon: BarChart3, color: "text-accent", bg: "from-accent/10 to-accent/5" },
-    { label: "تم الحل", value: issueStats.resolved, icon: CheckCircle2, color: "text-success", bg: "from-success/10 to-success/5" },
-    { label: "قيد المعالجة", value: issueStats.inProgress, icon: Clock, color: "text-warning", bg: "from-warning/10 to-warning/5" },
-    { label: "بانتظار المراجعة", value: issueStats.received, icon: AlertCircle, color: "text-info", bg: "from-info/10 to-info/5" },
+    { label: t("profile.total_issues"), value: issueStats.total, icon: BarChart3, color: "text-accent", bg: "from-accent/10 to-accent/5" },
+    { label: t("profile.resolved"), value: issueStats.resolved, icon: CheckCircle2, color: "text-success", bg: "from-success/10 to-success/5" },
+    { label: t("profile.in_progress"), value: issueStats.inProgress, icon: Clock, color: "text-warning", bg: "from-warning/10 to-warning/5" },
+    { label: t("profile.waiting"), value: issueStats.received, icon: AlertCircle, color: "text-info", bg: "from-info/10 to-info/5" },
   ];
 
   if (loading) {
