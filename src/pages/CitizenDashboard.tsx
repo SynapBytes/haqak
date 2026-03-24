@@ -97,7 +97,7 @@ const CitizenDashboard = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
     if (selected.length + files.length > 5) {
-      toast.error("الحد الأقصى 5 ملفات");
+      toast.error(t("dashboard.max_files"));
       return;
     }
     setFiles((prev) => [...prev, ...selected]);
