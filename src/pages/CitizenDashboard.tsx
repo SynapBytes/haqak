@@ -145,7 +145,7 @@ const CitizenDashboard = () => {
       const bannedUntil = new Date(profileData.banned_until);
       if (bannedUntil > new Date()) {
         const remainingDays = Math.ceil((bannedUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-        toast.error(`حسابك موقوف لمدة ${remainingDays} يوم بسبب استخدام ألفاظ غير لائقة`);
+        toast.error(t("dashboard.banned_message", { days: remainingDays }));
         return;
       }
     }
