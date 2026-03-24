@@ -11,6 +11,8 @@ import {
   User, Phone, Mail, Camera, Loader2, Save, Shield,
   Calendar, CheckCircle2, AlertCircle, Clock, BarChart3
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { stripExifFromFile } from "@/lib/stripExif";
 
 const CitizenProfile = () => {
   const { user, profile, role } = useAuth();

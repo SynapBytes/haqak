@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { Plus, X, Send, SendHorizonal, Loader2, ImagePlus, CheckCircle2, MessageCircle, AlertCircle, Clock, TrendingUp } from "lucide-react";
 import type { Issue } from "@/components/IssueCard";
 import LocationPicker from "@/components/LocationPicker";
+import { useTranslation } from "react-i18next";
+import { stripExifFromFiles } from "@/lib/stripExif";
 
 const categories = ["مياه", "طرق", "مرافق عامة", "صحة", "نظافة", "تعليم", "كهرباء", "أخرى"];
 
