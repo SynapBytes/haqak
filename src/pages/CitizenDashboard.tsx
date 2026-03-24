@@ -368,7 +368,7 @@ const CitizenDashboard = () => {
                     <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-accent to-info flex items-center justify-center">
                       <Plus className="w-5 h-5 text-white" />
                     </div>
-                    <h2 className="text-xl font-bold text-foreground">إبلاغ عن مشكلة جديدة</h2>
+                    <h2 className="text-xl font-bold text-foreground">{t("dashboard.new_issue")}</h2>
                   </div>
                   <button onClick={() => setShowForm(false)} className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors">
                     <X className="w-4 h-4" />
