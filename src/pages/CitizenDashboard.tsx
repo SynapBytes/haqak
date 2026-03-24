@@ -325,7 +325,7 @@ const CitizenDashboard = () => {
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button onClick={() => setShowForm(true)} className="gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 shadow-lg shadow-accent/20 rounded-xl h-11 px-6 font-semibold">
               <Plus className="w-5 h-5" />
-              إبلاغ عن مشكلة
+              {t("dashboard.report_issue")}
             </Button>
           </motion.div>
         </div>
