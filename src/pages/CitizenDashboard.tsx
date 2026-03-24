@@ -460,8 +460,7 @@ const CitizenDashboard = () => {
         {/* Issues List */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 className="w-10 h-10 animate-spin text-accent" />
-            <span className="text-sm text-muted-foreground">جاري التحميل...</span>
+            <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
           </div>
         ) : issues.length === 0 ? (
           <motion.div
