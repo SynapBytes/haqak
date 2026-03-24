@@ -177,7 +177,7 @@ const CitizenDashboard = () => {
       }));
 
       try {
-        toast.info("جاري التصنيف التلقائي بالذكاء الاصطناعي... ✨");
+        toast.info(t("dashboard.classifying_ai"));
         const { data: classifyData, error: classifyError } = await supabase.functions.invoke("classify-issue", {
           body: { title, description, senderName, files: filesInfo },
         });
