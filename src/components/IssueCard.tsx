@@ -45,7 +45,7 @@ const IssueCard = ({ issue, onClick }: IssueCardProps) => {
           {issue.is_flagged && (
             <Badge variant="outline" className="gap-1 text-xs border-destructive/20 text-destructive rounded-lg bg-destructive/[0.06]">
               <Flag className="w-3 h-3" />
-              تم التنقيح
+              {t("issue_card.flagged")}
             </Badge>
           )}
           {issue.citizen_confirmed && (
