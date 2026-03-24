@@ -428,11 +428,11 @@ const CitizenDashboard = () => {
 
                   {/* File Upload */}
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">مرفقات (اختياري)</label>
+                    <label className="text-sm font-semibold text-foreground block">{t("dashboard.attachments")}</label>
                     <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={handleFileChange} />
                     <Button type="button" variant="outline" className="w-full gap-2 h-11 rounded-xl border-dashed border-2 border-border/50 hover:border-accent/30 hover:bg-accent/5" onClick={() => fileInputRef.current?.click()}>
                       <ImagePlus className="w-4 h-4 text-accent" />
-                      إرفاق صور أو ملفات ({files.length}/5)
+                      {t("dashboard.attach_files") || "إرفاق صور أو ملفات"} ({files.length}/5)
                     </Button>
                     {files.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
