@@ -395,11 +395,11 @@ const CitizenDashboard = () => {
                     <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("dashboard.description_placeholder")} rows={4} className="text-right rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">الموقع</label>
-                    <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="مثال: شارع النيل، سوهاج" className="text-right h-11 rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
+                    <label className="text-sm font-semibold text-foreground block">{t("dashboard.location")}</label>
+                    <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder={t("dashboard.location_placeholder")} className="text-right h-11 rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">حدد الموقع على الخريطة (اختياري)</label>
+                    <label className="text-sm font-semibold text-foreground block">{t("dashboard.map_location")}</label>
                     <LocationPicker
                       latitude={latitude}
                       longitude={longitude}
