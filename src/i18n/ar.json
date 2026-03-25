@@ -374,6 +374,11 @@
     "sanitation": "نظافة",
     "education": "تعليم",
     "electricity": "كهرباء",
+    "other": "أخرى",
+    "all": "الكل"
+  },
+    "education": "تعليم",
+    "electricity": "كهرباء",
     "other": "أخرى"
   },
   "issue_card": {
