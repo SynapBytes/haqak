@@ -11,14 +11,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { sendPushToUser } from "@/lib/pushNotifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import {
   Search, Filter, BarChart3, AlertCircle, CheckCircle2, Clock, Loader2,
   X, Users, User, FileText, TrendingUp, PieChart, MessageCircle, Phone
 } from "lucide-react";
 import type { Issue } from "@/components/IssueCard";
 import type { IssueStatus } from "@/components/StatusBadge";
-
-const categories = ["الكل", "مياه", "طرق", "مرافق عامة", "صحة", "نظافة", "تعليم", "كهرباء", "أخرى"];
 
 interface ActionLog {
   id: string;
@@ -28,8 +27,9 @@ interface ActionLog {
 }
 
 const MPDashboard = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
-  const [selectedCategory, setSelectedCategory] = useState("الكل");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState<"all" | IssueStatus>("all");
   const [selectedType, setSelectedType] = useState<"all" | "individual" | "collective">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,8 +43,19 @@ const MPDashboard = () => {
   const [chatIssue, setChatIssue] = useState<Issue | null>(null);
   const [citizenPhones, setCitizenPhones] = useState<Record<string, string>>({});
 
+  const categories = [
+    { key: "all", label: t("categories.all") },
+    { key: "مياه", label: t("categories.water") },
+    { key: "طرق", label: t("categories.roads") },
+    { key: "مرافق عامة", label: t("categories.public_facilities") },
+    { key: "صحة", label: t("categories.health") },
+    { key: "نظافة", label: t("categories.sanitation") },
+    { key: "تعليم", label: t("categories.education") },
+    { key: "كهرباء", label: t("categories.electricity") },
+    { key: "أخرى", label: t("categories.other") },
+  ];
+
   const fetchIssues = async () => {
-    // Fetch MP's profile to get their constituency/governorate
     let mpGovernorate: string | null = null;
     if (user) {
       const { data: mpProfile } = await supabase
@@ -58,9 +69,6 @@ const MPDashboard = () => {
     }
 
     let query = supabase.from("issues").select("*").order("created_at", { ascending: false });
-    
-    // Filter by MP's governorate if available (MP sees only their constituency issues)
-    // Issues with matching location keyword OR assigned to this MP
     const { data } = await query;
     
     if (data) {
@@ -68,7 +76,7 @@ const MPDashboard = () => {
         ? data.filter((d) => 
             d.location?.includes(mpGovernorate!) || 
             d.assigned_mp_id === user?.id ||
-            !d.assigned_mp_id // Unassigned issues visible to all MPs in their area
+            !d.assigned_mp_id
           )
         : data;
 
@@ -121,33 +129,32 @@ const MPDashboard = () => {
       await supabase.from("issue_actions").insert({
         issue_id: selectedIssue.id, user_id: user.id,
         action_type: `status_change_to_${newStatus}`,
-        note: actionNote || `تم تغيير الحالة إلى ${newStatus === "received" ? "تم الاستلام" : newStatus === "in-progress" ? "قيد المعالجة" : "تم الحل"}`,
+        note: actionNote || `${t("mp_dashboard.update_status")}: ${newStatus === "received" ? t("mp_dashboard.received") : newStatus === "in-progress" ? t("mp_dashboard.in_progress") : t("mp_dashboard.resolved")}`,
       });
 
       const { data: issueData } = await supabase.from("issues").select("user_id, title").eq("id", selectedIssue.id).single();
       if (issueData) {
-        const statusLabel = newStatus === "resolved" ? "تم حل مشكلتك" : newStatus === "in-progress" ? "مشكلتك قيد المعالجة" : "تم استلام مشكلتك";
+        const statusLabel = newStatus === "resolved" ? t("mp_dashboard.resolved") : newStatus === "in-progress" ? t("mp_dashboard.in_progress") : t("mp_dashboard.received");
         const notifMessage = `${issueData.title}: ${actionNote || statusLabel}`;
         await supabase.from("notifications").insert({
           user_id: issueData.user_id, title: statusLabel,
           message: notifMessage, issue_id: selectedIssue.id,
         });
-        // Send push notification
         sendPushToUser(issueData.user_id, statusLabel, notifMessage, { issue_id: selectedIssue.id });
       }
 
-      toast.success("تم تحديث حالة المشكلة");
+      toast.success(t("mp_dashboard.status_updated"));
       setSelectedIssue(null);
       fetchIssues();
     } catch (err: any) {
-      toast.error(err.message || "خطأ في التحديث");
+      toast.error(err.message || t("mp_dashboard.error_update"));
     } finally {
       setUpdating(false);
     }
   };
 
   const filteredIssues = issues.filter((issue) => {
-    const matchesCategory = selectedCategory === "الكل" || issue.category === selectedCategory;
+    const matchesCategory = selectedCategory === "all" || issue.category === selectedCategory;
     const matchesStatus = selectedStatus === "all" || issue.status === selectedStatus;
     const matchesType = selectedType === "all" || issue.issue_type === selectedType;
     const matchesSearch = !searchQuery || issue.title.includes(searchQuery) || issue.description.includes(searchQuery) || issue.id.includes(searchQuery);
@@ -163,17 +170,17 @@ const MPDashboard = () => {
   const resolutionRate = totalIssues > 0 ? Math.round((resolvedCount / totalIssues) * 100) : 0;
 
   const statCards = [
-    { label: "إجمالي المشاكل", value: totalIssues, icon: BarChart3, color: "text-accent", bg: "from-accent/10 to-accent/5" },
-    { label: "بانتظار المعالجة", value: pendingCount, icon: AlertCircle, color: "text-warning", bg: "from-warning/10 to-warning/5" },
-    { label: "قيد المعالجة", value: inProgressCount, icon: Clock, color: "text-info", bg: "from-info/10 to-info/5" },
-    { label: "تم الحل", value: resolvedCount, icon: CheckCircle2, color: "text-success", bg: "from-success/10 to-success/5" },
+    { label: t("mp_dashboard.total_issues"), value: totalIssues, icon: BarChart3, color: "text-accent", bg: "from-accent/10 to-accent/5" },
+    { label: t("mp_dashboard.pending"), value: pendingCount, icon: AlertCircle, color: "text-warning", bg: "from-warning/10 to-warning/5" },
+    { label: t("mp_dashboard.processing"), value: inProgressCount, icon: Clock, color: "text-info", bg: "from-info/10 to-info/5" },
+    { label: t("mp_dashboard.completed"), value: resolvedCount, icon: CheckCircle2, color: "text-success", bg: "from-success/10 to-success/5" },
   ];
 
   const analyticsCards = [
-    { label: "نسبة الحل", value: `${resolutionRate}%`, icon: TrendingUp, color: "text-success" },
-    { label: "مشاكل جماعية", value: collectiveCount, icon: Users, color: "text-accent" },
-    { label: "مؤكدة من المواطنين", value: confirmedCount, icon: CheckCircle2, color: "text-primary" },
-    { label: "التصنيف الأكثر", value: getMostCommonCategory(), icon: PieChart, color: "text-warning" },
+    { label: t("mp_dashboard.resolution_rate"), value: `${resolutionRate}%`, icon: TrendingUp, color: "text-success" },
+    { label: t("mp_dashboard.collective_issues"), value: collectiveCount, icon: Users, color: "text-accent" },
+    { label: t("mp_dashboard.citizen_confirmed"), value: confirmedCount, icon: CheckCircle2, color: "text-primary" },
+    { label: t("mp_dashboard.top_category"), value: getMostCommonCategory(), icon: PieChart, color: "text-warning" },
   ];
 
   function getMostCommonCategory() {
@@ -184,18 +191,18 @@ const MPDashboard = () => {
   }
 
   const statusFilters: { key: "all" | IssueStatus; label: string }[] = [
-    { key: "all", label: "الكل" },
-    { key: "received", label: "تم الاستلام" },
-    { key: "in-progress", label: "قيد المعالجة" },
-    { key: "resolved", label: "تم الحل" },
+    { key: "all", label: t("mp_dashboard.filter_all") },
+    { key: "received", label: t("mp_dashboard.received") },
+    { key: "in-progress", label: t("mp_dashboard.in_progress") },
+    { key: "resolved", label: t("mp_dashboard.resolved") },
   ];
 
   const actionTypeLabels: Record<string, string> = {
-    status_change_to_received: "تغيير الحالة: تم الاستلام",
-    status_change_to_in_progress: "تغيير الحالة: قيد المعالجة",
-    "status_change_to_in-progress": "تغيير الحالة: قيد المعالجة",
-    status_change_to_resolved: "تغيير الحالة: تم الحل",
-    citizen_confirmed: "تأكيد المواطن للحل",
+    status_change_to_received: t("mp_dashboard.status_received"),
+    status_change_to_in_progress: t("mp_dashboard.status_in_progress"),
+    "status_change_to_in-progress": t("mp_dashboard.status_in_progress"),
+    status_change_to_resolved: t("mp_dashboard.status_resolved"),
+    citizen_confirmed: t("mp_dashboard.citizen_confirm_action"),
   };
 
   return (
@@ -210,8 +217,8 @@ const MPDashboard = () => {
       <div className="container py-6 md:py-8 px-4 relative z-10">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight">لوحة تحكم النائب</h1>
-          <p className="text-muted-foreground text-sm">نظرة عامة على مشاكل الدائرة وإحصائيات الأداء</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight">{t("mp_dashboard.title")}</h1>
+          <p className="text-muted-foreground text-sm">{t("mp_dashboard.subtitle")}</p>
         </motion.div>
 
         {/* Main Stats */}
@@ -267,7 +274,7 @@ const MPDashboard = () => {
           <div className="flex flex-col gap-4">
             <div className="relative">
               <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="ابحث بالعنوان أو رقم المشكلة..." className="pr-11 text-right h-11 rounded-xl border-border/50 bg-background/50" />
+              <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t("mp_dashboard.search_placeholder")} className="pr-11 text-right h-11 rounded-xl border-border/50 bg-background/50" />
             </div>
             <div className="flex gap-2 flex-wrap">
               {statusFilters.map((sf) => (
@@ -279,18 +286,18 @@ const MPDashboard = () => {
             <div className="flex gap-2 flex-wrap pt-3 border-t border-border/30">
               <Filter className="w-4 h-4 text-muted-foreground mt-1" />
               {categories.map((cat) => (
-                <Button key={cat} variant={selectedCategory === cat ? "secondary" : "ghost"} size="sm" onClick={() => setSelectedCategory(cat)} className="text-xs h-9 rounded-lg">
-                  {cat}
+                <Button key={cat.key} variant={selectedCategory === cat.key ? "secondary" : "ghost"} size="sm" onClick={() => setSelectedCategory(cat.key)} className="text-xs h-9 rounded-lg">
+                  {cat.label}
                 </Button>
               ))}
             </div>
             <div className="flex gap-2 pt-3 border-t border-border/30">
-              <Button variant={selectedType === "all" ? "secondary" : "ghost"} size="sm" onClick={() => setSelectedType("all")} className="gap-1 text-xs h-9 rounded-lg">الكل</Button>
+              <Button variant={selectedType === "all" ? "secondary" : "ghost"} size="sm" onClick={() => setSelectedType("all")} className="gap-1 text-xs h-9 rounded-lg">{t("mp_dashboard.filter_all")}</Button>
               <Button variant={selectedType === "individual" ? "secondary" : "ghost"} size="sm" onClick={() => setSelectedType("individual")} className="gap-1 text-xs h-9 rounded-lg">
-                <User className="w-3 h-3" /> فردية
+                <User className="w-3 h-3" /> {t("mp_dashboard.filter_individual")}
               </Button>
               <Button variant={selectedType === "collective" ? "secondary" : "ghost"} size="sm" onClick={() => setSelectedType("collective")} className="gap-1 text-xs h-9 rounded-lg">
-                <Users className="w-3 h-3" /> جماعية
+                <Users className="w-3 h-3" /> {t("mp_dashboard.filter_collective")}
               </Button>
             </div>
           </div>
@@ -298,13 +305,13 @@ const MPDashboard = () => {
 
         <div className="text-sm text-muted-foreground mb-4 flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-accent" />
-          عرض {filteredIssues.length} من {totalIssues} مشكلة
+          {t("mp_dashboard.showing", { count: filteredIssues.length, total: totalIssues })}
         </div>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="w-10 h-10 animate-spin text-accent" />
-            <span className="text-sm text-muted-foreground">جاري التحميل...</span>
+            <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
           </div>
         ) : (
           <div className="space-y-3 md:space-y-4">
@@ -318,7 +325,7 @@ const MPDashboard = () => {
                 <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
                   <Search className="w-7 h-7 text-muted-foreground" />
                 </div>
-                <p className="text-muted-foreground font-medium">لا توجد مشاكل مطابقة</p>
+                <p className="text-muted-foreground font-medium">{t("mp_dashboard.no_results")}</p>
               </div>
             )}
           </div>
@@ -343,7 +350,7 @@ const MPDashboard = () => {
                   <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-accent to-info flex items-center justify-center">
                     <FileText className="w-5 h-5 text-white" />
                   </div>
-                  <h2 className="text-lg font-bold text-foreground">تفاصيل المشكلة</h2>
+                  <h2 className="text-lg font-bold text-foreground">{t("mp_dashboard.issue_details")}</h2>
                 </div>
                 <button onClick={() => setSelectedIssue(null)} className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
                   <X className="w-4 h-4" />
@@ -358,23 +365,23 @@ const MPDashboard = () => {
 
               <div className="space-y-4 mb-6">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-foreground block">تحديث الحالة</label>
+                  <label className="text-sm font-semibold text-foreground block">{t("mp_dashboard.update_status")}</label>
                   <Select value={newStatus} onValueChange={(v) => setNewStatus(v as IssueStatus)}>
                     <SelectTrigger className="h-11 rounded-xl border-border/50"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="received">تم الاستلام</SelectItem>
-                      <SelectItem value="in-progress">قيد المعالجة</SelectItem>
-                      <SelectItem value="resolved">تم الحل</SelectItem>
+                      <SelectItem value="received">{t("mp_dashboard.received")}</SelectItem>
+                      <SelectItem value="in-progress">{t("mp_dashboard.in_progress")}</SelectItem>
+                      <SelectItem value="resolved">{t("mp_dashboard.resolved")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-foreground block">ملاحظات الإجراء</label>
-                  <Textarea value={actionNote} onChange={(e) => setActionNote(e.target.value)} placeholder="أضف ملاحظة عن الإجراء المتخذ..." rows={3} className="text-right rounded-xl border-border/50" />
+                  <label className="text-sm font-semibold text-foreground block">{t("mp_dashboard.add_note")}</label>
+                  <Textarea value={actionNote} onChange={(e) => setActionNote(e.target.value)} placeholder={t("mp_dashboard.note_placeholder")} rows={3} className="text-right rounded-xl border-border/50" />
                 </div>
                 <Button onClick={handleUpdateStatus} disabled={updating} className="w-full gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 h-12 rounded-xl font-semibold shadow-lg shadow-accent/20">
                   {updating ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-                  حفظ التحديث
+                  {t("mp_dashboard.update")}
                 </Button>
                 <Button
                   variant="outline"
@@ -386,16 +393,16 @@ const MPDashboard = () => {
                   className="w-full gap-2 h-11 rounded-xl border-border/50 hover:border-accent/30"
                 >
                   <MessageCircle className="w-4 h-4 text-accent" />
-                  محادثة المواطن
+                  {t("mp_dashboard.start_chat")}
                 </Button>
               </div>
 
               <div className="border-t border-border/30 pt-5">
                 <h4 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-accent" /> سجل الإجراءات
+                  <FileText className="w-4 h-4 text-accent" /> {t("mp_dashboard.action_log")}
                 </h4>
                 {actionLogs.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">لا توجد إجراءات مسجلة بعد</p>
+                  <p className="text-xs text-muted-foreground">{t("mp_dashboard.no_actions")}</p>
                 ) : (
                   <div className="space-y-2">
                     {actionLogs.map((log) => (

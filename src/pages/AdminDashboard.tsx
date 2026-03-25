@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import {
   Users, ShieldCheck, BarChart3, Search, CheckCircle2, XCircle,
   Loader2, AlertCircle, TrendingUp, Clock, FileText, MapPin
@@ -28,6 +29,7 @@ interface UserWithRole extends UserProfile {
 }
 
 const AdminDashboard = () => {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [issues, setIssues] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,9 +59,9 @@ const AdminDashboard = () => {
     setApproving(userId);
     const { error } = await supabase.from("profiles").update({ is_approved: approve }).eq("user_id", userId);
     if (error) {
-      toast.error("حدث خطأ");
+      toast.error(t("admin_dashboard.error"));
     } else {
-      toast.success(approve ? "تم تفعيل حساب النائب ✅" : "تم رفض حساب النائب");
+      toast.success(approve ? t("admin_dashboard.mp_approved") : t("admin_dashboard.mp_revoked"));
       fetchData();
     }
     setApproving(null);
@@ -78,19 +80,23 @@ const AdminDashboard = () => {
   const resolvedIssues = issues.filter((i) => i.status === "resolved").length;
   const resolutionRate = totalIssues > 0 ? Math.round((resolvedIssues / totalIssues) * 100) : 0;
 
-  const roleLabels: Record<string, string> = { citizen: "مواطن", mp: "نائب", admin: "مسؤول" };
+  const roleLabels: Record<string, string> = {
+    citizen: t("admin_dashboard.role_citizen"),
+    mp: t("admin_dashboard.role_mp"),
+    admin: t("admin_dashboard.role_admin"),
+  };
 
   const tabs = [
-    { key: "users" as const, label: "المستخدمين", icon: Users },
-    { key: "issues" as const, label: "المشاكل", icon: FileText },
-    { key: "analytics" as const, label: "التحليلات", icon: BarChart3 },
+    { key: "users" as const, label: t("admin_dashboard.tab_users"), icon: Users },
+    { key: "issues" as const, label: t("admin_dashboard.tab_issues"), icon: FileText },
+    { key: "analytics" as const, label: t("admin_dashboard.tab_analytics"), icon: BarChart3 },
   ];
 
   const statCards = [
-    { label: "مواطنين", value: totalCitizens, icon: Users, color: "text-accent", bg: "from-accent/10 to-accent/5" },
-    { label: "نواب", value: totalMPs, icon: ShieldCheck, color: "text-primary", bg: "from-primary/10 to-primary/5" },
-    { label: "بانتظار الموافقة", value: pendingMPs, icon: AlertCircle, color: "text-warning", bg: "from-warning/10 to-warning/5" },
-    { label: "نسبة الحل", value: `${resolutionRate}%`, icon: TrendingUp, color: "text-success", bg: "from-success/10 to-success/5" },
+    { label: t("admin_dashboard.total_users"), value: totalCitizens, icon: Users, color: "text-accent", bg: "from-accent/10 to-accent/5" },
+    { label: t("admin_dashboard.total_mps"), value: totalMPs, icon: ShieldCheck, color: "text-primary", bg: "from-primary/10 to-primary/5" },
+    { label: t("admin_dashboard.pending_count"), value: pendingMPs, icon: AlertCircle, color: "text-warning", bg: "from-warning/10 to-warning/5" },
+    { label: t("admin_dashboard.resolved_rate"), value: `${resolutionRate}%`, icon: TrendingUp, color: "text-success", bg: "from-success/10 to-success/5" },
   ];
 
   return (
@@ -104,8 +110,8 @@ const AdminDashboard = () => {
       <AppHeader />
       <div className="container py-6 md:py-8 px-4 relative z-10">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight">لوحة تحكم الإدارة</h1>
-          <p className="text-muted-foreground text-sm">إدارة المستخدمين والمشاكل والتحليلات</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight">{t("admin_dashboard.title")}</h1>
+          <p className="text-muted-foreground text-sm">{t("admin_dashboard.subtitle")}</p>
         </motion.div>
 
         {/* Stats */}
@@ -151,7 +157,7 @@ const AdminDashboard = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="w-10 h-10 animate-spin text-accent" />
-            <span className="text-sm text-muted-foreground">جاري التحميل...</span>
+            <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
           </div>
         ) : activeTab === "users" ? (
           <>
@@ -160,12 +166,12 @@ const AdminDashboard = () => {
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                   <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="بحث بالاسم أو رقم التليفون..." className="pr-11 text-right h-11 rounded-xl border-border/50 bg-background/50" />
+                  <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t("admin_dashboard.search_users")} className="pr-11 text-right h-11 rounded-xl border-border/50 bg-background/50" />
                 </div>
                 <div className="flex gap-2">
                   {(["all", "citizen", "mp"] as const).map((r) => (
                     <Button key={r} variant={filterRole === r ? "secondary" : "ghost"} size="sm" onClick={() => setFilterRole(r)} className="text-xs rounded-lg">
-                      {r === "all" ? "الكل" : roleLabels[r]}
+                      {r === "all" ? t("admin_dashboard.filter_all") : roleLabels[r]}
                     </Button>
                   ))}
                 </div>
@@ -192,14 +198,14 @@ const AdminDashboard = () => {
                             variant={user.is_approved ? "default" : "destructive"}
                             className={`text-[10px] rounded-lg ${user.is_approved ? "bg-success/10 text-success border-success/20" : ""}`}
                           >
-                            {user.is_approved ? "مفعّل" : "قيد المراجعة"}
+                            {user.is_approved ? t("admin_dashboard.approved") : t("admin_dashboard.pending_approval")}
                           </Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-3 mt-1 flex-wrap">
                         <span className="text-xs text-muted-foreground">{user.phone}</span>
                         {user.registration_number && (
-                          <span className="text-xs text-muted-foreground">القيد: {user.registration_number}</span>
+                          <span className="text-xs text-muted-foreground">{user.registration_number}</span>
                         )}
                         {user.governorate && (
                           <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" />{user.governorate}</span>
@@ -218,13 +224,13 @@ const AdminDashboard = () => {
                           disabled={approving === user.user_id}
                           onClick={() => handleApproveMP(user.user_id, true)}>
                           {approving === user.user_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                          موافقة
+                          {t("admin_dashboard.approve")}
                         </Button>
                       </motion.div>
                       <Button size="sm" variant="outline" className="gap-1.5 text-destructive border-destructive/20 text-xs h-9 rounded-xl hover:bg-destructive/5"
                         disabled={approving === user.user_id}
                         onClick={() => handleApproveMP(user.user_id, false)}>
-                        <XCircle className="w-3.5 h-3.5" /> رفض
+                        <XCircle className="w-3.5 h-3.5" /> {t("admin_dashboard.revoke")}
                       </Button>
                     </div>
                   )}
@@ -235,7 +241,7 @@ const AdminDashboard = () => {
                   <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
                     <Search className="w-7 h-7 text-muted-foreground" />
                   </div>
-                  <p className="text-muted-foreground font-medium text-sm">لا يوجد مستخدمين مطابقين</p>
+                  <p className="text-muted-foreground font-medium text-sm">{t("admin_dashboard.no_users")}</p>
                 </div>
               )}
             </div>
@@ -257,7 +263,7 @@ const AdminDashboard = () => {
                           "bg-accent/10 text-accent border-accent/20"
                         }`}
                       >
-                        {issue.status === "resolved" ? "تم الحل" : issue.status === "in-progress" ? "قيد المعالجة" : "تم الاستلام"}
+                        {issue.status === "resolved" ? t("mp_dashboard.resolved") : issue.status === "in-progress" ? t("mp_dashboard.in_progress") : t("mp_dashboard.received")}
                       </Badge>
                       <span className="text-[10px] text-muted-foreground bg-muted rounded-lg px-2 py-0.5">{issue.category}</span>
                       <span className="text-[10px] text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" />{issue.location}</span>
@@ -274,12 +280,12 @@ const AdminDashboard = () => {
           /* Analytics Tab */
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { label: "إجمالي المشاكل", value: totalIssues, icon: FileText, color: "text-accent", bg: "from-accent/10 to-accent/5" },
-              { label: "تم الحل", value: resolvedIssues, icon: CheckCircle2, color: "text-success", bg: "from-success/10 to-success/5" },
-              { label: "قيد المعالجة", value: issues.filter((i) => i.status === "in-progress").length, icon: Clock, color: "text-warning", bg: "from-warning/10 to-warning/5" },
-              { label: "مشاكل مفتوحة", value: issues.filter((i) => i.status === "received").length, icon: AlertCircle, color: "text-info", bg: "from-info/10 to-info/5" },
-              { label: "مشاكل جماعية", value: issues.filter((i) => i.issue_type === "collective").length, icon: Users, color: "text-accent", bg: "from-accent/10 to-primary/5" },
-              { label: "مؤكدة من المواطنين", value: issues.filter((i) => i.citizen_confirmed).length, icon: CheckCircle2, color: "text-primary", bg: "from-primary/10 to-primary/5" },
+              { label: t("admin_dashboard.total_issues"), value: totalIssues, icon: FileText, color: "text-accent", bg: "from-accent/10 to-accent/5" },
+              { label: t("mp_dashboard.resolved"), value: resolvedIssues, icon: CheckCircle2, color: "text-success", bg: "from-success/10 to-success/5" },
+              { label: t("mp_dashboard.in_progress"), value: issues.filter((i) => i.status === "in-progress").length, icon: Clock, color: "text-warning", bg: "from-warning/10 to-warning/5" },
+              { label: t("admin_dashboard.open_issues"), value: issues.filter((i) => i.status === "received").length, icon: AlertCircle, color: "text-info", bg: "from-info/10 to-info/5" },
+              { label: t("admin_dashboard.collective_issues"), value: issues.filter((i) => i.issue_type === "collective").length, icon: Users, color: "text-accent", bg: "from-accent/10 to-primary/5" },
+              { label: t("admin_dashboard.citizen_confirmed"), value: issues.filter((i) => i.citizen_confirmed).length, icon: CheckCircle2, color: "text-primary", bg: "from-primary/10 to-primary/5" },
             ].map((item, i) => (
               <motion.div
                 key={i}
