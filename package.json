@@ -100,7 +100,6 @@
     "serialize-javascript": "7.0.3",
     "esbuild": "0.25.0",
     "@babel/runtime": "7.26.10",
-    "minimatch": "3.1.4",
     "@tootallnate/once": "3.0.1",
     "brace-expansion": "1.1.12",
     "ajv": "6.14.0",
@@ -112,6 +111,7 @@
     "vite": "5.4.21",
     "@remix-run/router": "1.23.2",
     "lodash": "4.17.23",
-    "js-yaml": "4.1.1"
+    "js-yaml": "4.1.1",
+    "minimatch": "3.1.4"
   }
 }
