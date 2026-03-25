@@ -28,10 +28,40 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
     if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      return new Response(JSON.stringify({ error: "Unauthorized", status: "unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Declare userId for use in catch block
+    let userId: string | undefined;
+
+    // --- Check ban status (Server-side validation) ---
+    userId = claimsData.claims.sub;
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("banned_until")
+      .eq("user_id", userId)
+      .single();
+    
+    if (profileData?.banned_until) {
+      const bannedUntil = new Date(profileData.banned_until);
+      if (bannedUntil > new Date()) {
+        return new Response(JSON.stringify({
+          status: "rejected",
+          rejectionReason: "حسابك موقوف بسبب انتهاكات سابقة. لا يمكنك إرسال شكاوى في الوقت الحالي.",
+          senderName: null,
+          text: null,
+          category: null,
+          priority: null,
+          files: [],
+          foulWordsRemoved: false,
+        }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // --- Input validation ---
@@ -69,6 +99,39 @@ serve(async (req) => {
     const filesInfo = (files && files.length > 0)
       ? `\n\nالملفات المرفقة:\n${files.map((f: any) => `- ${String(f.fileName).slice(0, 200)} (${String(f.fileType).slice(0, 50)})`).join("\n")}`
       : "";
+
+    // --- Local content filtering (Blacklist check) ---
+    const forbiddenKeywords = [
+      "سب", "شتيمة", "كلمة نابية", "كلام بذيء", "تهديد", "وعيد", "عنف", "قتل", "اغتصاب",
+      "مخدرات", "إرهاب", "تفجير", "قنبلة", "سلاح", "قتال", "حرب", "دمار",
+      "كراهية", "عنصرية", "تمييز", "تحريض", "فتنة", "طائفية", "دينية"
+    ];
+    
+    const combinedText = (safeTitle + " " + safeDescription).toLowerCase();
+    const detectedForbidden = forbiddenKeywords.filter(keyword => combinedText.includes(keyword));
+    
+    if (detectedForbidden.length > 0) {
+      // Log the violation
+      await supabase.from("audit_logs").insert({
+        user_id: userId,
+        action: "forbidden_content_detected",
+        details: JSON.stringify({ forbidden_keywords: detectedForbidden }),
+        created_at: new Date().toISOString(),
+      }).catch(err => console.error("Audit log error:", err));
+      
+      return new Response(JSON.stringify({
+        status: "rejected",
+        rejectionReason: "تم رفض الشكوى لأنها تحتوي على محتوى غير لائق. يرجى إعادة صياغة الشكوى بشكل احترافي.",
+        senderName: null,
+        text: null,
+        category: null,
+        priority: null,
+        files: files || [],
+        foulWordsRemoved: true,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const systemPrompt = `أنت مساعد ذكي لمعالجة شكاوى المواطنين المصريين قبل إرسالها للنواب. هدفك تحويل أي شكوى إلى نص واضح، مختصر، رسمي، وجاهز للعرض للنائب.
 
@@ -134,8 +197,20 @@ serve(async (req) => {
       const errText = await response.text();
       console.error("Gemini API error:", response.status, errText);
 
+      // Log failed attempt
+      await supabase.from("submission_attempts").insert({
+        user_id: userId,
+        status: "failed",
+        reason: `Gemini API error: ${response.status}`,
+        title: safeTitle,
+        description: safeDescription,
+      }).catch(err => console.error("Submission tracking error:", err));
+
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "تم تجاوز حد الطلبات، حاول لاحقاً" }), {
+        return new Response(JSON.stringify({ 
+          error: "تم تجاوز حد الطلبات. يرجى المحاولة لاحقاً.",
+          status: "rate_limited"
+        }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -153,12 +228,37 @@ serve(async (req) => {
       result.files = files;
     }
 
+    // Log successful submission
+    await supabase.from("submission_attempts").insert({
+      user_id: userId,
+      status: result.status === "rejected" ? "rejected" : "success",
+      reason: result.rejectionReason || null,
+      title: safeTitle,
+      description: safeDescription,
+    }).catch(err => console.error("Submission tracking error:", err));
+
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("classify-issue error:", e);
-    return new Response(JSON.stringify({ error: "حدث خطأ أثناء المعالجة" }), {
+    
+    // Log error attempt
+    const userId = claimsData?.claims?.sub;
+    if (userId) {
+      await supabase.from("submission_attempts").insert({
+        user_id: userId,
+        status: "failed",
+        reason: String(e),
+        title: title || "unknown",
+        description: description || "unknown",
+      }).catch(err => console.error("Submission tracking error:", err));
+    }
+    
+    return new Response(JSON.stringify({ 
+      error: "حدث خطأ أثناء معالجة الشكوى. يرجى المحاولة لاحقاً.",
+      status: "error"
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
