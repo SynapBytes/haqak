@@ -99,7 +99,6 @@
   "overrides": {
     "serialize-javascript": "7.0.3",
     "esbuild": "0.25.0",
-    "react-router": "6.30.2",
     "@babel/runtime": "7.26.10",
     "@remix-run/router": "1.23.2",
     "vite": "5.4.21",
@@ -112,6 +111,7 @@
     "browserslist": "4.25.3",
     "rollup": "4.59.0",
     "flatted": "3.4.2",
-    "glob": "10.5.0"
+    "glob": "10.5.0",
+    "react-router": "6.30.2"
   }
 }
