@@ -110,16 +110,16 @@ serve(async (req) => {
     const combinedText = (safeTitle + " " + safeDescription).toLowerCase();
     const detectedForbidden = forbiddenKeywords.filter(keyword => combinedText.includes(keyword));
     
-    if (detectedForbidden.length > 0) {
-      // Log the violation
-      await supabase.from("audit_logs").insert({
-        user_id: userId,
-        action: "forbidden_content_detected",
-        details: JSON.stringify({ forbidden_keywords: detectedForbidden }),
-        created_at: new Date().toISOString(),
-      }).catch(err => console.error("Audit log error:", err));
-      
-      return new Response(JSON.stringify({
+	    if (detectedForbidden.length > 0) {
+	      // Log the violation (Non-blocking)
+	      supabase.from("audit_logs").insert({
+	        user_id: userId,
+	        action: "forbidden_content_detected",
+	        details: JSON.stringify({ forbidden_keywords: detectedForbidden }),
+	        created_at: new Date().toISOString(),
+	      }).then(({ error }) => { if (error) console.error("Audit log error:", error); });
+	      
+	      return new Response(JSON.stringify({
         status: "rejected",
         rejectionReason: "تم رفض الشكوى لأنها تحتوي على محتوى غير لائق. يرجى إعادة صياغة الشكوى بشكل احترافي.",
         senderName: null,
@@ -193,20 +193,20 @@ serve(async (req) => {
       }
     );
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Gemini API error:", response.status, errText);
-
-      // Log failed attempt
-      await supabase.from("submission_attempts").insert({
-        user_id: userId,
-        status: "failed",
-        reason: `Gemini API error: ${response.status}`,
-        title: safeTitle,
-        description: safeDescription,
-      }).catch(err => console.error("Submission tracking error:", err));
-
-      if (response.status === 429) {
+	    if (!response.ok) {
+	      const errText = await response.text();
+	      console.error("Gemini API error:", response.status, errText);
+	
+	      // Log failed attempt (Non-blocking)
+	      supabase.from("submission_attempts").insert({
+	        user_id: userId,
+	        status: "failed",
+	        reason: `Gemini API error: ${response.status}`,
+	        title: safeTitle,
+	        description: safeDescription,
+	      }).then(({ error }) => { if (error) console.error("Submission tracking error:", error); });
+	
+	      if (response.status === 429) {
         return new Response(JSON.stringify({ 
           error: "تم تجاوز حد الطلبات. يرجى المحاولة لاحقاً.",
           status: "rate_limited"
@@ -228,37 +228,37 @@ serve(async (req) => {
       result.files = files;
     }
 
-    // Log successful submission
-    await supabase.from("submission_attempts").insert({
-      user_id: userId,
-      status: result.status === "rejected" ? "rejected" : "success",
-      reason: result.rejectionReason || null,
-      title: safeTitle,
-      description: safeDescription,
-    }).catch(err => console.error("Submission tracking error:", err));
-
-    return new Response(JSON.stringify(result), {
+	    // Log successful submission (Non-blocking)
+	    supabase.from("submission_attempts").insert({
+	      user_id: userId,
+	      status: result.status === "rejected" ? "rejected" : "success",
+	      reason: result.rejectionReason || null,
+	      title: safeTitle,
+	      description: safeDescription,
+	    }).then(({ error }) => { if (error) console.error("Submission tracking error:", error); });
+	
+	    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e) {
-    console.error("classify-issue error:", e);
-    
-    // Log error attempt
-    const userId = claimsData?.claims?.sub;
-    if (userId) {
-      await supabase.from("submission_attempts").insert({
-        user_id: userId,
-        status: "failed",
-        reason: String(e),
-        title: title || "unknown",
-        description: description || "unknown",
-      }).catch(err => console.error("Submission tracking error:", err));
-    }
-    
-    return new Response(JSON.stringify({ 
-      error: "حدث خطأ أثناء معالجة الشكوى. يرجى المحاولة لاحقاً.",
-      status: "error"
-    }), {
+	  } catch (e) {
+	    console.error("classify-issue error:", e);
+	    
+	    // Log error attempt (Non-blocking)
+	    const userId = claimsData?.claims?.sub;
+	    if (userId) {
+	      supabase.from("submission_attempts").insert({
+	        user_id: userId,
+	        status: "failed",
+	        reason: String(e),
+	        title: title || "unknown",
+	        description: description || "unknown",
+	      }).then(({ error }) => { if (error) console.error("Submission tracking error:", error); });
+	    }
+	    
+	    return new Response(JSON.stringify({ 
+	      error: "حدث خطأ أثناء معالجة الشكوى. يرجى المحاولة لاحقاً.",
+	      status: "error"
+	    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
