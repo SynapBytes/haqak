@@ -23,6 +23,7 @@ import {
 import { useRef, useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 /* ─── Floating Particle Component ─── */
 const FloatingParticle = ({ delay, x, y, size, color }: { delay: number; x: string; y: string; size: number; color: string }) => (
@@ -84,38 +85,9 @@ const GradientOrb = ({ className }: { className: string }) => (
   />
 );
 
-/* ─── Data ─── */
-const features = [
-  { icon: MessageSquare, title: "إبلاغ سهل وسريع", description: "قدّم مشكلتك في أقل من 30 ثانية مع دعم رفع الصور والتصنيف الفوري.", gradient: "from-accent/20 to-accent/5" },
-  { icon: Shield, title: "خصوصية وأمان كامل", description: "بياناتك محمية بتشفير متقدم. لا نشر عام ولا مشاركة بدون إذنك.", gradient: "from-primary/20 to-primary/5" },
-  { icon: BarChart3, title: "تحليلات وتقارير دقيقة", description: "تقارير مفصلة وإحصائيات شاملة لمساعدة النواب في اتخاذ قرارات أسرع وأدق.", gradient: "from-info/20 to-info/5" },
-  { icon: Zap, title: "متابعة لحظية", description: "تابع حالة مشكلتك لحظة بلحظة مع إشعارات فورية عند كل تحديث.", gradient: "from-warning/20 to-warning/5" },
-  { icon: Globe, title: "تغطية شاملة", description: "ربط المواطنين بالنواب في كل المحافظات والدوائر الانتخابية.", gradient: "from-success/20 to-success/5" },
-  { icon: ClipboardCheck, title: "مراجعة دقيقة ومهنية", description: "فريق متخصص يراجع ويصنّف كل مشكلة ويعيد صياغتها باحترافية قبل عرضها.", gradient: "from-accent/20 to-primary/5" },
-];
-
-const visionPoints = [
-  { icon: Target, title: "رؤيتنا", description: "ربط كل مواطن مصري بنائبه مباشرة، لخلق قناة تواصل حقيقية وفعّالة.", color: "text-accent" },
-  { icon: Rocket, title: "مهمتنا", description: "تمكين المواطنين من إيصال صوتهم بسهولة ومتابعة حل مشاكلهم خطوة بخطوة.", color: "text-primary" },
-  { icon: Heart, title: "قيمنا", description: "الشفافية، المصداقية، وحماية خصوصية المواطنين هي أساس كل ما نبنيه.", color: "text-success" },
-  { icon: Sparkles, title: "الإدارة الذكية", description: "فريق الإدارة يصنّف المشاكل ويوجّهها للنائب المختص تلقائياً بدقة واحترافية.", color: "text-warning" },
-];
-
-const steps = [
-  { num: "١", title: "سجّل حسابك", desc: "أنشئ حساب مواطن مجاناً في ثوانٍ معدودة", icon: FileCheck, color: "from-accent to-accent/70" },
-  { num: "٢", title: "قدّم مشكلتك", desc: "اكتب المشكلة وارفق حتى 5 صور أو ملفات", icon: MessageSquare, color: "from-info to-info/70" },
-  { num: "٣", title: "مراجعة وتصنيف", desc: "فريق الإدارة يراجع ويصنّف المشكلة ويوجهها للنائب المختص", icon: ClipboardCheck, color: "from-warning to-warning/70" },
-  { num: "٤", title: "تابع الحل", desc: "استلم إشعارات فورية وأكّد الحل", icon: Eye, color: "from-success to-success/70" },
-];
-
-const partners = [
-  { name: "أعضاء مجلس النواب", icon: Building2 },
-  { name: "المجتمع المدني", icon: Users },
-  { name: "المواطنون", icon: Heart },
-];
-
 /* ─── Hero Stats Card (real data) ─── */
 const HeroStatsCard = () => {
+  const { t } = useTranslation();
   const [weeklyCount, setWeeklyCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -148,8 +120,8 @@ const HeroStatsCard = () => {
           <TrendingUp className="w-4 h-4 text-accent" />
         </div>
         <div>
-          <div className="text-xs font-bold text-foreground">+{arabicNum} مشكلة</div>
-          <div className="text-[10px] text-muted-foreground">هذا الأسبوع</div>
+          <div className="text-xs font-bold text-foreground">+{arabicNum} {t("hero.weekly_issues")}</div>
+          <div className="text-[10px] text-muted-foreground">{t("hero.this_week")}</div>
         </div>
       </div>
     </motion.div>
@@ -158,6 +130,7 @@ const HeroStatsCard = () => {
 
 /* ─── Support Form ─── */
 const SupportForm = () => {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -167,31 +140,28 @@ const SupportForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) {
-      toast.error("يرجى ملء جميع الحقول");
+      toast.error(t("support.fill_all"));
       return;
     }
     setSending(true);
     try {
-      // Try to store in notifications table (will work if user is logged in)
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         await supabase.from("notifications").insert({
           user_id: session.user.id,
-          title: `دعم فني: ${name}`,
-          message: `من: ${name} (${email})\n\n${message}`,
+          title: `${t("support.contact_us")}: ${name}`,
+          message: `${t("support.name")}: ${name} (${email})\n\n${message}`,
         });
       }
-      // Always show success (the message is recorded or will be sent via email)
-      toast.success("تم إرسال رسالتك بنجاح! سنرد عليك قريباً.");
+      toast.success(t("support.sent_success"));
       setName("");
       setEmail("");
       setMessage("");
       setSent(true);
       setTimeout(() => setSent(false), 5000);
     } catch {
-      // Fallback: still show success and open mailto
-      window.location.href = `mailto:support@sotak.app?subject=${encodeURIComponent(`دعم فني: ${name}`)}&body=${encodeURIComponent(message)}`;
-      toast.success("جاري فتح البريد الإلكتروني...");
+      window.location.href = `mailto:support@sotak.app?subject=${encodeURIComponent(`${t("support.contact_us")}: ${name}`)}&body=${encodeURIComponent(message)}`;
+      toast.success(t("support.opening_email"));
     } finally {
       setSending(false);
     }
@@ -212,14 +182,14 @@ const SupportForm = () => {
         >
           <CheckCircle2 className="w-10 h-10 text-success" />
         </motion.div>
-        <h3 className="text-xl font-bold text-foreground mb-2">تم إرسال رسالتك بنجاح!</h3>
-        <p className="text-muted-foreground text-sm mb-6">سنتواصل معك قريباً على بريدك الإلكتروني</p>
+        <h3 className="text-xl font-bold text-foreground mb-2">{t("support.success")}</h3>
+        <p className="text-muted-foreground text-sm mb-6">{t("support.success_sub")}</p>
         <Button
           variant="outline"
           onClick={() => setSent(false)}
           className="rounded-xl"
         >
-          إرسال رسالة أخرى
+          {t("support.send_another")}
         </Button>
       </motion.div>
     );
@@ -229,33 +199,33 @@ const SupportForm = () => {
     <form onSubmit={handleSubmit} className="bg-card border border-border rounded-3xl p-8 space-y-5 shadow-xl">
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">الاسم</label>
+          <label className="block text-sm font-medium text-foreground mb-2">{t("support.name")}</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="اسمك الكريم"
+            placeholder={t("support.name_placeholder")}
             className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">البريد الإلكتروني</label>
+          <label className="block text-sm font-medium text-foreground mb-2">{t("support.email")}</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="example@email.com"
+            placeholder={t("support.email_placeholder")}
             dir="ltr"
             className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all"
           />
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-foreground mb-2">رسالتك</label>
+        <label className="block text-sm font-medium text-foreground mb-2">{t("support.message")}</label>
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="اكتب استفسارك أو ملاحظاتك هنا..."
+          placeholder={t("support.message_placeholder")}
           rows={4}
           className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all resize-none"
         />
@@ -272,7 +242,7 @@ const SupportForm = () => {
         ) : (
           <Send className="w-4 h-4" />
         )}
-        {sending ? "جاري الإرسال..." : "إرسال"}
+        {sending ? t("support.sending") : t("support.send")}
       </Button>
     </form>
   );
@@ -280,6 +250,7 @@ const SupportForm = () => {
 
 
 const Landing = () => {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const heroRef = useRef<HTMLDivElement>(null);
@@ -296,6 +267,36 @@ const Landing = () => {
     window.addEventListener("mousemove", handleMouse);
     return () => window.removeEventListener("mousemove", handleMouse);
   }, []);
+
+  /* ─── Data ─── */
+  const features = [
+    { icon: MessageSquare, title: t("features.easy_report"), description: t("features.easy_report_desc"), gradient: "from-accent/20 to-accent/5" },
+    { icon: Shield, title: t("features.privacy"), description: t("features.privacy_desc"), gradient: "from-primary/20 to-primary/5" },
+    { icon: BarChart3, title: t("features.analytics"), description: t("features.analytics_desc"), gradient: "from-info/20 to-info/5" },
+    { icon: Zap, title: t("features.realtime"), description: t("features.realtime_desc"), gradient: "from-warning/20 to-warning/5" },
+    { icon: Globe, title: t("features.coverage"), description: t("features.coverage_desc"), gradient: "from-success/20 to-success/5" },
+    { icon: ClipboardCheck, title: t("features.review"), description: t("features.review_desc"), gradient: "from-accent/20 to-primary/5" },
+  ];
+
+  const visionPoints = [
+    { icon: Target, title: t("vision.our_vision"), description: t("vision.our_vision_desc"), color: "text-accent" },
+    { icon: Rocket, title: t("vision.our_mission"), description: t("vision.our_mission_desc"), color: "text-primary" },
+    { icon: Heart, title: t("vision.our_values"), description: t("vision.our_values_desc"), color: "text-success" },
+    { icon: Sparkles, title: t("vision.smart_management"), description: t("vision.smart_management_desc"), color: "text-warning" },
+  ];
+
+  const steps = [
+    { num: "١", title: t("steps.step1"), desc: t("steps.step1_desc"), icon: FileCheck, color: "from-accent to-accent/70" },
+    { num: "٢", title: t("steps.step2"), desc: t("steps.step2_desc"), icon: MessageSquare, color: "from-info to-info/70" },
+    { num: "٣", title: t("steps.step3"), desc: t("steps.step3_desc"), icon: ClipboardCheck, color: "from-warning to-warning/70" },
+    { num: "٤", title: t("steps.step4"), desc: t("steps.step4_desc"), icon: Eye, color: "from-success to-success/70" },
+  ];
+
+  const partners = [
+    { name: t("partners.mps"), icon: Building2 },
+    { name: t("partners.civil_society"), icon: Users },
+    { name: t("partners.citizens"), icon: Heart },
+  ];
 
   return (
     <div className="min-h-screen bg-background overflow-hidden">
@@ -356,7 +357,7 @@ const Landing = () => {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent/60" />
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent" />
                   </span>
-                  منصة التواصل المدني الأولى في مصر
+                  {t("hero.badge")}
                 </motion.div>
 
                 <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-8 leading-[1.1] tracking-tight">
@@ -367,7 +368,7 @@ const Landing = () => {
                     className="block relative"
                   >
                     <span className="relative inline-block">
-                      صوتك يوصل.
+                      {t("hero.title_1")}
                       <motion.span
                         className="absolute inset-0 bg-gradient-to-l from-transparent via-[#e8c566]/40 to-transparent bg-[length:200%_100%] bg-clip-text"
                         style={{
@@ -386,7 +387,7 @@ const Landing = () => {
                   >
                     <span className="relative inline-block">
                       <span className="bg-gradient-to-l from-accent via-info to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-[gradient-shift_4s_ease-in-out_infinite]">
-                        مشكلتك تُحل.
+                        {t("hero.title_2")}
                       </span>
                       <motion.span
                         initial={{ scaleX: 0 }}
@@ -404,8 +405,7 @@ const Landing = () => {
                   transition={{ delay: 0.5, duration: 0.6 }}
                   className="text-lg md:text-xl text-muted-foreground mb-10 max-w-xl leading-relaxed"
                 >
-                  منصة <span className="text-foreground font-semibold">"صوتك"</span> تربط المواطنين بأعضاء مجلس النواب مباشرة.
-                  قدّم مشكلتك بسهولة، تابع حلها، وأكّد النتيجة.
+                  {t("hero.subtitle")}
                 </motion.p>
 
                 <motion.div
@@ -417,14 +417,14 @@ const Landing = () => {
                   <MagneticButton>
                     <Link to="/auth">
                       <Button size="lg" className="gap-2.5 bg-accent text-accent-foreground hover:bg-accent/90 px-10 w-full sm:w-auto h-14 text-base font-semibold shadow-2xl shadow-accent/30 hover:shadow-accent/40 transition-all duration-300 rounded-2xl">
-                        قدّم مشكلتك الآن
+                        {t("hero.cta_citizen")}
                         <ArrowLeft className="w-5 h-5" />
                       </Button>
                     </Link>
                   </MagneticButton>
                   <Link to="/auth">
                     <Button size="lg" variant="outline" className="gap-2.5 px-10 w-full sm:w-auto h-14 text-base font-medium border-2 border-border hover:border-accent/30 hover:bg-accent/5 transition-all rounded-2xl backdrop-blur-sm">
-                      دخول النواب
+                      {t("hero.cta_mp")}
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
                   </Link>
@@ -439,12 +439,12 @@ const Landing = () => {
                 >
                   <div className="flex items-center gap-1.5">
                     <Shield className="w-4 h-4 text-success" />
-                    <span>مشفّر بالكامل</span>
+                    <span>{t("hero.encrypted")}</span>
                   </div>
                   <div className="w-px h-4 bg-border" />
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-accent" />
-                    <span>مجاني للمواطنين</span>
+                    <span>{t("hero.free")}</span>
                   </div>
                 </motion.div>
               </motion.div>
@@ -471,16 +471,16 @@ const Landing = () => {
                         <Heart className="w-6 h-6 text-white" />
                       </div>
                       <div>
-                        <div className="text-base font-bold text-foreground">أهلاً بيك في صوتك</div>
-                        <div className="text-xs text-muted-foreground">صوتك مسموع.. ومشكلتك مهمة</div>
+                        <div className="text-base font-bold text-foreground">{t("hero.welcome_title")}</div>
+                        <div className="text-xs text-muted-foreground">{t("hero.welcome_sub")}</div>
                       </div>
                     </div>
 
                     <div className="space-y-3 mb-6">
                       {[
-                        { icon: FileCheck, text: "سجّل مشكلتك في ثوانٍ", color: "text-accent" },
-                        { icon: Shield, text: "بياناتك محمية بالكامل", color: "text-success" },
-                        { icon: Eye, text: "تابع حالة مشكلتك لحظة بلحظة", color: "text-info" },
+                        { icon: FileCheck, text: t("hero.step1"), color: "text-accent" },
+                        { icon: Shield, text: t("hero.step2"), color: "text-success" },
+                        { icon: Eye, text: t("hero.step3"), color: "text-info" },
                       ].map((item, i) => (
                         <motion.div
                           key={i}
@@ -501,7 +501,7 @@ const Landing = () => {
                       transition={{ delay: 1.8, duration: 0.5 }}
                       className="text-center text-xs text-muted-foreground border-t border-border/50 pt-4"
                     >
-                      🇪🇬 من المواطن للنائب.. بدون وسيط
+                      🇪🇬 {t("hero.from_citizen")}
                     </motion.div>
                   </div>
                 </motion.div>
@@ -542,7 +542,7 @@ const Landing = () => {
             className="text-center mb-12"
           >
             <h2 className="text-2xl md:text-4xl font-bold text-foreground tracking-tight">
-              لماذا نبني <span className="bg-gradient-to-l from-accent to-primary bg-clip-text text-transparent">صوتك</span>؟
+              {t("vision.title")}
             </h2>
           </motion.div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
@@ -584,12 +584,12 @@ const Landing = () => {
               viewport={{ once: true }}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/[0.08] text-accent text-xs font-bold tracking-wider mb-5 border border-accent/10"
             >
-              كيف يعمل
+              {t("steps.badge")}
             </motion.span>
             <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
-              أربع خطوات <span className="bg-gradient-to-l from-accent to-primary bg-clip-text text-transparent">بسيطة</span>
+              {t("steps.title")}
             </h2>
-            <p className="text-muted-foreground max-w-lg mx-auto text-base md:text-lg">من تقديم المشكلة إلى حلها، كل شيء واضح ومنظم</p>
+            <p className="text-muted-foreground max-w-lg mx-auto text-base md:text-lg">{t("steps.subtitle")}</p>
           </motion.div>
 
           <div className="max-w-5xl mx-auto relative">
@@ -656,12 +656,12 @@ const Landing = () => {
               viewport={{ once: true }}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/[0.08] text-primary text-xs font-bold tracking-wider mb-5 border border-primary/10"
             >
-              المميزات
+              {t("features.badge")}
             </motion.span>
             <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
-              لماذا <span className="bg-gradient-to-l from-primary to-accent bg-clip-text text-transparent">صوتك</span>؟
+              {t("features.title")}
             </h2>
-            <p className="text-muted-foreground max-w-lg mx-auto text-base md:text-lg">مميزات تجعل التواصل المدني أسهل وأكثر فعالية</p>
+            <p className="text-muted-foreground max-w-lg mx-auto text-base md:text-lg">{t("features.subtitle")}</p>
           </motion.div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
@@ -717,12 +717,12 @@ const Landing = () => {
               viewport={{ once: true }}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/[0.08] text-accent text-xs font-bold tracking-wider mb-5 border border-accent/10"
             >
-              تواصل معنا
+              {t("support.badge")}
             </motion.span>
             <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
-              نحن هنا <span className="bg-gradient-to-l from-accent to-primary bg-clip-text text-transparent">لمساعدتك</span>
+              {t("support.title")}
             </h2>
-            <p className="text-muted-foreground max-w-lg mx-auto text-base md:text-lg">أرسل لنا استفسارك أو ملاحظاتك وسنرد عليك في أقرب وقت</p>
+            <p className="text-muted-foreground max-w-lg mx-auto text-base md:text-lg">{t("support.subtitle")}</p>
           </motion.div>
 
           <motion.div
@@ -746,7 +746,7 @@ const Landing = () => {
             viewport={{ once: true }}
             className="text-center mb-10"
           >
-            <p className="text-sm text-muted-foreground font-medium">بالتعاون مع</p>
+            <p className="text-sm text-muted-foreground font-medium">{t("partners.title")}</p>
           </motion.div>
           <div className="flex items-center justify-center gap-8 md:gap-16 flex-wrap">
             {partners.map((p, i) => (
@@ -792,16 +792,14 @@ const Landing = () => {
             >
               <Headphones className="w-10 h-10 text-white" />
             </motion.div>
-            <h3 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">ابدأ الآن مجاناً</h3>
+            <h3 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">{t("cta.title")}</h3>
             <p className="text-white/80 text-lg mb-10 max-w-md mx-auto leading-relaxed">
-              سجّل حسابك وقدّم مشكلتك الأولى في أقل من دقيقة.
-              <br />
-              صوتك يستحق أن يُسمع.
+              {t("cta.subtitle")}
             </p>
             <MagneticButton className="inline-block">
               <Link to="/auth">
                 <Button size="lg" className="gap-2.5 bg-white text-accent hover:bg-white/90 px-12 h-16 text-lg font-bold shadow-2xl shadow-black/20 rounded-2xl transition-all">
-                  سجّل حسابك الآن
+                  {t("cta.button")}
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
               </Link>
@@ -817,29 +815,29 @@ const Landing = () => {
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
               <div className="flex items-center gap-3">
-                <img src="/logo-sawtak.png" alt="صوتك" className="w-10 h-10 rounded-2xl shadow-md object-contain" />
+                <img src="/logo-sawtak.png" alt={t("app_name")} className="w-10 h-10 rounded-2xl shadow-md object-contain" />
                 <div>
-                  <span className="font-bold text-lg text-foreground block">صوتك</span>
-                  <span className="text-xs text-muted-foreground">منصة التواصل المدني</span>
+                  <span className="font-bold text-lg text-foreground block">{t("app_name")}</span>
+                  <span className="text-xs text-muted-foreground">{t("tagline")}</span>
                 </div>
               </div>
               <div className="flex items-center gap-6 text-sm text-muted-foreground flex-wrap justify-center md:justify-end">
-                <Link to="/auth" className="hover:text-foreground transition-colors">تسجيل الدخول</Link>
+                <Link to="/auth" className="hover:text-foreground transition-colors">{t("footer.login")}</Link>
                 <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
-                <Link to="/auth" className="hover:text-foreground transition-colors">إنشاء حساب</Link>
+                <Link to="/auth" className="hover:text-foreground transition-colors">{t("footer.register")}</Link>
                 <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
-                <button onClick={() => document.getElementById('support')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-foreground transition-colors cursor-pointer bg-transparent border-none p-0 text-sm text-muted-foreground">الدعم الفني</button>
+                <button onClick={() => document.getElementById('support')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-foreground transition-colors cursor-pointer bg-transparent border-none p-0 text-sm text-muted-foreground">{t("footer.support")}</button>
                 <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
-                <Link to="/privacy" className="hover:text-foreground transition-colors">الخصوصية</Link>
+                <Link to="/privacy" className="hover:text-foreground transition-colors">{t("footer.privacy")}</Link>
                 <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
-                <Link to="/terms" className="hover:text-foreground transition-colors">الشروط</Link>
+                <Link to="/terms" className="hover:text-foreground transition-colors">{t("footer.terms")}</Link>
               </div>
             </div>
             <div className="pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <p className="text-xs text-muted-foreground">© ٢٠٢٦ صوتك — جميع الحقوق محفوظة</p>
+              <p className="text-xs text-muted-foreground">{t("footer.rights")}</p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                جميع الخدمات تعمل بكفاءة
+                {t("footer.status")}
               </div>
             </div>
           </div>
