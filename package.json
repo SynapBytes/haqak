@@ -98,6 +98,7 @@
   },
   "overrides": {
     "flatted": "3.4.2",
-    "serialize-javascript": "7.0.3"
+    "serialize-javascript": "7.0.3",
+    "glob": "10.5.0"
   }
 }
