@@ -99,7 +99,6 @@
   "overrides": {
     "serialize-javascript": "7.0.3",
     "esbuild": "0.25.0",
-    "rollup": "4.59.0",
     "glob": "10.5.0",
     "react-router": "6.30.2",
     "@babel/runtime": "7.26.10",
@@ -112,6 +111,7 @@
     "brace-expansion": "1.1.12",
     "ajv": "6.14.0",
     "browserslist": "4.25.3",
-    "flatted": "3.4.2"
+    "flatted": "3.4.2",
+    "rollup": "4.59.0"
   }
 }
