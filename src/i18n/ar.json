@@ -298,25 +298,34 @@
   },
   "mps_directory": {
     "title": "دليل النواب",
-    "subtitle": "تصفح أعضاء مجلس النواب وتواصل معهم",
-    "search_placeholder": "ابحث بالاسم أو الدائرة...",
-    "no_results": "لا توجد نتائج",
-    "send_issue": "أرسل مشكلة",
-    "view_profile": "عرض الملف",
+    "subtitle": "تصفّح النواب المسجلين واطّلع على أدائهم",
+    "search_placeholder": "ابحث بالاسم، الدائرة، أو المحافظة...",
+    "no_results": "لا يوجد نواب مطابقين",
+    "no_results_sub": "حاول تغيير كلمات البحث أو الفلتر",
+    "send_issue": "أرسل شكوى",
+    "view_profile": "البروفايل",
     "constituency": "الدائرة",
     "governorate": "المحافظة",
-    "issues_resolved": "مشاكل محلولة"
+    "issues_resolved": "محلولة",
+    "total": "إجمالي",
+    "rate": "نسبة الحل",
+    "registered_count": "{{count}} نائب مسجّل",
+    "all": "الكل"
   },
-  "privacy_policy": {
-    "title": "سياسة الخصوصية"
-  },
-  "terms_of_service": {
-    "title": "شروط الخدمة"
-  },
-  "not_found": {
-    "title": "الصفحة غير موجودة",
-    "subtitle": "الصفحة التي تبحث عنها غير موجودة",
-    "go_home": "العودة للرئيسية"
+  "mp_profile": {
+    "badge": "نائب",
+    "not_found": "لم يتم العثور على النائب",
+    "not_found_sub": "تأكد من الرابط وحاول مرة أخرى",
+    "resolved": "تم الحل",
+    "in_progress": "قيد المعالجة",
+    "open": "مفتوحة",
+    "resolution_rate": "نسبة الحل",
+    "performance": "ملخص الأداء",
+    "total_issues": "إجمالي المشاكل",
+    "collective": "مشاكل جماعية",
+    "citizen_confirmed": "مؤكدة من المواطنين",
+    "top_categories": "أكثر التصنيفات",
+    "no_data": "لا توجد بيانات بعد"
   },
   "reset_password": {
     "title": "إعادة تعيين كلمة المرور",
