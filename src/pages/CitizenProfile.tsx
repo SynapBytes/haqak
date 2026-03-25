@@ -77,6 +77,8 @@ const CitizenProfile = () => {
       const ext = cleanFile.name.split(".").pop();
       const path = `${user.id}/avatar.${ext}`;
 
+      if (path.includes('..')) throw new Error('Invalid path');
+
       const { error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(path, cleanFile, { upsert: true });

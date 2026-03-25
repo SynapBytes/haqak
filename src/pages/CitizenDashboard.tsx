@@ -112,6 +112,9 @@ const CitizenDashboard = () => {
     for (const file of cleanedFiles) {
       const ext = file.name.split(".").pop();
       const path = `${user!.id}/${issueId}/${Date.now()}.${ext}`;
+      if (path.includes('..')) {
+        throw new Error("Invalid path");
+      }
       const { error: uploadError } = await supabase.storage
         .from("issue-attachments")
         .upload(path, file);
