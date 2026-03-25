@@ -111,6 +111,7 @@
     "minimatch": "3.1.4",
     "@babel/runtime": "7.26.10",
     "vite": "5.4.21",
-    "rollup": "4.59.0"
+    "rollup": "4.59.0",
+    "esbuild": "0.25.0"
   }
 }
