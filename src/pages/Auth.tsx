@@ -193,18 +193,18 @@ const Auth = () => {
                   {isSignup && (
                     <>
                       <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-foreground block">{t("auth.full_name")}</label>
+                        <label htmlFor="fullName" className="text-sm font-semibold text-foreground block">{t("auth.full_name")}</label>
                         <div className="relative group">
-                          <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t("auth.full_name_placeholder")} required className="text-right pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
+                          <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t("auth.full_name_placeholder")} required aria-required="true" aria-label={t("auth.full_name")} className="text-right pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
                           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
                             <User className="w-3.5 h-3.5 text-muted-foreground" />
                           </div>
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-foreground block">{t("auth.phone")}</label>
+                        <label htmlFor="phone" className="text-sm font-semibold text-foreground block">{t("auth.phone")}</label>
                         <div className="relative group">
-                          <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("auth.phone_placeholder")} type="tel" required dir="ltr" className="pl-11 text-left h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" maxLength={11} />
+                          <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("auth.phone_placeholder")} type="tel" required dir="ltr" aria-required="true" aria-label={t("auth.phone")} className="pl-11 text-left h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" maxLength={11} />
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
                             <Phone className="w-3.5 h-3.5 text-muted-foreground" />
                           </div>
@@ -212,9 +212,9 @@ const Auth = () => {
                       </div>
                       {mode === "signup-mp" && (
                         <div className="space-y-1.5">
-                          <label className="text-sm font-semibold text-foreground block">{t("auth.registration_number")}</label>
+                          <label htmlFor="regNumber" className="text-sm font-semibold text-foreground block">{t("auth.registration_number")}</label>
                           <div className="relative group">
-                            <Input value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} placeholder={t("auth.registration_number_placeholder")} required className="text-right pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
+                            <Input id="regNumber" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} placeholder={t("auth.registration_number_placeholder")} required aria-required="true" aria-label={t("auth.registration_number")} className="text-right pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
                               <IdCard className="w-3.5 h-3.5 text-muted-foreground" />
                             </div>
@@ -225,9 +225,9 @@ const Auth = () => {
                   )}
 
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">{t("auth.email")}</label>
+                    <label htmlFor="email" className="text-sm font-semibold text-foreground block">{t("auth.email")}</label>
                     <div className="relative group">
-                      <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("auth.email_placeholder")} type="email" required dir="ltr" className="pl-11 text-left h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
+                      <Input id="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("auth.email_placeholder")} type="email" required dir="ltr" aria-required="true" aria-label={t("auth.email")} className="pl-11 text-left h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
                       <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
                         <Mail className="w-3.5 h-3.5 text-muted-foreground" />
                       </div>
@@ -245,7 +245,7 @@ const Auth = () => {
                         )}
                       </div>
                       <div className="relative group">
-                        <Input value={password} onChange={(e) => setPassword(e.target.value)} type={showPassword ? "text" : "password"} placeholder="••••••••" required minLength={8} dir="ltr" className="px-11 text-left h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
+                        <Input id="password" value={password} onChange={(e) => setPassword(e.target.value)} type={showPassword ? "text" : "password"} placeholder="••••••••" required minLength={8} dir="ltr" aria-required="true" aria-label={t("auth.password")} className="px-11 text-left h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
                         <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
                           <Lock className="w-3.5 h-3.5 text-muted-foreground" />
                         </div>

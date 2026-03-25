@@ -30,6 +30,10 @@ const AppHeader = () => {
     document.documentElement.lang = newLang;
   };
 
+  const getLangLabel = () => {
+    return i18n.language === "ar" ? "Switch to English" : "التبديل للعربية";
+  };
+
   return (
     <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50">
       <div className="container flex items-center justify-between h-14 md:h-16 px-4">
@@ -80,7 +84,7 @@ const AppHeader = () => {
           <button
             onClick={toggleLang}
             className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            aria-label={i18n.language === "ar" ? "Switch to English" : "التبديل للعربية"}
+            aria-label={getLangLabel()}
             title={i18n.language === "ar" ? "English" : "العربية"}
           >
             <Globe className="w-[18px] h-[18px]" />
@@ -89,6 +93,7 @@ const AppHeader = () => {
             onClick={toggleTheme}
             className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             aria-label={t("nav.toggle_theme")}
+            title={t("nav.toggle_theme")}
           >
             {theme === "dark" ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
           </button>
@@ -121,6 +126,8 @@ const AppHeader = () => {
           <button
             className="md:hidden p-2 text-muted-foreground hover:text-foreground"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "إغلاق القائمة" : "فتح القائمة"}
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
