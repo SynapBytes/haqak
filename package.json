@@ -107,8 +107,8 @@
     "brace-expansion": "1.1.12",
     "ajv": "6.14.0",
     "browserslist": "4.25.3",
-    "rollup": "4.59.0",
     "glob": "10.5.0",
-    "minimatch": "3.1.4"
+    "minimatch": "3.1.4",
+    "rollup": "4.22.4"
   }
 }
