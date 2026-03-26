@@ -109,7 +109,16 @@ Deno.serve(async (req) => {
         .eq("user_id", callerId)
         .single();
 
-      if (!roleData || (roleData.role !== "mp" && roleData.role !== "admin")) {
+      const { data: profileData } = await serviceSupabase
+        .from("profiles")
+        .select("is_approved")
+        .eq("user_id", callerId)
+        .single();
+
+      const isApprovedMp = roleData?.role === "mp" && profileData?.is_approved === true;
+      const isAdmin = roleData?.role === "admin";
+
+      if (!isAdmin && !isApprovedMp) {
         return new Response(JSON.stringify({ error: "Forbidden" }), {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
