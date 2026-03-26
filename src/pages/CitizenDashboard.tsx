@@ -220,9 +220,17 @@ const CitizenDashboard = () => {
           isFlagged = classifyData.foulWordsRemoved || false;
           aiSummary = classifyData.summary || null;
           priority = classifyData.priority || "normal";
+
+          if (classifyData.ai_error || classifyData.ai_unavailable) {
+            toast.warning(t("dashboard.ai_unavailable_fallback"));
+          }
+        } else if (classifyError) {
+          console.error("AI classification error:", classifyError);
+          toast.warning(t("dashboard.ai_error_fallback"));
         }
-      } catch {
-        console.warn("AI classification failed, proceeding with original data");
+      } catch (err) {
+        console.error("AI classification failed:", err);
+        toast.warning(t("dashboard.ai_failed_fallback"));
       }
 
       const { data: insertedIssue, error } = await supabase.from("issues").insert({

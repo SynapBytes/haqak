@@ -86,7 +86,35 @@ serve(async (req) => {
     const safeSenderName = senderName ? String(senderName).slice(0, 200) : "مواطن";
 
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
+    if (!GEMINI_API_KEY) {
+      console.error("GEMINI_API_KEY is not configured");
+      return new Response(JSON.stringify({ 
+        status: "accepted", // Fallback to allow submission if AI is down
+        refined_title: safeTitle,
+        refined_description: safeDescription,
+        priority: "normal",
+        category: "individual",
+        isOffensive: false,
+        ai_unavailable: true
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- Rate limiting / Submission tracking check ---
+    if (profileData?.submission_blocked_until) {
+      const blockedUntil = new Date(profileData.submission_blocked_until);
+      if (blockedUntil > new Date()) {
+        return new Response(JSON.stringify({
+          status: "rejected",
+          rejectionReason: `لقد تجاوزت حد المحاولات المسموح به. يرجى المحاولة مرة أخرى بعد: ${blockedUntil.toLocaleString('ar-EG')}`,
+          isRateLimited: true
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     const systemPrompt = `أنت خبير متخصص في تحليل الشكاوى والمحتوى والامتثال الأخلاقي لمنصة تواصل بين المواطنين والنواب.
 
@@ -153,16 +181,32 @@ serve(async (req) => {
       }
     );
 
-    if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
-
-    const data = await response.json();
     let result;
-    
-    try {
-      result = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
-    } catch (parseError) {
-      console.error("JSON parse error:", parseError);
-      result = { status: "error", message: "فشل تحليل الرد من الذكاء الاصطناعي" };
+    if (!response.ok) {
+      console.error(`Gemini API error: ${response.status}`);
+      // Fallback if AI fails
+      result = { 
+        status: "accepted", 
+        refined_title: safeTitle, 
+        refined_description: safeDescription,
+        isOffensive: false,
+        ai_error: true 
+      };
+    } else {
+      const data = await response.json();
+      try {
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        result = JSON.parse(text);
+      } catch (parseError) {
+        console.error("JSON parse error:", parseError);
+        result = { 
+          status: "accepted", 
+          refined_title: safeTitle, 
+          refined_description: safeDescription,
+          isOffensive: false,
+          parse_error: true 
+        };
+      }
     }
 
     // --- Validate result structure ---
@@ -206,10 +250,38 @@ serve(async (req) => {
       });
     }
 
+    // --- Log submission attempt ---
+    await supabase.from("submission_attempts").insert({
+      user_id: userId,
+      status: result.status,
+      reason: result.rejectionReason || (result.isOffensive ? "offensive" : null),
+      title: safeTitle,
+      description: safeDescription
+    });
+
+    // --- Update profile tracking ---
+    if (result.status === "accepted") {
+      await supabase.from("profiles").update({
+        last_submission_attempt: new Date().toISOString(),
+        failed_submissions_count: 0
+      }).eq("user_id", userId);
+    } else {
+      const currentFailed = (profileData as any)?.failed_submissions_count || 0;
+      const newFailed = currentFailed + 1;
+      const updateData: any = { failed_submissions_count: newFailed };
+      
+      if (newFailed >= 5) {
+        // Block for 1 hour after 5 failed attempts
+        const blockUntil = new Date();
+        blockUntil.setHours(blockUntil.getHours() + 1);
+        updateData.submission_blocked_until = blockUntil.toISOString();
+      }
+      
+      await supabase.from("profiles").update(updateData).eq("user_id", userId);
+    }
+
     // --- Store refined content in database if accepted ---
     if (result.status === "accepted") {
-      // Update the issue with refined fields (if issue_id is provided)
-      // This will be done in the CitizenDashboard after issue creation
       result.refined_title = result.refined_title || safeTitle;
       result.refined_description = result.refined_description || safeDescription;
     }

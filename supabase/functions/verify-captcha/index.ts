@@ -19,10 +19,18 @@ serve(async (req) => {
     }
 
     const TURNSTILE_SECRET_KEY = Deno.env.get("TURNSTILE_SECRET_KEY");
+    const IS_DEV = Deno.env.get("ENVIRONMENT") === "development";
+    
     if (!TURNSTILE_SECRET_KEY) {
       console.error("TURNSTILE_SECRET_KEY is not configured");
-      // If secret is not configured, allow the request (for development)
-      return new Response(JSON.stringify({ valid: true, score: 1.0 }), {
+      // Only allow bypass in explicit development environment
+      if (IS_DEV) {
+        return new Response(JSON.stringify({ valid: true, score: 1.0, dev_mode: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ error: "CAPTCHA service unavailable", valid: false }), {
+        status: 503,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
