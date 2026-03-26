@@ -51,6 +51,25 @@ function detectCollectiveIssue(text: string): boolean {
   return collectiveKeywords.some(keyword => lowerText.includes(keyword));
 }
 
+function buildValidatedUrl(baseUrl: string): string {
+  try {
+    const url = new URL(baseUrl);
+    
+    const allowedDomains = ['example.com']; // add your allowed domains here
+    if (!allowedDomains.includes(url.hostname)) {
+      throw new Error('Invalid host');
+    }
+    
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      throw new Error('Invalid protocol');
+    }
+    
+    return url.href;
+  } catch {
+    throw new Error('Invalid URL');
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -99,7 +118,8 @@ serve(async (req) => {
         for (const imageUrl of imageUrls) {
           try {
             // Use Gemini Vision API to analyze image
-            const imageResponse = await fetch(imageUrl);
+            const validatedUrl = buildValidatedUrl(imageUrl);
+            const imageResponse = await fetch(validatedUrl);
             if (!imageResponse.ok) continue;
 
             const imageBuffer = await imageResponse.arrayBuffer();
