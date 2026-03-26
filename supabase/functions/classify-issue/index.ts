@@ -19,44 +19,52 @@ serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized", status: "unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Declare userId for use in catch block
-    let userId: string | undefined;
+    const userId = user.id;
 
-    // --- Check ban status (Server-side validation) ---
-    userId = claimsData.claims.sub;
+    // --- Check ban status ---
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("banned_until")
+      .select("banned_until, is_permanently_banned")
       .eq("user_id", userId)
       .single();
     
+    if (profileData?.is_permanently_banned) {
+      return new Response(JSON.stringify({
+        status: "rejected",
+        rejectionReason: "تم حظر حسابك نهائياً من المنصة بسبب تكرار الانتهاكات.",
+        isBanned: true,
+        permanent: true
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (profileData?.banned_until) {
       const bannedUntil = new Date(profileData.banned_until);
       if (bannedUntil > new Date()) {
+        const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateStr = bannedUntil.toLocaleDateString('ar-EG', options);
         return new Response(JSON.stringify({
           status: "rejected",
-          rejectionReason: "حسابك موقوف بسبب انتهاكات سابقة. لا يمكنك إرسال شكاوى في الوقت الحالي.",
-          senderName: null,
-          text: null,
-          category: null,
-          priority: null,
-          files: [],
-          foulWordsRemoved: false,
+          rejectionReason: `حسابك موقوف مؤقتاً بسبب انتهاك سياسة المحتوى. يمكنك المحاولة مرة أخرى بعد: ${dateStr}`,
+          isBanned: true,
+          bannedUntil: profileData.banned_until
         }), {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -73,106 +81,35 @@ serve(async (req) => {
       });
     }
 
-    // Enforce max lengths to prevent prompt injection / abuse
     const safeTitle = String(title).slice(0, 500);
     const safeDescription = String(description).slice(0, 5000);
-    const safeSenderName = senderName ? String(senderName).slice(0, 200) : "";
-
-    if (!safeSenderName || safeSenderName.trim() === "") {
-      return new Response(JSON.stringify({
-        status: "rejected",
-        rejectionReason: "الاسم الكامل للمرسل غير موجود. يجب تسجيل الدخول بحساب يحتوي على الاسم الكامل.",
-        senderName: null,
-        text: null,
-        category: null,
-        priority: null,
-        files: files || [],
-        foulWordsRemoved: false,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const safeSenderName = senderName ? String(senderName).slice(0, 200) : "مواطن";
 
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
 
-    const filesInfo = (files && files.length > 0)
-      ? `\n\nالملفات المرفقة:\n${files.map((f: any) => `- ${String(f.fileName).slice(0, 200)} (${String(f.fileType).slice(0, 50)})`).join("\n")}`
-      : "";
+    const systemPrompt = `أنت خبير في تحليل المحتوى والامتثال الأخلاقي لمنصة تواصل بين المواطنين والنواب.
+مهمتك هي تحليل الشكوى المقدمة واكتشاف أي إساءة، سب، قذف، استهزاء، أو محتوى غير لائق.
 
-    // --- Local content filtering (Blacklist check) ---
-    const forbiddenKeywords = [
-      "سب", "شتيمة", "كلمة نابية", "كلام بذيء", "تهديد", "وعيد", "عنف", "قتل", "اغتصاب",
-      "مخدرات", "إرهاب", "تفجير", "قنبلة", "سلاح", "قتال", "حرب", "دمار",
-      "كراهية", "عنصرية", "تمييز", "تحريض", "فتنة", "طائفية", "دينية"
-    ];
-    
-    const combinedText = (safeTitle + " " + safeDescription).toLowerCase();
-    const detectedForbidden = forbiddenKeywords.filter(keyword => combinedText.includes(keyword));
-    
-	    if (detectedForbidden.length > 0) {
-	      // Log the violation (Non-blocking)
-	      supabase.from("audit_logs").insert({
-	        user_id: userId,
-	        action: "forbidden_content_detected",
-	        details: JSON.stringify({ forbidden_keywords: detectedForbidden }),
-	        created_at: new Date().toISOString(),
-	      }).then(({ error }) => { if (error) console.error("Audit log error:", error); });
-	      
-	      return new Response(JSON.stringify({
-        status: "rejected",
-        rejectionReason: "تم رفض الشكوى لأنها تحتوي على محتوى غير لائق. يرجى إعادة صياغة الشكوى بشكل احترافي.",
-        senderName: null,
-        text: null,
-        category: null,
-        priority: null,
-        files: files || [],
-        foulWordsRemoved: true,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+القواعد الصارمة:
+1. إذا احتوى النص على أي شتائم (حتى لو خفيفة)، سب، قذف، تهديد، أو سخرية من النائب أو الدولة، يجب رفض الرسالة فوراً.
+2. في حالة الرفض بسبب الإساءة، يجب ضبط "isOffensive" على true.
+3. إذا كانت الرسالة محترمة ولكن غير واضحة، قم بإعادة صياغتها بشكل رسمي واحترافي.
 
-    const systemPrompt = `أنت مساعد ذكي لمعالجة شكاوى المواطنين المصريين قبل إرسالها للنواب. هدفك تحويل أي شكوى إلى نص واضح، مختصر، رسمي، وجاهز للعرض للنائب.
-
-القواعد:
-1. الاسم الكامل للمرسل مطلوب. إذا كان فارغاً أو غير موجود، ارجع status: "rejected" مع سبب الرفض.
-
-2. أي محتوى مسيء، شتائم، سب، استهزاء، أو طلب فلوس مباشرة يجب أن يُحجب تلقائياً ويُعاد صياغته بشكل محترم. اضبط foulWordsRemoved = true في هذه الحالة.
-
-3. كل شكوى طويلة أو معقدة يجب أن تُعاد صياغتها في نقاط مختصرة وواضحة بالعربية الفصحى، بحيث النائب يفهم كل المعلومات الأساسية بسرعة.
-
-4. صنف كل شكوى:
-   - "category": "individual" (تخص مواطن واحد) أو "group" (تخص مجموعة أو منطقة)
-   - "priority": 
-     * "urgent" - مشاكل تحتاج تدخل فوري (خطر على الحياة، كوارث)
-     * "humanitarian" - حالات إنسانية (مرض، فقر شديد، إعاقة)
-     * "normal" - مشاكل عادية تحتاج متابعة
-     * "nonLogical" - طلبات غير منطقية أو غير واقعية
-
-5. أي ملفات مرفقة أشر إليها في JSON باسم الملف ونوعه.
-
-6. صنف المشكلة في واحدة من هذه الفئات: مياه، طرق، مرافق عامة، صحة، نظافة، تعليم، كهرباء، أخرى
-
-أجب بصيغة JSON فقط بالشكل التالي:
+أجب بصيغة JSON فقط:
 {
   "status": "accepted" أو "rejected",
-  "rejectionReason": "سبب الرفض إذا كانت مرفوضة، أو null",
-  "senderName": "الاسم الكامل للمرسل",
-  "refined_title": "العنوان المُعاد صياغته",
-  "refined_description": "الوصف المُعاد صياغته في نقاط مختصرة وواضحة",
-  "text": "النص الكامل المعاد صياغته جاهز للعرض للنائب",
+  "isOffensive": true أو false (هام جداً),
+  "rejectionReason": "سبب الرفض بالعربية (مثلاً: محتوى مسيء، غير واضح، إلخ)",
+  "refined_title": "العنوان الرسمي المُقترح",
+  "refined_description": "الوصف الرسمي المُنسق في نقاط",
   "category": "individual" أو "group",
-  "issueCategory": "الفئة (مياه، طرق، إلخ)",
-  "priority": "urgent" أو "normal" أو "humanitarian" أو "nonLogical",
-  "summary": "ملخص في جملة واحدة",
-  "files": [{"fileName": "اسم الملف", "fileType": "نوع الملف"}],
-  "foulWordsRemoved": true أو false
+  "issueCategory": "مياه، طرق، صحة، إلخ",
+  "priority": "urgent" أو "normal" أو "humanitarian",
+  "summary": "ملخص في جملة واحدة"
 }`;
 
-    const userMessage = `اسم المرسل: ${safeSenderName}
-العنوان: ${safeTitle}
-الوصف: ${safeDescription}${filesInfo}`;
+    const userMessage = `اسم المرسل: ${safeSenderName}\nالعنوان: ${safeTitle}\nالوصف: ${safeDescription}`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
@@ -180,75 +117,59 @@ serve(async (req) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: `${systemPrompt}\n\n${userMessage}` }],
-            },
-          ],
-          generationConfig: {
-            responseMimeType: "application/json",
-          },
+          contents: [{ role: "user", parts: [{ text: `${systemPrompt}\n\n${userMessage}` }] }],
+          generationConfig: { responseMimeType: "application/json" },
         }),
       }
     );
 
-	    if (!response.ok) {
-	      const errText = await response.text();
-	      console.error("Gemini API error:", response.status, errText);
-	
-	      // Log failed attempt (Non-blocking)
-	      supabase.from("submission_attempts").insert({
-	        user_id: userId,
-	        status: "failed",
-	        reason: `Gemini API error: ${response.status}`,
-	        title: safeTitle,
-	        description: safeDescription,
-	      }).then(({ error }) => { if (error) console.error("Submission tracking error:", error); });
-	
-	      if (response.status === 429) {
-        return new Response(JSON.stringify({ 
-          error: "تم تجاوز حد الطلبات. يرجى المحاولة لاحقاً.",
-          status: "rate_limited"
-        }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw new Error(`Gemini API error: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
 
     const data = await response.json();
-    const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!textContent) throw new Error("No content in Gemini response");
+    const result = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
 
-    const result = JSON.parse(textContent);
+    // --- Penalty Enforcement ---
+    if (result.isOffensive === true) {
+      // Call the database function to log violation and apply penalty
+      const { error: penaltyError } = await supabase.rpc('handle_user_violation', {
+        _user_id: userId,
+        _violation_type: 'offensive_language',
+        _content_preview: safeTitle + ": " + safeDescription.slice(0, 100)
+      });
 
-    if (files && files.length > 0 && (!result.files || result.files.length === 0)) {
-      result.files = files;
+      if (penaltyError) console.error("Penalty enforcement error:", penaltyError);
+
+      // Get updated violation count to customize message
+      const { count } = await supabase
+        .from('user_violations')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+      const violationCount = count || 1;
+      let penaltyMessage = "تم رفض رسالتك لاحتوائها على محتوى مسيء. ";
+      if (violationCount === 1) {
+        penaltyMessage += "لقد تم إيقاف حسابك لمدة أسبوع كتحذير أول.";
+      } else {
+        penaltyMessage += "نظراً لتكرار الإساءة، تم حظر حسابك نهائياً من المنصة.";
+      }
+
+      return new Response(JSON.stringify({
+        status: "rejected",
+        rejectionReason: penaltyMessage,
+        isOffensive: true,
+        violationCount: violationCount
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-	    // Log successful submission (Non-blocking)
-	    supabase.from("submission_attempts").insert({
-	      user_id: userId,
-	      status: result.status === "rejected" ? "rejected" : "success",
-	      reason: result.rejectionReason || null,
-	      title: safeTitle,
-	      description: safeDescription,
-	    }).then(({ error }) => { if (error) console.error("Submission tracking error:", error); });
-	
-	    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-	  } catch (e) {
-	    console.error("classify-issue error:", e);
-	    
-	    // Error logged above
-	    
-	    return new Response(JSON.stringify({ 
-	      error: "حدث خطأ أثناء معالجة الشكوى. يرجى المحاولة لاحقاً.",
-	      status: "error"
-	    }), {
+
+  } catch (e) {
+    console.error("classify-issue error:", e);
+    return new Response(JSON.stringify({ error: "حدث خطأ أثناء معالجة الطلب.", status: "error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
