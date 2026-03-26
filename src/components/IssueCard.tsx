@@ -18,6 +18,7 @@ export interface Issue {
   ai_summary?: string;
   user_id?: string;
   priority?: "urgent" | "humanitarian" | "normal";
+  resolution_rating?: number;
   refined_title?: string;
   refined_description?: string;
 }

@@ -5,6 +5,7 @@ import AppHeader from "@/components/AppHeader";
 import IssueCard from "@/components/IssueCard";
 import ChatDrawer from "@/components/ChatDrawer";
 import StatusBadge from "@/components/StatusBadge";
+import ResolutionRating from "@/components/ResolutionRating";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -72,6 +73,7 @@ const CitizenDashboard = () => {
         citizen_confirmed: (d as any).citizen_confirmed || false,
         ai_summary: d.ai_summary || undefined,
         user_id: d.user_id,
+        resolution_rating: d.resolution_rating,
       })));
 
       const { data: convs } = await supabase
@@ -503,13 +505,20 @@ const CitizenDashboard = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {issues.map((issue) => (
-              <IssueCard
-                key={issue.id}
-                issue={issue}
-                onConfirmResolution={() => handleConfirmResolution(issue.id)}
-                onOpenChat={() => setChatIssue(issue)}
-                hasChat={conversationMap[issue.id] || false}
-              />
+              <div key={issue.id} className="space-y-4">
+                <IssueCard
+                  issue={issue}
+                  onConfirmResolution={() => handleConfirmResolution(issue.id)}
+                  onOpenChat={() => setChatIssue(issue)}
+                  hasChat={conversationMap[issue.id] || false}
+                />
+                {issue.status === "resolved" && !issue.resolution_rating && (
+                  <ResolutionRating 
+                    issueId={issue.id} 
+                    onRated={() => fetchIssues()} 
+                  />
+                )}
+              </div>
             ))}
           </div>
         )}

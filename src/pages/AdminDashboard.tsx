@@ -11,6 +11,7 @@ import {
   Users, ShieldCheck, BarChart3, Search, CheckCircle2, XCircle,
   Loader2, AlertCircle, TrendingUp, Clock, FileText, MapPin
 } from "lucide-react";
+import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 
 interface UserProfile {
   id: string;
@@ -159,6 +160,8 @@ const AdminDashboard = () => {
             <Loader2 className="w-10 h-10 animate-spin text-accent" />
             <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
           </div>
+        ) : activeTab === "analytics" ? (
+          <AnalyticsDashboard />
         ) : activeTab === "users" ? (
           <>
             {/* Search & Filter */}

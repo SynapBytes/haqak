@@ -1,11 +1,12 @@
 import Turnstile from "react-turnstile";
+import { APP_CONFIG } from "@/lib/config";
 
 interface TurnstileCaptchaProps {
   onVerify: (token: string) => void;
   onExpire?: () => void;
 }
 
-const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"; // Test key fallback
+const SITE_KEY = APP_CONFIG.TURNSTILE_SITE_KEY;
 
 const TurnstileCaptcha = ({ onVerify, onExpire }: TurnstileCaptchaProps) => {
   return (

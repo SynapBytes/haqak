@@ -21,6 +21,7 @@ import {
   Rocket, Target, Heart, Sparkles
 } from "lucide-react";
 import { useRef, useState, useEffect, useCallback } from "react";
+import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -136,16 +137,31 @@ const SupportForm = () => {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !message.trim()) {
+    if (!name.trim() || !email.trim() || !message.trim() || !captchaToken) {
+      toast.error(t("support.fill_all_captcha"));
+      return;
+    }
       toast.error(t("support.fill_all"));
       return;
     }
     setSending(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      // Verify captcha
+      const { data: captchaData, error: captchaError } = await supabase.functions.invoke("verify-captcha", {
+        body: JSON.stringify({ token: captchaToken }),
+      });
+
+      if (captchaError || !captchaData || !captchaData.success) {
+        toast.error(t("support.captcha_failed"));
+        setSending(false);
+        return;
+      }
+
       if (session?.user) {
         await supabase.from("notifications").insert({
           user_id: session.user.id,
@@ -230,9 +246,10 @@ const SupportForm = () => {
           className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all resize-none"
         />
       </div>
+      <TurnstileCaptcha onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
       <Button
         type="submit"
-        disabled={sending}
+        disabled={sending || !captchaToken}
         className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90 h-12 text-base font-semibold rounded-xl shadow-lg shadow-accent/20"
       >
         {sending ? (

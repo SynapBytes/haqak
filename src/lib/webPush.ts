@@ -1,4 +1,6 @@
-const VAPID_PUBLIC_KEY = "BNVKoUpjJ2sGXKaWxBBbSGkPTGv38mDDeUbk1UFupvGkZ8_xWVj5dg8MnH-ZnNvtpOOMHu-HjbGZe4mZSSRw0M4";
+import { APP_CONFIG } from "./config";
+
+const VAPID_PUBLIC_KEY = APP_CONFIG.VAPID_PUBLIC_KEY;
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -44,7 +46,7 @@ export async function subscribeToPush(): Promise<PushSubscriptionData | null> {
 
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
+      applicationServerKey: urlBase64ToUint8Array(APP_CONFIG.VAPID_PUBLIC_KEY) as BufferSource,
     });
 
     const key = subscription.getKey("p256dh");

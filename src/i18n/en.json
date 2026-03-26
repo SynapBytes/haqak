@@ -88,7 +88,9 @@
     "fill_all": "Please fill in all fields",
     "sent_success": "Your message was sent successfully! We'll get back to you soon.",
     "opening_email": "Opening email client...",
-    "contact_us": "Contact Us"
+    "contact_us": "Contact Us",
+    "fill_all_captcha": "Please fill in all fields and complete the CAPTCHA",
+    "captcha_failed": "CAPTCHA verification failed. Please try again."
   },
   "partners": {
     "title": "In Partnership With",
@@ -225,7 +227,10 @@
     "role_mp": "MP",
     "role_admin": "Admin",
     "pending_count": "Pending Approval",
-    "error": "An error occurred"
+    "error": "An error occurred",
+    "issues_by_gov": "Issues by Governorate",
+    "issues_by_status": "Issues by Status",
+    "issues_trend": "Issues Trend (Last 7 Days)"
   },
   "profile": {
     "title": "Profile",
@@ -254,6 +259,16 @@
     "mps_directory_link": "MPs Directory",
     "phone_invalid": "Invalid phone number (must start with 01 and be 11 digits)",
     "save_error": "Error saving data"
+  },
+  "rating": {
+    "rate_resolution": "Rate the Resolution Quality",
+    "select_stars": "Please select a star rating",
+    "feedback_label": "Your Feedback (Optional)",
+    "feedback_placeholder": "How was your experience with the resolution?",
+    "submit": "Submit Rating",
+    "success": "Thank you for your feedback!",
+    "thank_you": "Thank you!",
+    "feedback_received": "Your feedback helps us improve the service."
   },
   "auth": {
     "login_title": "Sign In",
