@@ -1,19 +1,19 @@
-import Redis from 'ioredis';
+// Simple in-memory rate limiter for edge functions
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-const redis = new Redis();
-
-const RATE_LIMIT_WINDOW = 60; // 1 minute
-const RATE_LIMIT_MAX = 100; // Maximum requests
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute in ms
+const RATE_LIMIT_MAX = 100;
 
 export const rateLimiter = async (key: string) => {
-    const current = await redis.get(key);
-    if (current) {
-        if (parseInt(current) >= RATE_LIMIT_MAX) {
-            throw new Error('Rate limit exceeded');
-        } else {
-            await redis.incr(key);
-        }
-    } else {
-        await redis.set(key, 1, 'EX', RATE_LIMIT_WINDOW);
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+
+  if (entry && now < entry.resetAt) {
+    if (entry.count >= RATE_LIMIT_MAX) {
+      throw new Error('Rate limit exceeded');
     }
+    entry.count++;
+  } else {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+  }
 };
