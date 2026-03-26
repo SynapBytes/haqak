@@ -88,28 +88,53 @@ serve(async (req) => {
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
 
-    const systemPrompt = `أنت خبير في تحليل المحتوى والامتثال الأخلاقي لمنصة تواصل بين المواطنين والنواب.
-مهمتك هي تحليل الشكوى المقدمة واكتشاف أي إساءة، سب، قذف، استهزاء، أو محتوى غير لائق.
+    const systemPrompt = `أنت خبير متخصص في تحليل الشكاوى والمحتوى والامتثال الأخلاقي لمنصة تواصل بين المواطنين والنواب.
 
-القواعد الصارمة:
-1. إذا احتوى النص على أي شتائم (حتى لو خفيفة)، سب، قذف، تهديد، أو سخرية من النائب أو الدولة، يجب رفض الرسالة فوراً.
-2. في حالة الرفض بسبب الإساءة، يجب ضبط "isOffensive" على true.
-3. إذا كانت الرسالة محترمة ولكن غير واضحة، قم بإعادة صياغتها بشكل رسمي واحترافي.
+مهمتك الرئيسية:
+1. فحص الشكوى للكشف عن أي محتوى مسيء أو غير لائق
+2. إعادة صياغة الشكوى بشكل احترافي ورسمي ومختصر
+3. تصنيف الشكوى حسب الأهمية والنوع والفئة
+
+القواعد الصارمة للفحص:
+- رفض فوري لأي شتائم أو سب أو قذف أو تهديدات
+- رفض أي محتوى جنسي أو مسيء للكرامة
+- رفض أي محتوى يسخر من الدولة أو النواب بنية سيئة
+- السماح بالنقد البناء والشكاوى المشروعة
+
+قواعد إعادة الصياغة:
+- اجعل العنوان واضحاً وموجزاً (5-10 كلمات)
+- اجعل الوصف منظماً في نقاط رئيسية
+- استخدم لغة رسمية واحترافية
+- احذف التفاصيل غير الضرورية والتكرار
+- اترجم النصوص الإنجليزية إلى العربية إن وجدت
+
+تصنيف الأهمية:
+- "urgent": مشاكل تهدد السلامة أو الصحة (انقطاع ماء، حريق، إصابة)
+- "humanitarian": مشاكل إنسانية (فقر، مرض، تشرد)
+- "normal": مشاكل عادية (طرق، مرافق عامة، تعليم)
+
+تصنيف النوع:
+- "individual": مشكلة تخص فرداً واحداً
+- "collective": مشكلة تخص مجموعة أو حي أو منطقة
 
 أجب بصيغة JSON فقط:
 {
   "status": "accepted" أو "rejected",
-  "isOffensive": true أو false (هام جداً),
-  "rejectionReason": "سبب الرفض بالعربية (مثلاً: محتوى مسيء، غير واضح، إلخ)",
-  "refined_title": "العنوان الرسمي المُقترح",
-  "refined_description": "الوصف الرسمي المُنسق في نقاط",
-  "category": "individual" أو "group",
-  "issueCategory": "مياه، طرق، صحة، إلخ",
-  "priority": "urgent" أو "normal" أو "humanitarian",
-  "summary": "ملخص في جملة واحدة"
+  "isOffensive": true أو false,
+  "rejectionReason": "سبب الرفض إن وجد",
+  "refined_title": "العنوان المُعاد صياغته",
+  "refined_description": "الوصف المُعاد صياغته في نقاط",
+  "category": "individual" أو "collective",
+  "issueCategory": "مياه، طرق، صحة، تعليم، كهرباء، نظافة، مرافق عامة، أخرى",
+  "priority": "urgent" أو "humanitarian" أو "normal",
+  "summary": "ملخص في جملة واحدة واضحة"
 }`;
 
-    const userMessage = `اسم المرسل: ${safeSenderName}\nالعنوان: ${safeTitle}\nالوصف: ${safeDescription}`;
+    const userMessage = `اسم المرسل: ${safeSenderName}
+العنوان: ${safeTitle}
+الوصف: ${safeDescription}
+
+تذكر: يجب أن تكون الإجابة بصيغة JSON صحيحة فقط بدون أي نص إضافي.`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
@@ -118,7 +143,12 @@ serve(async (req) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: `${systemPrompt}\n\n${userMessage}` }] }],
-          generationConfig: { responseMimeType: "application/json" },
+          generationConfig: { 
+            responseMimeType: "application/json",
+            temperature: 0.7,
+            topP: 0.9,
+            topK: 40,
+          },
         }),
       }
     );
@@ -126,9 +156,22 @@ serve(async (req) => {
     if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
 
     const data = await response.json();
-    const result = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
+    let result;
+    
+    try {
+      result = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      result = { status: "error", message: "فشل تحليل الرد من الذكاء الاصطناعي" };
+    }
 
-    // --- Penalty Enforcement ---
+    // --- Validate result structure ---
+    if (!result.status) {
+      result.status = "error";
+      result.message = "رد غير صحيح من الذكاء الاصطناعي";
+    }
+
+    // --- Penalty Enforcement for Offensive Content ---
     if (result.isOffensive === true) {
       // Call the database function to log violation and apply penalty
       const { error: penaltyError } = await supabase.rpc('handle_user_violation', {
@@ -161,6 +204,14 @@ serve(async (req) => {
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // --- Store refined content in database if accepted ---
+    if (result.status === "accepted") {
+      // Update the issue with refined fields (if issue_id is provided)
+      // This will be done in the CitizenDashboard after issue creation
+      result.refined_title = result.refined_title || safeTitle;
+      result.refined_description = result.refined_description || safeDescription;
     }
 
     return new Response(JSON.stringify(result), {

@@ -17,6 +17,7 @@ import type { Issue } from "@/components/IssueCard";
 import LocationPicker from "@/components/LocationPicker";
 import { useTranslation } from "react-i18next";
 import { stripExifFromFiles } from "@/lib/stripExif";
+import { filterContent, validateAttachments } from "@/lib/contentSecurity";
 
 const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitation", "education", "electricity", "other"] as const;
 
@@ -157,6 +158,27 @@ const CitizenDashboard = () => {
 
     setSubmitting(true);
     try {
+      // Validate content before processing
+      const contentFilter = filterContent(title, description);
+      if (!contentFilter.isClean) {
+        toast.error(contentFilter.reason || "محتوى مسيء أو غير لائق");
+        setSubmitting(false);
+        return;
+      }
+      
+      // Validate attachments
+      if (files.length > 0) {
+        const attachmentValidation = validateAttachments(files);
+        if (!attachmentValidation.isValid) {
+          toast.error(attachmentValidation.errors.join("\n"));
+          setSubmitting(false);
+          return;
+        }
+        if (attachmentValidation.warnings.length > 0) {
+          attachmentValidation.warnings.forEach(w => toast.warning(w));
+        }
+      }
+      
       let finalTitle = title;
       let finalDescription = description;
       let finalCategory = category;
@@ -207,11 +229,14 @@ const CitizenDashboard = () => {
         user_id: user.id,
         title: finalTitle,
         description: finalDescription,
+        refined_title: finalTitle,
+        refined_description: finalDescription,
         category: finalCategory,
         location,
         issue_type: finalIssueType,
         is_flagged: isFlagged,
         ai_summary: aiSummary,
+        priority: priority,
         ...(assignedMpId ? { assigned_mp_id: assignedMpId } : {}),
         ...(latitude ? { latitude } : {}),
         ...(longitude ? { longitude } : {}),
