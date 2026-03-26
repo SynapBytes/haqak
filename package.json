@@ -113,6 +113,7 @@
     "browserslist": "4.25.3",
     "@babel/runtime": "7.26.10",
     "vite": "5.4.21",
-    "picomatch": "4.0.4"
+    "picomatch": "4.0.4",
+    "yaml": "2.8.3"
   }
 }
