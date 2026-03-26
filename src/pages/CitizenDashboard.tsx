@@ -188,7 +188,7 @@ const CitizenDashboard = () => {
         if (!classifyError && classifyData) {
           // Check if AI rejected the complaint
           if (classifyData.status === "rejected") {
-            toast.error(classifyData.rejectionReason || "تم رفض الشكوى");
+            toast.error(classifyData.rejectionReason || t("dashboard.rejected"));
             setSubmitting(false);
             return;
           }
