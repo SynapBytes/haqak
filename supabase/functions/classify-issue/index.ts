@@ -243,17 +243,7 @@ serve(async (req) => {
 	  } catch (e) {
 	    console.error("classify-issue error:", e);
 	    
-	    // Log error attempt (Non-blocking)
-	    const userId = claimsData?.claims?.sub;
-	    if (userId) {
-	      supabase.from("submission_attempts").insert({
-	        user_id: userId,
-	        status: "failed",
-	        reason: String(e),
-	        title: title || "unknown",
-	        description: description || "unknown",
-	      }).then(({ error }) => { if (error) console.error("Submission tracking error:", error); });
-	    }
+	    // Error logged above
 	    
 	    return new Response(JSON.stringify({ 
 	      error: "حدث خطأ أثناء معالجة الشكوى. يرجى المحاولة لاحقاً.",

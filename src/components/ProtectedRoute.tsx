@@ -1,19 +1,16 @@
 import React from 'react';
-import { Route, Redirect } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 
-const ProtectedRoute = ({ component: Component, isAuthenticated, ...rest }) => {
-    return (
-        <Route
-            {...rest}
-            render={props => 
-                isAuthenticated ? (
-                    <Component {...props} />
-                ) : (
-                    <Redirect to="/auth" />
-                )
-            }
-        />
-    );
+interface ProtectedRouteProps {
+  isAuthenticated: boolean;
+  children: React.ReactNode;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ isAuthenticated, children }) => {
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" replace />;
+  }
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;
