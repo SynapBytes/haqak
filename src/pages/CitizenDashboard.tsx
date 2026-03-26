@@ -188,7 +188,7 @@ const CitizenDashboard = () => {
         if (!classifyError && classifyData) {
           // Check if AI rejected the complaint
           if (classifyData.status === "rejected") {
-            toast.error(classifyData.rejectionReason || "تم رفض الشكوى");
+            toast.error(classifyData.rejectionReason || t("dashboard.rejected"));
             setSubmitting(false);
             return;
           }
@@ -245,12 +245,12 @@ const CitizenDashboard = () => {
       // Step 5: Notify MPs
       const { data: mpRoles } = await supabase.from("user_roles").select("user_id").eq("role", "mp");
       if (mpRoles) {
-        const priorityLabel = priority === "urgent" ? "🔴 عاجلة" : priority === "humanitarian" ? "🟡 إنسانية" : "";
+        const priorityLabel = priority === "urgent" ? t("dashboard.new_issue_urgent") : priority === "humanitarian" ? t("dashboard.new_issue_humanitarian") : "";
         for (const mp of mpRoles) {
           await supabase.from("notifications").insert({
             user_id: mp.user_id,
-            title: priorityLabel ? `مشكلة جديدة ${priorityLabel}` : "مشكلة جديدة",
-            message: `تم استلام مشكلة جديدة: ${finalTitle}`,
+            title: priorityLabel || t("dashboard.new_issue_title"),
+            message: t("dashboard.new_issue_notification", { title: finalTitle }),
             issue_id: insertedIssue?.id,
           });
         }
@@ -278,7 +278,7 @@ const CitizenDashboard = () => {
       issue_id: issueId,
       user_id: user!.id,
       action_type: "citizen_confirmed",
-      note: "المواطن أكد حل المشكلة",
+      note: t("dashboard.confirm_resolution"),
     });
     fetchIssues();
   };
@@ -490,7 +490,7 @@ const CitizenDashboard = () => {
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       <Button size="sm" variant="outline" className="gap-2 text-accent border-accent/20 hover:bg-accent/5 rounded-xl" onClick={() => setChatIssue(issue)}>
                         <MessageCircle className="w-4 h-4" />
-                        المحادثة
+                        {t("dashboard.open_chat")}
                       </Button>
                     </motion.div>
                   )}
