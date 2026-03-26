@@ -490,7 +490,7 @@ const CitizenDashboard = () => {
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       <Button size="sm" variant="outline" className="gap-2 text-accent border-accent/20 hover:bg-accent/5 rounded-xl" onClick={() => setChatIssue(issue)}>
                         <MessageCircle className="w-4 h-4" />
-                        المحادثة
+                        {t("dashboard.open_chat")}
                       </Button>
                     </motion.div>
                   )}
