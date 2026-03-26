@@ -278,7 +278,7 @@ const CitizenDashboard = () => {
       issue_id: issueId,
       user_id: user!.id,
       action_type: "citizen_confirmed",
-      note: "المواطن أكد حل المشكلة",
+      note: t("dashboard.confirm_resolution"),
     });
     fetchIssues();
   };
