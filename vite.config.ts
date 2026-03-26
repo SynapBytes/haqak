@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["logo-sawtak.png", "placeholder.svg"],
+      includeAssets: ["logo-sawtak.webp", "placeholder.svg"],
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         navigateFallbackDenylist: [/^\/~oauth/],
@@ -46,8 +46,8 @@ export default defineConfig(({ mode }) => ({
         start_url: "/",
         scope: "/",
         icons: [
-          { src: "/logo-sawtak.png", sizes: "192x192", type: "image/png" },
-          { src: "/logo-sawtak.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
+          { src: "/logo-sawtak.webp", sizes: "192x192", type: "image/png" },
+          { src: "/logo-sawtak.webp", sizes: "512x512", type: "image/png", purpose: "any maskable" },
         ],
       },
     }),

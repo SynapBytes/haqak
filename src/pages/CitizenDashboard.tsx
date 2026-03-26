@@ -44,6 +44,11 @@ const CitizenDashboard = () => {
   const [longitude, setLongitude] = useState<number | null>(null);
   const [conversationMap, setConversationMap] = useState<Record<string, boolean>>({});
 
+  const isFormValid = title.trim() !== "" && 
+                      description.trim() !== "" && 
+                      category !== "" && 
+                      location.trim() !== "";
+
   const fetchIssues = async () => {
     if (!user) return;
     const { data } = await supabase
@@ -83,7 +88,6 @@ const CitizenDashboard = () => {
 
   useEffect(() => { fetchIssues(); }, [user]);
 
-  // Auto-open form when navigated from MP directory
   useEffect(() => {
     if (mpIdParam && mpNameParam) {
       setAssignedMpId(mpIdParam);
@@ -92,7 +96,6 @@ const CitizenDashboard = () => {
       setSearchParams({}, { replace: true });
     }
   }, [mpIdParam, mpNameParam]);
-
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
@@ -133,12 +136,11 @@ const CitizenDashboard = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !title || !description || !category || !location) {
+    if (!user || !isFormValid) {
       toast.error(t("dashboard.fill_all_fields"));
       return;
     }
 
-    // Check ban status
     const { data: profileData } = await supabase
       .from("profiles")
       .select("banned_until")
@@ -155,7 +157,6 @@ const CitizenDashboard = () => {
 
     setSubmitting(true);
     try {
-      // Step 1: Auto-classify with AI
       let finalTitle = title;
       let finalDescription = description;
       let finalCategory = category;
@@ -164,7 +165,6 @@ const CitizenDashboard = () => {
       let aiSummary: string | null = null;
       let priority = "normal";
 
-      // Get sender name from profile
       const { data: senderProfile } = await supabase
         .from("profiles")
         .select("full_name")
@@ -173,7 +173,6 @@ const CitizenDashboard = () => {
 
       const senderName = senderProfile?.full_name || "";
 
-      // Prepare files info for AI
       const filesInfo = files.map(f => ({
         fileName: f.name,
         fileType: f.type,
@@ -186,7 +185,6 @@ const CitizenDashboard = () => {
         });
 
         if (!classifyError && classifyData) {
-          // Check if AI rejected the complaint
           if (classifyData.status === "rejected") {
             toast.error(classifyData.rejectionReason || t("dashboard.rejected"));
             setSubmitting(false);
@@ -205,7 +203,6 @@ const CitizenDashboard = () => {
         console.warn("AI classification failed, proceeding with original data");
       }
 
-      // Step 2: Insert issue with AI results
       const { data: insertedIssue, error } = await supabase.from("issues").insert({
         user_id: user.id,
         title: finalTitle,
@@ -221,7 +218,6 @@ const CitizenDashboard = () => {
       }).select("id").single();
       if (error) throw error;
 
-      // Step 3: If flagged, apply progressive ban (7 days first, 30 days second)
       if (isFlagged) {
         const { data: currentProfile } = await supabase
           .from("profiles")
@@ -237,12 +233,10 @@ const CitizenDashboard = () => {
         toast.warning(t("dashboard.violation_recorded", { days: banDays }));
       }
 
-      // Step 4: Upload files
       if (files.length > 0 && insertedIssue) {
         await uploadFiles(insertedIssue.id);
       }
 
-      // Step 5: Notify MPs
       const { data: mpRoles } = await supabase.from("user_roles").select("user_id").eq("role", "mp");
       if (mpRoles) {
         const priorityLabel = priority === "urgent" ? t("dashboard.new_issue_urgent") : priority === "humanitarian" ? t("dashboard.new_issue_humanitarian") : "";
@@ -297,7 +291,6 @@ const CitizenDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Background decorations */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <motion.div
           animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
@@ -313,7 +306,6 @@ const CitizenDashboard = () => {
 
       <AppHeader />
       <div className="container py-6 md:py-8 px-4 relative z-10">
-        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <motion.h1
@@ -333,7 +325,6 @@ const CitizenDashboard = () => {
           </motion.div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-3 gap-3 md:gap-5 mb-8">
           {statCards.map((item, i) => (
             <motion.div
@@ -353,7 +344,6 @@ const CitizenDashboard = () => {
           ))}
         </div>
 
-        {/* Issue Form Modal */}
         <AnimatePresence>
           {showForm && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -429,7 +419,6 @@ const CitizenDashboard = () => {
                     </div>
                   </div>
 
-                  {/* File Upload */}
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-foreground block">{t("dashboard.attachments")}</label>
                     <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={handleFileChange} />
@@ -449,8 +438,7 @@ const CitizenDashboard = () => {
                     )}
                   </div>
 
-
-                  <Button type="submit" disabled={submitting} className="w-full gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 h-12 rounded-xl font-semibold shadow-lg shadow-accent/20 text-base">
+                  <Button type="submit" disabled={submitting || !isFormValid} className={`w-full gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 h-12 rounded-xl font-semibold shadow-lg shadow-accent/20 text-base transition-all ${isFormValid ? 'hover:-translate-y-0.5' : 'opacity-50 grayscale'}`}>
                     {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                     {t("dashboard.submit")}
                   </Button>
@@ -460,7 +448,6 @@ const CitizenDashboard = () => {
           )}
         </AnimatePresence>
 
-        {/* Issues List */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
@@ -476,51 +463,34 @@ const CitizenDashboard = () => {
             </div>
             <h3 className="text-lg font-bold text-foreground mb-2">{t("dashboard.no_issues")}</h3>
             <p className="text-muted-foreground text-sm mb-6">{t("dashboard.first_issue")}</p>
-            <Button onClick={() => setShowForm(true)} className="gap-2 bg-gradient-to-l from-accent to-info text-white rounded-xl px-6">
-              <Plus className="w-4 h-4" /> {t("dashboard.first_issue_btn") || t("dashboard.first_issue")}
+            <Button onClick={() => setShowForm(true)} className="gap-2 bg-accent text-white hover:bg-accent/90 rounded-xl">
+              <Plus className="w-4 h-4" /> {t("dashboard.first_issue_btn")}
             </Button>
           </motion.div>
         ) : (
-          <div className="space-y-4">
-            {issues.map((issue, i) => (
-              <motion.div key={issue.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                <IssueCard issue={issue} />
-                <div className="mt-2 flex justify-end gap-2">
-                  {conversationMap[issue.id] && (
-                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                      <Button size="sm" variant="outline" className="gap-2 text-accent border-accent/20 hover:bg-accent/5 rounded-xl" onClick={() => setChatIssue(issue)}>
-                        <MessageCircle className="w-4 h-4" />
-                        {t("dashboard.open_chat")}
-                      </Button>
-                    </motion.div>
-                  )}
-                  {issue.status === "resolved" && !issue.citizen_confirmed && (
-                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                      <Button size="sm" variant="outline" className="gap-2 border-success/20 text-success hover:bg-success/5 rounded-xl" onClick={() => handleConfirmResolution(issue.id)}>
-                        <CheckCircle2 className="w-4 h-4" />
-                        {t("dashboard.confirm_resolution")}
-                      </Button>
-                    </motion.div>
-                  )}
-                </div>
-              </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {issues.map((issue) => (
+              <IssueCard
+                key={issue.id}
+                issue={issue}
+                onConfirmResolution={() => handleConfirmResolution(issue.id)}
+                onOpenChat={() => setChatIssue(issue)}
+                hasChat={conversationMap[issue.id] || false}
+              />
             ))}
           </div>
         )}
       </div>
 
-      {/* Chat Drawer */}
-      <AnimatePresence>
-        {chatIssue && chatIssue.user_id && (
-          <ChatDrawer
-            issueId={chatIssue.id}
-            issueTitle={chatIssue.title}
-            citizenUserId={chatIssue.user_id}
-            isMP={false}
-            onClose={() => setChatIssue(null)}
-          />
-        )}
-      </AnimatePresence>
+      {chatIssue && (
+        <ChatDrawer
+          issueId={chatIssue.id}
+          issueTitle={chatIssue.title}
+          isOpen={!!chatIssue}
+          onClose={() => setChatIssue(null)}
+          isMP={false}
+        />
+      )}
     </div>
   );
 };

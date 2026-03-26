@@ -38,7 +38,7 @@ const AppHeader = () => {
     <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50">
       <div className="container flex items-center justify-between h-14 md:h-16 px-4">
         <Link to="/" className="flex items-center gap-2.5 group">
-          <img src="/logo-sawtak.png" alt="صوتك" className="w-9 h-9 rounded-xl shadow-sm group-hover:shadow-md transition-shadow object-contain" />
+          <img src="/logo-sawtak.webp" alt={t("app_name")} className="w-9 h-9 rounded-xl shadow-sm group-hover:shadow-md transition-shadow object-contain" />
           <span className="text-xl font-bold text-foreground tracking-tight">{t("app_name")}</span>
         </Link>
 
@@ -104,7 +104,7 @@ const AppHeader = () => {
               <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                 <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
                   {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                    <img src={profile.avatar_url} alt={profile.full_name || t("nav.my_account")} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-xs font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
                   )}
@@ -142,7 +142,7 @@ const AppHeader = () => {
               <div className="flex items-center gap-2 pb-3 mb-2 border-b border-border">
                 <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
                   {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                    <img src={profile.avatar_url} alt={profile.full_name || t("nav.my_account")} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-xs font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
                   )}

@@ -815,7 +815,7 @@ const Landing = () => {
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
               <div className="flex items-center gap-3">
-                <img src="/logo-sawtak.png" alt={t("app_name")} className="w-10 h-10 rounded-2xl shadow-md object-contain" />
+                <img src="/logo-sawtak.webp" alt={t("app_name")} className="w-10 h-10 rounded-2xl shadow-md object-contain" />
                 <div>
                   <span className="font-bold text-lg text-foreground block">{t("app_name")}</span>
                   <span className="text-xs text-muted-foreground">{t("tagline")}</span>

@@ -1,14 +1,14 @@
 import { useTheme } from "@/contexts/ThemeContext";
 
-import ornament1 from "@/assets/egyptian-ornament-1.png";
-import ornament2 from "@/assets/egyptian-ornament-2.png";
-import ornament3 from "@/assets/egyptian-ornament-3.png";
-import egyptianScene from "@/assets/egyptian-scene.png";
-import egyptianAnkh from "@/assets/egyptian-ankh.png";
-import egyptianPapyrus from "@/assets/egyptian-papyrus.png";
-import egyptianNefertiti from "@/assets/egyptian-nefertiti.png";
-import egyptianCobra from "@/assets/egyptian-cobra.png";
-import egyptianBorder from "@/assets/egyptian-border.png";
+import ornament1 from "@/assets/egyptian-ornament-1.webp";
+import ornament2 from "@/assets/egyptian-ornament-2.webp";
+import ornament3 from "@/assets/egyptian-ornament-3.webp";
+import egyptianScene from "@/assets/egyptian-scene.webp";
+import egyptianAnkh from "@/assets/egyptian-ankh.webp";
+import egyptianPapyrus from "@/assets/egyptian-papyrus.webp";
+import egyptianNefertiti from "@/assets/egyptian-nefertiti.webp";
+import egyptianCobra from "@/assets/egyptian-cobra.webp";
+import egyptianBorder from "@/assets/egyptian-border.webp";
 
 const Ornament = ({
   src,

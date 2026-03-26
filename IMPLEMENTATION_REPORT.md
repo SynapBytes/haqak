@@ -108,14 +108,14 @@
 **الحالة:** 📋 في الانتظار
 
 الصور الكبيرة التالية تحتاج إلى تحسين:
-- `logo-sawtak.png` (1024x1024) - يجب تصغيرها
+- `logo-sawtak.webp` (1024x1024) - يجب تصغيرها
 - `egyptian-scene.png` (1920x1080) - تحويل إلى WebP
 - `egyptian-ornament-*.png` (1024x1024) - تحويل إلى WebP
 
 **الإجراء المقترح:**
 ```bash
 # تصغير الشعار
-imagemagick convert logo-sawtak.png -resize 512x512 logo-sawtak-optimized.png
+imagemagick convert logo-sawtak.webp -resize 512x512 logo-sawtak-optimized.png
 
 # تحويل إلى WebP
 cwebp egyptian-scene.png -o egyptian-scene.webp

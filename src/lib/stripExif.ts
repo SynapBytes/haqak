@@ -29,7 +29,7 @@ export async function stripExifFromFile(file: File): Promise<File> {
             resolve(file);
             return;
           }
-          const ext = mimeType === "image/png" ? ".png" : ".jpg";
+          const ext = mimeType === "image/png" ? ".webp" : ".jpg";
           const cleanName = file.name.replace(/\.[^.]+$/, ext);
           resolve(new File([blob], cleanName, { type: mimeType, lastModified: Date.now() }));
         },

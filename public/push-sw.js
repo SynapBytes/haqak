@@ -7,8 +7,8 @@ self.addEventListener("push", (event) => {
     event.waitUntil(
       self.registration.showNotification(title || "صوتك", {
         body: body || "",
-        icon: icon || "/logo-sawtak.png",
-        badge: "/logo-sawtak.png",
+        icon: icon || "/logo-sawtak.webp",
+        badge: "/logo-sawtak.webp",
         data: data || {},
       })
     );

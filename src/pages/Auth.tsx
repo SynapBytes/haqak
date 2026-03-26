@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
@@ -6,15 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, ShieldCheck, LogIn, ArrowRight, Eye, EyeOff, Lock, Mail, Phone, IdCard, Fingerprint, KeyRound, MapPin, Building2, Landmark } from "lucide-react";
+import { User, ShieldCheck, LogIn, ArrowRight, Eye, EyeOff, Lock, Mail, Phone, IdCard, Fingerprint, KeyRound, MapPin, Building2, Landmark, AlertCircle } from "lucide-react";
 import egyptGeoData from "@/data/egypt-geo.json";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
-import ornament2 from "@/assets/egyptian-ornament-2.png";
-import egyptianAnkh from "@/assets/egyptian-ankh.png";
-import egyptianNefertiti from "@/assets/egyptian-nefertiti.png";
-import ornament1 from "@/assets/egyptian-ornament-1.png";
+import ornament2 from "@/assets/egyptian-ornament-2.webp";
+import egyptianAnkh from "@/assets/egyptian-ankh.webp";
+import egyptianNefertiti from "@/assets/egyptian-nefertiti.webp";
+import ornament1 from "@/assets/egyptian-ornament-1.webp";
 
 type AuthMode = "login" | "signup-citizen" | "signup-mp" | "forgot-password";
 
@@ -35,9 +35,50 @@ const Auth = () => {
   const [electoralDistrict, setElectoralDistrict] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
 
+  // Validation states
+  const [phoneError, setPhoneError] = useState("");
+  const [isFormValid, setIsFormValid] = useState(false);
+
+  const phoneRegex = /^01[0125][0-9]{8}$/;
+
+  useEffect(() => {
+    if (phone && !phoneRegex.test(phone)) {
+      setPhoneError(t("auth.phone_invalid"));
+    } else {
+      setPhoneError("");
+    }
+  }, [phone, t]);
+
+  useEffect(() => {
+    const validateForm = () => {
+      if (mode === "login") {
+        return email.length > 0 && password.length > 0;
+      }
+      if (mode === "forgot-password") {
+        return email.length > 0;
+      }
+      if (mode === "signup-citizen" || mode === "signup-mp") {
+        const commonValid = email.length > 0 && 
+                           password.length >= 8 && 
+                           /\d/.test(password) && 
+                           /[a-zA-Z\u0600-\u06FF]/.test(password) &&
+                           fullName.length > 0 && 
+                           phoneRegex.test(phone);
+        
+        if (mode === "signup-mp") {
+          return commonValid && governorate.length > 0 && district.length > 0 && electoralDistrict.length > 0;
+        }
+        return commonValid;
+      }
+      return false;
+    };
+    setIsFormValid(validateForm());
+  }, [mode, email, password, fullName, phone, governorate, district, electoralDistrict]);
+
   const resetForm = () => {
     setEmail(""); setPassword(""); setFullName(""); setPhone(""); setRegistrationNumber("");
     setDisplayName(""); setGovernorate(""); setDistrict(""); setElectoralDistrict("");
+    setPhoneError("");
   };
 
   const translateError = (msg: string): string => {
@@ -60,6 +101,7 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isFormValid) return;
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -76,11 +118,7 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 8) { toast.error(t("auth.password_min_error")); return; }
-    if (!/\d/.test(password) || !/[a-zA-Z\u0600-\u06FF]/.test(password)) {
-      toast.error(t("auth.password_mix_error")); return;
-    }
-    if (!/^01[0-9]{9}$/.test(phone)) { toast.error(t("auth.phone_invalid")); return; }
+    if (!isFormValid) return;
     setLoading(true);
     const timeoutId = setTimeout(() => {
       setLoading(false);
@@ -95,7 +133,6 @@ const Auth = () => {
         if (governorate) metadata.governorate = governorate;
         if (district) metadata.district = district;
         if (electoralDistrict) metadata.electoral_district = electoralDistrict;
-        // Keep registration number if provided, though we're moving away from it
         if (registrationNumber) metadata.registration_number = registrationNumber;
       }
 
@@ -122,7 +159,7 @@ const Auth = () => {
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) { toast.error(t("auth.enter_email")); return; }
+    if (!isFormValid) return;
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -219,75 +256,78 @@ const Auth = () => {
                       <div className="space-y-1.5">
                         <label htmlFor="phone" className="text-sm font-semibold text-foreground block">{t("auth.phone")}</label>
                         <div className="relative group">
-                          <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("auth.phone_placeholder")} type="tel" required dir="ltr" aria-required="true" aria-label={t("auth.phone")} className="pl-11 text-left h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" maxLength={11} />
-                          <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
+                          <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("auth.phone_placeholder")} required aria-required="true" aria-label={t("auth.phone")} className={`text-right pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors ${phoneError ? 'border-destructive focus-visible:ring-destructive' : ''}`} />
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
                             <Phone className="w-3.5 h-3.5 text-muted-foreground" />
                           </div>
                         </div>
+                        {phoneError && (
+                          <motion.p initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-destructive flex items-center gap-1 mt-1">
+                            <AlertCircle className="w-3 h-3" /> {phoneError}
+                          </motion.p>
+                        )}
                       </div>
-         	                      {mode === "signup-mp" && (
-	                        <>
-	                          <div className="space-y-1.5">
-	                            <label htmlFor="displayName" className="text-sm font-semibold text-foreground block">{t("auth.display_name")}</label>
-	                            <div className="relative group">
-	                              <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={t("auth.display_name_placeholder")} className="text-right pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
-	                              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
-	                                <Fingerprint className="w-3.5 h-3.5 text-muted-foreground" />
-	                              </div>
-	                            </div>
-	                          </div>
 
-	                          <div className="grid grid-cols-2 gap-3">
-	                            <div className="space-y-1.5">
-	                              <label className="text-sm font-semibold text-foreground block">{t("auth.governorate")}</label>
-	                              <Select value={governorate} onValueChange={(val) => { setGovernorate(val); setDistrict(""); }}>
-	                                <SelectTrigger className="h-12 rounded-xl border-border/50 bg-background/50 text-right pr-10">
-	                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
-	                                    <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-	                                  </div>
-	                                  <SelectValue placeholder={t("auth.governorate_placeholder")} />
-	                                </SelectTrigger>
-	                                <SelectContent className="max-h-[300px]">
-	                                  {Object.keys(egyptGeoData.Egypt).map((gov) => (
-	                                    <SelectItem key={gov} value={gov} className="text-right">
-	                                      {gov === "Cairo" ? "القاهرة" : gov === "Giza" ? "الجيزة" : gov === "Alexandria" ? "الإسكندرية" : gov}
-	                                    </SelectItem>
-	                                  ))}
-	                                </SelectContent>
-	                              </Select>
-	                            </div>
-
-	                            <div className="space-y-1.5">
-	                              <label className="text-sm font-semibold text-foreground block">{t("auth.district")}</label>
-	                              <Select value={district} onValueChange={setDistrict} disabled={!governorate}>
-	                                <SelectTrigger className="h-12 rounded-xl border-border/50 bg-background/50 text-right pr-10">
-	                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
-	                                    <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
-	                                  </div>
-	                                  <SelectValue placeholder={t("auth.district_placeholder")} />
-	                                </SelectTrigger>
-	                                <SelectContent className="max-h-[300px]">
-	                                  {governorate && Object.entries(egyptGeoData.Egypt[governorate as keyof typeof egyptGeoData.Egypt]).map(([en, ar]) => (
-	                                    <SelectItem key={en} value={en} className="text-right">{ar}</SelectItem>
-	                                  ))}
-	                                </SelectContent>
-	                              </Select>
-	                            </div>
-	                          </div>
-
-	                          <div className="space-y-1.5">
-	                            <label htmlFor="electoralDistrict" className="text-sm font-semibold text-foreground block">{t("auth.electoral_district")}</label>
-	                            <div className="relative group">
-	                              <Input id="electoralDistrict" value={electoralDistrict} onChange={(e) => setElectoralDistrict(e.target.value)} placeholder={t("auth.electoral_district_placeholder")} className="text-right pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
-	                              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
-	                                <Landmark className="w-3.5 h-3.5 text-muted-foreground" />
-	                              </div>
-	                            </div>
-	                          </div>
-	                        </>
-	                      )}             </div>
+                      {mode === "signup-mp" && (
+                        <>
+                          <div className="space-y-1.5">
+                            <label htmlFor="displayName" className="text-sm font-semibold text-foreground block">{t("auth.display_name")}</label>
+                            <div className="relative group">
+                              <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={t("auth.display_name_placeholder")} className="text-right pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
+                                <Fingerprint className="w-3.5 h-3.5 text-muted-foreground" />
+                              </div>
+                            </div>
                           </div>
-                        </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <label className="text-sm font-semibold text-foreground block">{t("auth.governorate")}</label>
+                              <Select value={governorate} onValueChange={(val) => { setGovernorate(val); setDistrict(""); }}>
+                                <SelectTrigger className="h-12 rounded-xl border-border/50 bg-background/50 text-right pr-10">
+                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
+                                    <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                                  </div>
+                                  <SelectValue placeholder={t("auth.governorate_placeholder")} />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[300px]">
+                                  {Object.keys(egyptGeoData.Egypt).map((gov) => (
+                                    <SelectItem key={gov} value={gov} className="text-right">
+                                      {gov === "Cairo" ? "القاهرة" : gov === "Giza" ? "الجيزة" : gov === "Alexandria" ? "الإسكندرية" : gov}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="text-sm font-semibold text-foreground block">{t("auth.district")}</label>
+                              <Select value={district} onValueChange={setDistrict} disabled={!governorate}>
+                                <SelectTrigger className="h-12 rounded-xl border-border/50 bg-background/50 text-right pr-10">
+                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
+                                    <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                                  </div>
+                                  <SelectValue placeholder={t("auth.district_placeholder")} />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[300px]">
+                                  {governorate && Object.entries(egyptGeoData.Egypt[governorate as keyof typeof egyptGeoData.Egypt]).map(([en, ar]) => (
+                                    <SelectItem key={en} value={en} className="text-right">{ar}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label htmlFor="electoralDistrict" className="text-sm font-semibold text-foreground block">{t("auth.electoral_district")}</label>
+                            <div className="relative group">
+                              <Input id="electoralDistrict" value={electoralDistrict} onChange={(e) => setElectoralDistrict(e.target.value)} placeholder={t("auth.electoral_district_placeholder")} className="text-right pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors" />
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
+                                <Landmark className="w-3.5 h-3.5 text-muted-foreground" />
+                              </div>
+                            </div>
+                          </div>
+                        </>
                       )}
                     </>
                   )}
@@ -342,16 +382,16 @@ const Auth = () => {
 
                   {mode === "signup-mp" && (
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-gradient-to-br from-warning/[0.08] to-warning/[0.03] border border-warning/15">
-                      <p className="text-xs text-warning flex items-center gap-2.5 leading-relaxed">
+                      <div className="text-xs text-warning flex items-center gap-2.5 leading-relaxed">
                         <div className="w-8 h-8 rounded-xl bg-warning/10 flex items-center justify-center shrink-0">
                           <ShieldCheck className="w-4 h-4" />
                         </div>
                         {t("auth.mp_approval_note")}
-                      </p>
+                      </div>
                     </motion.div>
                   )}
 
-                  <Button type="submit" disabled={loading} className={`w-full gap-2.5 bg-gradient-to-l ${gradient} text-white hover:opacity-90 h-13 text-base font-semibold rounded-xl shadow-lg transition-all hover:-translate-y-0.5`} style={{ height: '52px' }}>
+                  <Button type="submit" disabled={loading || !isFormValid} className={`w-full gap-2.5 bg-gradient-to-l ${gradient} text-white hover:opacity-90 h-13 text-base font-semibold rounded-xl shadow-lg transition-all ${isFormValid ? 'hover:-translate-y-0.5' : 'opacity-50 grayscale'}`} style={{ height: '52px' }}>
                     {loading ? (
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : isForgot ? (
