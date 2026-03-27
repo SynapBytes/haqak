@@ -20,13 +20,13 @@ const AnalyticsDashboard = () => {
       setLoading(true);
       
       // Fetch issues with governorate info
-      const { data: issues } = await supabase.from("issues").select("status, governorate, created_at");
+      const { data: issues } = await supabase.from("issues").select("status, location, created_at");
       
       if (issues) {
         // 1. Issues by Governorate
         const govData: Record<string, number> = {};
         issues.forEach(i => {
-          const gov = i.governorate || t("common.unknown");
+          const gov = (i.location?.split(",")[0]?.trim()) || t("common.unknown");
           govData[gov] = (govData[gov] || 0) + 1;
         });
         const govChartData = Object.entries(govData).map(([name, value]) => ({ name, value }));

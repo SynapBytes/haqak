@@ -73,7 +73,7 @@ const CitizenDashboard = () => {
         citizen_confirmed: (d as any).citizen_confirmed || false,
         ai_summary: d.ai_summary || undefined,
         user_id: d.user_id,
-        resolution_rating: d.resolution_rating,
+        resolution_rating: (d as any).resolution_rating,
       })));
 
       const { data: convs } = await supabase
@@ -508,9 +508,7 @@ const CitizenDashboard = () => {
               <div key={issue.id} className="space-y-4">
                 <IssueCard
                   issue={issue}
-                  onConfirmResolution={() => handleConfirmResolution(issue.id)}
-                  onOpenChat={() => setChatIssue(issue)}
-                  hasChat={conversationMap[issue.id] || false}
+                  onClick={() => setChatIssue(issue)}
                 />
                 {issue.status === "resolved" && !issue.resolution_rating && (
                   <ResolutionRating 
@@ -528,7 +526,7 @@ const CitizenDashboard = () => {
         <ChatDrawer
           issueId={chatIssue.id}
           issueTitle={chatIssue.title}
-          isOpen={!!chatIssue}
+          citizenUserId={chatIssue.user_id || ""}
           onClose={() => setChatIssue(null)}
           isMP={false}
         />

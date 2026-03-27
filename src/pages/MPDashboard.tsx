@@ -529,7 +529,10 @@ const MPDashboard = () => {
         {/* Chat Drawer */}
         {chatIssue && (
           <ChatDrawer
-            issue={chatIssue}
+            issueId={chatIssue.id}
+            issueTitle={chatIssue.title}
+            citizenUserId={chatIssue.user_id || ""}
+            isMP={true}
             onClose={() => setChatIssue(null)}
           />
         )}
