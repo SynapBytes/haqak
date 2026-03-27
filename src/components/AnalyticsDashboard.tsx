@@ -20,7 +20,7 @@ const AnalyticsDashboard = () => {
       setLoading(true);
       
       // Fetch issues with governorate info
-      const { data: issues } = await supabase.from("issues").select("status, governorate, created_at");
+      const { data: issues } = await supabase.from("issues").select("status, location, created_at");
       
       if (issues) {
         // 1. Issues by Governorate
