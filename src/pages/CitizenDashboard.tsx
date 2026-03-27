@@ -73,7 +73,7 @@ const CitizenDashboard = () => {
         citizen_confirmed: (d as any).citizen_confirmed || false,
         ai_summary: d.ai_summary || undefined,
         user_id: d.user_id,
-        resolution_rating: d.resolution_rating,
+        resolution_rating: (d as any).resolution_rating,
       })));
 
       const { data: convs } = await supabase
