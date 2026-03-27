@@ -31,9 +31,9 @@ const ResolutionRating = ({ issueId, onRated }: ResolutionRatingProps) => {
       const { error } = await supabase
         .from("issues")
         .update({
-          resolution_rating: rating,
-          resolution_feedback: feedback,
-        })
+          citizen_confirmed: true,
+          mp_notes: `Rating: ${rating}/5. ${feedback}`,
+        } as any)
         .eq("id", issueId);
 
       if (error) throw error;

@@ -135,16 +135,8 @@ const ChatDrawer = ({ issueId, issueTitle, citizenUserId, citizenPhone, isMP, on
                     <PhoneCall className="w-3.5 h-3.5" />{citizenPhone}
                   </a>
                 ) : (
-                  <Button variant="ghost" size="sm" onClick={async () => {
+                  <Button variant="ghost" size="sm" onClick={() => {
                     setShowPhone(true);
-                    if (user) {
-                      await supabase.from("audit_logs").insert({
-                        user_id: user.id,
-                        action: "VIEW_CITIZEN_PHONE",
-                        target_id: citizenUserId,
-                        description: `MP viewed citizen's phone number for issue ${issueId}`,
-                      });
-                    }
                   }} className="gap-1 text-xs h-8">
                     <Phone className="w-3.5 h-3.5" />{t("chat.show_phone")}
                   </Button>

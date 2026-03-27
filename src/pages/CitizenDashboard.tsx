@@ -526,7 +526,7 @@ const CitizenDashboard = () => {
         <ChatDrawer
           issueId={chatIssue.id}
           issueTitle={chatIssue.title}
-          isOpen={!!chatIssue}
+          citizenUserId={chatIssue.user_id || ""}
           onClose={() => setChatIssue(null)}
           isMP={false}
         />
