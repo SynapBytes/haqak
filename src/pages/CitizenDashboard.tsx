@@ -508,9 +508,7 @@ const CitizenDashboard = () => {
               <div key={issue.id} className="space-y-4">
                 <IssueCard
                   issue={issue}
-                  onConfirmResolution={() => handleConfirmResolution(issue.id)}
-                  onOpenChat={() => setChatIssue(issue)}
-                  hasChat={conversationMap[issue.id] || false}
+                  onClick={() => setChatIssue(issue)}
                 />
                 {issue.status === "resolved" && !issue.resolution_rating && (
                   <ResolutionRating 
