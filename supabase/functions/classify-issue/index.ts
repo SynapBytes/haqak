@@ -39,7 +39,7 @@ serve(async (req) => {
     // --- Check ban status ---
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("banned_until, is_permanently_banned")
+      .select("banned_until, is_permanently_banned, submission_blocked_until, failed_submissions_count")
       .eq("user_id", userId)
       .single();
     
