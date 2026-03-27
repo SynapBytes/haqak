@@ -141,11 +141,12 @@ const SupportForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !message.trim() || !captchaToken) {
-      toast.error(t("support.fill_all_captcha"));
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      toast.error(t("support.fill_all"));
       return;
     }
-      toast.error(t("support.fill_all"));
+    if (!captchaToken) {
+      toast.error(t("support.fill_all_captcha"));
       return;
     }
     setSending(true);
