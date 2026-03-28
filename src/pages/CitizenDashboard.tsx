@@ -19,6 +19,7 @@ import LocationPicker from "@/components/LocationPicker";
 import { useTranslation } from "react-i18next";
 import { stripExifFromFiles } from "@/lib/stripExif";
 import { filterContent, validateAttachments } from "@/lib/contentSecurity";
+import { sanitizeText } from "@/lib/sanitize";
 
 const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitation", "education", "electricity", "other"] as const;
 
