@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import IdentityVerification from "@/components/IdentityVerification";
 import {
   User, Phone, Mail, Camera, Loader2, Save, Shield,
   Calendar, CheckCircle2, AlertCircle, Clock, BarChart3
@@ -27,6 +28,7 @@ const CitizenProfile = () => {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
   const [issueStats, setIssueStats] = useState({ total: 0, resolved: 0, inProgress: 0, received: 0 });
 
   useEffect(() => {
@@ -35,7 +37,7 @@ const CitizenProfile = () => {
       setLoading(true);
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("full_name, phone, avatar_url")
+        .select("full_name, phone, avatar_url, is_verified")
         .eq("user_id", user.id)
         .single();
 
@@ -43,6 +45,7 @@ const CitizenProfile = () => {
         setFullName(profileData.full_name);
         setPhone(profileData.phone);
         setAvatarUrl(profileData.avatar_url);
+        setIsVerified(profileData.is_verified || false);
       }
 
       const { data: issues } = await supabase
@@ -161,6 +164,12 @@ const CitizenProfile = () => {
           <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight">{t("profile.title")}</h1>
           <p className="text-muted-foreground text-sm">{t("profile.subtitle")}</p>
         </motion.div>
+
+        {!isVerified && role === "citizen" && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-8">
+            <IdentityVerification onVerified={() => setIsVerified(true)} />
+          </motion.div>
+        )}
 
         {/* Avatar Section */}
         <motion.div

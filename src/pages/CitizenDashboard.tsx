@@ -4,8 +4,8 @@ import { useSearchParams } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import IssueCard from "@/components/IssueCard";
 import ChatDrawer from "@/components/ChatDrawer";
-import StatusBadge from "@/components/StatusBadge";
-import ResolutionRating from "@/components/ResolutionRating";
+import ReputationBadge from "@/components/ReputationBadge";
+import VoiceRecorder from "@/components/VoiceRecorder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Plus, X, Send, SendHorizonal, Loader2, ImagePlus, CheckCircle2, MessageCircle, AlertCircle, Clock, TrendingUp } from "lucide-react";
+import { Plus, X, Send, Loader2, ImagePlus, MessageCircle, AlertCircle, Clock, CheckCircle2, Mic, MapPin } from "lucide-react";
 import type { Issue } from "@/components/IssueCard";
 import LocationPicker from "@/components/LocationPicker";
 import { useTranslation } from "react-i18next";
@@ -45,7 +45,8 @@ const CitizenDashboard = () => {
   const [chatIssue, setChatIssue] = useState<Issue | null>(null);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
-  const [conversationMap, setConversationMap] = useState<Record<string, boolean>>({});
+  const [reputation, setReputation] = useState({ points: 0, rank: "مواطن جديد" });
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
 
   const isFormValid = title.trim() !== "" && 
                       description.trim() !== "" && 
@@ -76,17 +77,21 @@ const CitizenDashboard = () => {
         user_id: d.user_id,
         resolution_rating: (d as any).resolution_rating,
       })));
-
-      const { data: convs } = await supabase
-        .from("chat_conversations")
-        .select("issue_id")
-        .in("issue_id", data.map((d) => d.id));
-      if (convs) {
-        const map: Record<string, boolean> = {};
-        convs.forEach((c: any) => { map[c.issue_id] = true; });
-        setConversationMap(map);
-      }
     }
+    
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("reputation_points, citizen_rank")
+      .eq("user_id", user.id)
+      .single();
+    
+    if (profile) {
+      setReputation({
+        points: profile.reputation_points || 0,
+        rank: profile.citizen_rank || "مواطن جديد"
+      });
+    }
+    
     setLoading(false);
   };
 
@@ -119,9 +124,6 @@ const CitizenDashboard = () => {
     for (const file of cleanedFiles) {
       const ext = file.name.split(".").pop();
       const path = `${user!.id}/${issueId}/${Date.now()}.${ext}`;
-      if (path.includes('..')) {
-        throw new Error("Invalid path");
-      }
       const { error: uploadError } = await supabase.storage
         .from("issue-attachments")
         .upload(path, file);
@@ -145,48 +147,12 @@ const CitizenDashboard = () => {
       return;
     }
 
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("banned_until")
-      .eq("user_id", user.id)
-      .single();
-    if (profileData?.banned_until) {
-      const bannedUntil = new Date(profileData.banned_until);
-      if (bannedUntil > new Date()) {
-        const remainingDays = Math.ceil((bannedUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-        toast.error(t("dashboard.banned_message", { days: remainingDays }));
-        return;
-      }
-    }
-
     setSubmitting(true);
     try {
-      // Validate content before processing
-      const contentFilter = filterContent(title, description);
-      if (!contentFilter.isClean) {
-        toast.error(contentFilter.reason || "محتوى مسيء أو غير لائق");
-        setSubmitting(false);
-        return;
-      }
-      
-      // Validate attachments
-      if (files.length > 0) {
-        const attachmentValidation = validateAttachments(files);
-        if (!attachmentValidation.isValid) {
-          toast.error(attachmentValidation.errors.join("\n"));
-          setSubmitting(false);
-          return;
-        }
-        if (attachmentValidation.warnings.length > 0) {
-          attachmentValidation.warnings.forEach(w => toast.warning(w));
-        }
-      }
-      
       let finalTitle = sanitizeText(title);
       let finalDescription = sanitizeText(description);
       let finalCategory = category;
       let finalIssueType = issueType;
-      let isFlagged = false;
       let aiSummary: string | null = null;
       let priority = "normal";
 
@@ -198,15 +164,10 @@ const CitizenDashboard = () => {
 
       const senderName = senderProfile?.full_name || "";
 
-      const filesInfo = files.map(f => ({
-        fileName: f.name,
-        fileType: f.type,
-      }));
-
       try {
-        toast.info(t("dashboard.classifying_ai"));
+        toast.info("جاري تحليل الشكوى بالذكاء الاصطناعي...");
         const { data: classifyData, error: classifyError } = await supabase.functions.invoke("classify-issue", {
-          body: { title, description, senderName, files: filesInfo },
+          body: { title, description, senderName, location: { address: location, lat: latitude, lng: longitude } },
         });
 
         if (!classifyError && classifyData) {
@@ -217,23 +178,14 @@ const CitizenDashboard = () => {
           }
 
           finalTitle = classifyData.refined_title || title;
-          finalDescription = classifyData.refined_description || classifyData.text || description;
+          finalDescription = classifyData.refined_description || description;
           finalCategory = classifyData.issueCategory || category;
-          finalIssueType = classifyData.category === "group" ? "collective" : "individual";
-          isFlagged = classifyData.foulWordsRemoved || false;
-          aiSummary = classifyData.summary || null;
+          finalIssueType = classifyData.category === "collective" ? "collective" : "individual";
+          aiSummary = classifyData.ai_summary || null;
           priority = classifyData.priority || "normal";
-
-          if (classifyData.ai_error || classifyData.ai_unavailable) {
-            toast.warning(t("dashboard.ai_unavailable_fallback"));
-          }
-        } else if (classifyError) {
-          console.error("AI classification error:", classifyError);
-          toast.warning(t("dashboard.ai_error_fallback"));
         }
       } catch (err) {
         console.error("AI classification failed:", err);
-        toast.warning(t("dashboard.ai_failed_fallback"));
       }
 
       const { data: insertedIssue, error } = await supabase.from("issues").insert({
@@ -245,291 +197,228 @@ const CitizenDashboard = () => {
         category: finalCategory,
         location,
         issue_type: finalIssueType,
-        is_flagged: isFlagged,
         ai_summary: aiSummary,
         priority: priority,
         ...(assignedMpId ? { assigned_mp_id: assignedMpId } : {}),
         ...(latitude ? { latitude } : {}),
         ...(longitude ? { longitude } : {}),
       }).select("id").single();
+      
       if (error) throw error;
 
-      if (isFlagged) {
-        const { data: currentProfile } = await supabase
-          .from("profiles")
-          .select("banned_until")
-          .eq("user_id", user.id)
-          .single();
-
-        const hadPreviousBan = currentProfile?.banned_until && new Date(currentProfile.banned_until) > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-        const banDays = hadPreviousBan ? 30 : 7;
-        const banUntil = new Date();
-        banUntil.setDate(banUntil.getDate() + banDays);
-        await supabase.from("profiles").update({ banned_until: banUntil.toISOString() }).eq("user_id", user.id);
-        toast.warning(t("dashboard.violation_recorded", { days: banDays }));
-      }
-
-      if (files.length > 0 && insertedIssue) {
+      if (files.length > 0) {
         await uploadFiles(insertedIssue.id);
       }
 
-      const { data: mpRoles } = await supabase.from("user_roles").select("user_id").eq("role", "mp");
-      if (mpRoles) {
-        const priorityLabel = priority === "urgent" ? t("dashboard.new_issue_urgent") : priority === "humanitarian" ? t("dashboard.new_issue_humanitarian") : "";
-        for (const mp of mpRoles) {
-          await supabase.from("notifications").insert({
-            user_id: mp.user_id,
-            title: priorityLabel || t("dashboard.new_issue_title"),
-            message: t("dashboard.new_issue_notification", { title: finalTitle }),
-            issue_id: insertedIssue?.id,
-          });
-        }
-      }
-
-      toast.success(t("dashboard.issue_sent_success"));
+      toast.success(t("dashboard.issue_submitted"));
       setShowForm(false);
-      setTitle(""); setDescription(""); setCategory(""); setLocation("");
-      setIssueType("individual"); setFiles([]);
-      setLatitude(null); setLongitude(null);
-      setAssignedMpId(null); setAssignedMpName(null);
+      setTitle("");
+      setDescription("");
+      setCategory("");
+      setLocation("");
+      setFiles([]);
+      setAssignedMpId(null);
+      setAssignedMpName(null);
       fetchIssues();
     } catch (err: any) {
-      toast.error(err.message || t("dashboard.error_submit"));
+      toast.error(err.message || t("dashboard.error_submitting"));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleConfirmResolution = async (issueId: string) => {
-    const { error } = await supabase.from("issues").update({ citizen_confirmed: true }).eq("id", issueId);
-    if (error) { toast.error(t("common.error")); return; }
-    toast.success(t("dashboard.resolution_confirmed"));
-    await supabase.from("issue_actions").insert({
-      issue_id: issueId,
-      user_id: user!.id,
-      action_type: "citizen_confirmed",
-      note: t("dashboard.confirm_resolution"),
-    });
-    fetchIssues();
-  };
-
-  const statusCounts = {
-    received: issues.filter((i) => i.status === "received").length,
-    "in-progress": issues.filter((i) => i.status === "in-progress").length,
-    resolved: issues.filter((i) => i.status === "resolved").length,
-  };
-
-  const statCards = [
-    { status: "received" as const, count: statusCounts.received, icon: AlertCircle, color: "text-accent", bg: "from-accent/10 to-accent/5", label: t("dashboard.waiting") },
-    { status: "in-progress" as const, count: statusCounts["in-progress"], icon: Clock, color: "text-warning", bg: "from-warning/10 to-warning/5", label: t("dashboard.in_progress") },
-    { status: "resolved" as const, count: statusCounts.resolved, icon: CheckCircle2, color: "text-success", bg: "from-success/10 to-success/5", label: t("dashboard.resolved") },
+  const stats = [
+    { label: t("dashboard.total_issues"), value: issues.length, icon: AlertCircle, color: "text-accent", bg: "bg-accent/10" },
+    { label: t("dashboard.resolved"), value: issues.filter(i => i.status === 'resolved').length, icon: CheckCircle2, color: "text-success", bg: "bg-success/10" },
+    { label: t("dashboard.in_progress"), value: issues.filter(i => i.status === 'in-progress').length, icon: Clock, color: "text-info", bg: "bg-info/10" },
   ];
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen bg-background relative overflow-x-hidden">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-accent/[0.04] blur-3xl"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.3, 0.15] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-primary/[0.04] blur-3xl"
-        />
+        <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.03, 0.06, 0.03] }} transition={{ duration: 10, repeat: Infinity }} className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-accent blur-3xl" />
+        <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.03, 0.06, 0.03] }} transition={{ duration: 12, repeat: Infinity, delay: 1 }} className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-primary blur-3xl" />
       </div>
 
       <AppHeader />
-      <div className="container py-6 md:py-8 px-4 relative z-10">
-        <div className="flex items-center justify-between mb-8">
+
+      <main className="container mx-auto px-4 py-8 relative z-10">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
           <div>
-            <motion.h1
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight"
-            >
-              {t("dashboard.my_issues")}
-            </motion.h1>
-            <p className="text-muted-foreground text-sm">{t("dashboard.track_issues")}</p>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl font-bold text-foreground">{t("dashboard.title")}</h1>
+              <ReputationBadge points={reputation.points} rank={reputation.rank} />
+            </div>
+            <p className="text-muted-foreground">{t("dashboard.subtitle")}</p>
           </div>
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Button onClick={() => setShowForm(true)} className="gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 shadow-lg shadow-accent/20 rounded-xl h-11 px-6 font-semibold">
-              <Plus className="w-5 h-5" />
-              {t("dashboard.report_issue")}
-            </Button>
-          </motion.div>
+          <Button onClick={() => setShowForm(true)} className="gap-2 bg-accent hover:bg-accent/90 px-8 py-6 rounded-2xl text-lg shadow-lg shadow-accent/20 transition-all hover:scale-105 active:scale-95">
+            <Plus className="w-6 h-6" />
+            {t("dashboard.new_issue")}
+          </Button>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 md:gap-5 mb-8">
-          {statCards.map((item, i) => (
-            <motion.div
-              key={item.status}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              whileHover={{ y: -3, scale: 1.02 }}
-              className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-4 md:p-5 text-center group hover:shadow-xl transition-all duration-300 cursor-default"
-            >
-              <div className={`w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br ${item.bg} flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300`}>
-                <item.icon className={`w-5 h-5 md:w-6 md:h-6 ${item.color}`} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          {stats.map((stat, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className={`${stat.bg} border border-border/50 rounded-3xl p-6 backdrop-blur-sm`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">{stat.label}</p>
+                  <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+                </div>
+                <div className={`p-4 rounded-2xl bg-background/50 ${stat.color}`}>
+                  <stat.icon className="w-8 h-8" />
+                </div>
               </div>
-              <div className={`text-2xl md:text-3xl font-bold mb-1 ${item.color}`}>{item.count}</div>
-              <div className="text-xs text-muted-foreground font-medium">{item.label}</div>
             </motion.div>
           ))}
         </div>
 
-        <AnimatePresence>
-          {showForm && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-foreground/20 backdrop-blur-md z-50 flex items-center justify-center p-4"
-              onClick={() => setShowForm(false)}>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl p-7 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
-                onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-accent to-info flex items-center justify-center">
-                      <Plus className="w-5 h-5 text-white" />
-                    </div>
-                    <h2 className="text-xl font-bold text-foreground">{t("dashboard.new_issue")}</h2>
-                  </div>
-                  <button onClick={() => setShowForm(false)} className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors">
-                    <X className="w-4 h-4" />
-                  </button>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-foreground">{t("dashboard.my_issues")}</h2>
+          </div>
+          
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="w-10 h-10 animate-spin text-accent mb-4" />
+              <p className="text-muted-foreground">{t("common.loading")}</p>
+            </div>
+          ) : issues.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {issues.map((issue) => (
+                <IssueCard key={issue.id} issue={issue} onClick={() => {}} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-card/30 border border-dashed border-border/50 rounded-3xl">
+              <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-10 h-10 text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-2">{t("dashboard.no_issues")}</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">{t("dashboard.no_issues_desc")}</p>
+              <Button onClick={() => setShowForm(true)} variant="outline" className="mt-6 rounded-xl">
+                {t("dashboard.new_issue")}
+              </Button>
+            </div>
+          )}
+        </div>
+      </main>
+
+      <AnimatePresence>
+        {showForm && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xl">
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-card border border-border shadow-2xl rounded-[32px] w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="p-8 border-b border-border/50 flex justify-between items-center bg-muted/30">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">{t("dashboard.new_issue")}</h2>
+                  <p className="text-sm text-muted-foreground mt-1">أدخل تفاصيل مشكلتك ليتم معالجتها باحترافية</p>
                 </div>
+                <Button variant="ghost" size="icon" onClick={() => setShowForm(false)} className="rounded-full hover:bg-destructive/10 hover:text-destructive">
+                  <X className="w-6 h-6" />
+                </Button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-8">
                 {assignedMpName && (
-                  <div className="flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-xl px-4 py-3 mb-2">
-                    <SendHorizonal className="w-4 h-4 text-accent shrink-0" />
-                    <span className="text-sm font-medium text-foreground">
-                      {t("dashboard.issue_to_mp")} <span className="text-accent font-bold">{assignedMpName}</span>
-                    </span>
-                    <button type="button" onClick={() => { setAssignedMpId(null); setAssignedMpName(null); }} className="mr-auto text-muted-foreground hover:text-foreground">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                  <div className="bg-accent/10 border border-accent/20 rounded-2xl p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white font-bold">
+                      {assignedMpName[0]}
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">موجه إلى النائب:</p>
+                      <p className="font-bold text-accent">{assignedMpName}</p>
+                    </div>
                   </div>
                 )}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">{t("dashboard.title")}</label>
-                    <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("dashboard.title_placeholder")} className="text-right h-11 rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-foreground px-1">عنوان المشكلة</label>
+                    <Input placeholder="مثال: انقطاع المياه في حي الأمل" value={title} onChange={(e) => setTitle(e.target.value)} className="h-14 rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent" />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">{t("dashboard.description")}</label>
-                    <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("dashboard.description_placeholder")} rows={4} className="text-right rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-foreground px-1">القطاع</label>
+                    <Select value={category} onValueChange={setCategory}>
+                      <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent">
+                        <SelectValue placeholder="اختر القطاع المعني" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categoryKeys.map((key) => (
+                          <SelectItem key={key} value={t(`categories.${key}`)}>{t(`categories.${key}`)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">{t("dashboard.location")}</label>
-                    <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder={t("dashboard.location_placeholder")} className="text-right h-11 rounded-xl border-border/50 bg-background/50 focus:bg-background" required />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">{t("dashboard.map_location")}</label>
-                    <LocationPicker
-                      latitude={latitude}
-                      longitude={longitude}
-                      onChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-sm font-semibold text-foreground">وصف المشكلة</label>
+                    <VoiceRecorder 
+                      onTranscriptionComplete={(text) => setDescription(prev => prev ? prev + "\n" + text : text)}
+                      onRecordingComplete={(blob) => setVoiceBlob(blob)}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-foreground block">{t("dashboard.category")}</label>
-                      <Select value={category} onValueChange={setCategory}>
-                        <SelectTrigger className="h-11 rounded-xl border-border/50"><SelectValue placeholder={t("dashboard.category_placeholder")} /></SelectTrigger>
-                        <SelectContent>{categoryKeys.map((key) => (<SelectItem key={key} value={t(`categories.${key}`)}>{t(`categories.${key}`)}</SelectItem>))}</SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-foreground block">{t("dashboard.type")}</label>
-                      <Select value={issueType} onValueChange={(v) => setIssueType(v as "individual" | "collective")}>
-                        <SelectTrigger className="h-11 rounded-xl border-border/50"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="individual">{t("dashboard.individual")}</SelectItem>
-                          <SelectItem value="collective">{t("dashboard.collective")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                  <Textarea placeholder="اشرح تفاصيل المشكلة، متى بدأت، وما هي مطالبك..." value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-[150px] rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent resize-none p-4" />
+                </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground block">{t("dashboard.attachments")}</label>
-                    <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={handleFileChange} />
-                    <Button type="button" variant="outline" className="w-full gap-2 h-11 rounded-xl border-dashed border-2 border-border/50 hover:border-accent/30 hover:bg-accent/5" onClick={() => fileInputRef.current?.click()}>
-                      <ImagePlus className="w-4 h-4 text-accent" />
-                      {t("dashboard.attach_files") || "إرفاق صور أو ملفات"} ({files.length}/5)
-                    </Button>
-                    {files.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {files.map((f, i) => (
-                          <div key={i} className="flex items-center gap-1.5 bg-muted rounded-lg px-3 py-1.5 text-xs text-foreground">
-                            <span className="max-w-[100px] truncate">{f.name}</span>
-                            <button type="button" onClick={() => removeFile(i)} className="text-muted-foreground hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
-                          </div>
-                        ))}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground px-1">الموقع الجغرافي</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input placeholder="حدد المنطقة أو العنوان التفصيلي" value={location} onChange={(e) => setLocation(e.target.value)} className="h-14 pl-12 rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent" />
+                  </div>
+                  <LocationPicker onLocationSelect={(loc, lat, lng) => { setLocation(loc); setLatitude(lat); setLongitude(lng); }} />
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-sm font-semibold text-foreground px-1">المرفقات (صور أو مستندات)</label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {files.map((file, i) => (
+                      <div key={i} className="relative aspect-square rounded-2xl bg-muted overflow-hidden group border border-border/50">
+                        <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => removeFile(i)} className="absolute top-2 right-2 p-1 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                          <X className="w-4 h-4" />
+                        </button>
                       </div>
+                    ))}
+                    {files.length < 5 && (
+                      <button type="button" onClick={() => fileInputRef.current?.click()} className="aspect-square rounded-2xl border-2 border-dashed border-border hover:border-accent hover:bg-accent/5 transition-all flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-accent">
+                        <ImagePlus className="w-8 h-8" />
+                        <span className="text-xs font-medium">إضافة صورة</span>
+                      </button>
                     )}
                   </div>
+                  <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple accept="image/*" className="hidden" />
+                </div>
 
-                  <Button type="submit" disabled={submitting || !isFormValid} className={`w-full gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 h-12 rounded-xl font-semibold shadow-lg shadow-accent/20 text-base transition-all ${isFormValid ? 'hover:-translate-y-0.5' : 'opacity-50 grayscale'}`}>
-                    {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                    {t("dashboard.submit")}
+                <div className="pt-4 border-t border-border/50">
+                  <Button type="submit" disabled={submitting || !isFormValid} className="w-full h-16 rounded-2xl bg-accent hover:bg-accent/90 text-lg font-bold shadow-xl shadow-accent/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                    {submitting ? (
+                      <div className="flex items-center gap-3">
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                        <span>جاري المعالجة بالذكاء الاصطناعي...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <Send className="w-6 h-6" />
+                        <span>إرسال الشكوى رسمياً</span>
+                      </div>
+                    )}
                   </Button>
-                </form>
-              </motion.div>
+                </div>
+              </form>
             </motion.div>
-          )}
-        </AnimatePresence>
-
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
-          </div>
-        ) : issues.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-3xl text-center py-16 px-6"
-          >
-            <div className="w-16 h-16 rounded-3xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
-              <TrendingUp className="w-8 h-8 text-accent" />
-            </div>
-            <h3 className="text-lg font-bold text-foreground mb-2">{t("dashboard.no_issues")}</h3>
-            <p className="text-muted-foreground text-sm mb-6">{t("dashboard.first_issue")}</p>
-            <Button onClick={() => setShowForm(true)} className="gap-2 bg-accent text-white hover:bg-accent/90 rounded-xl">
-              <Plus className="w-4 h-4" /> {t("dashboard.first_issue_btn")}
-            </Button>
           </motion.div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {issues.map((issue) => (
-              <div key={issue.id} className="space-y-4">
-                <IssueCard
-                  issue={issue}
-                  onClick={() => setChatIssue(issue)}
-                />
-                {issue.status === "resolved" && !issue.resolution_rating && (
-                  <ResolutionRating 
-                    issueId={issue.id} 
-                    onRated={() => fetchIssues()} 
-                  />
-                )}
-              </div>
-            ))}
-          </div>
         )}
-      </div>
+      </AnimatePresence>
 
       {chatIssue && (
         <ChatDrawer
           issueId={chatIssue.id}
           issueTitle={chatIssue.title}
-          citizenUserId={chatIssue.user_id || ""}
+          citizenUserId={user?.id || ""}
           onClose={() => setChatIssue(null)}
-          isMP={false}
         />
       )}
     </div>

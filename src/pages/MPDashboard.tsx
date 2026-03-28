@@ -14,8 +14,11 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
   Search, Filter, BarChart3, AlertCircle, CheckCircle2, Clock, Loader2,
-  X, Users, User, FileText, TrendingUp, PieChart, MessageCircle, Phone
+  X, Users, User, FileText, TrendingUp, PieChart, MessageCircle, Phone,
+  LayoutDashboard, List
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MPAnalyticsSuite from "@/components/MPAnalyticsSuite";
 import type { Issue } from "@/components/IssueCard";
 import type { IssueStatus } from "@/components/StatusBadge";
 
@@ -102,16 +105,6 @@ const MPDashboard = () => {
     setLoading(false);
   };
 
-  const fetchCitizenPhone = async (userId: string) => {
-    if (citizenPhones[userId]) return citizenPhones[userId];
-    const { data } = await supabase.from("profiles").select("phone").eq("user_id", userId).single();
-    if (data) {
-      setCitizenPhones((prev) => ({ ...prev, [userId]: data.phone }));
-      return data.phone;
-    }
-    return undefined;
-  };
-
   useEffect(() => { fetchIssues(); }, [user]);
 
   const fetchActionLogs = async (issueId: string) => {
@@ -172,35 +165,6 @@ const MPDashboard = () => {
   });
 
   const totalIssues = issues.length;
-  const resolvedCount = issues.filter((i) => i.status === "resolved").length;
-  const pendingCount = issues.filter((i) => i.status === "received").length;
-  const inProgressCount = issues.filter((i) => i.status === "in-progress").length;
-  const confirmedCount = issues.filter((i) => i.citizen_confirmed).length;
-  const collectiveCount = issues.filter((i) => i.issue_type === "collective").length;
-  const urgentCount = issues.filter((i) => i.priority === "urgent").length;
-  const resolutionRate = totalIssues > 0 ? Math.round((resolvedCount / totalIssues) * 100) : 0;
-
-  const statCards = [
-    { label: t("mp_dashboard.total_issues"), value: totalIssues, icon: BarChart3, color: "text-accent", bg: "from-accent/10 to-accent/5" },
-    { label: t("mp_dashboard.pending"), value: pendingCount, icon: AlertCircle, color: "text-warning", bg: "from-warning/10 to-warning/5" },
-    { label: t("mp_dashboard.processing"), value: inProgressCount, icon: Clock, color: "text-info", bg: "from-info/10 to-info/5" },
-    { label: t("mp_dashboard.completed"), value: resolvedCount, icon: CheckCircle2, color: "text-success", bg: "from-success/10 to-success/5" },
-  ];
-
-  const analyticsCards = [
-    { label: t("mp_dashboard.resolution_rate"), value: `${resolutionRate}%`, icon: TrendingUp, color: "text-success" },
-    { label: t("mp_dashboard.collective_issues"), value: collectiveCount, icon: Users, color: "text-accent" },
-    { label: t("mp_dashboard.citizen_confirmed"), value: confirmedCount, icon: CheckCircle2, color: "text-primary" },
-    { label: "الشكاوى الضرورية", value: urgentCount, icon: AlertCircle, color: "text-destructive" },
-  ];
-
-  function getMostCommonCategory() {
-    if (issues.length === 0) return "-";
-    const counts: Record<string, number> = {};
-    issues.forEach((i) => { counts[i.category] = (counts[i.category] || 0) + 1; });
-    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "-";
-  }
-
   const statusFilters: { key: "all" | IssueStatus; label: string }[] = [
     { key: "all", label: t("mp_dashboard.filter_all") },
     { key: "received", label: t("mp_dashboard.received") },
@@ -225,233 +189,183 @@ const MPDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }} className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-accent/[0.04] blur-3xl" />
-        <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.3, 0.15] }} transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }} className="absolute -bottom-40 -right-40 w-[400px] h-[400px] rounded-full bg-primary/[0.04] blur-3xl" />
+        <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.04, 0.08, 0.04] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }} className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-accent blur-3xl" />
+        <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.04, 0.08, 0.04] }} transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }} className="absolute -bottom-40 -right-40 w-[400px] h-[400px] rounded-full bg-primary blur-3xl" />
       </div>
 
       <AppHeader />
       <div className="container py-6 md:py-8 px-4 relative z-10">
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight">{t("mp_dashboard.title")}</h1>
-          <p className="text-muted-foreground text-sm">{t("mp_dashboard.subtitle")}</p>
-        </motion.div>
-
-        {/* Main Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
-          {statCards.map((stat, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
-              whileHover={{ y: -3, scale: 1.02 }}
-              className={`bg-gradient-to-br ${stat.bg} border border-border/50 rounded-2xl p-4 md:p-5`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-xs md:text-sm font-medium">{stat.label}</p>
-                  <p className="text-2xl md:text-3xl font-bold text-foreground mt-1">{stat.value}</p>
-                </div>
-                <stat.icon className={`w-8 h-8 md:w-10 md:h-10 ${stat.color} opacity-20`} />
-              </div>
+        <Tabs defaultValue="list" className="space-y-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight">{t("mp_dashboard.title")}</h1>
+              <p className="text-muted-foreground text-sm">{t("mp_dashboard.subtitle")}</p>
             </motion.div>
-          ))}
-        </div>
-
-        {/* Analytics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
-          {analyticsCards.map((card, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: (i + 4) * 0.08 }}
-              className="bg-card/50 border border-border/50 rounded-2xl p-4 md:p-5 text-center"
-            >
-              <card.icon className={`w-6 h-6 md:w-8 md:h-8 ${card.color} mx-auto mb-2`} />
-              <p className="text-muted-foreground text-xs md:text-sm">{card.label}</p>
-              <p className="text-xl md:text-2xl font-bold text-foreground mt-1">{card.value}</p>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Filters and Search */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-card/50 border border-border/50 rounded-2xl p-4 md:p-6 mb-6"
-        >
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-5 h-5 text-accent" />
-            <h2 className="text-lg font-semibold text-foreground">{t("mp_dashboard.filters")}</h2>
+            <TabsList className="bg-card/50 backdrop-blur-sm border-accent/20 p-1">
+              <TabsTrigger value="list" className="gap-2 data-[state=active]:bg-accent">
+                <List className="w-4 h-4" />
+                قائمة الشكاوى
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="gap-2 data-[state=active]:bg-accent">
+                <LayoutDashboard className="w-4 h-4" />
+                مركز التحليلات
+              </TabsTrigger>
+            </TabsList>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder={t("mp_dashboard.search")}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+          <TabsContent value="analytics">
+            <MPAnalyticsSuite issues={issues} mpName={user?.email || "النائب"} />
+          </TabsContent>
+
+          <TabsContent value="list" className="space-y-8">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-card/50 border border-border/50 rounded-2xl p-4 md:p-6 mb-6"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Filter className="w-5 h-5 text-accent" />
+                <h2 className="text-lg font-semibold text-foreground">{t("mp_dashboard.filters")}</h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t("mp_dashboard.search")}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger>{t("categories.all")}</SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedStatus} onValueChange={(val) => setSelectedStatus(val as any)}>
+                  <SelectTrigger>{t("mp_dashboard.filter_all")}</SelectTrigger>
+                  <SelectContent>
+                    {statusFilters.map((filter) => (
+                      <SelectItem key={filter.key} value={filter.key}>{filter.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedType} onValueChange={(val) => setSelectedType(val as any)}>
+                  <SelectTrigger>{t("mp_dashboard.filter_all")}</SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("mp_dashboard.filter_all")}</SelectItem>
+                    <SelectItem value="individual">{t("issue_card.individual")}</SelectItem>
+                    <SelectItem value="collective">{t("issue_card.collective")}</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedPriority} onValueChange={(val) => setSelectedPriority(val as any)}>
+                  <SelectTrigger>جميع الأولويات</SelectTrigger>
+                  <SelectContent>
+                    {priorityFilters.map((filter) => (
+                      <SelectItem key={filter.key} value={filter.key}>{filter.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <p className="text-sm text-muted-foreground mt-4">
+                {t("mp_dashboard.showing")} <span className="font-semibold text-foreground">{filteredIssues.length}</span> {t("mp_dashboard.of")} <span className="font-semibold text-foreground">{totalIssues}</span> {t("mp_dashboard.issues")}
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              <AnimatePresence mode="popLayout">
+                {filteredIssues.map((issue) => (
+                  <motion.div
+                    key={issue.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <IssueCard
+                      issue={issue}
+                      onClick={() => openIssueDetail(issue)}
+                      isMPView
+                      citizenPhone={citizenPhones[issue.user_id]}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
 
-            {/* Category Filter */}
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger>{t("categories.all")}</SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {filteredIssues.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-20 bg-card/30 border border-dashed border-border/50 rounded-3xl"
+              >
+                <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Search className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-medium text-foreground">{t("mp_dashboard.no_issues")}</h3>
+                <p className="text-muted-foreground">{t("mp_dashboard.no_issues_desc")}</p>
+              </motion.div>
+            )}
+          </TabsContent>
+        </Tabs>
 
-            {/* Status Filter */}
-            <Select value={selectedStatus} onValueChange={(val) => setSelectedStatus(val as any)}>
-              <SelectTrigger>{t("mp_dashboard.filter_all")}</SelectTrigger>
-              <SelectContent>
-                {statusFilters.map((filter) => (
-                  <SelectItem key={filter.key} value={filter.key}>{filter.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Type Filter */}
-            <Select value={selectedType} onValueChange={(val) => setSelectedType(val as any)}>
-              <SelectTrigger>{t("mp_dashboard.filter_all")}</SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("mp_dashboard.filter_all")}</SelectItem>
-                <SelectItem value="individual">{t("issue_card.individual")}</SelectItem>
-                <SelectItem value="collective">{t("issue_card.collective")}</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Priority Filter */}
-            <Select value={selectedPriority} onValueChange={(val) => setSelectedPriority(val as any)}>
-              <SelectTrigger>جميع الأولويات</SelectTrigger>
-              <SelectContent>
-                {priorityFilters.map((filter) => (
-                  <SelectItem key={filter.key} value={filter.key}>{filter.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Results Count */}
-          <p className="text-sm text-muted-foreground mt-4">
-            {t("mp_dashboard.showing")} <span className="font-semibold text-foreground">{filteredIssues.length}</span> {t("mp_dashboard.of")} <span className="font-semibold text-foreground">{totalIssues}</span> {t("mp_dashboard.issues")}
-          </p>
-        </motion.div>
-
-        {/* Issues Grid */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-accent" />
-          </div>
-        ) : filteredIssues.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12"
-          >
-            <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-            <p className="text-muted-foreground">{t("mp_dashboard.no_issues")}</p>
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8"
-          >
-            <AnimatePresence>
-              {filteredIssues.map((issue, i) => (
-                <motion.div
-                  key={issue.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <IssueCard issue={issue} onClick={() => openIssueDetail(issue)} />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
-        )}
-
-        {/* Issue Detail Modal */}
         <AnimatePresence>
           {selectedIssue && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-              onClick={() => setSelectedIssue(null)}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
             >
               <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-card border border-border/50 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                initial={{ scale: 0.95, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.95, y: 20 }}
+                className="bg-card border border-border shadow-2xl rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
               >
-                <div className="p-6 md:p-8">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="flex-1">
-                      <h2 className="text-2xl font-bold text-foreground mb-2">{selectedIssue.refined_title || selectedIssue.title}</h2>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {selectedIssue.priority === "urgent" && (
-                          <span className="px-3 py-1 rounded-lg bg-destructive/10 text-destructive text-xs font-semibold">🔴 ضروري</span>
-                        )}
-                        {selectedIssue.priority === "humanitarian" && (
-                          <span className="px-3 py-1 rounded-lg bg-orange-500/10 text-orange-600 text-xs font-semibold">⚠️ إنساني</span>
-                        )}
-                        <span className="px-3 py-1 rounded-lg bg-muted text-muted-foreground text-xs">{selectedIssue.category}</span>
-                        {selectedIssue.issue_type === "collective" && (
-                          <span className="px-3 py-1 rounded-lg bg-accent/10 text-accent text-xs">جماعي</span>
-                        )}
-                      </div>
-                    </div>
-                    <button onClick={() => setSelectedIssue(null)} className="text-muted-foreground hover:text-foreground">
-                      <X className="w-6 h-6" />
-                    </button>
-                  </div>
+                <div className="p-6 border-b border-border/50 flex justify-between items-center">
+                  <h2 className="text-xl font-bold text-foreground">{t("mp_dashboard.issue_details")}</h2>
+                  <Button variant="ghost" size="icon" onClick={() => setSelectedIssue(null)} className="rounded-full">
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
 
-                  {/* Content */}
+                <div className="overflow-y-auto p-6 space-y-8">
                   <div className="space-y-6">
-                    {/* Description */}
                     <div>
-                      <h3 className="font-semibold text-foreground mb-2">{t("mp_dashboard.description")}</h3>
-                      <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{selectedIssue.refined_description || selectedIssue.description}</p>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-2">{t("issue_card.title")}</h3>
+                      <p className="text-lg font-semibold text-foreground">{selectedIssue.refined_title || selectedIssue.title}</p>
                     </div>
 
-                    {/* AI Summary */}
-                    {selectedIssue.ai_summary && (
-                      <div className="bg-accent/[0.06] border border-accent/20 rounded-xl p-4">
-                        <p className="text-sm text-accent">✨ <span className="font-semibold">{t("mp_dashboard.ai_summary")}:</span> {selectedIssue.ai_summary}</p>
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-2">{t("issue_card.description")}</h3>
+                      <div className="bg-muted/30 rounded-2xl p-4 text-foreground whitespace-pre-wrap leading-relaxed">
+                        {selectedIssue.refined_description || selectedIssue.description}
                       </div>
-                    )}
+                    </div>
 
-                    {/* Issue Details */}
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium">{t("mp_dashboard.location")}</p>
-                        <p className="text-foreground font-semibold">{selectedIssue.location || "-"}</p>
+                      <div className="bg-muted/20 rounded-xl p-3">
+                        <p className="text-xs text-muted-foreground mb-1">{t("issue_card.category")}</p>
+                        <p className="font-medium text-foreground">{selectedIssue.category}</p>
                       </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium">{t("mp_dashboard.date")}</p>
-                        <p className="text-foreground font-semibold">{selectedIssue.timeAgo}</p>
+                      <div className="bg-muted/20 rounded-xl p-3">
+                        <p className="text-xs text-muted-foreground mb-1">{t("issue_card.location")}</p>
+                        <p className="font-medium text-foreground">{selectedIssue.location}</p>
                       </div>
                     </div>
 
-                    {/* Action Logs */}
                     {actionLogs.length > 0 && (
                       <div>
                         <h3 className="font-semibold text-foreground mb-3">{t("mp_dashboard.action_history")}</h3>
@@ -467,7 +381,6 @@ const MPDashboard = () => {
                       </div>
                     )}
 
-                    {/* Update Status Form */}
                     <div className="border-t border-border/50 pt-6">
                       <h3 className="font-semibold text-foreground mb-4">{t("mp_dashboard.update_status")}</h3>
                       <div className="space-y-4">
@@ -507,7 +420,6 @@ const MPDashboard = () => {
                       </div>
                     </div>
 
-                    {/* Chat Button */}
                     <Button
                       onClick={() => {
                         setChatIssue(selectedIssue);
@@ -526,7 +438,6 @@ const MPDashboard = () => {
           )}
         </AnimatePresence>
 
-        {/* Chat Drawer */}
         {chatIssue && (
           <ChatDrawer
             issueId={chatIssue.id}
