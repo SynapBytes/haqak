@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { stripExifFromFile } from "@/lib/stripExif";
+import { sanitizeText } from "@/lib/sanitize";
 
 const CitizenProfile = () => {
   const { user, profile, role } = useAuth();
