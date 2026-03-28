@@ -4,12 +4,17 @@ import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
   Users, ShieldCheck, BarChart3, Search, CheckCircle2, XCircle,
-  Loader2, AlertCircle, TrendingUp, Clock, FileText, MapPin
+  Loader2, AlertCircle, TrendingUp, Clock, FileText, MapPin, Trash2, UserCog
 } from "lucide-react";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 
@@ -23,6 +28,7 @@ interface UserProfile {
   created_at: string;
   constituency: string | null;
   governorate: string | null;
+  banned_until: string | null;
 }
 
 interface UserWithRole extends UserProfile {
@@ -35,9 +41,14 @@ const AdminDashboard = () => {
   const [issues, setIssues] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [issueSearchQuery, setIssueSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"users" | "issues" | "analytics">("users");
   const [filterRole, setFilterRole] = useState<"all" | "citizen" | "mp">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "banned">("all");
+  const [filterGov, setFilterGov] = useState<string>("all");
   const [approving, setApproving] = useState<string | null>(null);
+  const [updatingRole, setUpdatingRole] = useState<string | null>(null);
+  const [deletingUser, setDeletingUser] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -68,10 +79,61 @@ const AdminDashboard = () => {
     setApproving(null);
   };
 
+  const handleRoleChange = async (userId: string, newRole: "citizen" | "mp" | "admin") => {
+    setUpdatingRole(userId);
+    try {
+      const { error } = await supabase
+        .from("user_roles")
+        .update({ role: newRole })
+        .eq("user_id", userId);
+      if (error) throw error;
+
+      // If changing to mp, ensure is_approved is set; if changing away from mp, clear approval
+      if (newRole === "mp") {
+        await supabase.from("profiles").update({ is_approved: false }).eq("user_id", userId);
+      }
+
+      toast.success(t("admin_dashboard.role_updated"));
+      fetchData();
+    } catch {
+      toast.error(t("admin_dashboard.role_update_error"));
+    }
+    setUpdatingRole(null);
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    setDeletingUser(userId);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-delete-user", {
+        body: { target_user_id: userId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(t("admin_dashboard.account_deleted"));
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || t("admin_dashboard.delete_error"));
+    }
+    setDeletingUser(null);
+  };
+
+  // Gather unique governorates for filter
+  const governorates = [...new Set(users.map((u) => u.governorate).filter(Boolean))] as string[];
+
   const filteredUsers = users.filter((u) => {
     const matchesSearch = !searchQuery || u.full_name.includes(searchQuery) || u.phone.includes(searchQuery);
     const matchesRole = filterRole === "all" || u.role === filterRole;
-    return matchesSearch && matchesRole;
+    const matchesStatus =
+      filterStatus === "all" ||
+      (filterStatus === "active" && (!u.banned_until || new Date(u.banned_until) <= new Date())) ||
+      (filterStatus === "banned" && u.banned_until && new Date(u.banned_until) > new Date());
+    const matchesGov = filterGov === "all" || u.governorate === filterGov;
+    return matchesSearch && matchesRole && matchesStatus && matchesGov;
+  });
+
+  const filteredIssues = issues.filter((issue) => {
+    if (!issueSearchQuery) return true;
+    return issue.title?.includes(issueSearchQuery) || issue.description?.includes(issueSearchQuery) || issue.location?.includes(issueSearchQuery);
   });
 
   const totalCitizens = users.filter((u) => u.role === "citizen").length;
@@ -99,6 +161,8 @@ const AdminDashboard = () => {
     { label: t("admin_dashboard.pending_count"), value: pendingMPs, icon: AlertCircle, color: "text-warning", bg: "from-warning/10 to-warning/5" },
     { label: t("admin_dashboard.resolved_rate"), value: `${resolutionRate}%`, icon: TrendingUp, color: "text-success", bg: "from-success/10 to-success/5" },
   ];
+
+  const isBanned = (u: UserWithRole) => u.banned_until && new Date(u.banned_until) > new Date();
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -166,17 +230,41 @@ const AdminDashboard = () => {
           <>
             {/* Search & Filter */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-5 mb-6">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t("admin_dashboard.search_users")} className="pr-11 text-right h-11 rounded-xl border-border/50 bg-background/50" />
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t("admin_dashboard.search_users")} className="pr-11 text-right h-11 rounded-xl border-border/50 bg-background/50" />
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    {(["all", "citizen", "mp"] as const).map((r) => (
+                      <Button key={r} variant={filterRole === r ? "secondary" : "ghost"} size="sm" onClick={() => setFilterRole(r)} className="text-xs rounded-lg">
+                        {r === "all" ? t("admin_dashboard.filter_all") : roleLabels[r]}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  {(["all", "citizen", "mp"] as const).map((r) => (
-                    <Button key={r} variant={filterRole === r ? "secondary" : "ghost"} size="sm" onClick={() => setFilterRole(r)} className="text-xs rounded-lg">
-                      {r === "all" ? t("admin_dashboard.filter_all") : roleLabels[r]}
-                    </Button>
-                  ))}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex gap-2">
+                    {(["all", "active", "banned"] as const).map((s) => (
+                      <Button key={s} variant={filterStatus === s ? "secondary" : "ghost"} size="sm" onClick={() => setFilterStatus(s)} className="text-xs rounded-lg">
+                        {s === "all" ? t("admin_dashboard.filter_all") : s === "active" ? t("admin_dashboard.filter_active") : t("admin_dashboard.filter_banned")}
+                      </Button>
+                    ))}
+                  </div>
+                  {governorates.length > 0 && (
+                    <Select value={filterGov} onValueChange={setFilterGov}>
+                      <SelectTrigger className="w-[180px] h-9 rounded-lg text-xs border-border/50">
+                        <SelectValue placeholder={t("admin_dashboard.filter_governorate")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{t("admin_dashboard.all_governorates")}</SelectItem>
+                        {governorates.map((g) => (
+                          <SelectItem key={g} value={g}>{g}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -186,13 +274,13 @@ const AdminDashboard = () => {
               {filteredUsers.map((user, i) => (
                 <motion.div key={user.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
                   className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:shadow-lg hover:border-border transition-all duration-300">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-accent/10 to-primary/10 flex items-center justify-center shrink-0 border border-accent/10">
                       <span className="text-sm font-bold text-accent">{user.full_name.charAt(0)}</span>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-foreground text-sm">{user.full_name}</span>
+                        <span className="font-bold text-foreground text-sm truncate">{user.full_name}</span>
                         <Badge variant={user.role === "mp" ? "default" : "secondary"} className="text-[10px] rounded-lg">
                           {roleLabels[user.role]}
                         </Badge>
@@ -202,6 +290,11 @@ const AdminDashboard = () => {
                             className={`text-[10px] rounded-lg ${user.is_approved ? "bg-success/10 text-success border-success/20" : ""}`}
                           >
                             {user.is_approved ? t("admin_dashboard.approved") : t("admin_dashboard.pending_approval")}
+                          </Badge>
+                        )}
+                        {isBanned(user) && (
+                          <Badge variant="destructive" className="text-[10px] rounded-lg">
+                            {t("admin_dashboard.filter_banned")}
                           </Badge>
                         )}
                       </div>
@@ -220,23 +313,75 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   </div>
-                  {user.role === "mp" && !user.is_approved && (
-                    <div className="flex gap-2">
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Button size="sm" className="gap-1.5 bg-gradient-to-l from-success to-primary text-white hover:opacity-90 text-xs h-9 rounded-xl shadow-md"
+                  <div className="flex items-center gap-2 flex-wrap shrink-0">
+                    {/* Role Dropdown */}
+                    <Select
+                      value={user.role}
+                      onValueChange={(val) => handleRoleChange(user.user_id, val as "citizen" | "mp" | "admin")}
+                      disabled={updatingRole === user.user_id}
+                    >
+                      <SelectTrigger className="w-[110px] h-9 rounded-lg text-xs border-border/50">
+                        {updatingRole === user.user_id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <SelectValue />
+                        )}
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="citizen">{t("admin_dashboard.role_citizen")}</SelectItem>
+                        <SelectItem value="mp">{t("admin_dashboard.role_mp")}</SelectItem>
+                        <SelectItem value="admin">{t("admin_dashboard.role_admin")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {/* MP Approval */}
+                    {user.role === "mp" && !user.is_approved && (
+                      <>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button size="sm" className="gap-1.5 bg-gradient-to-l from-success to-primary text-white hover:opacity-90 text-xs h-9 rounded-xl shadow-md"
+                            disabled={approving === user.user_id}
+                            onClick={() => handleApproveMP(user.user_id, true)}>
+                            {approving === user.user_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                            {t("admin_dashboard.approve")}
+                          </Button>
+                        </motion.div>
+                        <Button size="sm" variant="outline" className="gap-1.5 text-destructive border-destructive/20 text-xs h-9 rounded-xl hover:bg-destructive/5"
                           disabled={approving === user.user_id}
-                          onClick={() => handleApproveMP(user.user_id, true)}>
-                          {approving === user.user_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                          {t("admin_dashboard.approve")}
+                          onClick={() => handleApproveMP(user.user_id, false)}>
+                          <XCircle className="w-3.5 h-3.5" /> {t("admin_dashboard.revoke")}
                         </Button>
-                      </motion.div>
-                      <Button size="sm" variant="outline" className="gap-1.5 text-destructive border-destructive/20 text-xs h-9 rounded-xl hover:bg-destructive/5"
-                        disabled={approving === user.user_id}
-                        onClick={() => handleApproveMP(user.user_id, false)}>
-                        <XCircle className="w-3.5 h-3.5" /> {t("admin_dashboard.revoke")}
-                      </Button>
-                    </div>
-                  )}
+                      </>
+                    )}
+
+                    {/* Delete Account */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="ghost" className="h-9 w-9 p-0 text-destructive hover:bg-destructive/10 rounded-xl"
+                          disabled={deletingUser === user.user_id}>
+                          {deletingUser === user.user_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{t("admin_dashboard.delete_confirm_title")}</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {t("admin_dashboard.delete_confirm_message")}
+                            <br />
+                            <strong>{user.full_name}</strong> — {user.phone}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteUser(user.user_id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            {t("common.delete")}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </motion.div>
               ))}
               {filteredUsers.length === 0 && (
@@ -250,35 +395,53 @@ const AdminDashboard = () => {
             </div>
           </>
         ) : activeTab === "issues" ? (
-          <div className="space-y-3">
-            {issues.map((issue, i) => (
-              <motion.div key={issue.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
-                className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-4 md:p-5 hover:shadow-lg transition-all duration-300">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-foreground text-sm truncate">{issue.title}</h3>
-                    <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1">{issue.description}</p>
-                    <div className="flex items-center gap-2 mt-3 flex-wrap">
-                      <Badge
-                        className={`text-[10px] rounded-lg border ${
-                          issue.status === "resolved" ? "bg-success/10 text-success border-success/20" :
-                          issue.status === "in-progress" ? "bg-warning/10 text-warning border-warning/20" :
-                          "bg-accent/10 text-accent border-accent/20"
-                        }`}
-                      >
-                        {issue.status === "resolved" ? t("mp_dashboard.resolved") : issue.status === "in-progress" ? t("mp_dashboard.in_progress") : t("mp_dashboard.received")}
-                      </Badge>
-                      <span className="text-[10px] text-muted-foreground bg-muted rounded-lg px-2 py-0.5">{issue.category}</span>
-                      <span className="text-[10px] text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" />{issue.location}</span>
+          <>
+            {/* Issue Search */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-5 mb-6">
+              <div className="relative">
+                <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input value={issueSearchQuery} onChange={(e) => setIssueSearchQuery(e.target.value)} placeholder={t("admin_dashboard.search_issues")} className="pr-11 text-right h-11 rounded-xl border-border/50 bg-background/50" />
+              </div>
+            </motion.div>
+
+            <div className="space-y-3">
+              {filteredIssues.map((issue, i) => (
+                <motion.div key={issue.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
+                  className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-4 md:p-5 hover:shadow-lg transition-all duration-300">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-foreground text-sm truncate">{issue.title}</h3>
+                      <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1">{issue.description}</p>
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
+                        <Badge
+                          className={`text-[10px] rounded-lg border ${
+                            issue.status === "resolved" ? "bg-success/10 text-success border-success/20" :
+                            issue.status === "in-progress" ? "bg-warning/10 text-warning border-warning/20" :
+                            "bg-accent/10 text-accent border-accent/20"
+                          }`}
+                        >
+                          {issue.status === "resolved" ? t("mp_dashboard.resolved") : issue.status === "in-progress" ? t("mp_dashboard.in_progress") : t("mp_dashboard.received")}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground bg-muted rounded-lg px-2 py-0.5">{issue.category}</span>
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" />{issue.location}</span>
+                      </div>
                     </div>
+                    <span className="text-[10px] text-muted-foreground shrink-0 bg-muted rounded-lg px-2 py-1">
+                      {new Date(issue.created_at).toLocaleDateString("ar-EG")}
+                    </span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground shrink-0 bg-muted rounded-lg px-2 py-1">
-                    {new Date(issue.created_at).toLocaleDateString("ar-EG")}
-                  </span>
+                </motion.div>
+              ))}
+              {filteredIssues.length === 0 && (
+                <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl text-center py-16">
+                  <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                    <Search className="w-7 h-7 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground font-medium text-sm">{t("mp_dashboard.no_results")}</p>
                 </div>
-              </motion.div>
-            ))}
-          </div>
+              )}
+            </div>
+          </>
         ) : (
           /* Analytics Tab */
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
