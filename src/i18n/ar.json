@@ -233,7 +233,20 @@
     "error": "حدث خطأ",
     "issues_by_gov": "المشاكل حسب المحافظة",
     "issues_by_status": "المشاكل حسب الحالة",
-    "issues_trend": "معدل المشاكل (آخر ٧ أيام)"
+    "issues_trend": "معدل المشاكل (آخر ٧ أيام)",
+    "change_role": "تغيير الدور",
+    "delete_account": "حذف الحساب",
+    "delete_confirm_title": "تأكيد حذف الحساب",
+    "delete_confirm_message": "هل أنت متأكد من حذف هذا الحساب؟ لا يمكن التراجع عن هذا الإجراء.",
+    "role_updated": "تم تحديث دور المستخدم بنجاح ✅",
+    "role_update_error": "خطأ في تحديث الدور",
+    "account_deleted": "تم حذف الحساب بنجاح",
+    "delete_error": "خطأ في حذف الحساب",
+    "filter_active": "نشط",
+    "filter_banned": "محظور",
+    "filter_governorate": "المحافظة",
+    "all_governorates": "كل المحافظات",
+    "search_issues": "بحث في المشاكل..."
   },
   "profile": {
     "title": "الملف الشخصي",

@@ -118,7 +118,7 @@ const CitizenProfile = () => {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: fullName, phone })
+        .update({ full_name: sanitizeText(fullName), phone: sanitizeText(phone) })
         .eq("user_id", user.id);
       if (error) throw error;
       toast.success(t("profile.saved"));

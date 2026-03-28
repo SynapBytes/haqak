@@ -182,8 +182,8 @@ const CitizenDashboard = () => {
         }
       }
       
-      let finalTitle = title;
-      let finalDescription = description;
+      let finalTitle = sanitizeText(title);
+      let finalDescription = sanitizeText(description);
       let finalCategory = category;
       let finalIssueType = issueType;
       let isFlagged = false;
