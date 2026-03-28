@@ -21,6 +21,9 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MPAnalyticsSuite from "@/components/MPAnalyticsSuite";
+import { AIEarlyWarningSystem } from "@/components/AIEarlyWarningSystem";
+import { GISHeatmap } from "@/components/GISHeatmap";
+import { BlockchainAuditTrail } from "@/components/BlockchainAuditTrail";
 import type { Issue } from "@/components/IssueCard";
 import type { IssueStatus } from "@/components/StatusBadge";
 
@@ -258,11 +261,35 @@ const MPDashboard = () => {
                 <LayoutDashboard className="w-4 h-4" />
                 مركز التحليلات
               </TabsTrigger>
+              <TabsTrigger value="early-warning" className="gap-2 data-[state=active]:bg-accent">
+                <AlertCircle className="w-4 h-4" />
+                الإنذار المبكر
+              </TabsTrigger>
+              <TabsTrigger value="gis" className="gap-2 data-[state=active]:bg-accent">
+                <PieChart className="w-4 h-4" />
+                خريطة GIS
+              </TabsTrigger>
+              <TabsTrigger value="blockchain" className="gap-2 data-[state=active]:bg-accent">
+                <ShieldCheck className="w-4 h-4" />
+                سجل التدقيق
+              </TabsTrigger>
             </TabsList>
           </div>
 
           <TabsContent value="analytics">
             <MPAnalyticsSuite issues={issues} mpName={user?.email || "النائب"} />
+          </TabsContent>
+
+          <TabsContent value="early-warning">
+            <AIEarlyWarningSystem />
+          </TabsContent>
+
+          <TabsContent value="gis">
+            <GISHeatmap />
+          </TabsContent>
+
+          <TabsContent value="blockchain">
+            <BlockchainAuditTrail />
           </TabsContent>
 
           <TabsContent value="list" className="space-y-8">

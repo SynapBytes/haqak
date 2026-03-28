@@ -7,6 +7,10 @@ import ChatDrawer from "@/components/ChatDrawer";
 import ReputationBadge from "@/components/ReputationBadge";
 import OfficialDocumentGenerator from "@/components/OfficialDocumentGenerator";
 import AttachmentManager from "@/components/AttachmentManager";
+import { AILegalBot } from "@/components/AILegalBot";
+import { MobileAppFeatures } from "@/components/MobileAppFeatures";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -286,35 +290,56 @@ const CitizenDashboard = () => {
           ))}
         </div>
 
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-foreground">{t("dashboard.my_issues")}</h2>
-          </div>
-          
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <Loader2 className="w-10 h-10 animate-spin text-accent mb-4" />
-              <p className="text-muted-foreground">{t("common.loading")}</p>
-            </div>
-          ) : issues.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {issues.map((issue) => (
-                <IssueCard key={issue.id} issue={issue} onClick={() => openIssueDetail(issue)} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20 bg-card/30 border border-dashed border-border/50 rounded-3xl">
-              <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="w-10 h-10 text-muted-foreground" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">{t("dashboard.no_issues")}</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">{t("dashboard.no_issues_desc")}</p>
-              <Button onClick={() => setShowForm(true)} variant="outline" className="mt-6 rounded-xl">
-                {t("dashboard.new_issue")}
-              </Button>
-            </div>
-          )}
-        </div>
+<Tabs defaultValue="issues" className="space-y-8">
+            <TabsList className="bg-card/50 backdrop-blur-sm border-accent/20 p-1">
+              <TabsTrigger value="issues" className="gap-2 data-[state=active]:bg-accent">
+                <AlertCircle className="w-4 h-4" />
+                {t("dashboard.my_issues")}
+              </TabsTrigger>
+              <TabsTrigger value="legal-bot" className="gap-2 data-[state=active]:bg-accent">
+                <MessageCircle className="w-4 h-4" />
+                المساعد القانوني
+              </TabsTrigger>
+              <TabsTrigger value="mobile-app" className="gap-2 data-[state=active]:bg-accent">
+                <Smartphone className="w-4 h-4" />
+                تطبيق صوتك
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="issues" className="space-y-6">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <Loader2 className="w-10 h-10 animate-spin text-accent mb-4" />
+                  <p className="text-muted-foreground">{t("common.loading")}</p>
+                </div>
+              ) : issues.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {issues.map((issue) => (
+                    <IssueCard key={issue.id} issue={issue} onClick={() => openIssueDetail(issue)} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-20 bg-card/30 border border-dashed border-border/50 rounded-3xl">
+                  <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle className="w-10 h-10 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">{t("dashboard.no_issues")}</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">{t("dashboard.no_issues_desc")}</p>
+                  <Button onClick={() => setShowForm(true)} variant="outline" className="mt-6 rounded-xl">
+                    {t("dashboard.new_issue")}
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="legal-bot">
+              <AILegalBot />
+            </TabsContent>
+
+            <TabsContent value="mobile-app">
+              <MobileAppFeatures />
+            </TabsContent>
+          </Tabs>
       </main>
 
       {/* New Issue Form Overlay */}
