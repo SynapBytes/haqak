@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import AppHeader from "@/components/AppHeader";
 import IssueCard from "@/components/IssueCard";
 import ChatDrawer from "@/components/ChatDrawer";
+import OfficialDocumentGenerator from "@/components/OfficialDocumentGenerator";
+import AttachmentManager from "@/components/AttachmentManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import {
   Search, Filter, BarChart3, AlertCircle, CheckCircle2, Clock, Loader2,
   X, Users, User, FileText, TrendingUp, PieChart, MessageCircle, Phone,
-  LayoutDashboard, List
+  LayoutDashboard, List, ShieldCheck, Send
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MPAnalyticsSuite from "@/components/MPAnalyticsSuite";
@@ -26,6 +28,12 @@ interface ActionLog {
   id: string;
   action_type: string;
   note: string | null;
+  created_at: string;
+}
+
+interface MPResponse {
+  id: string;
+  response_text: string;
   created_at: string;
 }
 
@@ -46,6 +54,8 @@ const MPDashboard = () => {
   const [updating, setUpdating] = useState(false);
   const [chatIssue, setChatIssue] = useState<Issue | null>(null);
   const [citizenPhones, setCitizenPhones] = useState<Record<string, string>>({});
+  const [citizenNames, setCitizenNames] = useState<Record<string, string>>({});
+  const [mpResponses, setMpResponses] = useState<MPResponse[]>([]);
 
   const categories = [
     { key: "all", label: t("categories.all") },
@@ -107,9 +117,23 @@ const MPDashboard = () => {
 
   useEffect(() => { fetchIssues(); }, [user]);
 
+  const fetchCitizenData = async (userId: string) => {
+    if (citizenNames[userId]) return;
+    const { data } = await supabase.from("profiles").select("full_name, phone").eq("user_id", userId).single();
+    if (data) {
+      setCitizenNames((prev) => ({ ...prev, [userId]: data.full_name }));
+      setCitizenPhones((prev) => ({ ...prev, [userId]: data.phone }));
+    }
+  };
+
   const fetchActionLogs = async (issueId: string) => {
     const { data } = await supabase.from("issue_actions").select("*").eq("issue_id", issueId).order("created_at", { ascending: false });
     if (data) setActionLogs(data);
+  };
+
+  const fetchResponses = async (issueId: string) => {
+    const { data } = await supabase.from("mp_responses").select("*").eq("issue_id", issueId).order("created_at", { ascending: false });
+    if (data) setMpResponses(data);
   };
 
   const openIssueDetail = (issue: Issue) => {
@@ -117,6 +141,8 @@ const MPDashboard = () => {
     setNewStatus(issue.status);
     setActionNote("");
     fetchActionLogs(issue.id);
+    fetchResponses(issue.id);
+    if (issue.user_id) fetchCitizenData(issue.user_id);
   };
 
   const handleUpdateStatus = async () => {
@@ -150,6 +176,27 @@ const MPDashboard = () => {
       fetchIssues();
     } catch (err: any) {
       toast.error(err.message || t("mp_dashboard.error_update"));
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleAddOfficialResponse = async () => {
+    if (!selectedIssue || !user || !actionNote) return;
+    setUpdating(true);
+    try {
+      const { error } = await supabase.from("mp_responses").insert({
+        issue_id: selectedIssue.id,
+        mp_id: user.id,
+        response_text: actionNote,
+      });
+      if (error) throw error;
+      
+      toast.success("تم إرسال الرد الرسمي بنجاح");
+      fetchResponses(selectedIssue.id);
+      setActionNote("");
+    } catch (err: any) {
+      toast.error("فشل إرسال الرد");
     } finally {
       setUpdating(false);
     }
@@ -332,105 +379,137 @@ const MPDashboard = () => {
                 initial={{ scale: 0.95, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 20 }}
-                className="bg-card border border-border shadow-2xl rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
+                className="bg-card border border-border shadow-2xl rounded-[32px] w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col"
               >
-                <div className="p-6 border-b border-border/50 flex justify-between items-center">
-                  <h2 className="text-xl font-bold text-foreground">{t("mp_dashboard.issue_details")}</h2>
+                <div className="p-6 border-b border-border/50 flex justify-between items-center bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck className="w-6 h-6 text-accent" />
+                    <div>
+                      <h2 className="text-xl font-bold text-foreground">التوثيق الرسمي للشكوى</h2>
+                      <p className="text-xs text-muted-foreground">معالجة سيادية لمطالب المواطن</p>
+                    </div>
+                  </div>
                   <Button variant="ghost" size="icon" onClick={() => setSelectedIssue(null)} className="rounded-full">
                     <X className="w-5 h-5" />
                   </Button>
                 </div>
 
-                <div className="overflow-y-auto p-6 space-y-8">
-                  <div className="space-y-6">
+                <div className="overflow-y-auto p-8 space-y-10">
+                  {/* Document Generation Options */}
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-accent/5 p-6 rounded-2xl border border-accent/10">
                     <div>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-2">{t("issue_card.title")}</h3>
-                      <p className="text-lg font-semibold text-foreground">{selectedIssue.refined_title || selectedIssue.title}</p>
+                      <h3 className="font-bold text-foreground">توليد المستندات الرسمية</h3>
+                      <p className="text-xs text-muted-foreground mt-1">قم بتوليد خطاب رسمي موجه للجهات المعنية</p>
                     </div>
-
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-2">{t("issue_card.description")}</h3>
-                      <div className="bg-muted/30 rounded-2xl p-4 text-foreground whitespace-pre-wrap leading-relaxed">
-                        {selectedIssue.refined_description || selectedIssue.description}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-muted/20 rounded-xl p-3">
-                        <p className="text-xs text-muted-foreground mb-1">{t("issue_card.category")}</p>
-                        <p className="font-medium text-foreground">{selectedIssue.category}</p>
-                      </div>
-                      <div className="bg-muted/20 rounded-xl p-3">
-                        <p className="text-xs text-muted-foreground mb-1">{t("issue_card.location")}</p>
-                        <p className="font-medium text-foreground">{selectedIssue.location}</p>
-                      </div>
-                    </div>
-
-                    {actionLogs.length > 0 && (
-                      <div>
-                        <h3 className="font-semibold text-foreground mb-3">{t("mp_dashboard.action_history")}</h3>
-                        <div className="space-y-2 max-h-40 overflow-y-auto">
-                          {actionLogs.map((log) => (
-                            <div key={log.id} className="text-xs bg-muted/50 rounded-lg p-2">
-                              <p className="font-semibold text-foreground">{actionTypeLabels[log.action_type] || log.action_type}</p>
-                              {log.note && <p className="text-muted-foreground">{log.note}</p>}
-                              <p className="text-xs text-muted-foreground/70">{new Date(log.created_at).toLocaleString("ar-EG")}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="border-t border-border/50 pt-6">
-                      <h3 className="font-semibold text-foreground mb-4">{t("mp_dashboard.update_status")}</h3>
-                      <div className="space-y-4">
-                        <Select value={newStatus} onValueChange={(val) => setNewStatus(val as IssueStatus)}>
-                          <SelectTrigger>{newStatus}</SelectTrigger>
-                          <SelectContent>
-                            {statusFilters.map((filter) => (
-                              <SelectItem key={filter.key} value={filter.key}>{filter.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                        <Textarea
-                          placeholder={t("mp_dashboard.add_note")}
-                          value={actionNote}
-                          onChange={(e) => setActionNote(e.target.value)}
-                          className="min-h-24"
-                        />
-
-                        <div className="flex gap-3">
-                          <Button
-                            onClick={handleUpdateStatus}
-                            disabled={updating}
-                            className="flex-1 bg-accent hover:bg-accent/90"
-                          >
-                            {updating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                            {t("mp_dashboard.save_changes")}
-                          </Button>
-                          <Button
-                            onClick={() => setSelectedIssue(null)}
-                            variant="outline"
-                            className="flex-1"
-                          >
-                            {t("common.cancel")}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Button
-                      onClick={() => {
-                        setChatIssue(selectedIssue);
-                        setSelectedIssue(null);
+                    <OfficialDocumentGenerator 
+                      type="issue_report"
+                      data={{
+                        id: selectedIssue.id,
+                        title: selectedIssue.refined_title || selectedIssue.title,
+                        description: selectedIssue.refined_description || selectedIssue.description,
+                        citizenName: citizenNames[selectedIssue.user_id || ""] || "مواطن مسجل",
+                        category: selectedIssue.category,
+                        location: selectedIssue.location || "غير محدد",
+                        date: selectedIssue.timeAgo,
+                        status: selectedIssue.status
                       }}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      {t("mp_dashboard.open_chat")}
-                    </Button>
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <div className="space-y-8">
+                      <div>
+                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">تفاصيل الشكوى المنقحة</h3>
+                        <div className="bg-muted/30 rounded-3xl p-6 border border-border/50">
+                          <h4 className="text-lg font-bold text-foreground mb-4">{selectedIssue.refined_title || selectedIssue.title}</h4>
+                          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                            {selectedIssue.refined_description || selectedIssue.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      <AttachmentManager issueId={selectedIssue.id} />
+                    </div>
+
+                    <div className="space-y-8">
+                      {/* Response System */}
+                      <div className="bg-card border border-border/50 rounded-3xl p-6 space-y-6">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-bold text-foreground">الردود الرسمية والمتابعة</h3>
+                          <Badge className="bg-success/10 text-success border-success/20">موثق</Badge>
+                        </div>
+
+                        <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                          {mpResponses.length > 0 ? (
+                            mpResponses.map((res) => (
+                              <div key={res.id} className="bg-muted/30 p-4 rounded-2xl border border-border/30 relative group">
+                                <p className="text-sm text-foreground mb-2 font-medium">{res.response_text}</p>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[10px] text-muted-foreground">{new Date(res.created_at).toLocaleString("ar-EG")}</span>
+                                  <OfficialDocumentGenerator 
+                                    type="mp_response"
+                                    data={{
+                                      id: selectedIssue.id,
+                                      title: selectedIssue.refined_title || selectedIssue.title,
+                                      description: selectedIssue.refined_description || selectedIssue.description,
+                                      citizenName: citizenNames[selectedIssue.user_id || ""] || "مواطن مسجل",
+                                      mpName: user?.email || "عضو مجلس النواب",
+                                      category: selectedIssue.category,
+                                      location: selectedIssue.location || "غير محدد",
+                                      date: new Date(res.created_at).toLocaleDateString("ar-EG"),
+                                      status: selectedIssue.status,
+                                      responseText: res.response_text
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-8 text-muted-foreground text-sm">لا توجد ردود رسمية حتى الآن</div>
+                          )}
+                        </div>
+
+                        <div className="space-y-4 pt-4 border-t border-border/50">
+                          <Textarea
+                            placeholder="اكتب ردك الرسمي هنا... سيتم توثيقه وإرساله للمواطن فوراً"
+                            value={actionNote}
+                            onChange={(e) => setActionNote(e.target.value)}
+                            className="min-h-[120px] rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent"
+                          />
+                          <div className="flex gap-3">
+                            <Button
+                              onClick={handleAddOfficialResponse}
+                              disabled={updating || !actionNote}
+                              className="flex-1 bg-accent hover:bg-accent/90 rounded-xl gap-2"
+                            >
+                              <Send className="w-4 h-4" />
+                              إرسال رد رسمي
+                            </Button>
+                            <Select value={newStatus} onValueChange={(val) => setNewStatus(val as IssueStatus)}>
+                              <SelectTrigger className="w-[140px] rounded-xl">{newStatus}</SelectTrigger>
+                              <SelectContent>
+                                {statusFilters.map((filter) => (
+                                  <SelectItem key={filter.key} value={filter.key}>{filter.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button onClick={handleUpdateStatus} disabled={updating} variant="outline" className="rounded-xl">تحديث الحالة</Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button
+                        onClick={() => {
+                          setChatIssue(selectedIssue);
+                          setSelectedIssue(null);
+                        }}
+                        variant="ghost"
+                        className="w-full h-14 rounded-2xl border border-dashed border-border/50 hover:bg-accent/5 text-accent gap-2"
+                      >
+                        <MessageCircle className="w-5 h-5" />
+                        فتح المحادثة المباشرة مع المواطن
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </motion.div>

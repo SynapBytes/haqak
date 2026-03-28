@@ -5,7 +5,8 @@ import AppHeader from "@/components/AppHeader";
 import IssueCard from "@/components/IssueCard";
 import ChatDrawer from "@/components/ChatDrawer";
 import ReputationBadge from "@/components/ReputationBadge";
-import VoiceRecorder from "@/components/VoiceRecorder";
+import OfficialDocumentGenerator from "@/components/OfficialDocumentGenerator";
+import AttachmentManager from "@/components/AttachmentManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,12 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Plus, X, Send, Loader2, ImagePlus, MessageCircle, AlertCircle, Clock, CheckCircle2, Mic, MapPin } from "lucide-react";
+import { Plus, X, Send, Loader2, ImagePlus, MessageCircle, AlertCircle, Clock, CheckCircle2, Mic, MapPin, ShieldCheck, FileText } from "lucide-react";
 import type { Issue } from "@/components/IssueCard";
 import LocationPicker from "@/components/LocationPicker";
 import { useTranslation } from "react-i18next";
 import { stripExifFromFiles } from "@/lib/stripExif";
-import { filterContent, validateAttachments } from "@/lib/contentSecurity";
 import { sanitizeText } from "@/lib/sanitize";
 
 const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitation", "education", "electricity", "other"] as const;
@@ -43,10 +43,11 @@ const CitizenDashboard = () => {
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [chatIssue, setChatIssue] = useState<Issue | null>(null);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [reputation, setReputation] = useState({ points: 0, rank: "مواطن جديد" });
-  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [mpResponses, setMpResponses] = useState<any[]>([]);
 
   const isFormValid = title.trim() !== "" && 
                       description.trim() !== "" && 
@@ -76,6 +77,8 @@ const CitizenDashboard = () => {
         ai_summary: d.ai_summary || undefined,
         user_id: d.user_id,
         resolution_rating: (d as any).resolution_rating,
+        refined_title: (d as any).refined_title,
+        refined_description: (d as any).refined_description,
       })));
     }
     
@@ -93,6 +96,11 @@ const CitizenDashboard = () => {
     }
     
     setLoading(false);
+  };
+
+  const fetchResponses = async (issueId: string) => {
+    const { data } = await supabase.from("mp_responses").select("*").eq("issue_id", issueId).order("created_at", { ascending: false });
+    if (data) setMpResponses(data);
   };
 
   useEffect(() => { fetchIssues(); }, [user]);
@@ -227,6 +235,11 @@ const CitizenDashboard = () => {
     }
   };
 
+  const openIssueDetail = (issue: Issue) => {
+    setSelectedIssue(issue);
+    fetchResponses(issue.id);
+  };
+
   const stats = [
     { label: t("dashboard.total_issues"), value: issues.length, icon: AlertCircle, color: "text-accent", bg: "bg-accent/10" },
     { label: t("dashboard.resolved"), value: issues.filter(i => i.status === 'resolved').length, icon: CheckCircle2, color: "text-success", bg: "bg-success/10" },
@@ -286,7 +299,7 @@ const CitizenDashboard = () => {
           ) : issues.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {issues.map((issue) => (
-                <IssueCard key={issue.id} issue={issue} onClick={() => {}} />
+                <IssueCard key={issue.id} issue={issue} onClick={() => openIssueDetail(issue)} />
               ))}
             </div>
           ) : (
@@ -304,6 +317,7 @@ const CitizenDashboard = () => {
         </div>
       </main>
 
+      {/* New Issue Form Overlay */}
       <AnimatePresence>
         {showForm && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xl">
@@ -354,10 +368,6 @@ const CitizenDashboard = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center px-1">
                     <label className="text-sm font-semibold text-foreground">وصف المشكلة</label>
-                    <VoiceRecorder 
-                      onTranscriptionComplete={(text) => setDescription(prev => prev ? prev + "\n" + text : text)}
-                      onRecordingComplete={(blob) => setVoiceBlob(blob)}
-                    />
                   </div>
                   <Textarea placeholder="اشرح تفاصيل المشكلة، متى بدأت، وما هي مطالبك..." value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-[150px] rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent resize-none p-4" />
                 </div>
@@ -389,7 +399,7 @@ const CitizenDashboard = () => {
                       </button>
                     )}
                   </div>
-                  <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple accept="image/*" className="hidden" />
+                  <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple accept="image/*,application/pdf" className="hidden" />
                 </div>
 
                 <div className="pt-4 border-t border-border/50">
@@ -408,6 +418,119 @@ const CitizenDashboard = () => {
                   </Button>
                 </div>
               </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Issue Detail Overlay with Official Response Tracking */}
+      <AnimatePresence>
+        {selectedIssue && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xl">
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="bg-card border border-border shadow-2xl rounded-[32px] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="p-6 border-b border-border/50 flex justify-between items-center bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck className="w-6 h-6 text-accent" />
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground">التوثيق الرسمي والمتابعة</h2>
+                    <p className="text-xs text-muted-foreground">شكوى رقم: {selectedIssue.id.slice(0, 8).toUpperCase()}</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setSelectedIssue(null)} className="rounded-full">
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              <div className="overflow-y-auto p-8 space-y-10">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-accent/5 p-6 rounded-2xl border border-accent/10">
+                  <div>
+                    <h3 className="font-bold text-foreground">توليد نسخة رسمية للطباعة</h3>
+                    <p className="text-xs text-muted-foreground mt-1">احتفظ بنسخة موثقة من شكواك لاستخدامها قانونياً</p>
+                  </div>
+                  <OfficialDocumentGenerator 
+                    type="issue_report"
+                    data={{
+                      id: selectedIssue.id,
+                      title: selectedIssue.refined_title || selectedIssue.title,
+                      description: selectedIssue.refined_description || selectedIssue.description,
+                      citizenName: "المواطن صاحب الشكوى",
+                      category: selectedIssue.category,
+                      location: selectedIssue.location || "غير محدد",
+                      date: selectedIssue.timeAgo,
+                      status: selectedIssue.status
+                    }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">محتوى الشكوى الموثق</h3>
+                      <div className="bg-muted/30 rounded-3xl p-6 border border-border/50">
+                        <h4 className="text-lg font-bold text-foreground mb-4">{selectedIssue.refined_title || selectedIssue.title}</h4>
+                        <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                          {selectedIssue.refined_description || selectedIssue.description}
+                        </p>
+                      </div>
+                    </div>
+                    <AttachmentManager issueId={selectedIssue.id} />
+                  </div>
+
+                  <div className="space-y-8">
+                    <div className="bg-card border border-border/50 rounded-3xl p-6 space-y-6">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-foreground">الردود الرسمية من النائب</h3>
+                        <Badge className="bg-success/10 text-success border-success/20">موثق</Badge>
+                      </div>
+
+                      <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                        {mpResponses.length > 0 ? (
+                          mpResponses.map((res) => (
+                            <div key={res.id} className="bg-muted/30 p-4 rounded-2xl border border-border/30">
+                              <p className="text-sm text-foreground mb-4 font-medium">{res.response_text}</p>
+                              <div className="flex justify-between items-center">
+                                <span className="text-[10px] text-muted-foreground">{new Date(res.created_at).toLocaleString("ar-EG")}</span>
+                                <OfficialDocumentGenerator 
+                                  type="mp_response"
+                                  data={{
+                                    id: selectedIssue.id,
+                                    title: selectedIssue.refined_title || selectedIssue.title,
+                                    description: selectedIssue.refined_description || selectedIssue.description,
+                                    citizenName: "المواطن صاحب الشكوى",
+                                    mpName: "عضو مجلس النواب",
+                                    category: selectedIssue.category,
+                                    location: selectedIssue.location || "غير محدد",
+                                    date: new Date(res.created_at).toLocaleDateString("ar-EG"),
+                                    status: selectedIssue.status,
+                                    responseText: res.response_text
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-12 space-y-3">
+                            <Clock className="w-10 h-10 text-muted-foreground/30 mx-auto" />
+                            <p className="text-muted-foreground text-sm">بانتظار رد النائب الرسمي...</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => {
+                        setChatIssue(selectedIssue);
+                        setSelectedIssue(null);
+                      }}
+                      variant="outline"
+                      className="w-full h-14 rounded-2xl border-dashed border-accent/30 text-accent gap-2"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      متابعة في المحادثة المباشرة
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         )}
