@@ -23,6 +23,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const GeniusEnhancements = lazy(() => import("./pages/GeniusEnhancements"));
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ function App() {
                   <Route path="/" element={<Landing />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/genius" element={<GeniusEnhancements />} />
                   <Route path="/citizen" element={<ProtectedRoute requiredRole="citizen"><CitizenDashboard /></ProtectedRoute>} />
                   <Route path="/profile" element={<ProtectedRoute><CitizenProfile /></ProtectedRoute>} />
                   <Route path="/mps" element={<ProtectedRoute><MPsDirectory /></ProtectedRoute>} />
