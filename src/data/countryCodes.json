@@ -1,0 +1,396 @@
+{
+  "countries": [
+    {
+      "name": "مصر",
+      "code": "EG",
+      "dialCode": "+20",
+      "flag": "🇪🇬",
+      "priority": 1
+    },
+    {
+      "name": "السعودية",
+      "code": "SA",
+      "dialCode": "+966",
+      "flag": "🇸🇦",
+      "priority": 2
+    },
+    {
+      "name": "الإمارات",
+      "code": "AE",
+      "dialCode": "+971",
+      "flag": "🇦🇪",
+      "priority": 3
+    },
+    {
+      "name": "الكويت",
+      "code": "KW",
+      "dialCode": "+965",
+      "flag": "🇰🇼",
+      "priority": 4
+    },
+    {
+      "name": "قطر",
+      "code": "QA",
+      "dialCode": "+974",
+      "flag": "🇶🇦",
+      "priority": 5
+    },
+    {
+      "name": "البحرين",
+      "code": "BH",
+      "dialCode": "+973",
+      "flag": "🇧🇭",
+      "priority": 6
+    },
+    {
+      "name": "عمان",
+      "code": "OM",
+      "dialCode": "+968",
+      "flag": "🇴🇲",
+      "priority": 7
+    },
+    {
+      "name": "الأردن",
+      "code": "JO",
+      "dialCode": "+962",
+      "flag": "🇯🇴",
+      "priority": 8
+    },
+    {
+      "name": "لبنان",
+      "code": "LB",
+      "dialCode": "+961",
+      "flag": "🇱🇧",
+      "priority": 9
+    },
+    {
+      "name": "فلسطين",
+      "code": "PS",
+      "dialCode": "+970",
+      "flag": "🇵🇸",
+      "priority": 10
+    },
+    {
+      "name": "سوريا",
+      "code": "SY",
+      "dialCode": "+963",
+      "flag": "🇸🇾",
+      "priority": 11
+    },
+    {
+      "name": "العراق",
+      "code": "IQ",
+      "dialCode": "+964",
+      "flag": "🇮🇶",
+      "priority": 12
+    },
+    {
+      "name": "اليمن",
+      "code": "YE",
+      "dialCode": "+967",
+      "flag": "🇾🇪",
+      "priority": 13
+    },
+    {
+      "name": "المغرب",
+      "code": "MA",
+      "dialCode": "+212",
+      "flag": "🇲🇦",
+      "priority": 14
+    },
+    {
+      "name": "الجزائر",
+      "code": "DZ",
+      "dialCode": "+213",
+      "flag": "🇩🇿",
+      "priority": 15
+    },
+    {
+      "name": "تونس",
+      "code": "TN",
+      "dialCode": "+216",
+      "flag": "🇹🇳",
+      "priority": 16
+    },
+    {
+      "name": "ليبيا",
+      "code": "LY",
+      "dialCode": "+218",
+      "flag": "🇱🇾",
+      "priority": 17
+    },
+    {
+      "name": "السودان",
+      "code": "SD",
+      "dialCode": "+249",
+      "flag": "🇸🇩",
+      "priority": 18
+    },
+    {
+      "name": "جيبوتي",
+      "code": "DJ",
+      "dialCode": "+253",
+      "flag": "🇩🇯",
+      "priority": 19
+    },
+    {
+      "name": "الصومال",
+      "code": "SO",
+      "dialCode": "+252",
+      "flag": "🇸🇴",
+      "priority": 20
+    },
+    {
+      "name": "موريتانيا",
+      "code": "MR",
+      "dialCode": "+222",
+      "flag": "🇲🇷",
+      "priority": 21
+    },
+    {
+      "name": "بريطانيا",
+      "code": "GB",
+      "dialCode": "+44",
+      "flag": "🇬🇧",
+      "priority": 100
+    },
+    {
+      "name": "فرنسا",
+      "code": "FR",
+      "dialCode": "+33",
+      "flag": "🇫🇷",
+      "priority": 101
+    },
+    {
+      "name": "ألمانيا",
+      "code": "DE",
+      "dialCode": "+49",
+      "flag": "🇩🇪",
+      "priority": 102
+    },
+    {
+      "name": "إيطاليا",
+      "code": "IT",
+      "dialCode": "+39",
+      "flag": "🇮🇹",
+      "priority": 103
+    },
+    {
+      "name": "إسبانيا",
+      "code": "ES",
+      "dialCode": "+34",
+      "flag": "🇪🇸",
+      "priority": 104
+    },
+    {
+      "name": "هولندا",
+      "code": "NL",
+      "dialCode": "+31",
+      "flag": "🇳🇱",
+      "priority": 105
+    },
+    {
+      "name": "بلجيكا",
+      "code": "BE",
+      "dialCode": "+32",
+      "flag": "🇧🇪",
+      "priority": 106
+    },
+    {
+      "name": "سويسرا",
+      "code": "CH",
+      "dialCode": "+41",
+      "flag": "🇨🇭",
+      "priority": 107
+    },
+    {
+      "name": "السويد",
+      "code": "SE",
+      "dialCode": "+46",
+      "flag": "🇸🇪",
+      "priority": 108
+    },
+    {
+      "name": "النرويج",
+      "code": "NO",
+      "dialCode": "+47",
+      "flag": "🇳🇴",
+      "priority": 109
+    },
+    {
+      "name": "الدنمارك",
+      "code": "DK",
+      "dialCode": "+45",
+      "flag": "🇩🇰",
+      "priority": 110
+    },
+    {
+      "name": "فنلندا",
+      "code": "FI",
+      "dialCode": "+358",
+      "flag": "🇫🇮",
+      "priority": 111
+    },
+    {
+      "name": "بولندا",
+      "code": "PL",
+      "dialCode": "+48",
+      "flag": "🇵🇱",
+      "priority": 112
+    },
+    {
+      "name": "الولايات المتحدة",
+      "code": "US",
+      "dialCode": "+1",
+      "flag": "🇺🇸",
+      "priority": 200
+    },
+    {
+      "name": "كندا",
+      "code": "CA",
+      "dialCode": "+1",
+      "flag": "🇨🇦",
+      "priority": 201
+    },
+    {
+      "name": "المكسيك",
+      "code": "MX",
+      "dialCode": "+52",
+      "flag": "🇲🇽",
+      "priority": 202
+    },
+    {
+      "name": "البرازيل",
+      "code": "BR",
+      "dialCode": "+55",
+      "flag": "🇧🇷",
+      "priority": 203
+    },
+    {
+      "name": "الأرجنتين",
+      "code": "AR",
+      "dialCode": "+54",
+      "flag": "🇦🇷",
+      "priority": 204
+    },
+    {
+      "name": "أستراليا",
+      "code": "AU",
+      "dialCode": "+61",
+      "flag": "🇦🇺",
+      "priority": 300
+    },
+    {
+      "name": "نيوزيلندا",
+      "code": "NZ",
+      "dialCode": "+64",
+      "flag": "🇳🇿",
+      "priority": 301
+    },
+    {
+      "name": "اليابان",
+      "code": "JP",
+      "dialCode": "+81",
+      "flag": "🇯🇵",
+      "priority": 302
+    },
+    {
+      "name": "الصين",
+      "code": "CN",
+      "dialCode": "+86",
+      "flag": "🇨🇳",
+      "priority": 303
+    },
+    {
+      "name": "الهند",
+      "code": "IN",
+      "dialCode": "+91",
+      "flag": "🇮🇳",
+      "priority": 304
+    },
+    {
+      "name": "تايلاند",
+      "code": "TH",
+      "dialCode": "+66",
+      "flag": "🇹🇭",
+      "priority": 305
+    },
+    {
+      "name": "ماليزيا",
+      "code": "MY",
+      "dialCode": "+60",
+      "flag": "🇲🇾",
+      "priority": 306
+    },
+    {
+      "name": "سنغافورة",
+      "code": "SG",
+      "dialCode": "+65",
+      "flag": "🇸🇬",
+      "priority": 307
+    },
+    {
+      "name": "إندونيسيا",
+      "code": "ID",
+      "dialCode": "+62",
+      "flag": "🇮🇩",
+      "priority": 308
+    },
+    {
+      "name": "الفلبين",
+      "code": "PH",
+      "dialCode": "+63",
+      "flag": "🇵🇭",
+      "priority": 309
+    },
+    {
+      "name": "فيتنام",
+      "code": "VN",
+      "dialCode": "+84",
+      "flag": "🇻🇳",
+      "priority": 310
+    },
+    {
+      "name": "كوريا الجنوبية",
+      "code": "KR",
+      "dialCode": "+82",
+      "flag": "🇰🇷",
+      "priority": 311
+    },
+    {
+      "name": "باكستان",
+      "code": "PK",
+      "dialCode": "+92",
+      "flag": "🇵🇰",
+      "priority": 312
+    },
+    {
+      "name": "بنغلاديش",
+      "code": "BD",
+      "dialCode": "+880",
+      "flag": "🇧🇩",
+      "priority": 313
+    },
+    {
+      "name": "تركيا",
+      "code": "TR",
+      "dialCode": "+90",
+      "flag": "🇹🇷",
+      "priority": 314
+    },
+    {
+      "name": "إيران",
+      "code": "IR",
+      "dialCode": "+98",
+      "flag": "🇮🇷",
+      "priority": 315
+    },
+    {
+      "name": "أفغانستان",
+      "code": "AF",
+      "dialCode": "+93",
+      "flag": "🇦🇫",
+      "priority": 316
+    }
+  ]
+}

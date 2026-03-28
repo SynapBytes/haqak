@@ -24,6 +24,7 @@ import LocationPicker from "@/components/LocationPicker";
 import { useTranslation } from "react-i18next";
 import { stripExifFromFiles } from "@/lib/stripExif";
 import { sanitizeText } from "@/lib/sanitize";
+import { validateIssueLocation, isLocationInEgypt } from "@/lib/egyptLocationValidation";
 
 const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitation", "education", "electricity", "other"] as const;
 
@@ -159,6 +160,14 @@ const CitizenDashboard = () => {
       return;
     }
 
+    // Validate that the issue location is within Egypt
+    if (latitude && longitude) {
+      if (!isLocationInEgypt(latitude, longitude)) {
+        toast.error("البلاغ يجب أن يكون عن مشكلة داخل حدود مصر فقط");
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       let finalTitle = sanitizeText(title);
@@ -179,12 +188,23 @@ const CitizenDashboard = () => {
       try {
         toast.info("جاري تحليل الشكوى بالذكاء الاصطناعي...");
         const { data: classifyData, error: classifyError } = await supabase.functions.invoke("classify-issue", {
-          body: { title, description, senderName, location: { address: location, lat: latitude, lng: longitude } },
+          body: { 
+            title, 
+            description, 
+            senderName, 
+            location: { address: location, lat: latitude, lng: longitude },
+            isEgyptianLocation: latitude && longitude ? isLocationInEgypt(latitude, longitude) : true
+          },
         });
 
         if (!classifyError && classifyData) {
           if (classifyData.status === "rejected") {
-            toast.error(classifyData.rejectionReason || t("dashboard.rejected"));
+            // Check if rejection is due to location being outside Egypt
+            if (classifyData.rejectionReason && classifyData.rejectionReason.includes("location")) {
+              toast.error("البلاغ يجب أن يكون عن مشكلة داخل حدود مصر فقط");
+            } else {
+              toast.error(classifyData.rejectionReason || t("dashboard.rejected"));
+            }
             setSubmitting(false);
             return;
           }

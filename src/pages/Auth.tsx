@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { InputOTP } from "@/components/ui/input-otp";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, ShieldCheck, LogIn, ArrowRight, Eye, EyeOff, Lock, Phone, IdCard, Fingerprint, KeyRound, MapPin, Building2, Landmark, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { User, ShieldCheck, LogIn, ArrowRight, Eye, EyeOff, Lock, Phone, IdCard, Fingerprint, KeyRound, MapPin, Building2, Landmark, AlertCircle, CheckCircle2, Clock, Globe } from "lucide-react";
 import egyptGeoData from "@/data/egypt-geo.json";
+import countryCodes from "@/data/countryCodes.json";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
@@ -16,6 +17,7 @@ import ornament2 from "@/assets/egyptian-ornament-2.webp";
 import egyptianAnkh from "@/assets/egyptian-ankh.webp";
 import egyptianNefertiti from "@/assets/egyptian-nefertiti.webp";
 import ornament1 from "@/assets/egyptian-ornament-1.webp";
+import { validateEgyptianId, extractEgyptianIdInfo } from "@/lib/egyptianIdValidation";
 
 type AuthMode = "login" | "login-otp" | "signup-citizen" | "signup-citizen-otp" | "signup-mp" | "signup-mp-otp" | "forgot-password" | "forgot-password-otp";
 
@@ -32,6 +34,7 @@ const Auth = () => {
 
   // Form states
   const [phone, setPhone] = useState("");
+  const [countryCode, setCountryCode] = useState("EG");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -39,11 +42,35 @@ const Auth = () => {
   const [district, setDistrict] = useState("");
   const [electoralDistrict, setElectoralDistrict] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
+  const [nationalId, setNationalId] = useState("");
+  const [nationalIdError, setNationalIdError] = useState("");
+  const [userLocation, setUserLocation] = useState<{ country: string; countryCode: string } | null>(null);
 
   // Validation states
   const [phoneError, setPhoneError] = useState("");
   const [membershipNumberError, setMembershipNumberError] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
+
+  // Get user's location on component mount
+  useEffect(() => {
+    const detectLocation = async () => {
+      try {
+        const response = await fetch("https://ipapi.co/json/");
+        const data = await response.json();
+        if (data.country_code) {
+          setUserLocation({
+            country: data.country_name || "",
+            countryCode: data.country_code,
+          });
+          setCountryCode(data.country_code);
+        }
+      } catch (err) {
+        console.error("Failed to detect location:", err);
+        setCountryCode("EG");
+      }
+    };
+    detectLocation();
+  }, []);
 
   const phoneRegex = /^01[0125][0-9]{8}$/;
   const membershipNumberRegex = /^[0-9]+$/;
@@ -66,6 +93,23 @@ const Auth = () => {
       setPhoneError("");
     }
   }, [phone, t]);
+
+  useEffect(() => {
+    if (nationalId && mode.includes("signup-citizen")) {
+      if (!validateEgyptianId(nationalId)) {
+        setNationalIdError(t("auth.national_id_invalid"));
+      } else {
+        const idInfo = extractEgyptianIdInfo(nationalId);
+        if (idInfo && !idInfo.isEgyptian) {
+          setNationalIdError(t("auth.not_egyptian_citizen"));
+        } else {
+          setNationalIdError("");
+        }
+      }
+    } else {
+      setNationalIdError("");
+    }
+  }, [nationalId, mode, t]);
 
   useEffect(() => {
     if (registrationNumber && mode === "signup-mp") {
@@ -99,6 +143,13 @@ const Auth = () => {
                            /[a-zA-Z\u0600-\u06FF]/.test(password) &&
                            fullName.length > 0;
         
+        if (mode === "signup-citizen") {
+          const nationalIdValid = nationalId.length === 14 && 
+                                 validateEgyptianId(nationalId) && 
+                                 nationalIdError === "";
+          return commonValid && nationalIdValid;
+        }
+        
         if (mode === "signup-mp") {
           const membershipValid = registrationNumber.length > 0 && 
                                  membershipNumberRegex.test(registrationNumber) &&
@@ -112,10 +163,11 @@ const Auth = () => {
       return false;
     };
     setIsFormValid(validateForm());
-  }, [mode, phone, password, fullName, governorate, district, electoralDistrict, registrationNumber, membershipNumberError]);}
+  }, [mode, phone, password, fullName, governorate, district, electoralDistrict, registrationNumber, membershipNumberError, nationalId, nationalIdError]);
 
   const resetForm = () => {
     setPhone("");
+    setCountryCode("EG");
     setPassword("");
     setFullName("");
     setRegistrationNumber("");
@@ -123,7 +175,9 @@ const Auth = () => {
     setGovernorate("");
     setDistrict("");
     setElectoralDistrict("");
+    setNationalId("");
     setPhoneError("");
+    setNationalIdError("");
     setOtpCode("");
     setOtpTimer(0);
     setCanResendOtp(false);
@@ -167,7 +221,7 @@ const Auth = () => {
       const response = await fetch("/.netlify/functions/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, mode: mode.replace("-otp", "") }),
+        body: JSON.stringify({ phone, countryCode, mode: mode.replace("-otp", "") }),
       });
 
       const data = await response.json();
@@ -203,9 +257,10 @@ const Auth = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           phone, 
+          countryCode,
           otp: otpCode, 
           mode: mode.replace("-otp", ""),
-          ...(mode.includes("signup") && { fullName, password, governorate, district, electoralDistrict, registrationNumber, displayName })
+          ...(mode.includes("signup") && { fullName, password, governorate, district, electoralDistrict, registrationNumber, displayName, nationalId })
         }),
       });
 
@@ -232,7 +287,11 @@ const Auth = () => {
             data: {
               full_name: fullName,
               phone,
+              countryCode,
               role: mode.includes("mp") ? "mp" : "citizen",
+              ...(mode.includes("citizen") && {
+                national_id: nationalId,
+              }),
               ...(mode.includes("mp") && {
                 display_name: displayName,
                 governorate,
@@ -395,20 +454,36 @@ const Auth = () => {
                     onSubmit={handleSendOtp}
                     className="space-y-5"
                   >
-                    {/* Phone Field */}
+                    {/* Country Code and Phone Field */}
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground flex items-center gap-2">
                         <Phone className="w-4 h-4" />
                         {t("auth.phone")}
                       </label>
-                      <Input
-                        type="tel"
-                        placeholder="01012345678"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        disabled={loading}
-                        className={phoneError ? "border-destructive" : ""}
-                      />
+                      <div className="flex gap-2">
+                        <Select value={countryCode} onValueChange={setCountryCode} disabled={loading}>
+                          <SelectTrigger className="w-24">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {countryCodes.countries
+                              .sort((a, b) => a.priority - b.priority)
+                              .map((country) => (
+                                <SelectItem key={country.code} value={country.code}>
+                                  {country.flag} +{country.dialCode.replace("+", "")}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          type="tel"
+                          placeholder="01012345678"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          disabled={loading}
+                          className={`flex-1 ${phoneError ? "border-destructive" : ""}`}
+                        />
+                      </div>
                       {phoneError && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {phoneError}</p>}
                     </div>
 
@@ -461,6 +536,37 @@ const Auth = () => {
                           onChange={(e) => setFullName(e.target.value)}
                           disabled={loading}
                         />
+                      </div>
+                    )}
+
+                    {/* National ID (for citizen signup) */}
+                    {mode === "signup-citizen" && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                          <IdCard className="w-4 h-4" />
+                          {t("auth.national_id")}
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder="14 رقم من الرقم القومي"
+                          value={nationalId}
+                          onChange={(e) => setNationalId(e.target.value.replace(/\D/g, "").slice(0, 14))}
+                          disabled={loading}
+                          maxLength={14}
+                          className={nationalIdError ? "border-destructive" : ""}
+                        />
+                        {nationalIdError && (
+                          <p className="text-xs text-destructive flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            {nationalIdError}
+                          </p>
+                        )}
+                        {nationalId && !nationalIdError && (
+                          <p className="text-xs text-green-600 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            {t("auth.national_id_valid")}
+                          </p>
+                        )}
                       </div>
                     )}
 
