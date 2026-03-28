@@ -19,6 +19,7 @@ import LocationPicker from "@/components/LocationPicker";
 import { useTranslation } from "react-i18next";
 import { stripExifFromFiles } from "@/lib/stripExif";
 import { filterContent, validateAttachments } from "@/lib/contentSecurity";
+import { sanitizeText } from "@/lib/sanitize";
 
 const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitation", "education", "electricity", "other"] as const;
 
@@ -181,8 +182,8 @@ const CitizenDashboard = () => {
         }
       }
       
-      let finalTitle = title;
-      let finalDescription = description;
+      let finalTitle = sanitizeText(title);
+      let finalDescription = sanitizeText(description);
       let finalCategory = category;
       let finalIssueType = issueType;
       let isFlagged = false;
