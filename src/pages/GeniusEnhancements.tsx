@@ -25,10 +25,19 @@ import { CitizenRewardsSystem } from '@/components/CitizenRewardsSystem';
 import { CitizenProxyIntegrator } from '@/components/CitizenProxyIntegrator';
 import { ServiceGapAnalytics } from '@/components/ServiceGapAnalytics';
 
+// Import our 5 advanced revolutionary components
+import { BlockchainAccountabilityLedger } from '@/components/BlockchainAccountabilityLedger';
+import { AILegislativeDrafter } from '@/components/AILegislativeDrafter';
+import { MicroCrowdfundingPlatform } from '@/components/MicroCrowdfundingPlatform';
+import { BiometricIdentityVerification } from '@/components/BiometricIdentityVerification';
+import { DroneAINeedsRadar } from '@/components/DroneAINeedsRadar';
+import { SmartWarRoomDashboard } from '@/components/SmartWarRoomDashboard';
+
 const GeniusEnhancements = () => {
   const [activeTab, setActiveTab] = useState('predictive');
 
   const enhancements = [
+    // Phase 1: 7 Genius Enhancements
     { id: 'predictive', name: 'محرك التنبؤ', icon: <TrendingUp className="w-4 h-4" />, color: 'text-orange-600' },
     { id: 'voting', name: 'التصويت الرقمي', icon: <Vote className="w-4 h-4" />, color: 'text-primary' },
     { id: 'twin', name: 'التوأم الرقمي', icon: <Layers className="w-4 h-4" />, color: 'text-indigo-600' },
@@ -36,6 +45,13 @@ const GeniusEnhancements = () => {
     { id: 'rewards', name: 'نظام المكافآت', icon: <Trophy className="w-4 h-4" />, color: 'text-amber-500' },
     { id: 'proxy', name: 'تكامل البيانات', icon: <ShieldCheck className="w-4 h-4" />, color: 'text-emerald-600' },
     { id: 'gap', name: 'تحليل الفجوة', icon: <FileBarChart className="w-4 h-4" />, color: 'text-blue-600' },
+    // Phase 2: 5 Revolutionary Advanced Features
+    { id: 'blockchain', name: 'البلوكشين', icon: <Sparkles className="w-4 h-4" />, color: 'text-purple-600' },
+    { id: 'legislative', name: 'الصياغة التشريعية', icon: <Sparkles className="w-4 h-4" />, color: 'text-indigo-600' },
+    { id: 'crowdfunding', name: 'التمويل الجماعي', icon: <Sparkles className="w-4 h-4" />, color: 'text-amber-600' },
+    { id: 'biometric', name: 'الهوية البيومترية', icon: <Sparkles className="w-4 h-4" />, color: 'text-emerald-600' },
+    { id: 'drone', name: 'رادار الدرونز', icon: <Sparkles className="w-4 h-4" />, color: 'text-cyan-600' },
+    { id: 'warroom', name: 'غرفة العمليات', icon: <Sparkles className="w-4 h-4" />, color: 'text-purple-600' },
   ];
 
   return (
@@ -99,13 +115,52 @@ const GeniusEnhancements = () => {
                     key={e.id} 
                     value={e.id}
                     className="flex flex-col items-center gap-1 py-3 px-4 min-w-[100px] data-[state=active]:bg-slate-50 data-[state=active]:shadow-none"
-                  >
-                    <div className={`${e.color} p-1.5 rounded-lg bg-white shadow-sm border`}>
-                      {e.icon}
+                 <TabsTrigger value="gap">
+                <div className={`${e.color} p-1.5 rounded-lg bg-white shadow-sm border`}>
+                  {e.icon}
+                </div>
+                <span className="text-[11px] font-bold mt-1">{e.name}</span>
+              </TabsTrigger>
+              {enhancements.length > 7 && (
+                <>
+                  <TabsTrigger value="blockchain">
+                    <div className={`${enhancements[7].color} p-1.5 rounded-lg bg-white shadow-sm border`}>
+                      {enhancements[7].icon}
                     </div>
-                    <span className="text-[11px] font-bold mt-1">{e.name}</span>
+                    <span className="text-[11px] font-bold mt-1">{enhancements[7].name}</span>
                   </TabsTrigger>
-                ))}
+                  <TabsTrigger value="legislative">
+                    <div className={`${enhancements[8].color} p-1.5 rounded-lg bg-white shadow-sm border`}>
+                      {enhancements[8].icon}
+                    </div>
+                    <span className="text-[11px] font-bold mt-1">{enhancements[8].name}</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="crowdfunding">
+                    <div className={`${enhancements[9].color} p-1.5 rounded-lg bg-white shadow-sm border`}>
+                      {enhancements[9].icon}
+                    </div>
+                    <span className="text-[11px] font-bold mt-1">{enhancements[9].name}</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="biometric">
+                    <div className={`${enhancements[10].color} p-1.5 rounded-lg bg-white shadow-sm border`}>
+                      {enhancements[10].icon}
+                    </div>
+                    <span className="text-[11px] font-bold mt-1">{enhancements[10].name}</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="drone">
+                    <div className={`${enhancements[11].color} p-1.5 rounded-lg bg-white shadow-sm border`}>
+                      {enhancements[11].icon}
+                    </div>
+                    <span className="text-[11px] font-bold mt-1">{enhancements[11].name}</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="warroom">
+                    <div className={`${enhancements[12].color} p-1.5 rounded-lg bg-white shadow-sm border`}>
+                      {enhancements[12].icon}
+                    </div>
+                    <span className="text-[11px] font-bold mt-1">{enhancements[12].name}</span>
+                  </TabsTrigger>
+                </>
+              )}              ))}
               </TabsList>
             </div>
 
@@ -131,6 +186,24 @@ const GeniusEnhancements = () => {
               </TabsContent>
               <TabsContent value="gap">
                 <ServiceGapAnalytics />
+              </TabsContent>
+              <TabsContent value="blockchain">
+                <BlockchainAccountabilityLedger />
+              </TabsContent>
+              <TabsContent value="legislative">
+                <AILegislativeDrafter />
+              </TabsContent>
+              <TabsContent value="crowdfunding">
+                <MicroCrowdfundingPlatform />
+              </TabsContent>
+              <TabsContent value="biometric">
+                <BiometricIdentityVerification />
+              </TabsContent>
+              <TabsContent value="drone">
+                <DroneAINeedsRadar />
+              </TabsContent>
+              <TabsContent value="warroom">
+                <SmartWarRoomDashboard />
               </TabsContent>
             </div>
           </Tabs>
