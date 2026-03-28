@@ -42,9 +42,12 @@ const Auth = () => {
 
   // Validation states
   const [phoneError, setPhoneError] = useState("");
+  const [membershipNumberError, setMembershipNumberError] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
 
   const phoneRegex = /^01[0125][0-9]{8}$/;
+  const membershipNumberRegex = /^[0-9]+$/;
+  const MAX_MEMBERSHIP_NUMBER = 568;
 
   // OTP Timer effect
   useEffect(() => {
@@ -65,6 +68,23 @@ const Auth = () => {
   }, [phone, t]);
 
   useEffect(() => {
+    if (registrationNumber && mode === "signup-mp") {
+      if (!membershipNumberRegex.test(registrationNumber)) {
+        setMembershipNumberError(t("auth.membership_number_invalid"));
+      } else {
+        const num = parseInt(registrationNumber, 10);
+        if (num < 1 || num > MAX_MEMBERSHIP_NUMBER) {
+          setMembershipNumberError(t("auth.membership_number_out_of_range"));
+        } else {
+          setMembershipNumberError("");
+        }
+      }
+    } else {
+      setMembershipNumberError("");
+    }
+  }, [registrationNumber, mode, t]);
+
+  useEffect(() => {
     const validateForm = () => {
       if (mode === "login") {
         return phoneRegex.test(phone) && password.length > 0;
@@ -80,14 +100,19 @@ const Auth = () => {
                            fullName.length > 0;
         
         if (mode === "signup-mp") {
-          return commonValid && governorate.length > 0 && district.length > 0 && electoralDistrict.length > 0;
+          const membershipValid = registrationNumber.length > 0 && 
+                                 membershipNumberRegex.test(registrationNumber) &&
+                                 parseInt(registrationNumber, 10) >= 1 &&
+                                 parseInt(registrationNumber, 10) <= MAX_MEMBERSHIP_NUMBER &&
+                                 membershipNumberError === "";
+          return commonValid && governorate.length > 0 && district.length > 0 && electoralDistrict.length > 0 && membershipValid;
         }
         return commonValid;
       }
       return false;
     };
     setIsFormValid(validateForm());
-  }, [mode, phone, password, fullName, governorate, district, electoralDistrict]);
+  }, [mode, phone, password, fullName, governorate, district, electoralDistrict, registrationNumber, membershipNumberError]);}
 
   const resetForm = () => {
     setPhone("");
@@ -517,7 +542,14 @@ const Auth = () => {
                             value={registrationNumber}
                             onChange={(e) => setRegistrationNumber(e.target.value)}
                             disabled={loading}
+                            className={membershipNumberError ? "border-destructive" : ""}
                           />
+                          {membershipNumberError && (
+                            <p className="text-sm text-destructive flex items-center gap-1">
+                              <AlertCircle className="w-4 h-4" />
+                              {membershipNumberError}
+                            </p>
+                          )}
                         </div>
                       </>
                     )}
