@@ -24,6 +24,10 @@ import MPAnalyticsSuite from "@/components/MPAnalyticsSuite";
 import { AIEarlyWarningSystem } from "@/components/AIEarlyWarningSystem";
 import { GISHeatmap } from "@/components/GISHeatmap";
 import { BlockchainAuditTrail } from "@/components/BlockchainAuditTrail";
+import { DigitalTwinIntegration } from "@/components/DigitalTwinIntegration";
+import { PredictiveCrisisEngine } from "@/components/PredictiveCrisisEngine";
+import { SmartContractsAccountability } from "@/components/SmartContractsAccountability";
+import { UnifiedNationalIDIntegration } from "@/components/UnifiedNationalIDIntegration";
 import type { Issue } from "@/components/IssueCard";
 import type { IssueStatus } from "@/components/StatusBadge";
 
@@ -273,6 +277,22 @@ const MPDashboard = () => {
                 <ShieldCheck className="w-4 h-4" />
                 سجل التدقيق
               </TabsTrigger>
+              <TabsTrigger value="digital-twin" className="gap-2 data-[state=active]:bg-accent">
+                <LayoutDashboard className="w-4 h-4" />
+                التوأم الرقمي
+              </TabsTrigger>
+              <TabsTrigger value="predictive" className="gap-2 data-[state=active]:bg-accent">
+                <TrendingUp className="w-4 h-4" />
+                التنبؤ بالأزمات
+              </TabsTrigger>
+              <TabsTrigger value="smart-contracts" className="gap-2 data-[state=active]:bg-accent">
+                <ShieldCheck className="w-4 h-4" />
+                العقود الذكية
+              </TabsTrigger>
+              <TabsTrigger value="democracy" className="gap-2 data-[state=active]:bg-accent">
+                <Users className="w-4 h-4" />
+                الديمقراطية المباشرة
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -290,6 +310,22 @@ const MPDashboard = () => {
 
           <TabsContent value="blockchain">
             <BlockchainAuditTrail />
+          </TabsContent>
+
+          <TabsContent value="digital-twin">
+            <DigitalTwinIntegration />
+          </TabsContent>
+
+          <TabsContent value="predictive">
+            <PredictiveCrisisEngine />
+          </TabsContent>
+
+          <TabsContent value="smart-contracts">
+            <SmartContractsAccountability />
+          </TabsContent>
+
+          <TabsContent value="democracy">
+            <UnifiedNationalIDIntegration />
           </TabsContent>
 
           <TabsContent value="list" className="space-y-8">
