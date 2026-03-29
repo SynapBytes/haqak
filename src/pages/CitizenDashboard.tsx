@@ -29,12 +29,15 @@ import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import { verifyCaptchaToken } from "@/lib/captchaVerification";
 import { validateBeforeUpload, validateNewFiles } from "@/lib/fileValidation";
 import { ALLOWED_FILE_TYPES } from "@/constants/uploadConstraints";
+import { useCsrfToken } from "@/hooks/useCsrfToken";
+import { hashFile } from "@/lib/fileIntegrityService";
 
 const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitation", "education", "electricity", "other"] as const;
 
 const CitizenDashboard = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { csrfToken, csrfHeader, rotate: rotateCsrf } = useCsrfToken();
   const [searchParams, setSearchParams] = useSearchParams();
   const mpIdParam = searchParams.get("mp_id");
   const mpNameParam = searchParams.get("mp_name");
@@ -147,6 +150,9 @@ const CitizenDashboard = () => {
     }
     const cleanedFiles = await stripExifFromFiles(files);
     for (const file of cleanedFiles) {
+      // ── FIX #4: Compute SHA-256 hash BEFORE upload ───────────────────────────
+      const preHash = await hashFile(file);
+
       const ext = file.name.split(".").pop();
       const path = `${user!.id}/${issueId}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
@@ -156,6 +162,20 @@ const CitizenDashboard = () => {
         console.error("Upload error:", uploadError);
         continue;
       }
+
+      // ── FIX #4: Verify integrity via Edge Function ───────────────────────────
+      const { data: integrityData, error: integrityError } = await supabase.functions.invoke(
+        "verify-upload-integrity",
+        { body: { storagePath: path, expectedHash: preHash } },
+      );
+      if (integrityError || !integrityData?.valid) {
+        console.error("Integrity check failed for", file.name, integrityError ?? integrityData?.error);
+        // Remove the corrupted upload
+        await supabase.storage.from("issue-attachments").remove([path]);
+        toast.error(`${t("dashboard.file_integrity_failed")}: ${file.name}`);
+        continue;
+      }
+
       await supabase.from("issue_attachments").insert({
         issue_id: issueId,
         file_path: path,
@@ -219,6 +239,7 @@ const CitizenDashboard = () => {
             location: { address: location, lat: latitude, lng: longitude },
             isEgyptianLocation: latitude && longitude ? isLocationInEgypt(latitude, longitude) : true
           },
+          headers: { [csrfHeader]: csrfToken },
         });
 
         if (!classifyError && classifyData) {
@@ -276,6 +297,7 @@ const CitizenDashboard = () => {
       setAssignedMpId(null);
       setAssignedMpName(null);
       setCaptchaToken(null);
+      rotateCsrf();
       fetchIssues();
     } catch (err: any) {
       toast.error(err.message || t("dashboard.error_submitting"));

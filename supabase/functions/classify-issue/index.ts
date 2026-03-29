@@ -18,6 +18,18 @@ serve(async (req) => {
       });
     }
 
+    // ── FIX #2: CSRF protection — require custom header ───────────────────────
+    // The browser same-origin policy prevents cross-origin pages from setting
+    // custom request headers, so the presence of X-CSRF-Token proves the request
+    // originates from our own frontend.
+    const csrfToken = req.headers.get("X-CSRF-Token");
+    if (!csrfToken || csrfToken.trim() === "") {
+      return new Response(JSON.stringify({ error: "Forbidden: missing CSRF token" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);

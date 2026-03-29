@@ -156,7 +156,8 @@
     "loading": "Loading...",
     "error_submit": "Error submitting issue",
     "rejected": "Issue rejected",
-    "issue_type_label": "Issue Type"
+    "issue_type_label": "Issue Type",
+    "file_integrity_failed": "File integrity check failed"
   },
   "mp_dashboard": {
     "title": "MP Dashboard",
