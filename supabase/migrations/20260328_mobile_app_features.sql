@@ -31,7 +31,7 @@ CREATE TRIGGER trigger_verify_geotagged
 BEFORE INSERT ON public.issue_attachments
 FOR EACH ROW EXECUTE FUNCTION public.verify_geotagged_photo();
 
--- 4. Mobile Push Notification Tokens (Already exists in Sutak, but we'll ensure it's ready)
+-- 4. Mobile Push Notification Tokens (Already exists in Haqak, but we'll ensure it's ready)
 -- Table fcm_tokens already exists in types.ts
 
 -- 5. Citizen Profile: Mobile App Settings
