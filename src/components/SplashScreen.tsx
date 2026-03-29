@@ -1,9 +1,6 @@
 import { useEffect, useRef } from "react";
 
-// SPLASH_DURATION_MS controls how long the splash screen is shown before
-// redirecting to the landing page. Adjust this value to change the duration.
 const SPLASH_DURATION_MS = 7000;
-
 const SPLASH_VIDEO_SRC = "/video-black.mov";
 
 const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
@@ -17,16 +14,13 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
     };
   }, [onFinish]);
 
-  // Ensure autoplay without showing native overlays
   useEffect(() => {
-    const videoEl = videoRef.current;
-    if (!videoEl) return;
-    const playPromise = videoEl.play();
-    if (playPromise && typeof playPromise.catch === "function") {
-      playPromise.catch(() => {
-        // Some browsers pause muted autoplay; retry once.
-        setTimeout(() => videoEl.play().catch(() => {}), 150);
-      });
+    const v = videoRef.current;
+    if (!v) return;
+    const attempt = () => v.play().catch(() => {});
+    const p = v.play();
+    if (p && typeof p.catch === "function") {
+      p.catch(() => setTimeout(attempt, 150));
     }
   }, []);
 
@@ -40,8 +34,26 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
         overflow: "hidden",
       }}
     >
+      <style>{`
+        .splash-video,
+        .splash-video * {
+          user-select: none;
+          -webkit-user-select: none;
+        }
+        .splash-video::-webkit-media-controls,
+        .splash-video::-webkit-media-controls-enclosure,
+        .splash-video::-webkit-media-controls-start-playback-button,
+        .splash-video::-webkit-media-controls-play-button {
+          display: none !important;
+          opacity: 0 !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+        }
+      `}</style>
+
       <video
         ref={videoRef}
+        className="splash-video"
         autoPlay
         muted
         playsInline
@@ -64,8 +76,6 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
           objectFit: "cover",
           pointerEvents: "none",
           backgroundColor: "#000",
-          WebkitUserSelect: "none",
-          userSelect: "none",
         }}
       >
         <source src={SPLASH_VIDEO_SRC} type="video/quicktime" />
