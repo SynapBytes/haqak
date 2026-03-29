@@ -8,6 +8,7 @@ const SPLASH_VIDEO_SRC = "/video-black.mov";
 
 const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     timerRef.current = setTimeout(onFinish, SPLASH_DURATION_MS);
@@ -15,6 +16,19 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [onFinish]);
+
+  // Ensure autoplay without showing native overlays
+  useEffect(() => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+    const playPromise = videoEl.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(() => {
+        // Some browsers pause muted autoplay; retry once.
+        setTimeout(() => videoEl.play().catch(() => {}), 150);
+      });
+    }
+  }, []);
 
   return (
     <div
@@ -27,12 +41,20 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
       }}
     >
       <video
+        ref={videoRef}
         autoPlay
         muted
         playsInline
         preload="auto"
+        loop={false}
         controls={false}
+        controlsList="nodownload noremoteplayback nofullscreen noplaybackrate"
+        disablePictureInPicture
+        disableRemotePlayback
+        tabIndex={-1}
         onContextMenu={(e) => e.preventDefault()}
+        onMouseDown={(e) => e.preventDefault()}
+        onTouchStart={(e) => e.preventDefault()}
         aria-hidden="true"
         style={{
           position: "absolute",
@@ -41,6 +63,9 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
           height: "100%",
           objectFit: "cover",
           pointerEvents: "none",
+          backgroundColor: "#000",
+          WebkitUserSelect: "none",
+          userSelect: "none",
         }}
       >
         <source src={SPLASH_VIDEO_SRC} type="video/quicktime" />
