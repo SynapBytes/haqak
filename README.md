@@ -1,50 +1,75 @@
-# Haqak (حقك) - منظومة الحكم المحلي الذكية
+# Haqak (حقك) — منصة Civic‑Tech مصرية مستقلة (MVP)
 
-## عن المشروع (About The Project)
+**Haqak (حقك)** منصة Civic‑Tech مصرية بتنظم تواصل ومتابعة القضايا المحلية بين **المواطنين** و**نواب مجلس الشعب** و**الإدارة** — بشكل واضح وسهل وشفاف:  
+تقديم قضية/شكوى → متابعة → مخرجات → رؤية أحسن للأولويات.
 
-**Haqak (حقك)** هي منصة تقنية مدنية (Civic-Tech) ثورية تهدف إلى إعادة تعريف مفهوم الحكم المحلي والتواصل السياسي. المنصة مصممة خصيصاً لربط **المواطنين** بشكل مباشر مع **نواب البرلمان**، لتسهيل تقديم الشكاوى، متابعة الوعود الانتخابية، والمشاركة في صنع القرار المحلي بطريقة شفافة وذكية.
+> **الحالة الحالية:** MVP / Prototype (Pre‑Production) — مناسبة للتجربة والتطوير.  
+> 🇪🇬 **Scope:** مصر فقط حاليًا.
 
-تعتمد المنصة على أحدث تقنيات الذكاء الاصطناعي (AI) وسلاسل الكتل (Blockchain) لضمان أقصى درجات الشفافية، المساءلة، والكفاءة في تلبية احتياجات المواطنين.
+---
 
-## الميزات الرئيسية (Key Features)
+## Disclaimer
 
-### 👨‍⚖️ تواصل مباشر بين المواطن والنائب
-* **لوحات تحكم مخصصة:** واجهات مخصصة لكل من المواطن (Citizen)، النائب (MP)، والإدارة (Admin).
-* **تقديم ومتابعة الشكاوى:** نظام متكامل لتقديم الطلبات ومتابعة حالتها خطوة بخطوة.
+Haqak مشروع Civic‑Tech **مستقل** ومش تابع/مش ممثّل لأي جهة حكومية.  
+المنصة بتتعامل مع "نواب مجلس الشعب" كـ **فئة مستخدمين (User Role)** داخل النظام، **من غير** أي تكامل رسمي أو شراكة حكومية في المرحلة الحالية.
 
-### 🤖 أدوات الذكاء الاصطناعي (AI-Powered Tools)
-* **AILegislativeDrafter (صياغة تشريعية بالذكاء الاصطناعي):** مساعدة النواب في تحويل شكاوى المواطنين إلى طلبات إحاطة أو مشاريع قوانين مصاغة باحترافية.
-* **PredictiveCrisisEngine (محرك التنبؤ بالأزمات):** تحليل البيانات للتنبؤ بالمشكلات المحلية قبل تفاقمها.
-* **VoiceAssistantAI (مساعد صوتي ذكي):** تمكين المواطنين من تقديم الشكاوى والطلبات عبر الأوامر الصوتية.
-* **DroneAINeedsRadar (رادار الاحتياجات بالذكاء الاصطناعي):** تحليل البيانات الجغرافية والصور لتحديد المناطق الأكثر احتياجاً للتطوير.
+---
 
-### 🗳️ المشاركة المجتمعية والشفافية
-* **ConsultativeVotingSystem (نظام التصويت الاستشاري):** استطلاعات رأي حية للسماح للمواطنين بالتصويت على أولويات الدائرة الانتخابية.
-* **BlockchainAccountabilityLedger (سجل المساءلة عبر البلوكتشين):** توثيق الوعود، الشكاوى، والقرارات باستخدام `SHA-256 Hash Chain` لضمان عدم التلاعب بالبيانات وتوفير شفافية مطلقة.
-* **MicroCrowdfundingPlatform (التمويل الجماعي المصغر):** منصة لتمويل المشاريع التنموية المحلية بمشاركة مجتمعية.
+## بيعمل إيه؟ (بالمختصر)
 
-### 🔒 الأمان والموثوقية
-* **BiometricIdentityVerification (التحقق البيومتري):** نظام متعدد الطبقات للتحقق من هوية المستخدمين وضمان موثوقية الحسابات.
-* تشفير متقدم للبيانات (AES-256) مع احترام كامل لخصوصية المستخدمين.
+- **أدوار واضحة:** Citizen / MP / Admin
+- **المسار الأساسي:** تقديم قضايا + متابعة الحالة + تنظيم الأولويات
+- **شفافية/مساءلة:** فكرة Ledger (Hash Chain) لتوثيق الوعود/التحديثات
+- **AI (اختياري):** مساعدة في صياغة مسودات وتحليلات أولية
+- **خرائط وتحليلات:** GIS + Charts
+- **i18n & PWA:** موجودة كبنية قابلة للتوسع
 
-## التقنيات المستخدمة (Tech Stack)
+---
 
-* **الواجهة الأمامية (Frontend):** React 18+, TypeScript, Vite.
-* **التصميم (Styling):** TailwindCSS, Framer Motion, shadcn/ui.
-* **أدوات الخرائط والرسوم البيانية:** Recharts, Leaflet.
-* **الذكاء الاصطناعي والبلوكتشين:** OpenAI/Gemini API, TensorFlow.js, Crypto-js.
+## Routes (Quick Map)
 
-## كيف تبدأ (Quick Start)
+`/` `/auth` `/reset-password` `/citizen` `/mp` `/admin` `/mps` `/profile` `/genius` `/privacy` `/terms`
+
+---
+
+## Tech Stack
+
+React + TypeScript + Vite + Tailwind + shadcn/ui  
+Supabase + React Query + i18next + Leaflet + Recharts  
+Vitest (ومهيأ للتوسع بـ Playwright)
+
+---
+
+## Quick Start
+
+**Requirements:** Node.js >= 20
 
 ```bash
-# استنساخ المستودع
 git clone https://github.com/SynapBytes/haqak.git
-
-# تثبيت الاعتماديات
+cd haqak
 npm install
-
-# تشغيل خادم التطوير
 npm run dev
 ```
 
-لمزيد من التفاصيل حول البنية المعمارية للمشروع، يرجى مراجعة ملف [TECHNICAL_IMPLEMENTATION.md](./TECHNICAL_IMPLEMENTATION.md).
+```bash
+cp .env.example .env
+# fill env values
+```
+
+---
+
+## التوثيق (Docs)
+
+- العربي (الأساسي): [`docs/README.md`](./docs/README.md)
+- English (short): [`docs/README_EN.md`](./docs/README_EN.md)
+- Architecture: [`docs/architecture.md`](./docs/architecture.md)
+- Roadmap: [`docs/roadmap.md`](./docs/roadmap.md)
+- Glossary (مصري): [`docs/glossary_eg.md`](./docs/glossary_eg.md)
+- Technical (موجود): [`TECHNICAL_IMPLEMENTATION.md`](./TECHNICAL_IMPLEMENTATION.md)
+- Security (موجود): [`SECURITY.md`](./SECURITY.md) + [`SECURITY_AUDIT_REPORT.md`](./SECURITY_AUDIT_REPORT.md)
+
+---
+
+## License
+
+Not specified yet.
