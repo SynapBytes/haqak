@@ -1,1 +1,108 @@
-import { serve } from \"https://deno.land/std@0.168.0/http/server.ts\";\nimport { createClient } from \"https://esm.sh/@supabase/supabase-js@2.49.2\";\n\nconst corsHeaders = {\n  \"Access-Control-Allow-Origin\": \"*\",\n  \"Access-Control-Allow-Headers\": \"authorization, x-client-info, apikey, content-type\",\n};\n\nserve(async (req) => {\n  if (req.method === \"OPTIONS\") return new Response(null, { headers: corsHeaders });\n\n  try {\n    const authHeader = req.headers.get(\"Authorization\");\n    if (!authHeader?.startsWith(\"Bearer \")) {\n      return new Response(JSON.stringify({ error: \"Unauthorized\" }), {\n        status: 401,\n        headers: { ...corsHeaders, \"Content-Type\": \"application/json\" },\n      });\n    }\n\n    const SUPABASE_URL = Deno.env.get(\"SUPABASE_URL\")!;\n    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(\"SUPABASE_SERVICE_ROLE_KEY\")!;\n    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);\n\n    const token = authHeader.replace(\"Bearer \", \"\");\n    const { data: { user }, error: authError } = await supabase.auth.getUser(token);\n    \n    if (authError || !user) {\n      return new Response(JSON.stringify({ error: \"Unauthorized\" }), {\n        status: 401,\n        headers: { ...corsHeaders, \"Content-Type\": \"application/json\" },\n      });\n    }\n\n    const { userMessage } = await req.json();\n    const GEMINI_API_KEY = Deno.env.get(\"GEMINI_API_KEY\");\n\n    // Knowledge base for legal responses\n    const legalKnowledge = {\n      procedures: {\n        keywords: [\"كيف\", \"تقديم\", \"شكوى\", \"إجراء\"],\n        response: `لتقديم شكوى في نظام \"سوتك\":\n\n1. اذهب إلى صفحة \"تقديم شكوى جديدة\"\n2. اختر فئة الشكوى (كهرباء، مياه، طرق، إلخ)\n3. اكتب عنواناً واضحاً ووصفاً مفصلاً\n4. أضف صوراً أو مستندات إن أمكن\n5. اضغط \"إرسال\"\n\nستتلقى رقم تتبع لمتابعة شكواك.`,\n        references: [\n          { title: \"قانون الحق في الوصول للمعلومات\", year: 2020 },\n        ],\n      },\n      rights: {\n        keywords: [\"حقوق\", \"حق\", \"مواطن\"],\n        response: `حقوقك كمواطن:\n\n✓ الحق في تقديم شكاوى دون تمييز\n✓ الحق في الحصول على رد من النائب\n✓ الحق في الخصوصية والسرية\n✓ الحق في الحصول على معلومات عن حالة شكواك\n✓ الحق في الاستئناف إذا لم تُحل مشكلتك\n\nجميع هذه الحقوق مضمونة بموجب القانون.`,\n        references: [\n          { title: \"الدستور المصري 2014\", article: 33 },\n          { title: \"قانون حماية البيانات الشخصية\", year: 2020 },\n        ],\n      },\n      timeline: {\n        keywords: [\"مدة\", \"كم\", \"وقت\", \"متى\"],\n        response: `المدة المتوقعة لحل الشكوى:\n\n⏱️ شكاوى عاجلة (كهرباء، مياه): 24-48 ساعة\n⏱️ شكاوى عادية: 7-14 يوم\n⏱️ شكاوى معقدة: 30 يوم\n\nسيتم إخطارك بأي تطورات عبر التطبيق والرسائل النصية.`,\n        references: [\n          { title: \"لائحة معالجة الشكاوى\", year: 2023 },\n        ],\n      },\n    };\n\n    // Match user message to knowledge base\n    let response = null;\n    let references = [];\n\n    for (const [key, knowledge] of Object.entries(legalKnowledge)) {\n      const matchesKeywords = (knowledge as any).keywords.some((kw: string) =>\n        userMessage.includes(kw)\n      );\n      if (matchesKeywords) {\n        response = (knowledge as any).response;\n        references = (knowledge as any).references;\n        break;\n      }\n    }\n\n    // If no match found, use Gemini API for more complex queries\n    if (!response && GEMINI_API_KEY) {\n      const systemPrompt = `أنت مساعد قانوني ذكي متخصص في القوانين واللوائح المصرية.\nمهمتك مساعدة المواطنين في فهم حقوقهم والإجراءات المتعلقة بنظام الشكاوى \"سوتك\".\nأجب بشكل واضح وموجز باللغة العربية.`;\n\n      const apiResponse = await fetch(\n        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,\n        {\n          method: \"POST\",\n          headers: { \"Content-Type\": \"application/json\" },\n          body: JSON.stringify({\n            contents: [\n              {\n                role: \"user\",\n                parts: [{ text: `${systemPrompt}\\n\\nسؤال المواطن: ${userMessage}` }],\n              },\n            ],\n            generationConfig: { temperature: 0.3 },\n          }),\n        }\n      );\n\n      const data = await apiResponse.json();\n      response =\n        data.candidates?.[0]?.content?.parts?.[0]?.text ||\n        \"عذراً، لم أتمكن من معالجة سؤالك. يرجى المحاولة لاحقاً.\";\n    }\n\n    // Default response if still no match\n    if (!response) {\n      response = `شكراً على سؤالك. أنا مساعد ذكي متخصص في القوانين والإجراءات. يمكنني مساعدتك في:\n\n• شرح كيفية تقديم الشكاوى\n• توضيح حقوقك كمواطن\n• معلومات عن المدة المتوقعة للحل\n• إرشادات قانونية عامة\n\nكيف يمكنني مساعدتك؟`;\n    }\n\n    return new Response(\n      JSON.stringify({\n        status: \"success\",\n        response,\n        references,\n      }),\n      { headers: { ...corsHeaders, \"Content-Type\": \"application/json\" } }\n    );\n  } catch (error) {\n    return new Response(\n      JSON.stringify({ error: error.message, status: \"error\" }),\n      { status: 500, headers: { ...corsHeaders, \"Content-Type\": \"application/json\" } }\n    );\n  }\n});\n
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    const token = authHeader.replace("Bearer ", "");
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { userMessage } = await req.json();
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+
+    const legalKnowledge = {
+      procedures: {
+        keywords: ["كيف", "تقديم", "شكوى", "إجراء"],
+        response: `لتقديم شكوى في نظام "سوتك":\n\n1. اذهب إلى صفحة "تقديم شكوى جديدة"\n2. اختر فئة الشكوى\n3. اكتب عنواناً واضحاً ووصفاً مفصلاً\n4. أضف صوراً أو مستندات إن أمكن\n5. اضغط "إرسال"`,
+        references: [{ title: "دليل تقديم الشكاوى" }],
+      },
+      rights: {
+        keywords: ["حقوق", "حق", "مواطن"],
+        response: `حقوقك كمواطن تشمل تقديم الطلب، متابعة الحالة، والحصول على تحديثات واضحة على مسار المعالجة داخل المنصة.`,
+        references: [{ title: "سياسة الاستخدام" }, { title: "سياسة الخصوصية" }],
+      },
+      timeline: {
+        keywords: ["مدة", "وقت", "متى", "كم"],
+        response: `تختلف مدة المعالجة بحسب نوع الطلب وأولويته، لكنك ستجد كل تحديث ظاهرًا مباشرة داخل حسابك.`,
+        references: [{ title: "إجراءات معالجة الطلبات" }],
+      },
+    };
+
+    let response = "";
+    let references: Array<{ title: string }> = [];
+
+    for (const knowledge of Object.values(legalKnowledge)) {
+      if (knowledge.keywords.some((keyword) => userMessage?.includes(keyword))) {
+        response = knowledge.response;
+        references = knowledge.references;
+        break;
+      }
+    }
+
+    if (!response && GEMINI_API_KEY) {
+      const systemPrompt = `أنت مساعد قانوني ذكي متخصص في القوانين والإجراءات العامة للمواطنين. أجب بالعربية بشكل واضح ومختصر.`;
+      const apiResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [{ text: `${systemPrompt}\n\nالسؤال: ${userMessage}` }],
+              },
+            ],
+            generationConfig: { temperature: 0.3 },
+          }),
+        },
+      );
+
+      const data = await apiResponse.json();
+      response =
+        data.candidates?.[0]?.content?.parts?.[0]?.text ||
+        "عذرًا، تعذر توليد رد الآن. حاول مرة أخرى بعد قليل.";
+    }
+
+    if (!response) {
+      response = "يمكنني مساعدتك في فهم خطوات التقديم، الحقوق الأساسية، وآلية المتابعة داخل المنصة.";
+    }
+
+    return new Response(JSON.stringify({ status: "success", response, references }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message, status: "error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
