@@ -404,6 +404,6 @@ const { data, error } = await supabase
 
 للمزيد من المعلومات أو الإبلاغ عن مشاكل، يرجى التواصل عبر:
 
-- البريد الإلكتروني: support@sutak.com
-- الموقع: www.sutak.com
+- البريد الإلكتروني: support@haqak.com
+- الموقع: www.haqak.com
 - الهاتف: +20 (0) XXX-XXXX-XXX

@@ -243,7 +243,7 @@ export const ConstituencyDigitalTwin: React.FC = () => {
           <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex gap-3 items-start">
             <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-blue-700 leading-relaxed">
-              تعتمد هذه البيانات على تقنية <strong>Statistical Extrapolation</strong> التي تدمج البيانات المفتوحة (Open Data) مع كثافة المسجلين في تطبيق Sutak لتقدير الاحتياجات الفعلية.
+              تعتمد هذه البيانات على تقنية <strong>Statistical Extrapolation</strong> التي تدمج البيانات المفتوحة (Open Data) مع كثافة المسجلين في تطبيق Haqak لتقدير الاحتياجات الفعلية.
             </p>
           </div>
         </div>

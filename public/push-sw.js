@@ -5,10 +5,10 @@ self.addEventListener("push", (event) => {
     const payload = event.data.json();
     const { title, body, icon, data } = payload;
     event.waitUntil(
-      self.registration.showNotification(title || "صوتك", {
+      self.registration.showNotification(title || "حقك", {
         body: body || "",
-        icon: icon || "/logo-sawtak.webp",
-        badge: "/logo-sawtak.webp",
+        icon: icon || "/logo-haqak.webp",
+        badge: "/logo-haqak.webp",
         data: data || {},
       })
     );

@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["logo-sawtak.webp", "placeholder.svg"],
+      includeAssets: ["logo-haqak.webp", "placeholder.svg"],
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         navigateFallbackDenylist: [/^\/~oauth/],
@@ -35,9 +35,9 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       manifest: {
-        name: "صوتك — منصة التواصل المدني",
-        short_name: "صوتك",
-        description: "منصة صوتك تربط المواطنين بأعضاء مجلس النواب لحل المشاكل بشكل منظم وآمن",
+        name: "حقك — منصة التواصل المدني",
+        short_name: "حقك",
+        description: "منصة حقك تربط المواطنين بأعضاء مجلس النواب لحل المشاكل بشكل منظم وآمن",
         theme_color: "#4285f4",
         background_color: "#f8fafc",
         display: "standalone",
@@ -46,8 +46,8 @@ export default defineConfig(({ mode }) => ({
         start_url: "/",
         scope: "/",
         icons: [
-          { src: "/logo-sawtak.webp", sizes: "192x192", type: "image/png" },
-          { src: "/logo-sawtak.webp", sizes: "512x512", type: "image/png", purpose: "any maskable" },
+          { src: "/logo-haqak.webp", sizes: "192x192", type: "image/png" },
+          { src: "/logo-haqak.webp", sizes: "512x512", type: "image/png", purpose: "any maskable" },
         ],
       },
     }),

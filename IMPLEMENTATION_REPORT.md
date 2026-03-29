@@ -1,4 +1,4 @@
-# تقرير تنفيذ الإصلاحات والتحسينات لموقع صوتك
+# تقرير تنفيذ الإصلاحات والتحسينات لموقع حقك
 
 **التاريخ:** 25 مارس 2026
 **الحالة:** ✅ مكتمل
@@ -108,14 +108,14 @@
 **الحالة:** 📋 في الانتظار
 
 الصور الكبيرة التالية تحتاج إلى تحسين:
-- `logo-sawtak.webp` (1024x1024) - يجب تصغيرها
+- `logo-haqak.webp` (1024x1024) - يجب تصغيرها
 - `egyptian-scene.png` (1920x1080) - تحويل إلى WebP
 - `egyptian-ornament-*.png` (1024x1024) - تحويل إلى WebP
 
 **الإجراء المقترح:**
 ```bash
 # تصغير الشعار
-imagemagick convert logo-sawtak.webp -resize 512x512 logo-sawtak-optimized.png
+imagemagick convert logo-haqak.webp -resize 512x512 logo-haqak-optimized.png
 
 # تحويل إلى WebP
 cwebp egyptian-scene.png -o egyptian-scene.webp

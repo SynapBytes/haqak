@@ -25,7 +25,7 @@ const OfficialDocumentGenerator: React.FC<DocumentProps> = ({ type, data }) => {
 
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
-    documentTitle: `Sutak_Official_${data.id}`,
+    documentTitle: `Haqak_Official_${data.id}`,
     onAfterPrint: () => toast.success("تم تجهيز المستند للطباعة"),
   });
 
@@ -60,7 +60,7 @@ const OfficialDocumentGenerator: React.FC<DocumentProps> = ({ type, data }) => {
           <div className="flex justify-between items-start border-b-2 border-black pb-6 mb-8">
             <div className="text-right">
               <h1 className="text-2xl font-bold mb-1">جمهورية مصر العربية</h1>
-              <h2 className="text-xl font-bold mb-1">منصة «صوتك» الإلكترونية</h2>
+              <h2 className="text-xl font-bold mb-1">منصة «حقك» الإلكترونية</h2>
               <p className="text-sm">منظومة التواصل السيادي بين المواطن والبرلمان</p>
             </div>
             <div className="w-24 h-24 bg-slate-100 flex items-center justify-center border border-black rounded-lg">
@@ -111,7 +111,7 @@ const OfficialDocumentGenerator: React.FC<DocumentProps> = ({ type, data }) => {
             <div className="text-right space-y-2">
               <p className="font-bold">التوقيع الإلكتروني المعتمد:</p>
               <div className="w-48 h-12 bg-slate-100 border border-dashed border-black flex items-center justify-center italic text-sm">
-                Sutak_Verified_Digital_Signature
+                Haqak_Verified_Digital_Signature
               </div>
               <p className="text-xs">حرر في: {data.date}</p>
             </div>
@@ -125,7 +125,7 @@ const OfficialDocumentGenerator: React.FC<DocumentProps> = ({ type, data }) => {
 
           {/* Watermark */}
           <div className="fixed inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] rotate-[-45deg]">
-             <h1 className="text-[120px] font-bold border-8 border-black p-10">صوتك - SUTAK</h1>
+             <h1 className="text-[120px] font-bold border-8 border-black p-10">حقك - HAQAK</h1>
           </div>
         </div>
       </div>
