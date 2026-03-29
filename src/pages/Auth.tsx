@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
@@ -8,7 +8,14 @@ import { InputOTP } from "@/components/ui/input-otp";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { User, ShieldCheck, LogIn, ArrowRight, Eye, EyeOff, Lock, Phone, IdCard, Fingerprint, KeyRound, MapPin, Building2, Landmark, AlertCircle, CheckCircle2, Clock, Globe } from "lucide-react";
-import egyptGeoData from "@/data/egypt-geo.json";
+import { 
+  getDistrictOptions, 
+  getElectoralDistrictOptions, 
+  getGovernorateOptions, 
+  isValidDistrictForGovernorate, 
+  isValidElectoralDistrictForGovernorate, 
+  isValidGovernorate 
+} from "@/utils/egyptianElectoralData";
 import countryCodes from "@/data/countryCodes.json";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -49,6 +56,9 @@ const Auth = () => {
   // Validation states
   const [phoneError, setPhoneError] = useState("");
   const [membershipNumberError, setMembershipNumberError] = useState("");
+  const [governorateError, setGovernorateError] = useState("");
+  const [districtError, setDistrictError] = useState("");
+  const [electoralError, setElectoralError] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
 
   // Get user's location on component mount
@@ -75,6 +85,12 @@ const Auth = () => {
   const phoneRegex = /^01[0125][0-9]{8}$/;
   const membershipNumberRegex = /^[0-9]+$/;
   const MAX_MEMBERSHIP_NUMBER = 568;
+  const governorateOptions = useMemo(() => getGovernorateOptions(), []);
+  const districtOptions = useMemo(() => getDistrictOptions(governorate), [governorate]);
+  const electoralOptions = useMemo(
+    () => getElectoralDistrictOptions(governorate, district),
+    [governorate, district],
+  );
 
   // OTP Timer effect
   useEffect(() => {
@@ -156,14 +172,56 @@ const Auth = () => {
                                  parseInt(registrationNumber, 10) >= 1 &&
                                  parseInt(registrationNumber, 10) <= MAX_MEMBERSHIP_NUMBER &&
                                  membershipNumberError === "";
-          return commonValid && governorate.length > 0 && district.length > 0 && electoralDistrict.length > 0 && membershipValid;
+          const geoValid =
+            isValidGovernorate(governorate) &&
+            isValidDistrictForGovernorate(governorate, district) &&
+            isValidElectoralDistrictForGovernorate(governorate, electoralDistrict, district) &&
+            !governorateError &&
+            !districtError &&
+            !electoralError;
+          return commonValid && geoValid && membershipValid;
         }
         return commonValid;
       }
       return false;
     };
     setIsFormValid(validateForm());
-  }, [mode, phone, password, fullName, governorate, district, electoralDistrict, registrationNumber, membershipNumberError, nationalId, nationalIdError]);
+  }, [mode, phone, password, fullName, governorate, district, electoralDistrict, registrationNumber, membershipNumberError, nationalId, nationalIdError, governorateError, districtError, electoralError]);
+
+  useEffect(() => {
+    if (!mode.includes("signup-mp")) {
+      setGovernorateError("");
+      setDistrictError("");
+      setElectoralError("");
+      return;
+    }
+
+    if (governorate && !isValidGovernorate(governorate)) {
+      setGovernorateError(t("auth.governorate_invalid"));
+    } else {
+      setGovernorateError("");
+    }
+
+    if (district) {
+      if (!isValidDistrictForGovernorate(governorate, district)) {
+        setDistrictError(t("auth.district_invalid"));
+      } else {
+        setDistrictError("");
+      }
+    } else {
+      setDistrictError("");
+    }
+
+    if (electoralDistrict) {
+      if (!isValidElectoralDistrictForGovernorate(governorate, electoralDistrict, district)) {
+        setElectoralError(t("auth.electoral_district_invalid"));
+      } else {
+        setElectoralError("");
+      }
+    } else {
+      setElectoralError("");
+    }
+  }, [governorate, district, electoralDistrict, mode, t]);
 
   const resetForm = () => {
     setPhone("");
@@ -178,6 +236,9 @@ const Auth = () => {
     setNationalId("");
     setPhoneError("");
     setNationalIdError("");
+    setGovernorateError("");
+    setDistrictError("");
+    setElectoralError("");
     setOtpCode("");
     setOtpTimer(0);
     setCanResendOtp(false);
@@ -592,16 +653,30 @@ const Auth = () => {
                             <MapPin className="w-4 h-4" />
                             {t("auth.governorate")}
                           </label>
-                          <Select value={governorate} onValueChange={setGovernorate} disabled={loading}>
+                          <Select
+                            value={governorate}
+                            onValueChange={(value) => {
+                              setGovernorate(value);
+                              setDistrict("");
+                              setElectoralDistrict("");
+                            }}
+                            disabled={loading}
+                          >
                             <SelectTrigger>
                               <SelectValue placeholder={t("auth.select_governorate")} />
                             </SelectTrigger>
                             <SelectContent>
-                              {Object.keys(egyptGeoData).map((gov) => (
-                                <SelectItem key={gov} value={gov}>{gov}</SelectItem>
+                              {governorateOptions.map((gov) => (
+                                <SelectItem key={gov.value} value={gov.value}>{gov.label}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
+                          {governorateError && (
+                            <p className="text-sm text-destructive flex items-center gap-1">
+                              <AlertCircle className="w-4 h-4" />
+                              {governorateError}
+                            </p>
+                          )}
                         </div>
 
                         {governorate && (
@@ -610,16 +685,29 @@ const Auth = () => {
                               <Building2 className="w-4 h-4" />
                               {t("auth.district")}
                             </label>
-                            <Select value={district} onValueChange={setDistrict} disabled={loading}>
+                            <Select
+                              value={district}
+                              onValueChange={(value) => {
+                                setDistrict(value);
+                                setElectoralDistrict("");
+                              }}
+                              disabled={loading || districtOptions.length === 0}
+                            >
                               <SelectTrigger>
                                 <SelectValue placeholder={t("auth.select_district")} />
                               </SelectTrigger>
                               <SelectContent>
-                                {(egyptGeoData[governorate as keyof typeof egyptGeoData] || []).map((dist) => (
-                                  <SelectItem key={dist} value={dist}>{dist}</SelectItem>
+                                {districtOptions.map((dist) => (
+                                  <SelectItem key={dist.value} value={dist.value}>{dist.label}</SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
+                            {districtError && (
+                              <p className="text-sm text-destructive flex items-center gap-1">
+                                <AlertCircle className="w-4 h-4" />
+                                {districtError}
+                              </p>
+                            )}
                           </div>
                         )}
 
@@ -628,13 +716,28 @@ const Auth = () => {
                             <Landmark className="w-4 h-4" />
                             {t("auth.electoral_district")}
                           </label>
-                          <Input
-                            type="text"
-                            placeholder={t("auth.electoral_district_placeholder")}
+                          <Select
                             value={electoralDistrict}
-                            onChange={(e) => setElectoralDistrict(e.target.value)}
-                            disabled={loading}
-                          />
+                            onValueChange={setElectoralDistrict}
+                            disabled={loading || !governorate}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("auth.select_electoral_district")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {electoralOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {electoralError && (
+                            <p className="text-sm text-destructive flex items-center gap-1">
+                              <AlertCircle className="w-4 h-4" />
+                              {electoralError}
+                            </p>
+                          )}
                         </div>
 
                         <div className="space-y-2">
