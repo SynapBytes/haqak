@@ -322,47 +322,55 @@ const Landing = () => {
       <AppHeader />
 
       {/* ═══════════ HERO ═══════════ */}
-      <section ref={heroRef} className="relative min-h-[90vh] flex flex-col overflow-hidden">
-        {/* Video Background */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, ease: "easeIn" }}
-          className="absolute inset-0"
-          style={{ backgroundColor: isDark ? "#000" : "#fff" }}
-        >
-          <video
-            key={isDark ? "dark" : "light"}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            className="absolute inset-0 w-full h-full object-cover"
-            aria-hidden="true"
-          >
-            {/* Provide both MIME types for maximum browser compatibility with .mov files */}
-            <source src={isDark ? "/video-black.mov" : "/video-white.mov"} type="video/quicktime" />
-            <source src={isDark ? "/video-black.mov" : "/video-white.mov"} type="video/mp4" />
-          </video>
-          {/* Gradient overlay — transparent at top, darkens/lightens toward bottom for button readability */}
-          <div className={`absolute inset-0 pointer-events-none ${isDark ? "bg-gradient-to-b from-black/10 via-transparent to-black/65" : "bg-gradient-to-b from-white/10 via-transparent to-white/65"}`} />
-        </motion.div>
+      <section ref={heroRef} className="relative min-h-[90vh] flex flex-col items-center justify-center overflow-hidden">
+        <HeroDecorations isDark={isDark} />
 
-        {/* Spacer — lets video breathe while pushing CTA to the bottom */}
-        <div className="flex-1" />
-
-        {/* CTA content anchored at the bottom of the hero */}
         <motion.div
           style={{ y: heroY, opacity: heroOpacity }}
-          className="relative z-10 container px-4 pb-16 md:pb-20"
+          className="relative z-10 container px-4 py-20 md:py-28"
         >
-          <div className="max-w-2xl mx-auto flex flex-col items-center text-center gap-6">
+          <div className="max-w-3xl mx-auto flex flex-col items-center text-center gap-6">
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-accent/30 bg-accent/10 text-accent text-sm font-medium"
+            >
+              <Globe className="w-4 h-4" />
+              <span>{t("hero.badge")}</span>
+            </motion.div>
+
+            {/* Title */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="space-y-1"
+            >
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-tight">
+                {t("hero.title_1")}
+              </h1>
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-accent leading-tight">
+                {t("hero.title_2")}
+              </h1>
+            </motion.div>
+
+            {/* Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="text-base md:text-lg text-muted-foreground max-w-xl leading-relaxed"
+            >
+              {t("hero.subtitle")}
+            </motion.p>
+
             {/* Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.5 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
               className="flex flex-col sm:flex-row gap-4"
             >
               <MagneticButton>
@@ -374,7 +382,7 @@ const Landing = () => {
                 </Link>
               </MagneticButton>
               <Link to="/auth">
-                <Button size="lg" variant="outline" className={`gap-2.5 px-10 w-full sm:w-auto h-14 text-base font-medium border-2 transition-all rounded-2xl backdrop-blur-sm hover:bg-accent/10 hover:border-accent/60 ${isDark ? "border-white/30 text-white" : "border-black/30 text-foreground"}`}>
+                <Button size="lg" variant="outline" className="gap-2.5 px-10 w-full sm:w-auto h-14 text-base font-medium border-2 transition-all rounded-2xl backdrop-blur-sm hover:bg-accent/10 hover:border-accent/60 border-border text-foreground">
                   {t("hero.cta_mp")}
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
@@ -386,13 +394,13 @@ const Landing = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1, duration: 0.6 }}
-              className={`flex items-center gap-5 text-sm ${isDark ? "text-white/70" : "text-black/70"}`}
+              className="flex items-center gap-5 text-sm text-muted-foreground"
             >
               <div className="flex items-center gap-1.5">
                 <Shield className="w-4 h-4 text-emerald-400" />
                 <span>{t("hero.encrypted")}</span>
               </div>
-              <div className={`w-px h-4 ${isDark ? "bg-white/20" : "bg-black/20"}`} />
+              <div className="w-px h-4 bg-border" />
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-accent" />
                 <span>{t("hero.free")}</span>
@@ -411,7 +419,7 @@ const Landing = () => {
           <motion.div
             animate={{ y: [0, 8, 0] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className={`w-6 h-10 rounded-full border-2 ${isDark ? "border-white/30" : "border-black/30"} flex items-start justify-center p-1.5`}
+            className="w-6 h-10 rounded-full border-2 border-border flex items-start justify-center p-1.5"
           >
             <motion.div
               animate={{ y: [0, 12, 0] }}
