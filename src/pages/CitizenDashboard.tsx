@@ -25,6 +25,10 @@ import { useTranslation } from "react-i18next";
 import { stripExifFromFiles } from "@/lib/stripExif";
 import { sanitizeText } from "@/lib/sanitize";
 import { validateIssueLocation, isLocationInEgypt } from "@/lib/egyptLocationValidation";
+import TurnstileCaptcha from "@/components/TurnstileCaptcha";
+import { verifyCaptchaToken } from "@/lib/captchaVerification";
+import { validateBeforeUpload, validateNewFiles } from "@/lib/fileValidation";
+import { ALLOWED_FILE_TYPES } from "@/constants/uploadConstraints";
 
 const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitation", "education", "electricity", "other"] as const;
 
@@ -48,6 +52,7 @@ const CitizenDashboard = () => {
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [chatIssue, setChatIssue] = useState<Issue | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
@@ -116,13 +121,15 @@ const CitizenDashboard = () => {
       setAssignedMpName(decodeURIComponent(mpNameParam));
       setShowForm(true);
       setSearchParams({}, { replace: true });
+      setCaptchaToken(null);
     }
   }, [mpIdParam, mpNameParam]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
-    if (selected.length + files.length > 5) {
-      toast.error(t("dashboard.max_files"));
+    const validation = validateNewFiles(files, selected);
+    if (!validation.valid) {
+      toast.error(validation.error || t("dashboard.max_files"));
       return;
     }
     setFiles((prev) => [...prev, ...selected]);
@@ -133,6 +140,11 @@ const CitizenDashboard = () => {
   };
 
   const uploadFiles = async (issueId: string) => {
+    const validation = validateBeforeUpload(files);
+    if (!validation.valid) {
+      toast.error(validation.error || t("dashboard.max_files"));
+      return;
+    }
     const cleanedFiles = await stripExifFromFiles(files);
     for (const file of cleanedFiles) {
       const ext = file.name.split(".").pop();
@@ -159,6 +171,10 @@ const CitizenDashboard = () => {
       toast.error(t("dashboard.fill_all_fields"));
       return;
     }
+    if (!captchaToken) {
+      toast.error(t("support.fill_all_captcha"));
+      return;
+    }
 
     // Validate that the issue location is within Egypt
     if (latitude && longitude) {
@@ -170,6 +186,14 @@ const CitizenDashboard = () => {
 
     setSubmitting(true);
     try {
+      const captchaResult = await verifyCaptchaToken(captchaToken);
+      if (!captchaResult.valid) {
+        toast.error(t("support.captcha_failed"));
+        setCaptchaToken(null);
+        setSubmitting(false);
+        return;
+      }
+
       let finalTitle = sanitizeText(title);
       let finalDescription = sanitizeText(description);
       let finalCategory = category;
@@ -251,6 +275,7 @@ const CitizenDashboard = () => {
       setFiles([]);
       setAssignedMpId(null);
       setAssignedMpName(null);
+      setCaptchaToken(null);
       fetchIssues();
     } catch (err: any) {
       toast.error(err.message || t("dashboard.error_submitting"));
@@ -372,7 +397,15 @@ const CitizenDashboard = () => {
                   <h2 className="text-2xl font-bold text-foreground">{t("dashboard.new_issue")}</h2>
                   <p className="text-sm text-muted-foreground mt-1">أدخل تفاصيل مشكلتك ليتم معالجتها باحترافية</p>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setShowForm(false)} className="rounded-full hover:bg-destructive/10 hover:text-destructive">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setShowForm(false);
+                    setCaptchaToken(null);
+                  }}
+                  className="rounded-full hover:bg-destructive/10 hover:text-destructive"
+                >
                   <X className="w-6 h-6" />
                 </Button>
               </div>
@@ -444,11 +477,23 @@ const CitizenDashboard = () => {
                       </button>
                     )}
                   </div>
-                  <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple accept="image/*,application/pdf" className="hidden" />
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    multiple
+                    accept={ALLOWED_FILE_TYPES.map((ext) => `.${ext}`).join(",")}
+                    className="hidden"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-foreground px-1">التحقق البشري (CAPTCHA)</p>
+                  <TurnstileCaptcha onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
                 </div>
 
                 <div className="pt-4 border-t border-border/50">
-                  <Button type="submit" disabled={submitting || !isFormValid} className="w-full h-16 rounded-2xl bg-accent hover:bg-accent/90 text-lg font-bold shadow-xl shadow-accent/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                  <Button type="submit" disabled={submitting || !isFormValid || !captchaToken} className="w-full h-16 rounded-2xl bg-accent hover:bg-accent/90 text-lg font-bold shadow-xl shadow-accent/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
                     {submitting ? (
                       <div className="flex items-center gap-3">
                         <Loader2 className="w-6 h-6 animate-spin" />
