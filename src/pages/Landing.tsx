@@ -322,209 +322,82 @@ const Landing = () => {
       <AppHeader />
 
       {/* ═══════════ HERO ═══════════ */}
-      <section ref={heroRef} className="relative min-h-[90vh] flex items-center">
-        <HeroDecorations isDark={isDark} />
-        {/* Animated gradient mesh background */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <GradientOrb className="w-[600px] h-[600px] bg-accent/[0.07] -top-40 -left-40" />
-          <GradientOrb className="w-[500px] h-[500px] bg-primary/[0.06] -bottom-20 -right-20" />
-          <GradientOrb className="w-[300px] h-[300px] bg-warning/[0.04] top-1/3 right-1/4" />
-          
-          {/* Grid pattern overlay */}
-          <div 
-            className="absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage: "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)",
-              backgroundSize: "60px 60px",
-            }}
-          />
+      <section ref={heroRef} className="relative min-h-[90vh] flex flex-col overflow-hidden">
+        {/* Video Background */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, ease: "easeIn" }}
+          className="absolute inset-0"
+          style={{ backgroundColor: isDark ? "#000" : "#fff" }}
+        >
+          <video
+            key={isDark ? "dark" : "light"}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            className="absolute inset-0 w-full h-full object-cover"
+            aria-hidden="true"
+          >
+            {/* Provide both MIME types for maximum browser compatibility with .mov files */}
+            <source src={isDark ? "/video-black.mov" : "/video-white.mov"} type="video/quicktime" />
+            <source src={isDark ? "/video-black.mov" : "/video-white.mov"} type="video/mp4" />
+          </video>
+          {/* Gradient overlay — transparent at top, darkens/lightens toward bottom for button readability */}
+          <div className={`absolute inset-0 pointer-events-none ${isDark ? "bg-gradient-to-b from-black/10 via-transparent to-black/65" : "bg-gradient-to-b from-white/10 via-transparent to-white/65"}`} />
+        </motion.div>
 
-          {/* Floating particles */}
-          <FloatingParticle delay={0} x="10%" y="20%" size={6} color="bg-accent/30" />
-          <FloatingParticle delay={0.5} x="85%" y="15%" size={4} color="bg-primary/25" />
-          <FloatingParticle delay={1} x="70%" y="60%" size={5} color="bg-accent/20" />
-          <FloatingParticle delay={1.5} x="20%" y="70%" size={3} color="bg-warning/25" />
-          <FloatingParticle delay={2} x="50%" y="30%" size={4} color="bg-success/20" />
-          <FloatingParticle delay={0.8} x="30%" y="85%" size={5} color="bg-info/20" />
-          <FloatingParticle delay={1.2} x="90%" y="45%" size={3} color="bg-primary/20" />
+        {/* Spacer — lets video breathe while pushing CTA to the bottom */}
+        <div className="flex-1" />
 
-          {/* Spotlight following mouse */}
-          <motion.div
-            className="absolute w-[800px] h-[800px] rounded-full bg-accent/[0.03] blur-3xl"
-            animate={{
-              x: mousePos.x * 200 - 100,
-              y: mousePos.y * 200 - 100,
-            }}
-            transition={{ type: "spring", damping: 30, stiffness: 50 }}
-            style={{ left: "30%", top: "10%" }}
-          />
-        </div>
+        {/* CTA content anchored at the bottom of the hero */}
+        <motion.div
+          style={{ y: heroY, opacity: heroOpacity }}
+          className="relative z-10 container px-4 pb-16 md:pb-20"
+        >
+          <div className="max-w-2xl mx-auto flex flex-col items-center text-center gap-6">
+            {/* Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7, duration: 0.5 }}
+              className="flex flex-col sm:flex-row gap-4"
+            >
+              <MagneticButton>
+                <Link to="/auth">
+                  <Button size="lg" className="gap-2.5 bg-accent text-accent-foreground hover:bg-accent/90 px-10 w-full sm:w-auto h-14 text-base font-semibold shadow-2xl shadow-accent/30 hover:shadow-accent/40 transition-all duration-300 rounded-2xl">
+                    {t("hero.cta_citizen")}
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                </Link>
+              </MagneticButton>
+              <Link to="/auth">
+                <Button size="lg" variant="outline" className={`gap-2.5 px-10 w-full sm:w-auto h-14 text-base font-medium border-2 transition-all rounded-2xl backdrop-blur-sm hover:bg-accent/10 hover:border-accent/60 ${isDark ? "border-white/30 text-white" : "border-black/30 text-foreground"}`}>
+                  {t("hero.cta_mp")}
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+              </Link>
+            </motion.div>
 
-        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="container px-4 relative z-10">
-          <div className="max-w-5xl mx-auto">
-            <div className="grid lg:grid-cols-[1fr,0.6fr] gap-12 items-center">
-              {/* Text content */}
-              <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}>
-                <motion.div 
-                  initial={{ opacity: 0, y: -10 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  transition={{ delay: 0.3, duration: 0.5 }}
-                  className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-card/80 backdrop-blur-md text-accent text-sm font-medium mb-8 border border-accent/15 shadow-sm"
-                >
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent/60" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent" />
-                  </span>
-                  {t("hero.badge")}
-                </motion.div>
-
-                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-8 leading-[1.1] tracking-tight">
-                  <motion.span
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1, duration: 0.6 }}
-                    className="block relative"
-                  >
-                    <span className="relative inline-block">
-                      {t("hero.title_1")}
-                      <motion.span
-                        className="absolute inset-0 bg-gradient-to-l from-transparent via-[#e8c566]/40 to-transparent bg-[length:200%_100%] bg-clip-text"
-                        style={{
-                          WebkitTextStroke: "0.5px rgba(200,149,60,0.15)",
-                        }}
-                        animate={{ backgroundPosition: ["200% 0", "-200% 0"] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: "linear", repeatDelay: 2 }}
-                      />
-                    </span>
-                  </motion.span>
-                  <motion.span
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.6 }}
-                    className="block mt-2"
-                  >
-                    <span className="relative inline-block">
-                      <span className="bg-gradient-to-l from-accent via-info to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-[gradient-shift_4s_ease-in-out_infinite]">
-                        {t("hero.title_2")}
-                      </span>
-                      <motion.span
-                        initial={{ scaleX: 0 }}
-                        animate={{ scaleX: 1 }}
-                        transition={{ delay: 1.2, duration: 0.8, ease: "easeOut" }}
-                        className="absolute -bottom-2 right-0 left-0 h-1.5 bg-gradient-to-l from-accent to-primary rounded-full origin-right"
-                      />
-                    </span>
-                  </motion.span>
-                </h1>
-
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5, duration: 0.6 }}
-                  className="text-lg md:text-xl text-muted-foreground mb-10 max-w-xl leading-relaxed"
-                >
-                  {t("hero.subtitle")}
-                </motion.p>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7, duration: 0.5 }}
-                  className="flex flex-col sm:flex-row gap-4"
-                >
-                  <MagneticButton>
-                    <Link to="/auth">
-                      <Button size="lg" className="gap-2.5 bg-accent text-accent-foreground hover:bg-accent/90 px-10 w-full sm:w-auto h-14 text-base font-semibold shadow-2xl shadow-accent/30 hover:shadow-accent/40 transition-all duration-300 rounded-2xl">
-                        {t("hero.cta_citizen")}
-                        <ArrowLeft className="w-5 h-5" />
-                      </Button>
-                    </Link>
-                  </MagneticButton>
-                  <Link to="/auth">
-                    <Button size="lg" variant="outline" className="gap-2.5 px-10 w-full sm:w-auto h-14 text-base font-medium border-2 border-border hover:border-accent/30 hover:bg-accent/5 transition-all rounded-2xl backdrop-blur-sm">
-                      {t("hero.cta_mp")}
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                  </Link>
-                </motion.div>
-
-                {/* Trust indicators */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1, duration: 0.6 }}
-                  className="flex items-center gap-5 mt-10 text-sm text-muted-foreground"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Shield className="w-4 h-4 text-success" />
-                    <span>{t("hero.encrypted")}</span>
-                  </div>
-                  <div className="w-px h-4 bg-border" />
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                    <span>{t("hero.free")}</span>
-                  </div>
-                </motion.div>
-              </motion.div>
-
-              {/* Welcome visual card */}
-              <motion.div
-                initial={{ opacity: 0, x: -40, rotateY: -10 }}
-                animate={{ opacity: 1, x: 0, rotateY: 0 }}
-                transition={{ delay: 0.5, duration: 0.8 }}
-                className="hidden lg:block relative"
-              >
-                <motion.div
-                  whileHover={{ y: -8, rotateZ: -1 }}
-                  transition={{ type: "spring", stiffness: 200 }}
-                  className="relative bg-card/60 backdrop-blur-xl border border-border/50 rounded-3xl p-8 shadow-2xl overflow-hidden"
-                >
-                  {/* Decorative gradient blob */}
-                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-accent/10 rounded-full blur-2xl pointer-events-none" />
-                  <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
-
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-accent/20">
-                        <Heart className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <div className="text-base font-bold text-foreground">{t("hero.welcome_title")}</div>
-                        <div className="text-xs text-muted-foreground">{t("hero.welcome_sub")}</div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3 mb-6">
-                      {[
-                        { icon: FileCheck, text: t("hero.step1"), color: "text-accent" },
-                        { icon: Shield, text: t("hero.step2"), color: "text-success" },
-                        { icon: Eye, text: t("hero.step3"), color: "text-info" },
-                      ].map((item, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 1 + i * 0.2, duration: 0.4 }}
-                          className="flex items-center gap-3 bg-muted/30 rounded-xl px-4 py-2.5"
-                        >
-                          <item.icon className={`w-4 h-4 ${item.color} shrink-0`} />
-                          <span className="text-sm text-foreground">{item.text}</span>
-                        </motion.div>
-                      ))}
-                    </div>
-
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 1.8, duration: 0.5 }}
-                      className="text-center text-xs text-muted-foreground border-t border-border/50 pt-4"
-                    >
-                      🇪🇬 {t("hero.from_citizen")}
-                    </motion.div>
-                  </div>
-                </motion.div>
-              </motion.div>
-            </div>
+            {/* Trust indicators */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1, duration: 0.6 }}
+              className={`flex items-center gap-5 text-sm ${isDark ? "text-white/70" : "text-black/70"}`}
+            >
+              <div className="flex items-center gap-1.5">
+                <Shield className="w-4 h-4 text-emerald-400" />
+                <span>{t("hero.encrypted")}</span>
+              </div>
+              <div className={`w-px h-4 ${isDark ? "bg-white/20" : "bg-black/20"}`} />
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-accent" />
+                <span>{t("hero.free")}</span>
+              </div>
+            </motion.div>
           </div>
         </motion.div>
 
@@ -533,12 +406,12 @@ const Landing = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 2 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
         >
           <motion.div
             animate={{ y: [0, 8, 0] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="w-6 h-10 rounded-full border-2 border-muted-foreground/30 flex items-start justify-center p-1.5"
+            className={`w-6 h-10 rounded-full border-2 ${isDark ? "border-white/30" : "border-black/30"} flex items-start justify-center p-1.5`}
           >
             <motion.div
               animate={{ y: [0, 12, 0] }}
