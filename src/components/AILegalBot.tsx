@@ -1,53 +1,116 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { MessageCircle, Send, BookOpen, Loader, AlertCircle } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { useMemo, useState } from "react";
+import { BookOpen, MessageCircle, Scale } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
-interface BotMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  legal_references?: any[];
-  created_at: string;
-}
+const suggestions = [
+  "كيف أقدم شكوى؟",
+  "ما هي حقوقي كمواطن؟",
+  "كم تستغرق معالجة الطلب؟",
+];
 
-interface Conversation {
-  id: string;
-  title: string;
-  created_at: string;
-}
+const knowledgeBase = [
+  {
+    keywords: ["كيف", "شكوى", "أقدم"],
+    answer:
+      "لتقديم شكوى: اختر الفئة المناسبة، اكتب العنوان والوصف بشكل واضح، أرفق الأدلة إن وجدت، ثم أرسل الطلب لمتابعته من حسابك.",
+    references: ["دليل تقديم الشكاوى", "سياسة المتابعة والرد"],
+  },
+  {
+    keywords: ["حقوق", "مواطن"],
+    answer:
+      "من حقك تقديم الطلب، متابعة حالته، معرفة آخر التحديثات، والاعتراض أو إعادة التوضيح إذا كانت البيانات غير كافية.",
+    references: ["سياسة حماية البيانات", "سياسة الاستخدام"],
+  },
+  {
+    keywords: ["كم", "مدة", "تستغرق"],
+    answer:
+      "تختلف المدة حسب نوع الطلب وأولويته، لكن المنصة تعرض لك كل مرحلة بوضوح بمجرد تحديث الحالة من الجهة المختصة.",
+    references: ["إجراءات معالجة الطلبات"],
+  },
+];
 
-export const AILegalBot: React.FC = () => {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
-  const [messages, setMessages] = useState<BotMessage[]>([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+export const AILegalBot = () => {
+  const [question, setQuestion] = useState("");
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const result = useMemo(() => {
+    if (!question.trim()) {
+      return {
+        answer: "اكتب سؤالك أو اختر أحد الاقتراحات السريعة لعرض الإجابة.",
+        references: [] as string[],
+      };
+    }
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const match = knowledgeBase.find((item) =>
+      item.keywords.some((keyword) => question.includes(keyword)),
+    );
 
-  useEffect(() => {
-    const fetchConversations = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('ai_bot_conversations')
-          .select('*')
-          .order('created_at', { ascending: false });
+    return (
+      match || {
+        answer:
+          "يمكنني مساعدتك في فهم خطوات التقديم، الحقوق الأساسية، ومدة المتابعة العامة داخل المنصة.",
+        references: ["مركز المساعدة"],
+      }
+    );
+  }, [question]);
 
-        if (error) throw error;
-        setConversations(data || []);
-      } catch (err) {
-        console.error('Failed to fetch conversations:', err);
-      } finally {\n        setLoading(false);\n      }\n    };\n\n    fetchConversations();\n  }, []);\n\n  useEffect(() => {\n    if (!currentConversation) return;\n\n    const fetchMessages = async () => {\n      try {\n        const { data, error } = await supabase\n          .from('ai_bot_messages')\n          .select('*')\n          .eq('conversation_id', currentConversation.id)\n          .order('created_at', { ascending: true });\n\n        if (error) throw error;\n        setMessages(data || []);\n      } catch (err) {\n        console.error('Failed to fetch messages:', err);\n      }\n    };\n\n    fetchMessages();\n  }, [currentConversation]);\n\n  const createNewConversation = async () => {\n    try {\n      const { data, error } = await supabase\n        .from('ai_bot_conversations')\n        .insert([{ title: 'محادثة جديدة' }])\n        .select()\n        .single();\n\n      if (error) throw error;\n      setCurrentConversation(data);\n      setConversations([data, ...conversations]);\n    } catch (err) {\n      console.error('Failed to create conversation:', err);\n    }\n  };\n\n  const sendMessage = async () => {\n    if (!input.trim() || !currentConversation || sendingMessage) return;\n\n    try {\n      setSendingMessage(true);\n      const userMessage = input.trim();\n      setInput('');\n\n      // Add user message to UI\n      const newUserMessage: BotMessage = {\n        id: Date.now().toString(),\n        role: 'user',\n        content: userMessage,\n        created_at: new Date().toISOString(),\n      };\n      setMessages([...messages, newUserMessage]);\n\n      // Save user message to database\n      await supabase.from('ai_bot_messages').insert([\n        {\n          conversation_id: currentConversation.id,\n          role: 'user',\n          content: userMessage,\n        },\n      ]);\n\n      // Call AI to generate response (Simulated)\n      const assistantResponse = await generateAIResponse(userMessage);\n\n      // Add assistant message to UI\n      const newAssistantMessage: BotMessage = {\n        id: (Date.now() + 1).toString(),\n        role: 'assistant',\n        content: assistantResponse.content,\n        legal_references: assistantResponse.references,\n        created_at: new Date().toISOString(),\n      };\n      setMessages(prev => [...prev, newAssistantMessage]);\n\n      // Save assistant message to database\n      await supabase.from('ai_bot_messages').insert([\n        {\n          conversation_id: currentConversation.id,\n          role: 'assistant',\n          content: assistantResponse.content,\n          legal_references: assistantResponse.references,\n        },\n      ]);\n    } catch (err) {\n      console.error('Failed to send message:', err);\n    } finally {\n      setSendingMessage(false);\n    }\n  };\n\n  const generateAIResponse = async (userMessage: string) => {\n    // Simulated AI response - in production, call Gemini API\n    const responses: { [key: string]: { content: string; references: any[] } } = {\n      'كيف أقدم شكوى': {\n        content:\n          'لتقديم شكوى في نظام \"سوتك\":\\n\\n1. اذهب إلى صفحة \"تقديم شكوى جديدة\"\\n2. اختر فئة الشكوى (كهرباء، مياه، طرق، إلخ)\\n3. اكتب عنواناً واضحاً ووصفاً مفصلاً\\n4. أضف صوراً أو مستندات إن أمكن\\n5. اضغط \"إرسال\"\\n\\nستتلقى رقم تتبع لمتابعة شكواك.',\n        references: [\n          { title: 'قانون الحق في الوصول للمعلومات', year: 2020 },\n        ],\n      },\n      'ما هي حقوقي': {\n        content:\n          'حقوقك كمواطن:\\n\\n✓ الحق في تقديم شكاوى دون تمييز\\n✓ الحق في الحصول على رد من النائب\\n✓ الحق في الخصوصية والسرية\\n✓ الحق في الحصول على معلومات عن حالة شكواك\\n✓ الحق في الاستئناف إذا لم تُحل مشكلتك\\n\\nجميع هذه الحقوق مضمونة بموجب القانون.',\n        references: [\n          { title: 'الدستور المصري 2014', article: 33 },\n          { title: 'قانون حماية البيانات الشخصية', year: 2020 },\n        ],\n      },\n      'كم المدة المتوقعة': {\n        content:\n          'المدة المتوقعة لحل الشكوى:\\n\\n⏱️ شكاوى عاجلة (كهرباء، مياه): 24-48 ساعة\\n⏱️ شكاوى عادية: 7-14 يوم\\n⏱️ شكاوى معقدة: 30 يوم\\n\\nسيتم إخطارك بأي تطورات عبر التطبيق والرسائل النصية.',\n        references: [\n          { title: 'لائحة معالجة الشكاوى', year: 2023 },\n        ],\n      },\n    };\n\n    // Find matching response\n    for (const [key, value] of Object.entries(responses)) {\n      if (userMessage.includes(key)) {\n        return value;\n      }\n    }\n\n    // Default response\n    return {\n      content:\n        'شكراً على سؤالك. أنا مساعد ذكي متخصص في القوانين والإجراءات. يمكنني مساعدتك في:\\n\\n• شرح كيفية تقديم الشكاوى\\n• توضيح حقوقك كمواطن\\n• معلومات عن المدة المتوقعة للحل\\n• إرشادات قانونية عامة\\n\\nكيف يمكنني مساعدتك؟',\n      references: [],\n    };\n  };\n\n  return (\n    <div className=\"space-y-4\">\n      <Card className=\"bg-gradient-to-br from-indigo-50 to-blue-50 border-indigo-200\">\n        <CardHeader>\n          <CardTitle className=\"flex items-center gap-2\">\n            <MessageCircle className=\"w-5 h-5 text-indigo-600\" />\n            المساعد الذكي القانوني\n          </CardTitle>\n          <CardDescription>\n            مساعد ذكي متخصص في القوانين واللوائح المصرية لمساعدتك في صياغة شكواك\n          </CardDescription>\n        </CardHeader>\n        <CardContent className=\"space-y-4\">\n          <div className=\"grid grid-cols-1 md:grid-cols-4 gap-2 mb-4\">\n            {/* Conversation List */}\n            <div className=\"md:col-span-1 border-r border-indigo-200 pr-4\">\n              <Button\n                onClick={createNewConversation}\n                className=\"w-full mb-4\"\n                size=\"sm\"\n              >\n                + محادثة جديدة\n              </Button>\n              <div className=\"space-y-2 max-h-96 overflow-y-auto\">\n                {conversations.map((conv) => (\n                  <div\n                    key={conv.id}\n                    onClick={() => setCurrentConversation(conv)}\n                    className={`p-2 rounded cursor-pointer transition-all ${\n                      currentConversation?.id === conv.id\n                        ? 'bg-indigo-200 text-indigo-900'\n                        : 'bg-gray-100 hover:bg-gray-200'\n                    }`}\n                  >\n                    <div className=\"text-sm font-medium truncate\">{conv.title}</div>\n                    <div className=\"text-xs text-gray-500\">\n                      {new Date(conv.created_at).toLocaleDateString('ar-EG')}\n                    </div>\n                  </div>\n                ))}\n              </div>\n            </div>\n\n            {/* Chat Area */}\n            <div className=\"md:col-span-3 flex flex-col h-96 bg-white rounded-lg border border-indigo-100\">\n              {!currentConversation ? (\n                <div className=\"flex-1 flex items-center justify-center text-gray-500\">\n                  <div className=\"text-center\">\n                    <BookOpen className=\"w-12 h-12 mx-auto mb-2 opacity-50\" />\n                    <p>اختر محادثة أو ابدأ محادثة جديدة</p>\n                  </div>\n                </div>\n              ) : (\n                <>\n                  {/* Messages */}\n                  <div className=\"flex-1 overflow-y-auto p-4 space-y-3\">\n                    {messages.length === 0 ? (\n                      <div className=\"text-center text-gray-400 py-8\">\n                        <p>ابدأ محادثتك - اسأل عن الإجراءات والقوانين</p>\n                      </div>\n                    ) : (\n                      messages.map((msg) => (\n                        <div\n                          key={msg.id}\n                          className={`flex ${\n                            msg.role === 'user' ? 'justify-end' : 'justify-start'\n                          }`}\n                        >\n                          <div\n                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${\n                              msg.role === 'user'\n                                ? 'bg-indigo-600 text-white'\n                                : 'bg-gray-100 text-gray-900'\n                            }`}\n                          >\n                            <p className=\"text-sm whitespace-pre-wrap\">{msg.content}</p>\n                            {msg.legal_references && msg.legal_references.length > 0 && (\n                              <div className=\"mt-2 pt-2 border-t border-gray-300 text-xs\">\n                                <div className=\"font-bold mb-1\">المراجع القانونية:</div>\n                                {msg.legal_references.map((ref, idx) => (\n                                  <div key={idx} className=\"text-xs opacity-80\">\n                                    • {ref.title}\n                                  </div>\n                                ))}\n                              </div>\n                            )}\n                          </div>\n                        </div>\n                      ))\n                    )}\n                    {sendingMessage && (\n                      <div className=\"flex justify-start\">\n                        <div className=\"bg-gray-100 px-4 py-2 rounded-lg flex items-center gap-2\">\n                          <Loader className=\"w-4 h-4 animate-spin\" />\n                          <span className=\"text-sm\">جاري الكتابة...</span>\n                        </div>\n                      </div>\n                    )}\n                    <div ref={messagesEndRef} />\n                  </div>\n\n                  {/* Input */}\n                  <div className=\"border-t border-indigo-100 p-4 space-y-2\">\n                    <div className=\"flex gap-2\">\n                      <Input\n                        value={input}\n                        onChange={(e) => setInput(e.target.value)}\n                        onKeyPress={(e) => {\n                          if (e.key === 'Enter' && !e.shiftKey) {\n                            e.preventDefault();\n                            sendMessage();\n                          }\n                        }}\n                        placeholder=\"اسأل عن الإجراءات والقوانين...\"\n                        disabled={sendingMessage}\n                      />\n                      <Button\n                        onClick={sendMessage}\n                        disabled={!input.trim() || sendingMessage}\n                        size=\"sm\"\n                      >\n                        <Send className=\"w-4 h-4\" />\n                      </Button>\n                    </div>\n                    <div className=\"text-xs text-gray-500\">\n                      💡 اسأل عن: \"كيف أقدم شكوى؟\" أو \"ما هي حقوقي؟\" أو \"كم المدة المتوقعة؟\"\n                    </div>\n                  </div>\n                </>\n              )}\n            </div>\n          </div>\n        </CardContent>\n      </Card>\n    </div>\n  );\n};\n
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <MessageCircle className="h-5 w-5 text-primary" />
+          المساعد القانوني الذكي
+        </CardTitle>
+        <CardDescription>
+          إجابات إرشادية سريعة لمساعدة المواطنين على فهم إجراءات التقديم والمتابعة.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {suggestions.map((item) => (
+            <Button key={item} type="button" variant="outline" size="sm" onClick={() => setQuestion(item)}>
+              {item}
+            </Button>
+          ))}
+        </div>
+
+        <div className="flex gap-2">
+          <Input
+            value={question}
+            onChange={(event) => setQuestion(event.target.value)}
+            placeholder="اكتب سؤالك هنا..."
+          />
+          <Button type="button">إرسال</Button>
+        </div>
+
+        <div className="rounded-lg border bg-muted/30 p-4">
+          <div className="mb-3 flex items-center gap-2 font-medium text-foreground">
+            <Scale className="h-4 w-4 text-primary" />
+            الرد
+          </div>
+          <p className="text-sm leading-7 text-muted-foreground">{result.answer}</p>
+        </div>
+
+        {result.references.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <BookOpen className="h-4 w-4 text-primary" />
+              مراجع مرتبطة
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {result.references.map((reference) => (
+                <Badge key={reference} variant="secondary">
+                  {reference}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+export default AILegalBot;
