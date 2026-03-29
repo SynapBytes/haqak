@@ -11,6 +11,7 @@ import { AILegalBot } from "@/components/AILegalBot";
 import { MobileAppFeatures } from "@/components/MobileAppFeatures";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Smartphone } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -263,6 +264,9 @@ const CitizenDashboard = () => {
         }
       } catch (err) {
         console.error("AI classification failed:", err);
+        toast.error("حدث خطأ في خوادم الفحص، يرجى المحاولة لاحقاً.");
+        setSubmitting(false);
+        return;
       }
 
       const { data: insertedIssue, error } = await supabase.from("issues").insert({
