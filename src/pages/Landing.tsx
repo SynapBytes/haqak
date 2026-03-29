@@ -129,6 +129,70 @@ const HeroStatsCard = () => {
   );
 };
 
+/* ─── Hero Info Window ─── */
+const HeroInfoWindow = () => {
+  const { t } = useTranslation();
+
+  const infoSteps = [
+    { icon: FileCheck, text: t("hero.step1"), colorClass: "text-accent", bgClass: "bg-accent/10" },
+    { icon: Shield, text: t("hero.step2"), colorClass: "text-emerald-400", bgClass: "bg-emerald-400/10" },
+    { icon: Eye, text: t("hero.step3"), colorClass: "text-info", bgClass: "bg-info/10" },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 40, y: 10 }}
+      animate={{ opacity: 1, x: 0, y: 0 }}
+      transition={{ delay: 0.7, duration: 0.6 }}
+      className="relative bg-card/80 backdrop-blur-xl border border-border rounded-3xl p-6 shadow-2xl shadow-black/10"
+    >
+      {/* macOS-style window title bar */}
+      <div className="flex items-center gap-3 mb-5 pb-4 border-b border-border/60">
+        <div className="flex gap-1.5">
+          <span className="w-3 h-3 rounded-full bg-red-400/70" />
+          <span className="w-3 h-3 rounded-full bg-yellow-400/70" />
+          <span className="w-3 h-3 rounded-full bg-emerald-400/70" />
+        </div>
+        <div className="flex items-center gap-2 flex-1 justify-center">
+          <img src="/logo-haqak.webp" alt="" className="w-5 h-5 rounded-md object-contain" />
+          <span className="text-xs font-semibold text-foreground/70">{t("hero.welcome_title")}</span>
+        </div>
+      </div>
+
+      {/* Welcome subtitle */}
+      <p className="text-sm text-muted-foreground mb-5 leading-relaxed text-center">
+        {t("hero.welcome_sub")}
+      </p>
+
+      {/* Key feature steps */}
+      <div className="space-y-2.5 mb-5">
+        {infoSteps.map((step, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1 + i * 0.12, duration: 0.4 }}
+            className="flex items-center gap-3 bg-muted/50 rounded-xl px-3 py-2.5"
+          >
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${step.bgClass}`}>
+              <step.icon className={`w-3.5 h-3.5 ${step.colorClass}`} />
+            </div>
+            <span className="text-sm text-foreground/80">{step.text}</span>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Tagline */}
+      <div className="bg-accent/[0.07] border border-accent/15 rounded-2xl px-4 py-2.5 text-center text-xs font-semibold text-accent">
+        {t("hero.from_citizen")}
+      </div>
+
+      {/* Floating weekly stats badge (renders only when data is available) */}
+      <HeroStatsCard />
+    </motion.div>
+  );
+};
+
 /* ─── Support Form ─── */
 const SupportForm = () => {
   const { t } = useTranslation();
@@ -329,83 +393,96 @@ const Landing = () => {
           style={{ y: heroY, opacity: heroOpacity }}
           className="relative z-10 container px-4 py-20 md:py-28"
         >
-          <div className="max-w-3xl mx-auto flex flex-col items-center text-center gap-6">
-            {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-accent/30 bg-accent/10 text-accent text-sm font-medium"
-            >
-              <Globe className="w-4 h-4" />
-              <span>{t("hero.badge")}</span>
-            </motion.div>
+          <div className="max-w-5xl mx-auto">
+            <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-14">
 
-            {/* Title */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-              className="space-y-1"
-            >
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-tight">
-                {t("hero.title_1")}
-              </h1>
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-accent leading-tight">
-                {t("hero.title_2")}
-              </h1>
-            </motion.div>
+              {/* ── Left: Hero text ── */}
+              <div className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-start gap-6">
 
-            {/* Subtitle */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-              className="text-base md:text-lg text-muted-foreground max-w-xl leading-relaxed"
-            >
-              {t("hero.subtitle")}
-            </motion.p>
+                {/* Badge */}
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-accent/30 bg-accent/10 text-accent text-sm font-medium"
+                >
+                  <Globe className="w-4 h-4" />
+                  <span>{t("hero.badge")}</span>
+                </motion.div>
 
-            {/* Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-              className="flex flex-col sm:flex-row gap-4"
-            >
-              <MagneticButton>
-                <Link to="/auth">
-                  <Button size="lg" className="gap-2.5 bg-accent text-accent-foreground hover:bg-accent/90 px-10 w-full sm:w-auto h-14 text-base font-semibold shadow-2xl shadow-accent/30 hover:shadow-accent/40 transition-all duration-300 rounded-2xl">
-                    {t("hero.cta_citizen")}
-                    <ArrowLeft className="w-5 h-5" />
-                  </Button>
-                </Link>
-              </MagneticButton>
-              <Link to="/auth">
-                <Button size="lg" variant="outline" className="gap-2.5 px-10 w-full sm:w-auto h-14 text-base font-medium border-2 transition-all rounded-2xl backdrop-blur-sm hover:bg-accent/10 hover:border-accent/60 border-border text-foreground">
-                  {t("hero.cta_mp")}
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-              </Link>
-            </motion.div>
+                {/* Title */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.6 }}
+                  className="space-y-1"
+                >
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-tight">
+                    {t("hero.title_1")}
+                  </h1>
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-accent leading-tight">
+                    {t("hero.title_2")}
+                  </h1>
+                </motion.div>
 
-            {/* Trust indicators */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1, duration: 0.6 }}
-              className="flex items-center gap-5 text-sm text-muted-foreground"
-            >
-              <div className="flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-emerald-400" />
-                <span>{t("hero.encrypted")}</span>
+                {/* Subtitle */}
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.6 }}
+                  className="text-base md:text-lg text-muted-foreground max-w-xl leading-relaxed"
+                >
+                  {t("hero.subtitle")}
+                </motion.p>
+
+                {/* Buttons */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6, duration: 0.5 }}
+                  className="flex flex-col sm:flex-row gap-4"
+                >
+                  <MagneticButton>
+                    <Link to="/auth">
+                      <Button size="lg" className="gap-2.5 bg-accent text-accent-foreground hover:bg-accent/90 px-10 w-full sm:w-auto h-14 text-base font-semibold shadow-2xl shadow-accent/30 hover:shadow-accent/40 transition-all duration-300 rounded-2xl">
+                        {t("hero.cta_citizen")}
+                        <ArrowLeft className="w-5 h-5" />
+                      </Button>
+                    </Link>
+                  </MagneticButton>
+                  <Link to="/auth">
+                    <Button size="lg" variant="outline" className="gap-2.5 px-10 w-full sm:w-auto h-14 text-base font-medium border-2 transition-all rounded-2xl backdrop-blur-sm hover:bg-accent/10 hover:border-accent/60 border-border text-foreground">
+                      {t("hero.cta_mp")}
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                </motion.div>
+
+                {/* Trust indicators */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1, duration: 0.6 }}
+                  className="flex items-center gap-5 text-sm text-muted-foreground"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Shield className="w-4 h-4 text-emerald-400" />
+                    <span>{t("hero.encrypted")}</span>
+                  </div>
+                  <div className="w-px h-4 bg-border" />
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-accent" />
+                    <span>{t("hero.free")}</span>
+                  </div>
+                </motion.div>
               </div>
-              <div className="w-px h-4 bg-border" />
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-accent" />
-                <span>{t("hero.free")}</span>
+
+              {/* ── Right: Info window ── */}
+              <div className="w-full max-w-sm lg:w-[340px] flex-shrink-0">
+                <HeroInfoWindow />
               </div>
-            </motion.div>
+
+            </div>
           </div>
         </motion.div>
 
