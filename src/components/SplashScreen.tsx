@@ -31,6 +31,8 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
         muted
         playsInline
         preload="auto"
+        controls={false}
+        onContextMenu={(e) => e.preventDefault()}
         aria-hidden="true"
         style={{
           position: "absolute",
@@ -38,6 +40,7 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
           width: "100%",
           height: "100%",
           objectFit: "cover",
+          pointerEvents: "none",
         }}
       >
         <source src={SPLASH_VIDEO_SRC} type="video/quicktime" />
@@ -48,4 +51,3 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
 };
 
 export default SplashScreen;
-
