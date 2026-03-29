@@ -322,7 +322,7 @@ const CitizenDashboard = () => {
               </TabsTrigger>
               <TabsTrigger value="mobile-app" className="gap-2 data-[state=active]:bg-accent">
                 <Smartphone className="w-4 h-4" />
-                تطبيق صوتك
+                تطبيق حقك
               </TabsTrigger>
             </TabsList>
 

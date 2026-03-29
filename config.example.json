@@ -1,15 +1,15 @@
 {
-  "project_name": "Sutak",
-  "project_domain": "www.sutak.com",
+  "project_name": "Haqak",
+  "project_domain": "www.haqak.com",
   "cib_bank_account": {
     "account_number": "[YOUR_CIB_ACCOUNT_NUMBER]",
     "account_holder": "[YOUR_COMPANY_NAME]",
-    "ipa_address": "sutak@cib" 
+    "ipa_address": "haqak@cib" 
   },
   "fawry_integration": {
     "merchant_code": "[YOUR_FAWRY_MERCHANT_CODE]",
     "security_key": "[YOUR_FAWRY_SECURITY_KEY]",
-    "callback_url": "https://api.sutak.com/fawry/callback"
+    "callback_url": "https://api.haqak.com/fawry/callback"
   },
   "instapay_integration": {
     "api_key": "[YOUR_INSTAPAY_API_KEY]",

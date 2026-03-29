@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Cube, Zap, AlertTriangle, MapPin, Eye, EyeOff } from 'lucide-react';
+import { Box, Zap, AlertTriangle, MapPin, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CableLayer {
@@ -301,7 +301,7 @@ export const DigitalTwinIntegration: React.FC = () => {
       <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Cube className="w-5 h-5 text-blue-600" />
+            <Box className="w-5 h-5 text-blue-600" />
             التوأم الرقمي للمدن (Digital Twin Integration)
           </CardTitle>
           <CardDescription>

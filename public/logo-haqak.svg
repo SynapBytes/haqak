@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a1628;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d1f3c;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8c566;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#c8953c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e8c566;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="256" height="256" rx="52" fill="url(#bgGrad)"/>
+
+  <!-- Subtle gold ring accent -->
+  <circle cx="128" cy="128" r="108" fill="none" stroke="#c8953c" stroke-width="1" opacity="0.15"/>
+  <circle cx="128" cy="128" r="96" fill="none" stroke="#c8953c" stroke-width="0.5" opacity="0.1"/>
+
+  <!-- Golden H letterform -->
+  <g filter="url(#glow)">
+    <!-- Left vertical bar of H -->
+    <rect x="60" y="68" width="32" height="120" rx="6" fill="url(#goldGrad)"/>
+    <!-- Right vertical bar of H -->
+    <rect x="164" y="68" width="32" height="120" rx="6" fill="url(#goldGrad)"/>
+    <!-- Crossbar of H -->
+    <rect x="60" y="112" width="136" height="32" rx="6" fill="url(#goldGrad)"/>
+  </g>
+
+  <!-- Subtle corner accents -->
+  <line x1="20" y1="20" x2="40" y2="20" stroke="#c8953c" stroke-width="2" opacity="0.4" stroke-linecap="round"/>
+  <line x1="20" y1="20" x2="20" y2="40" stroke="#c8953c" stroke-width="2" opacity="0.4" stroke-linecap="round"/>
+  <line x1="236" y1="20" x2="216" y2="20" stroke="#c8953c" stroke-width="2" opacity="0.4" stroke-linecap="round"/>
+  <line x1="236" y1="20" x2="236" y2="40" stroke="#c8953c" stroke-width="2" opacity="0.4" stroke-linecap="round"/>
+  <line x1="20" y1="236" x2="40" y2="236" stroke="#c8953c" stroke-width="2" opacity="0.4" stroke-linecap="round"/>
+  <line x1="20" y1="236" x2="20" y2="216" stroke="#c8953c" stroke-width="2" opacity="0.4" stroke-linecap="round"/>
+  <line x1="236" y1="236" x2="216" y2="236" stroke="#c8953c" stroke-width="2" opacity="0.4" stroke-linecap="round"/>
+  <line x1="236" y1="236" x2="236" y2="216" stroke="#c8953c" stroke-width="2" opacity="0.4" stroke-linecap="round"/>
+</svg>
