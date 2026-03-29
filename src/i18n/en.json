@@ -1,5 +1,5 @@
 {
-  "app_name": "Sawtak",
+  "app_name": "Haqak",
   "tagline": "Civic Communication Platform",
   "nav": {
     "my_issues": "My Issues",
@@ -15,12 +15,12 @@
     "badge": "Egypt's First Civic Communication Platform",
     "title_1": "Your Voice Reaches.",
     "title_2": "Your Rights Realized.",
-    "subtitle": "Sawtak connects citizens directly with members of parliament — submit your issue, track its resolution, and confirm the outcome. Everything is digital, transparent, and secure.",
+    "subtitle": "Haqak connects citizens directly with members of parliament — submit your issue, track its resolution, and confirm the outcome. Everything is digital, transparent, and secure.",
     "cta_citizen": "Submit Your Issue Now",
     "cta_mp": "MP Login",
     "weekly_issues": "issues",
     "this_week": "this week",
-    "welcome_title": "Welcome to Sawtak",
+    "welcome_title": "Welcome to Haqak",
     "welcome_sub": "Your voice is heard.. your issue matters",
     "step1": "Submit your issue in seconds",
     "step2": "Your data is fully protected",
@@ -30,7 +30,7 @@
     "free": "Free for citizens"
   },
   "features": {
-    "title": "Why Sawtak?",
+    "title": "Why Haqak?",
     "subtitle": "Features that make civic communication easier and more effective",
     "badge": "Features",
     "easy_report": "Quick & Easy Reporting",
@@ -47,7 +47,7 @@
     "review_desc": "A specialized team reviews and classifies every issue professionally before presenting it."
   },
   "vision": {
-    "title": "Why We Build Sawtak?",
+    "title": "Why We Build Haqak?",
     "our_vision": "Our Vision",
     "our_vision_desc": "Connecting every Egyptian citizen directly with their representative for genuine and effective communication.",
     "our_mission": "Our Mission",
@@ -109,7 +109,7 @@
     "support": "Support",
     "privacy": "Privacy",
     "terms": "Terms",
-    "rights": "© 2026 Sawtak — All rights reserved",
+    "rights": "© 2026 Haqak — All rights reserved",
     "status": "All services running normally"
   },
   "dashboard": {
@@ -429,14 +429,14 @@
   },
   "privacy_policy": {
     "title": "Privacy Policy",
-    "subtitle": "This page explains how we handle your data when using Sawtak, and what your rights and data protection mechanisms are.",
+    "subtitle": "This page explains how we handle your data when using Haqak, and what your rights and data protection mechanisms are.",
     "badge": "Privacy Policy",
     "see_also": "You can also view",
     "terms_link": "Terms of Service"
   },
   "terms_of_service": {
     "title": "Terms of Service",
-    "subtitle": "Please read these terms carefully before using Sawtak, as they govern how you use the app and its limitations.",
+    "subtitle": "Please read these terms carefully before using Haqak, as they govern how you use the app and its limitations.",
     "badge": "Terms of Service",
     "see_also": "You can also view",
     "privacy_link": "Privacy Policy"

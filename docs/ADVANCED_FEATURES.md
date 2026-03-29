@@ -1,8 +1,8 @@
-# Advanced Features Documentation - صوتك
+# Advanced Features Documentation - حقك
 
 ## نظرة عامة على التحسينات المتقدمة
 
-تم تطوير مجموعة شاملة من الميزات المتقدمة لضمان أن منصة "صوتك" توفر تجربة احترافية وآمنة وفعالة للمواطنين والنواب والإدارة.
+تم تطوير مجموعة شاملة من الميزات المتقدمة لضمان أن منصة "حقك" توفر تجربة احترافية وآمنة وفعالة للمواطنين والنواب والإدارة.
 
 ---
 
@@ -45,7 +45,7 @@
 {
   "success": true,
   "shortCode": "AbCd1234",
-  "trackingUrl": "https://sutak.app/track?code=AbCd1234",
+  "trackingUrl": "https://haqak.app/track?code=AbCd1234",
   "linkId": "uuid"
 }
 ```
@@ -223,7 +223,7 @@ log_audit_event(
 ```
 تم استقبال شكوتك برقم #12345
 الموضوع: [العنوان]
-تابع: https://sutak.app/t/AbCd1234
+تابع: https://haqak.app/t/AbCd1234
 ```
 
 **2. تحديث الحالة (status_update)**
@@ -235,17 +235,17 @@ log_audit_event(
 
 **3. تنبيه عاجل (urgent_alert)**
 ```
-🚨 تنبيه عاجل من صوتك
+🚨 تنبيه عاجل من حقك
 الموضوع: [العنوان]
 الأولوية: حرجة
-تابع: https://sutak.app/t/AbCd1234
+تابع: https://haqak.app/t/AbCd1234
 ```
 
 **4. إشعار الحل (resolution_notice)**
 ```
 ✅ تم حل شكوتك #12345
 الحل: [ملخص الحل]
-شكراً لاستخدام صوتك
+شكراً لاستخدام حقك
 ```
 
 ---

@@ -127,7 +127,7 @@ export const ConsultativeVotingSystem: React.FC = () => {
             <Vote className="w-6 h-6 text-primary" />
             التصويت الرقمي الاستشاري
           </h2>
-          <p className="text-muted-foreground">صوتك أمانة، شارك في صنع القرار بدائرتك</p>
+          <p className="text-muted-foreground">حقك أمانة، شارك في صنع القرار بدائرتك</p>
         </div>
         <Badge variant="outline" className="px-3 py-1 gap-1">
           <Users className="w-4 h-4" />

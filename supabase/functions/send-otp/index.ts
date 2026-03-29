@@ -98,7 +98,7 @@ serve(async (req) => {
       body: new URLSearchParams({
         From: twilioPhoneNumber,
         To: formattedPhone,
-        Body: `رمز التحقق الخاص بك في صوتك: ${otp}\nلا تشارك هذا الرمز مع أحد\nصلاحية الرمز 5 دقائق`,
+        Body: `رمز التحقق الخاص بك في حقك: ${otp}\nلا تشارك هذا الرمز مع أحد\nصلاحية الرمز 5 دقائق`,
       }).toString(),
     });
 

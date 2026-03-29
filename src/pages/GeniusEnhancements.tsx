@@ -64,7 +64,7 @@ const GeniusEnhancements = () => {
               <Sparkles className="w-6 h-6 text-primary animate-pulse" />
             </div>
             <div>
-              <h1 className="font-bold text-xl tracking-tight">التحسينات العبقرية <span className="text-primary">Sutak</span></h1>
+              <h1 className="font-bold text-xl tracking-tight">التحسينات العبقرية <span className="text-primary">Haqak</span></h1>
               <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Genius Enhancements v1.0</p>
             </div>
           </div>
@@ -88,7 +88,7 @@ const GeniusEnhancements = () => {
                 <span className="text-slate-400 text-sm">7 تحسينات ثورية لمستقبل العمل البرلماني</span>
               </div>
               <CardTitle className="text-3xl md:text-4xl font-black leading-tight">
-                تحويل <span className="text-primary">Sutak</span> إلى العقل المفكر للدائرة
+                تحويل <span className="text-primary">Haqak</span> إلى العقل المفكر للدائرة
               </CardTitle>
               <CardDescription className="text-slate-300 text-lg max-w-2xl mt-2">
                 لقد قمنا بدمج أحدث تقنيات الذكاء الاصطناعي، النمذجة الإحصائية، وأنظمة المكافآت لتقديم تجربة ديمقراطية تشاركية فريدة من نوعها.

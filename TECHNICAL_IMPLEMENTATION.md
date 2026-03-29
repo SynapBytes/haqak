@@ -1,12 +1,12 @@
-# 🔧 دليل التطبيق التقني - مشروع Sutak النسخة 2.0
+# 🔧 دليل التطبيق التقني - مشروع Haqak النسخة 2.0
 
 ## معلومات المشروع
 
-- **اسم المشروع:** Sutak - منظومة الحكم المحلي الذكية
+- **اسم المشروع:** Haqak - منظومة الحكم المحلي الذكية
 - **النسخة:** 2.0 (مع 5 ميزات ثورية متقدمة)
 - **لغة البرمجة:** TypeScript + React
 - **الإطار العمل:** Vite + React + TailwindCSS
-- **مستودع GitHub:** `SynapBytes/sutak`
+- **مستودع GitHub:** `SynapBytes/haqak`
 - **تاريخ التطبيق:** مارس 2026
 
 ---
@@ -14,7 +14,7 @@
 ## 📁 البنية الهندسية للمشروع
 
 ```
-sutak/
+haqak/
 ├── src/
 │   ├── components/
 │   │   ├── Phase 1 - 7 Genius Components
@@ -389,7 +389,7 @@ Mobile: ✅ iOS 14+, Android 10+
 ### 1. التطوير المحلي
 ```bash
 # Clone the repository
-gh repo clone SynapBytes/sutak
+gh repo clone SynapBytes/haqak
 
 # Install dependencies
 npm install
@@ -473,7 +473,7 @@ const fetchData = async () => {};
 
 // Constants
 const MAX_RETRIES = 3;
-const API_ENDPOINT = 'https://api.sutak.app';
+const API_ENDPOINT = 'https://api.haqak.app';
 ```
 
 ---
@@ -628,10 +628,10 @@ Sentry.init({
 - **QA Engineer:** [Name]
 
 ### Support Channels
-- 📧 Email: `dev@sutak.app`
-- 💬 Slack: `#sutak-development`
+- 📧 Email: `dev@haqak.app`
+- 💬 Slack: `#haqak-development`
 - 📱 WhatsApp: `+20 XXX XXX XXXX`
-- 🐛 GitHub Issues: `SynapBytes/sutak/issues`
+- 🐛 GitHub Issues: `SynapBytes/haqak/issues`
 
 ---
 
@@ -651,6 +651,6 @@ Sentry.init({
 
 ---
 
-**تم إعداد هذا الدليل التقني بواسطة فريق Sutak**
+**تم إعداد هذا الدليل التقني بواسطة فريق Haqak**
 **النسخة: 2.0**
 **آخر تحديث: مارس 2026**

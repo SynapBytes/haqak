@@ -227,7 +227,7 @@ export const ProjectVotingSystem: React.FC = () => {
             <Vote className="w-6 h-6 text-primary" />
             التصويت على المشاريع المقترحة
           </h2>
-          <p className="text-muted-foreground">صوتك مهم - ساعد في اختيار المشاريع التي ستطور دائرتك</p>
+          <p className="text-muted-foreground">حقك مهم - ساعد في اختيار المشاريع التي ستطور دائرتك</p>
         </div>
         <Badge variant="outline" className="px-3 py-1 gap-1">
           <Users className="w-4 h-4" />
