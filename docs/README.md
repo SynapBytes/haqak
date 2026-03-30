@@ -95,3 +95,9 @@ cp .env.example .env
 - [`docs/glossary_eg.md`](./glossary_eg.md)
 - [`TECHNICAL_IMPLEMENTATION.md`](../TECHNICAL_IMPLEMENTATION.md)
 - [`SECURITY.md`](../SECURITY.md)
+
+---
+
+## التواصل
+
+للاستفسارات أو الدعم أو التعاون: **[team@haqak.org](mailto:team@haqak.org)**

@@ -2,20 +2,26 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+Haqak is currently in **MVP / Pre-Production** stage. Security fixes are applied to the latest version of the `main` branch only.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+| Version | Supported |
+| ------- | --------- |
+| latest (main) | ✅ |
+| older branches | ❌ |
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+If you discover a security vulnerability in this project, please report it responsibly.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+**Contact:** [team@haqak.org](mailto:team@haqak.org)
+
+Please include in your report:
+- A clear description of the vulnerability
+- Steps to reproduce the issue
+- Any relevant screenshots or proof-of-concept
+
+We aim to acknowledge reports within **72 hours** and to provide a resolution timeline once the issue is confirmed.
+
+We request that you **do not publicly disclose** the vulnerability until it has been addressed.
+
+Thank you for helping keep Haqak secure.

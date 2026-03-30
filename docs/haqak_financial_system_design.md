@@ -332,7 +332,7 @@ ADD COLUMN refund_vote_threshold DECIMAL(5,2) DEFAULT 0.51; -- 51%
 ```json
 {
   "project_name": "Haqak",
-  "project_domain": "www.haqak.com",
+  "project_domain": "www.haqak.org",
   "cib_bank_account": {
     "account_number": "[YOUR_CIB_ACCOUNT_NUMBER]",
     "account_holder": "[YOUR_COMPANY_NAME]",
@@ -341,7 +341,7 @@ ADD COLUMN refund_vote_threshold DECIMAL(5,2) DEFAULT 0.51; -- 51%
   "fawry_integration": {
     "merchant_code": "[YOUR_FAWRY_MERCHANT_CODE]",
     "security_key": "[YOUR_FAWRY_SECURITY_KEY]",
-    "callback_url": "https://api.haqak.com/fawry/callback"
+    "callback_url": "https://api.haqak.org/fawry/callback"
   },
   "instapay_integration": {
     "api_key": "[YOUR_INSTAPAY_API_KEY]",

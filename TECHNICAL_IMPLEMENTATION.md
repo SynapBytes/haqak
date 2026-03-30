@@ -473,7 +473,7 @@ const fetchData = async () => {};
 
 // Constants
 const MAX_RETRIES = 3;
-const API_ENDPOINT = 'https://api.haqak.app';
+const API_ENDPOINT = 'https://api.haqak.org';
 ```
 
 ---

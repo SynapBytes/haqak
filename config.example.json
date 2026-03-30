@@ -9,7 +9,7 @@
   "fawry_integration": {
     "merchant_code": "[YOUR_FAWRY_MERCHANT_CODE]",
     "security_key": "[YOUR_FAWRY_SECURITY_KEY]",
-    "callback_url": "https://api.haqak.com/fawry/callback"
+    "callback_url": "https://api.haqak.org/fawry/callback"
   },
   "instapay_integration": {
     "api_key": "[YOUR_INSTAPAY_API_KEY]",

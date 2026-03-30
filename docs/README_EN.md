@@ -34,3 +34,7 @@ npm run dev
 - Architecture: [`docs/architecture.md`](./architecture.md)
 - Roadmap: [`docs/roadmap.md`](./roadmap.md)
 - Glossary (Egyptian Arabic): [`docs/glossary_eg.md`](./glossary_eg.md)
+
+## Contact
+
+For inquiries, support, or collaboration: **[team@haqak.org](mailto:team@haqak.org)**

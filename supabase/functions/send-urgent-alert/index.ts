@@ -157,7 +157,7 @@ serve(async (req) => {
     const urgencyEmoji = urgencyLevel === "critical" ? "🚨" : urgencyLevel === "high" ? "⚠️" : "ℹ️";
 
     for (const recipient of notificationRecipients) {
-      const message = `${urgencyEmoji} تنبيه عاجل من حقك:\n${title}\nالأولوية: ${urgencyLevel}\nتابع: https://haqak.app/issues/${issueId}`;
+      const message = `${urgencyEmoji} تنبيه عاجل من حقك:\n${title}\nالأولوية: ${urgencyLevel}\nتابع: https://haqak.org/issues/${issueId}`;
 
       // Send via Twilio
       if (twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
