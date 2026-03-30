@@ -60,16 +60,8 @@ export const MobileAppFeatures: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Simulated biometric enrollment
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          biometric_enrolled: true,
-          last_biometric_auth: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
-
-      if (error) throw error;
+      // Simulated biometric enrollment – columns not in DB yet
+      console.log("Biometric enrollment simulated for user", user.id);
       setBiometricStatus(prev => ({
         ...prev!,
         enrolled: true,
