@@ -146,6 +146,44 @@ export type Database = {
           },
         ]
       }
+      issue_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          assigned_to: string
+          id: string
+          issue_id: string
+          reason: string | null
+          unassigned_at: string | null
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          assigned_to: string
+          id?: string
+          issue_id: string
+          reason?: string | null
+          unassigned_at?: string | null
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          assigned_to?: string
+          id?: string
+          issue_id?: string
+          reason?: string | null
+          unassigned_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "issue_assignments_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "issues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       issue_attachments: {
         Row: {
           created_at: string
@@ -174,6 +212,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "issue_attachments_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "issues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      issue_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          is_internal: boolean
+          issue_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          issue_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          issue_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "issue_comments_issue_id_fkey"
             columns: ["issue_id"]
             isOneToOne: false
             referencedRelation: "issues"
@@ -240,6 +316,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      issue_status_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          issue_id: string
+          new_status: string
+          note: string | null
+          old_status: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          issue_id: string
+          new_status: string
+          note?: string | null
+          old_status?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          issue_id?: string
+          new_status?: string
+          note?: string | null
+          old_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "issue_status_history_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "issues"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
