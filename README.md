@@ -77,7 +77,7 @@ cp .env.example .env
 
 **Environment variables**
 - Frontend (Vercel project):
-  - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+  - `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`
   - `VITE_TURNSTILE_SITE_KEY`
   - `VITE_VAPID_PUBLIC_KEY`
   - Optional: `VITE_ENV=production`

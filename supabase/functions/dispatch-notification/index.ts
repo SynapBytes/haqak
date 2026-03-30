@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { buildParticipantSet } from "../shared/access-control.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -163,6 +164,14 @@ serve(async (req) => {
       );
     }
 
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -174,11 +183,82 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    let issueTitle: string | undefined;
 
+    const token = authHeader.slice("Bearer ".length);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser(token);
+
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const { data: roleRows, error: roleError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .in("role", ["admin", "moderator"]);
+    if (roleError) {
+      console.error("Failed to load roles", roleError);
+      return new Response(
+        JSON.stringify({ error: "Unable to verify permissions" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const roles = new Set(roleRows?.map((r) => r.role) ?? []);
+    const isAdminOrModerator = roles.has("admin") || roles.has("moderator");
+
+    let issueTitle: string | undefined;
     if (issueId) {
-      const { data: issueData } = await supabase.from("issues").select("title").eq("id", issueId).single();
-      issueTitle = issueData?.title;
+      const { data: issueData, error: issueError } = await supabase
+        .from("issues")
+        .select("id, title, user_id, assigned_mp_id")
+        .eq("id", issueId)
+        .single();
+
+      if (issueError || !issueData) {
+        return new Response(
+          JSON.stringify({ error: "Issue not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      const isIssueParticipant = issueData.user_id === user.id || issueData.assigned_mp_id === user.id;
+      if (!isAdminOrModerator && !isIssueParticipant) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      issueTitle = issueData.title;
+      const allowedRecipients = buildParticipantSet(issueData.user_id, issueData.assigned_mp_id);
+      const isIssueParticipant = allowedRecipients.has(user.id);
+
+      if (!isAdminOrModerator && !isIssueParticipant) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      if (!isAdminOrModerator) {
+        const unauthorized = recipients.some((id) => !allowedRecipients.has(id));
+        if (unauthorized) {
+          return new Response(
+            JSON.stringify({ error: "Recipients not allowed" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+      }
+    } else if (!isAdminOrModerator) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     const enabledChannels = new Set(channels ?? ["push", "email"]);
