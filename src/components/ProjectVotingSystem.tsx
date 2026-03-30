@@ -38,7 +38,8 @@ interface ProjectProposal {
 }
 
 export const ProjectVotingSystem: React.FC = () => {
-  const { user } = useAuth();
+  const { session } = useAuth();
+  const user = session?.user ?? null;
   const [projects, setProjects] = useState<ProjectProposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [votingProject, setVotingProject] = useState<string | null>(null);
