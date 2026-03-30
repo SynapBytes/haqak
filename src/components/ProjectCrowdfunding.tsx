@@ -93,25 +93,6 @@ export const ProjectCrowdfunding: React.FC = () => {
   };
       
       // Update local state
-      setProjects(prev => prev.map(p => 
-        p.id === selectedProject.id 
-          ? {
-              ...p,
-              raised_amount: p.raised_amount + contributionAmount,
-              contributors_count: (p.contributors_count || 0) + 1,
-              user_contribution: (p.user_contribution || 0) + contributionAmount
-            }
-          : p
-      ));
-
-      setContributionAmount(100);
-      setSelectedProject(null);
-    } catch (error) {
-      console.error('Contribution error:', error);
-      toast.error('حدث خطأ أثناء المساهمة');
-    } finally {
-      setSubmittingContribution(false);
-    }
   };
 
   const daysRemaining = (deadline: string) => {
