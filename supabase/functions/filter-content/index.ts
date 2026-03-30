@@ -97,6 +97,31 @@ function isHostAllowed(hostname: string): boolean {
   return false;
 }
 
+/**
+ * Return true if the hostname is a private/loopback/link-local address.
+ * Blocked: 127/8, 10/8, 172.16/12, 192.168/16, 169.254/16, ::1, fc00::/7, fe80::/10.
+ */
+function isPrivateIp(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  if (h === "localhost") return true;
+  const bare = h.startsWith("[") && h.endsWith("]") ? h.slice(1, -1) : h;
+  if (bare === "::1") return true;
+  if (/^f[cd]/.test(bare)) return true;   // fc00::/7 unique-local
+  if (/^fe[89ab]/.test(bare)) return true; // fe80::/10 link-local
+  const parts = bare.split(".");
+  if (parts.length === 4) {
+    const octets = parts.map(Number);
+    if (octets.some((o) => !Number.isInteger(o) || o < 0 || o > 255)) return false;
+    const [a, b] = octets;
+    if (a === 127) return true;
+    if (a === 10) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 169 && b === 254) return true;
+  }
+  return false;
+}
+
 function buildValidatedUrl(baseUrl: string): string {
   let url: URL;
   try {
@@ -107,6 +132,10 @@ function buildValidatedUrl(baseUrl: string): string {
 
   if (!["http:", "https:"].includes(url.protocol)) {
     throw new Error("Invalid protocol");
+  }
+
+  if (isPrivateIp(url.hostname)) {
+    throw new Error("Invalid host");
   }
 
   if (!isHostAllowed(url.hostname)) {

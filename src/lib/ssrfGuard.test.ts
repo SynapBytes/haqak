@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildValidatedUrl,
   isHostAllowed,
+  isPrivateIp,
   parseAllowedHostPatterns,
 } from "./ssrfGuard";
 
@@ -114,6 +115,76 @@ describe("isHostAllowed", () => {
   it("returns true when any one of multiple patterns matches", () => {
     const patterns = ["images.example.com", "*.cdn.example.org"];
     expect(isHostAllowed("files.cdn.example.org", patterns)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isPrivateIp
+// ---------------------------------------------------------------------------
+
+describe("isPrivateIp", () => {
+  it("identifies 'localhost' as private", () => {
+    expect(isPrivateIp("localhost")).toBe(true);
+  });
+
+  it("identifies 127.0.0.1 as loopback", () => {
+    expect(isPrivateIp("127.0.0.1")).toBe(true);
+  });
+
+  it("identifies 127.255.255.255 as loopback (127/8 boundary)", () => {
+    expect(isPrivateIp("127.255.255.255")).toBe(true);
+  });
+
+  it("identifies 10.0.0.1 as private (10/8)", () => {
+    expect(isPrivateIp("10.0.0.1")).toBe(true);
+  });
+
+  it("identifies 172.16.0.1 as private (172.16/12 lower bound)", () => {
+    expect(isPrivateIp("172.16.0.1")).toBe(true);
+  });
+
+  it("identifies 172.31.255.255 as private (172.16/12 upper bound)", () => {
+    expect(isPrivateIp("172.31.255.255")).toBe(true);
+  });
+
+  it("does not identify 172.15.0.1 as private (just outside 172.16/12)", () => {
+    expect(isPrivateIp("172.15.0.1")).toBe(false);
+  });
+
+  it("does not identify 172.32.0.1 as private (just outside 172.16/12)", () => {
+    expect(isPrivateIp("172.32.0.1")).toBe(false);
+  });
+
+  it("identifies 192.168.1.1 as private (192.168/16)", () => {
+    expect(isPrivateIp("192.168.1.1")).toBe(true);
+  });
+
+  it("identifies 169.254.169.254 as link-local (cloud metadata)", () => {
+    expect(isPrivateIp("169.254.169.254")).toBe(true);
+  });
+
+  it("identifies ::1 as IPv6 loopback", () => {
+    expect(isPrivateIp("::1")).toBe(true);
+  });
+
+  it("identifies fc00:: as IPv6 unique-local (fc00::/7)", () => {
+    expect(isPrivateIp("fc00::1")).toBe(true);
+  });
+
+  it("identifies fd00:: as IPv6 unique-local (fc00::/7)", () => {
+    expect(isPrivateIp("fd00::1")).toBe(true);
+  });
+
+  it("identifies fe80:: as IPv6 link-local (fe80::/10)", () => {
+    expect(isPrivateIp("fe80::1")).toBe(true);
+  });
+
+  it("does not flag a public IP (8.8.8.8)", () => {
+    expect(isPrivateIp("8.8.8.8")).toBe(false);
+  });
+
+  it("does not flag a public hostname (images.example.com)", () => {
+    expect(isPrivateIp("images.example.com")).toBe(false);
   });
 });
 
