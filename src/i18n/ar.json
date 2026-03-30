@@ -230,6 +230,7 @@
     "role_citizen": "مواطن",
     "role_mp": "نائب",
     "role_admin": "مسؤول",
+    "role_moderator": "مشرف",
     "pending_count": "بانتظار الموافقة",
     "error": "حدث خطأ",
     "issues_by_gov": "المشاكل حسب المحافظة",

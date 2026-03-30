@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
-
-type AppRole = "citizen" | "mp" | "admin";
+import { AppRole, resolvePrimaryRole } from "@/constants/roles";
 
 interface Profile {
   id: string;
@@ -50,10 +49,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const [profileRes, roleRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", userId),
       ]);
       setProfile((profileRes.data as Profile) ?? null);
-      setRole((roleRes.data?.role as AppRole) ?? "citizen");
+      const roles = (roleRes.data ?? []).map((r) => r.role as AppRole);
+      setRole(resolvePrimaryRole(roles));
     } catch {
       setProfile(null);
       setRole("citizen");

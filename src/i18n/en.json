@@ -227,6 +227,7 @@
     "role_citizen": "Citizen",
     "role_mp": "MP",
     "role_admin": "Admin",
+    "role_moderator": "Moderator",
     "pending_count": "Pending Approval",
     "error": "An error occurred",
     "issues_by_gov": "Issues by Governorate",

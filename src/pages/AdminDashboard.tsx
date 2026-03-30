@@ -17,6 +17,7 @@ import {
   Loader2, AlertCircle, TrendingUp, Clock, FileText, MapPin, Trash2, UserCog
 } from "lucide-react";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
+import { AppRole, resolvePrimaryRole } from "@/constants/roles";
 
 interface UserProfile {
   id: string;
@@ -32,7 +33,7 @@ interface UserProfile {
 }
 
 interface UserWithRole extends UserProfile {
-  role: "citizen" | "mp" | "admin";
+  role: AppRole;
 }
 
 const AdminDashboard = () => {
@@ -43,7 +44,7 @@ const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [issueSearchQuery, setIssueSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"users" | "issues" | "analytics">("users");
-  const [filterRole, setFilterRole] = useState<"all" | "citizen" | "mp">("all");
+  const [filterRole, setFilterRole] = useState<"all" | AppRole>("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "banned">("all");
   const [filterGov, setFilterGov] = useState<string>("all");
   const [approving, setApproving] = useState<string | null>(null);
@@ -58,8 +59,17 @@ const AdminDashboard = () => {
       supabase.from("issues").select("*").order("created_at", { ascending: false }),
     ]);
     if (profilesRes.data && rolesRes.data) {
-      const roleMap = new Map(rolesRes.data.map((r: any) => [r.user_id, r.role]));
-      setUsers(profilesRes.data.map((p: any) => ({ ...p, role: roleMap.get(p.user_id) || "citizen" })));
+      const rolesByUser = new Map<string, AppRole[]>();
+      rolesRes.data.forEach((r: any) => {
+        const existing = rolesByUser.get(r.user_id) ?? [];
+        rolesByUser.set(r.user_id, [...existing, r.role]);
+      });
+      setUsers(
+        profilesRes.data.map((p: any) => {
+          const roles = rolesByUser.get(p.user_id) ?? [];
+          return { ...p, role: resolvePrimaryRole(roles) };
+        }),
+      );
     }
     if (issuesRes.data) setIssues(issuesRes.data);
     setLoading(false);
@@ -79,7 +89,7 @@ const AdminDashboard = () => {
     setApproving(null);
   };
 
-  const handleRoleChange = async (userId: string, newRole: "citizen" | "mp" | "admin") => {
+  const handleRoleChange = async (userId: string, newRole: AppRole) => {
     setUpdatingRole(userId);
     try {
       const { error } = await supabase
@@ -147,6 +157,7 @@ const AdminDashboard = () => {
     citizen: t("admin_dashboard.role_citizen"),
     mp: t("admin_dashboard.role_mp"),
     admin: t("admin_dashboard.role_admin"),
+    moderator: t("admin_dashboard.role_moderator"),
   };
 
   const tabs = [
@@ -237,7 +248,7 @@ const AdminDashboard = () => {
                     <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t("admin_dashboard.search_users")} className="pr-11 text-right h-11 rounded-xl border-border/50 bg-background/50" />
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    {(["all", "citizen", "mp"] as const).map((r) => (
+                    {(["all", "citizen", "mp", "moderator", "admin"] as const).map((r) => (
                       <Button key={r} variant={filterRole === r ? "secondary" : "ghost"} size="sm" onClick={() => setFilterRole(r)} className="text-xs rounded-lg">
                         {r === "all" ? t("admin_dashboard.filter_all") : roleLabels[r]}
                       </Button>
@@ -317,7 +328,7 @@ const AdminDashboard = () => {
                     {/* Role Dropdown */}
                     <Select
                       value={user.role}
-                      onValueChange={(val) => handleRoleChange(user.user_id, val as "citizen" | "mp" | "admin")}
+                      onValueChange={(val) => handleRoleChange(user.user_id, val as AppRole)}
                       disabled={updatingRole === user.user_id}
                     >
                       <SelectTrigger className="w-[110px] h-9 rounded-lg text-xs border-border/50">
@@ -330,6 +341,7 @@ const AdminDashboard = () => {
                       <SelectContent>
                         <SelectItem value="citizen">{t("admin_dashboard.role_citizen")}</SelectItem>
                         <SelectItem value="mp">{t("admin_dashboard.role_mp")}</SelectItem>
+                        <SelectItem value="moderator">{t("admin_dashboard.role_moderator")}</SelectItem>
                         <SelectItem value="admin">{t("admin_dashboard.role_admin")}</SelectItem>
                       </SelectContent>
                     </Select>

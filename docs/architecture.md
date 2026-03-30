@@ -68,3 +68,12 @@ Citizen
 - المشروع في مرحلة **MVP / Prototype** — جزء من الميزات ممكن يكون واجهة/نموذج وينتظر ربط إنتاجي.
 - Supabase schema + RLS policies هيتضبطوا حسب مرحلة التطوير.
 - راجع [`TECHNICAL_IMPLEMENTATION.md`](../TECHNICAL_IMPLEMENTATION.md) للتفاصيل التقنية الكاملة.
+
+## Supabase auth & roles (production defaults)
+
+- **Roles:** `citizen` (default), `mp` (approved only), `moderator` (read-only oversight), `admin` (full control). كل مستخدم بيُنشأ بـ `citizen` فقط، وأي دور إضافي لازم يتعيّن بواسطة admin.
+- **Linking:** `auth.users.id` مرتبط بـ `profiles.user_id` (unique) ويمتلك صفوف في `user_roles`.
+- **RLS:** مفعل على كل الجداول الحساسة (`profiles`, `user_roles`, `issues`, `issue_actions`, `issue_attachments`, `notifications`, `chat_*`, `submission_attempts`, `audit_logs`, `rate_limit_logs`, `captcha_verifications`, `otp_codes`, `storage.objects` for `issue-attachments`). السياسات مكتوبة بمبدأ أقل صلاحية.
+- **Helpers:** دوال `has_role`, `has_any_role`, `is_active_mp`, `is_admin` بتُستخدم داخل السياسات لتحديد السماح.
+- **Storage:** مرفقات المشاكل private، والقراءة مقصورة على صاحب الملف، النائب المعيّن، المشرف، أو admin.
+- **Service role only:** الكتابة لـ `audit_logs`, `submission_attempts`, `rate_limit_logs`, `captcha_verifications`, و`otp_codes` لازم تكون من backend مفعل بمفتاح الخدمة (edge functions أو server). 

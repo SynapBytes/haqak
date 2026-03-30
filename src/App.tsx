@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import SplashScreen from "@/components/SplashScreen";
 import PushNotificationProvider from "@/components/PushNotificationProvider";
 import { useTranslation } from "react-i18next";
+import { AppRole } from "@/constants/roles";
 
 // Lazy-loaded pages
 const Landing = lazy(() => import("./pages/Landing"));
@@ -33,12 +34,13 @@ const PageLoader = () => (
   </div>
 );
 
-function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode; requiredRole?: "citizen" | "mp" | "admin" }) {
+function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode; requiredRole?: AppRole }) {
   const { session, role, loading, profile } = useAuth();
   const { t } = useTranslation();
   if (loading) return <PageLoader />;
   if (!session) return <Navigate to="/auth" replace />;
   if (requiredRole === "admin" && role !== "admin") return <Navigate to="/" replace />;
+  if (requiredRole === "moderator" && role !== "moderator" && role !== "admin") return <Navigate to="/" replace />;
   if (requiredRole === "mp" && role === "mp" && !profile?.is_approved) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">

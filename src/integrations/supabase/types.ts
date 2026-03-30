@@ -386,15 +386,23 @@ export type Database = {
       get_public_issue_stats: { Args: never; Returns: Json }
       has_role: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
+      has_any_role: {
+        Args: {
+          _user_id: string
+          _roles: Database["public"]["Enums"]["app_role"][]
         }
         Returns: boolean
       }
       is_active_mp: { Args: { _user_id: string }; Returns: boolean }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "citizen" | "mp" | "admin"
+      app_role: "citizen" | "mp" | "admin" | "moderator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -522,7 +530,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["citizen", "mp", "admin"],
+      app_role: ["citizen", "mp", "admin", "moderator"],
     },
   },
 } as const
