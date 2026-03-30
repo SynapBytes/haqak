@@ -43,7 +43,8 @@ interface FundingProject {
 }
 
 export const ProjectCrowdfunding: React.FC = () => {
-  const { user } = useAuth();
+  const { session } = useAuth();
+  const user = session?.user ?? null;
   const [projects, setProjects] = useState<FundingProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<FundingProject | null>(null);
