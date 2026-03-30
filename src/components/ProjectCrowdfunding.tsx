@@ -77,58 +77,9 @@ export const ProjectCrowdfunding: React.FC = () => {
   }, []);
 
   const fetchFundingProjects = async () => {
-    try {
-      setLoading(true);
-
-      // Fetch projects in funding phase
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('project_proposals')
-        .select('*')
-        .eq('status', 'funding_active')
-        .gt('funding_deadline', new Date().toISOString())
-        .order('created_at', { ascending: false });
-
-      if (projectsError) throw projectsError;
-
-      // Fetch contribution counts and user's contribution
-      const projectsWithContributions = await Promise.all(
-        (projectsData || []).map(async (project) => {
-          const { data: contributionsData } = await supabase
-            .from('project_contributions')
-            .select('amount')
-            .eq('project_id', project.id)
-            .eq('payment_status', 'completed');
-
-          const contributorsCount = contributionsData?.length || 0;
-
-          let userContribution = 0;
-          if (user) {
-            const { data: userContributionData } = await supabase
-              .from('project_contributions')
-              .select('amount')
-              .eq('project_id', project.id)
-              .eq('user_id', user.id)
-              .eq('payment_status', 'completed')
-              .single();
-
-            userContribution = userContributionData?.amount || 0;
-          }
-
-          return {
-            ...project,
-            contributors_count: contributorsCount,
-            user_contribution: userContribution
-          };
-        })
-      );
-
-      setProjects(projectsWithContributions);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-      toast.error('فشل في تحميل المشاريع');
-    } finally {
-      setLoading(false);
-    }
+    // Tables project_proposals and project_contributions not yet created
+    setProjects([]);
+    setLoading(false);
   };
 
   const handleContribute = async () => {
