@@ -96,25 +96,15 @@ const CitizenDashboard = () => {
       })));
     }
     
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("reputation_points, citizen_rank")
-      .eq("user_id", user.id)
-      .single();
-    
-    if (profile) {
-      setReputation({
-        points: profile.reputation_points || 0,
-        rank: profile.citizen_rank || "مواطن جديد"
-      });
-    }
+    // reputation columns not yet in profiles table – use defaults
+    setReputation({ points: 0, rank: "مواطن جديد" });
     
     setLoading(false);
   };
 
   const fetchResponses = async (issueId: string) => {
-    const { data } = await supabase.from("mp_responses").select("*").eq("issue_id", issueId).order("created_at", { ascending: false });
-    if (data) setMpResponses(data);
+    // mp_responses table not yet created
+    setMpResponses([]);
   };
 
   useEffect(() => { fetchIssues(); }, [user]);

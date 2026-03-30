@@ -460,7 +460,11 @@ const Auth = () => {
                   >
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">{t("auth.otp_code")}</label>
-                      <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode} disabled={otpLoading} />
+                      <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode} disabled={otpLoading}>
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <input key={i} className="w-10 h-12 text-center border rounded-md" />
+                        ))}
+                      </InputOTP>
                       <p className="text-xs text-muted-foreground">{t("auth.otp_sent_to")} {phone}</p>
                     </div>
 

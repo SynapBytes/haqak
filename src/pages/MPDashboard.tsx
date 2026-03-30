@@ -192,12 +192,13 @@ const MPDashboard = () => {
     if (!selectedIssue || !user || !actionNote) return;
     setUpdating(true);
     try {
-      const { error } = await supabase.from("mp_responses").insert({
+      // mp_responses table not yet created – use issue_actions as alternative
+      await supabase.from("issue_actions").insert({
         issue_id: selectedIssue.id,
-        mp_id: user.id,
-        response_text: actionNote,
+        user_id: user.id,
+        action_type: "official_response",
+        note: actionNote,
       });
-      if (error) throw error;
       
       toast.success("تم إرسال الرد الرسمي بنجاح");
       fetchResponses(selectedIssue.id);

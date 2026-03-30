@@ -23,7 +23,7 @@ export interface IntegrityResult {
  * Compute the SHA-256 hash of `data` and return it as a lowercase hex string.
  */
 export async function sha256Hex(data: ArrayBuffer | Uint8Array): Promise<string> {
-  const buf = data instanceof Uint8Array ? data.buffer : data;
+  const buf = data instanceof Uint8Array ? (data.buffer as ArrayBuffer) : data;
   const hashBuf = await crypto.subtle.digest("SHA-256", buf);
   return Array.from(new Uint8Array(hashBuf))
     .map((b) => b.toString(16).padStart(2, "0"))
