@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Lock, 
-  Chain, 
+  Link2 as Chain, 
   CheckCircle2, 
   Clock, 
   AlertCircle, 

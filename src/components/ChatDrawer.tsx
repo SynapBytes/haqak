@@ -31,7 +31,8 @@ interface ChatDrawerProps {
 
 const ChatDrawer = ({ issueId, issueTitle, citizenUserId, citizenPhone, isMP, onClose }: ChatDrawerProps) => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { session } = useAuth();
+  const user = session?.user ?? null;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);

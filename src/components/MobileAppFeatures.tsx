@@ -33,18 +33,11 @@ export const MobileAppFeatures: React.FC = () => {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('biometric_enrolled, last_biometric_auth')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error) throw error;
+        // biometric columns not yet in profiles table – use defaults
         setBiometricStatus({
-          enrolled: data?.biometric_enrolled || false,
-          lastAuth: data?.last_biometric_auth || null,
-          deviceInfo: 'iPhone 15 Pro, iOS 17.4', // Simulated
+          enrolled: false,
+          lastAuth: null,
+          deviceInfo: 'iPhone 15 Pro, iOS 17.4',
         });
       } catch (err) {
         console.error('Failed to fetch biometric status:', err);
@@ -57,33 +50,8 @@ export const MobileAppFeatures: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const fetchGeotaggedPhotos = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('issue_attachments')
-          .select('id, file_name, is_geotagged, metadata_lat, metadata_lng, metadata_timestamp, device_info')
-          .eq('is_geotagged', true)
-          .order('metadata_timestamp', { ascending: false })
-          .limit(10);
-
-        if (error) throw error;
-        setGeotaggedPhotos(
-          (data || []).map(photo => ({
-            id: photo.id,
-            fileName: photo.file_name,
-            isGeotagged: photo.is_geotagged,
-            lat: photo.metadata_lat,
-            lng: photo.metadata_lng,
-            timestamp: photo.metadata_timestamp,
-            deviceInfo: photo.device_info || 'جهاز غير معروف',
-          }))
-        );
-      } catch (err) {
-        console.error('Failed to fetch geotagged photos:', err);
-      }
-    };
-
-    fetchGeotaggedPhotos();
+    // geotagged columns not yet in issue_attachments – use empty
+    setGeotaggedPhotos([]);
   }, []);
 
   const enrollBiometric = async () => {

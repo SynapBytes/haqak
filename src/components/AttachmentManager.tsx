@@ -8,8 +8,8 @@ interface Attachment {
   id: string;
   file_path: string;
   file_name: string;
-  file_type: string;
-  is_verified: boolean;
+  file_type: string | null;
+  is_verified?: boolean;
 }
 
 const AttachmentManager = ({ issueId }: { issueId: string }) => {

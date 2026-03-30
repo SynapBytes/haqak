@@ -232,7 +232,7 @@ export const ConstituencyDigitalTwin: React.FC = () => {
                   <Zap className="w-4 h-4 text-blue-500" />
                   <span className="text-sm">الكهرباء</span>
                 </div>
-                <Badge variant="success" className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] h-5">-7%</Badge>
+                <Badge variant="outline" className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] h-5">-7%</Badge>
               </div>
               <Button variant="ghost" className="w-full text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 p-0 h-8 mt-2">
                 عرض التقرير التفصيلي

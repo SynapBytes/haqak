@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Radar, 
-  Drone, 
+  Plane as Drone, 
   AlertTriangle, 
   MapPin, 
   Eye, 

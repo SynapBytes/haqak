@@ -51,34 +51,10 @@ const AdminAuditDashboard = () => {
   }, []);
 
   const fetchData = async () => {
-    try {
-      setLoading(true);
-
-      // Fetch audit logs
-      const { data: logs, error: logsError } = await supabase
-        .from("audit_logs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(100);
-
-      if (logsError) throw logsError;
-      setAuditLogs(logs || []);
-
-      // Fetch urgent alerts
-      const { data: alerts, error: alertsError } = await supabase
-        .from("urgent_issue_alerts")
-        .select("*")
-        .order("detected_at", { ascending: false })
-        .limit(50);
-
-      if (alertsError) throw alertsError;
-      setUrgentAlerts(alerts || []);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast.error(t("admin.fetch_error"));
-    } finally {
-      setLoading(false);
-    }
+    // Tables audit_logs and urgent_issue_alerts not yet created – use empty data
+    setAuditLogs([]);
+    setUrgentAlerts([]);
+    setLoading(false);
   };
 
   const filteredLogs = auditLogs.filter((log) => {
