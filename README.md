@@ -65,14 +65,20 @@ cp .env.example .env
 - Build command: `npm run build`
 - Output directory: `dist`
 - Root directory: repository root
-- SPA routing: handled by `vercel.json` rewrite to `/index.html`
+- SPA routing: handled by `vercel.json` rewrite to `/index.html` (keeps client-side routing working on refresh/deep links)
 
-**Required environment variables**
-- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
-- `VITE_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`
-- `VITE_VAPID_PUBLIC_KEY`
-- Twilio (if SMS is enabled): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
-- Optional: `VITE_ENV` (set to `production` on Vercel)
+**Environment variables**
+- Frontend (Vercel project):
+  - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+  - `VITE_TURNSTILE_SITE_KEY`
+  - `VITE_VAPID_PUBLIC_KEY`
+  - Optional: `VITE_ENV=production`
+- Server / Supabase Edge Functions (Supabase project or Vercel server env):
+  - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+  - `TURNSTILE_SECRET_KEY` (required in production; set `ENVIRONMENT=development` only if you intentionally allow local dev bypass)
+  - Push: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, optional `VAPID_SUBJECT`
+  - Optional AI: `GEMINI_API_KEY`
+  - Twilio (if SMS is enabled): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
 
 **DNS (Namecheap → Vercel)**
 - Apex (`haqak.org`): A record → `76.76.21.21` (Vercel)
