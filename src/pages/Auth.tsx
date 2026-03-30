@@ -87,6 +87,8 @@ const Auth = () => {
   const phoneRegex = /^01[0125][0-9]{8}$/;
   const membershipNumberRegex = /^[0-9]+$/;
   const MAX_MEMBERSHIP_NUMBER = 568;
+  const passwordHasNumber = useMemo(() => /\d/.test(password), [password]);
+  const passwordHasLetter = useMemo(() => /[a-zA-Z\u0600-\u06FF]/.test(password), [password]);
   const governorateOptions = useMemo(() => getGovernorateOptions(), []);
   const districtOptions = useMemo(() => getDistrictOptions(governorate), [governorate]);
   const electoralOptions = useMemo(
@@ -114,7 +116,9 @@ const Auth = () => {
 
   useEffect(() => {
     if (nationalId && mode.includes("signup-citizen")) {
-      if (!validateEgyptianId(nationalId)) {
+      if (nationalId.length < 14) {
+        setNationalIdError(t("auth.national_id_incomplete"));
+      } else if (!validateEgyptianId(nationalId)) {
         setNationalIdError(t("auth.national_id_invalid"));
       } else {
         const idInfo = extractEgyptianIdInfo(nationalId);
@@ -155,11 +159,10 @@ const Auth = () => {
         return phoneRegex.test(phone);
       }
       if (mode === "signup-citizen" || mode === "signup-mp") {
-        const commonValid = phoneRegex.test(phone) && 
-                           password.length >= 8 && 
-                           /\d/.test(password) && 
-                           /[a-zA-Z\u0600-\u06FF]/.test(password) &&
-                           fullName.length > 0;
+        const phoneValid = phoneRegex.test(phone);
+        const passwordValid = password.length >= 8 && passwordHasNumber && passwordHasLetter;
+        const fullNameValid = fullName.trim().length > 0;
+        const commonValid = phoneValid && passwordValid && fullNameValid;
         
         if (mode === "signup-citizen") {
           const nationalIdValid = nationalId.length === 14 && 
@@ -181,14 +184,15 @@ const Auth = () => {
             !governorateError &&
             !districtError &&
             !electoralError;
-          return commonValid && geoValid && membershipValid;
+          const displayNameValid = displayName.trim().length > 0;
+          return commonValid && geoValid && membershipValid && displayNameValid;
         }
         return commonValid;
       }
       return false;
     };
     setIsFormValid(validateForm());
-  }, [mode, phone, password, fullName, governorate, district, electoralDistrict, registrationNumber, membershipNumberError, nationalId, nationalIdError, governorateError, districtError, electoralError]);
+  }, [mode, phone, password, passwordHasNumber, passwordHasLetter, fullName, displayName, governorate, district, electoralDistrict, registrationNumber, membershipNumberError, nationalId, nationalIdError, governorateError, districtError, electoralError]);
 
   useEffect(() => {
     if (!mode.includes("signup-mp")) {
@@ -274,6 +278,10 @@ const Auth = () => {
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if ((mode === "signup-citizen" || mode === "signup-mp") && !isFormValid) {
+      toast.error(t("auth.form_invalid"));
+      return;
+    }
     if (!phoneRegex.test(phone)) {
       setPhoneError(t("auth.phone_invalid"));
       return;
@@ -554,9 +562,11 @@ const Auth = () => {
                         </Select>
                         <Input
                           type="tel"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           placeholder="01012345678"
                           value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
+                          onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
                           disabled={loading}
                           className={cn(
                             "flex-1 text-center sm:text-left",
@@ -593,7 +603,7 @@ const Auth = () => {
                         </div>
                         {mode.includes("signup") && password && (
                           <p className="text-xs text-muted-foreground">
-                            {password.length >= 8 && /\d/.test(password) && /[a-zA-Z\u0600-\u06FF]/.test(password) ? (
+                            {password.length >= 8 && passwordHasNumber && passwordHasLetter ? (
                               <span className="text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {t("auth.password_strong")}</span>
                             ) : (
                               <span className="text-amber-600">{t("auth.password_requirements")}</span>
@@ -610,13 +620,13 @@ const Auth = () => {
                           <User className="w-4 h-4" />
                           {t("auth.full_name")}
                         </label>
-                        <Input
-                          type="text"
-                          placeholder={t("auth.full_name_placeholder")}
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                          disabled={loading}
-                        />
+                          <Input
+                            type="text"
+                            placeholder={t("auth.full_name_placeholder")}
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value.replace(/^\s+/, ""))}
+                            disabled={loading}
+                          />
                       </div>
                     )}
 
@@ -629,7 +639,7 @@ const Auth = () => {
                         </label>
                         <Input
                           type="text"
-                          placeholder="14 رقم من الرقم القومي"
+                          placeholder={t("auth.national_id_placeholder")}
                           value={nationalId}
                           onChange={(e) => setNationalId(e.target.value.replace(/\D/g, "").slice(0, 14))}
                           disabled={loading}
@@ -663,7 +673,7 @@ const Auth = () => {
                             type="text"
                             placeholder={t("auth.display_name_placeholder")}
                             value={displayName}
-                            onChange={(e) => setDisplayName(e.target.value)}
+                            onChange={(e) => setDisplayName(e.target.value.replace(/^\s+/, ""))}
                             disabled={loading}
                           />
                         </div>
@@ -769,7 +779,7 @@ const Auth = () => {
                             type="text"
                             placeholder={t("auth.registration_number_placeholder")}
                             value={registrationNumber}
-                            onChange={(e) => setRegistrationNumber(e.target.value)}
+                            onChange={(e) => setRegistrationNumber(e.target.value.replace(/\D/g, "").slice(0, 4))}
                             disabled={loading}
                             className={membershipNumberError ? "border-destructive" : ""}
                           />

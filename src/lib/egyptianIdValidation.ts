@@ -6,18 +6,21 @@
 /**
  * Validates Egyptian national ID number
  * Egyptian ID format: 14 digits
- * Structure: YYMMDDDCCSSSNX
+ * Structure: CYYMMDDCCSSSNG
+ * - C: Century indicator (2 = 1900s, 3 = 2000s)
  * - YY: Birth year (00-99)
  * - MM: Birth month (01-12)
  * - DDD: Birth day (01-31)
  * - CC: Governorate code (01-29)
  * - SSS: Serial number (001-999)
  * - N: Gender (1-4 for males, 5-8 for females)
- * - X: Check digit
+ * - G: Final digit (historically used as checksum, often unreliable in data)
  */
-export const validateEgyptianId = (id: string): boolean => {
-  // Remove spaces and dashes
-  const cleanId = id.replace(/[\s-]/g, "");
+const CENTURY_BASE_YEARS: Record<number, number> = { 1: 1800, 2: 1900, 3: 2000 };
+
+export const validateEgyptianId = (id: string, currentTimestamp: number = Date.now()): boolean => {
+  // Keep only digits
+  const cleanId = id.replace(/\D/g, "");
 
   // Check if it's exactly 14 digits
   if (!/^\d{14}$/.test(cleanId)) {
@@ -25,19 +28,38 @@ export const validateEgyptianId = (id: string): boolean => {
   }
 
   // Extract parts
-  const year = parseInt(cleanId.substring(0, 2), 10);
-  const month = parseInt(cleanId.substring(2, 4), 10);
-  const day = parseInt(cleanId.substring(4, 6), 10);
-  const governorate = parseInt(cleanId.substring(6, 8), 10);
+  const centuryIndicator = parseInt(cleanId[0], 10);
+  const year = parseInt(cleanId.substring(1, 3), 10);
+  const month = parseInt(cleanId.substring(3, 5), 10);
+  const day = parseInt(cleanId.substring(5, 7), 10);
+  const governorate = parseInt(cleanId.substring(7, 9), 10);
   const genderCode = parseInt(cleanId.substring(12, 13), 10);
+
+  // Validate century indicator (supports 1800s, 1900s, 2000s)
+  const baseYear = CENTURY_BASE_YEARS[centuryIndicator];
+  if (!baseYear) {
+    return false;
+  }
+
+  const fullYear = baseYear + year;
 
   // Validate month (01-12)
   if (month < 1 || month > 12) {
     return false;
   }
 
-  // Validate day (01-31)
-  if (day < 1 || day > 31) {
+  // Validate day using real calendar
+  const date = new Date(Date.UTC(fullYear, month - 1, day));
+  if (
+    date.getUTCFullYear() !== fullYear ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return false;
+  }
+
+  // Reject IDs with future birth dates
+  if (date.getTime() > currentTimestamp) {
     return false;
   }
 
@@ -51,38 +73,35 @@ export const validateEgyptianId = (id: string): boolean => {
     return false;
   }
 
-  // Validate check digit using Luhn algorithm
-  const weights = [29, 27, 23, 19, 17, 29, 27, 23, 19, 17, 29, 27, 23, 19];
-  let sum = 0;
-
-  for (let i = 0; i < 13; i++) {
-    sum += parseInt(cleanId[i], 10) * weights[i];
-  }
-
-  const checkDigit = (11 - (sum % 11)) % 10;
-  const providedCheckDigit = parseInt(cleanId[13], 10);
-
-  return checkDigit === providedCheckDigit;
+  // Check digit historically exists but is unreliable in many IDs issued before
+  // digitization. Relying on it was blocking real users with valid 14-digit IDs,
+  // so we intentionally accept structurally valid IDs without enforcing the digit.
+  return true;
 };
 
 /**
  * Extracts information from a valid Egyptian national ID
  */
 export const extractEgyptianIdInfo = (id: string) => {
-  const cleanId = id.replace(/[\s-]/g, "");
+  const cleanId = id.replace(/\D/g, "");
 
   if (!validateEgyptianId(cleanId)) {
     return null;
   }
 
-  const year = parseInt(cleanId.substring(0, 2), 10);
-  const month = parseInt(cleanId.substring(2, 4), 10);
-  const day = parseInt(cleanId.substring(4, 6), 10);
-  const governorateCode = parseInt(cleanId.substring(6, 8), 10);
+  const centuryIndicator = parseInt(cleanId[0], 10);
+  const year = parseInt(cleanId.substring(1, 3), 10);
+  const month = parseInt(cleanId.substring(3, 5), 10);
+  const day = parseInt(cleanId.substring(5, 7), 10);
+  const governorateCode = parseInt(cleanId.substring(7, 9), 10);
   const genderCode = parseInt(cleanId.substring(12, 13), 10);
 
-  // Determine century (1900 or 2000)
-  const fullYear = year > 30 ? 1900 + year : 2000 + year;
+  // Determine century
+  const baseYear = CENTURY_BASE_YEARS[centuryIndicator];
+  if (!baseYear) {
+    return null;
+  }
+  const fullYear = baseYear + year;
 
   // Determine gender
   const gender = genderCode % 2 === 1 ? "male" : "female";
