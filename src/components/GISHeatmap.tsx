@@ -1,8 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { MapPin, Layers, ZoomIn, ZoomOut } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { MapPin, Layers, Navigation } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { MapContainer, TileLayer, Marker, CircleMarker, Popup, Tooltip, useMap } from 'react-leaflet';
+import { ensureLeafletDefaults, TILE_LAYER_ATTRIBUTION, TILE_LAYER_URL } from '@/lib/leafletConfig';
+import L from 'leaflet';
+
+const MAP_PADDING = 40;
+const MAX_FIT_ZOOM = 15;
 
 interface IssueLocation {
   id: string;
@@ -24,10 +30,17 @@ interface HeatmapPoint {
 
 export const GISHeatmap: React.FC = () => {
   const [issues, setIssues] = useState<IssueLocation[]>([]);
-  const [heatmapData, setHeatmapData] = useState<HeatmapPoint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [zoom, setZoom] = useState(12);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [nearbyOnly, setNearbyOnly] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
+
+  const defaultCenter: [number, number] = [26.8206, 30.8025]; // Egypt
+
+  useEffect(() => {
+    ensureLeafletDefaults();
+  }, []);
 
   useEffect(() => {
     const fetchIssues = async () => {
@@ -41,7 +54,6 @@ export const GISHeatmap: React.FC = () => {
 
         if (error) throw error;
         setIssues(data || []);
-        generateHeatmap(data || []);
       } catch (err) {
         console.error('Failed to fetch issues:', err);
       } finally {
@@ -52,10 +64,9 @@ export const GISHeatmap: React.FC = () => {
     fetchIssues();
   }, []);
 
-  const generateHeatmap = (issueList: IssueLocation[]) => {
-    // Group issues by proximity (simplified grid-based clustering)
-    const gridSize = 0.01; // ~1 km grid
-    const grid: { [key: string]: IssueLocation[] } = {};
+  const generateHeatmap = (issueList: IssueLocation[]): HeatmapPoint[] => {
+    const gridSize = 0.05; // ~5 km grid
+    const grid: Record<string, IssueLocation[]> = {};
 
     issueList.forEach((issue) => {
       const gridKey = `${Math.floor(issue.latitude / gridSize)},${Math.floor(issue.longitude / gridSize)}`;
@@ -63,7 +74,6 @@ export const GISHeatmap: React.FC = () => {
       grid[gridKey].push(issue);
     });
 
-    // Convert grid to heatmap points
     const points: HeatmapPoint[] = Object.entries(grid).map(([key, issues]) => {
       const [latGrid, lngGrid] = key.split(',').map(Number);
       const avgLat = (latGrid * gridSize + (latGrid + 1) * gridSize) / 2;
@@ -78,7 +88,7 @@ export const GISHeatmap: React.FC = () => {
       };
     });
 
-    setHeatmapData(points);
+    return points;
   };
 
   const getColorForIntensity = (intensity: number): string => {
@@ -102,11 +112,51 @@ export const GISHeatmap: React.FC = () => {
     return icons[category] || '📍';
   };
 
-  const filteredHeatmapData = selectedCategory
-    ? heatmapData.filter(p => p.category === selectedCategory)
-    : heatmapData;
-
   const categories = Array.from(new Set(issues.map(i => i.category)));
+
+  const filteredIssues = useMemo(() => {
+    let filtered = [...issues];
+
+    if (selectedCategory) {
+      filtered = filtered.filter((issue) => issue.category === selectedCategory);
+    }
+
+    if (nearbyOnly && userPosition) {
+      filtered = filtered.filter((issue) => {
+        const distance = haversineDistance(userPosition.lat, userPosition.lng, issue.latitude, issue.longitude);
+        return distance <= 10; // km
+      });
+    }
+
+    return filtered;
+  }, [issues, selectedCategory, nearbyOnly, userPosition]);
+
+  const heatmapData = useMemo(() => generateHeatmap(filteredIssues), [filteredIssues]);
+
+  const handleLocate = () => {
+    if (!navigator.geolocation) {
+      setGeoError("المتصفح لا يدعم تحديد الموقع الجغرافي.");
+      return;
+    }
+
+    setGeoError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      (err) => {
+        if (err.code === err.PERMISSION_DENIED) {
+          setGeoError("تم رفض إذن تحديد الموقع. يمكنك استخدام الخريطة بدون تحديد موقعك.");
+        } else {
+          setGeoError("تعذر الحصول على موقعك الحالي.");
+        }
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
+  const hasLocationData = filteredIssues.length > 0;
+  const markerPositions = filteredIssues.map((issue) => [issue.latitude, issue.longitude] as [number, number]);
 
   return (
     <div className="space-y-4">
@@ -142,125 +192,150 @@ export const GISHeatmap: React.FC = () => {
             ))}
           </div>
 
-          {/* Map Container (Simplified ASCII representation) */}
-          <div className="bg-white border-2 border-gray-200 rounded-lg p-4 min-h-96 relative overflow-hidden">
-            {loading ? (
-              <div className="flex items-center justify-center h-96">
-                <p>جاري تحميل الخريطة...</p>
-              </div>
-            ) : (
-              <>
-                {/* Map Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-cyan-50 opacity-50" />
+          <div className="flex flex-wrap gap-2 items-center">
+            <Button variant="outline" size="sm" onClick={handleLocate} className="gap-2">
+              <Navigation className="w-4 h-4" />
+              موقعي الحالي
+            </Button>
+            <Button
+              variant={nearbyOnly ? 'default' : 'outline'}
+              size="sm"
+              disabled={!userPosition}
+              onClick={() => setNearbyOnly((prev) => !prev)}
+              className="gap-2"
+            >
+              {nearbyOnly ? 'إظهار كل الشكاوى' : 'الشكاوى القريبة (10 كم)'}
+            </Button>
+            {geoError && <span className="text-xs text-destructive">{geoError}</span>}
+          </div>
 
-                {/* Heatmap Points */}
-                <div className="relative h-96">
-                  {filteredHeatmapData.map((point, idx) => {
-                    // Normalize coordinates to map container (simplified)
-                    const x = ((point.lng + 180) / 360) * 100;
-                    const y = ((point.lat + 90) / 180) * 100;
-                    const size = Math.max(20, point.count * 5);
+          {/* Map Container */}
+          <div className="bg-white border-2 border-gray-200 rounded-lg overflow-hidden">
+            <div className="relative" style={{ height: 420 }}>
+              {loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <p>جاري تحميل الخريطة...</p>
+                </div>
+              ) : (
+                <MapContainer
+                  center={defaultCenter}
+                  zoom={6}
+                  scrollWheelZoom
+                  style={{ height: "100%", width: "100%" }}
+                >
+                  <TileLayer attribution={TILE_LAYER_ATTRIBUTION} url={TILE_LAYER_URL} />
+                  <FitBounds positions={markerPositions} fallbackCenter={defaultCenter} />
 
+                  {userPosition && (
+                    <CircleMarker
+                      center={[userPosition.lat, userPosition.lng]}
+                      radius={10}
+                      pathOptions={{ color: '#0ea5e9', fillColor: '#0ea5e9', fillOpacity: 0.3 }}
+                    >
+                      <Tooltip direction="top">موقعي الحالي</Tooltip>
+                    </CircleMarker>
+                  )}
+
+                  {heatmapData.map((point, idx) => {
+                    const color = getLeafletColor(point.intensity);
                     return (
-                      <div
-                        key={idx}
-                        className={`absolute rounded-full opacity-70 hover:opacity-100 transition-all cursor-pointer ${getColorForIntensity(
-                          point.intensity
-                        )}`}
-                        style={{
-                          left: `${x}%`,
-                          top: `${y}%`,
-                          width: `${size}px`,
-                          height: `${size}px`,
-                          transform: 'translate(-50%, -50%)',
-                          boxShadow: `0 0 ${size / 2}px rgba(0,0,0,0.3)`,
-                        }}
-                        title={`${point.count} شكاوى - ${point.category}`}
+                      <CircleMarker
+                        key={`heat-${idx}`}
+                        center={[point.lat, point.lng]}
+                        radius={Math.max(8, point.count * 2)}
+                        pathOptions={{ color, fillColor: color, fillOpacity: 0.35 }}
                       >
-                        <div className="flex items-center justify-center h-full text-white font-bold text-xs">
-                          {point.count}
-                        </div>
-                      </div>
+                        <Tooltip direction="top">
+                          {point.count} شكوى - {point.category}
+                        </Tooltip>
+                      </CircleMarker>
                     );
                   })}
-                </div>
 
-                {/* Legend */}
-                <div className="absolute bottom-4 left-4 bg-white p-3 rounded-lg border border-gray-200 text-xs">
-                  <div className="font-bold mb-2">مفتاح الألوان:</div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-red-600 rounded" />
-                      <span>حرج جداً (8+)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-orange-500 rounded" />
-                      <span>حرج (6-8)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-yellow-500 rounded" />
-                      <span>مرتفع (4-6)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-green-500 rounded" />
-                      <span>متوسط (2-4)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-blue-500 rounded" />
-                      <span>منخفض (1-2)</span>
-                    </div>
-                  </div>
-                </div>
-              </>
+                  {filteredIssues.map((issue) => (
+                    <Marker key={issue.id} position={[issue.latitude, issue.longitude]}>
+                      <Popup>
+                        <div className="space-y-1 text-sm">
+                          <p className="font-semibold">{issue.title}</p>
+                          <p className="text-muted-foreground flex items-center gap-1">
+                            <MapPin className="w-4 h-4" />
+                            {issue.location || 'موقع غير محدد'}
+                          </p>
+                          <p className="text-xs">
+                            الفئة: <span className="font-semibold">{issue.category}</span>
+                          </p>
+                          <p className="text-xs">
+                            الحالة: <span className="font-semibold">{issue.status}</span>
+                          </p>
+                        </div>
+                      </Popup>
+                      <Tooltip direction="top">{issue.title}</Tooltip>
+                    </Marker>
+                  ))}
+                </MapContainer>
+              )}
+            </div>
+
+            {!loading && !hasLocationData && (
+              <div className="p-4 text-center text-muted-foreground text-sm">
+                لا توجد شكاوى جغرافية لعرضها حالياً.
+              </div>
             )}
           </div>
 
-          {/* Zoom Controls */}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setZoom(Math.min(zoom + 1, 20))}
-            >
-              <ZoomIn className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setZoom(Math.max(zoom - 1, 8))}
-            >
-              <ZoomOut className="w-4 h-4" />
-            </Button>
-            <span className="text-sm text-gray-600 flex items-center">التكبير: {zoom}x</span>
-          </div>
-
-          {/* Statistics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-            <div className="bg-blue-100 p-2 rounded">
-              <div className="font-bold text-blue-900">{filteredHeatmapData.length}</div>
-              <div className="text-xs text-blue-700">نقاط ساخنة</div>
-            </div>
-            <div className="bg-red-100 p-2 rounded">
-              <div className="font-bold text-red-900">
-                {Math.max(...filteredHeatmapData.map(p => p.count), 0)}
-              </div>
-              <div className="text-xs text-red-700">أقصى تركيز</div>
-            </div>
-            <div className="bg-green-100 p-2 rounded">
-              <div className="font-bold text-green-900">
-                {filteredHeatmapData.reduce((sum, p) => sum + p.count, 0)}
-              </div>
-              <div className="text-xs text-green-700">إجمالي الشكاوى</div>
-            </div>
-            <div className="bg-yellow-100 p-2 rounded">
-              <div className="font-bold text-yellow-900">
-                {categories.length}
-              </div>
-              <div className="text-xs text-yellow-700">فئات</div>
-            </div>
+          <div className="flex flex-wrap gap-3 text-xs">
+            <LegendItem color="bg-red-600" label="حرج جداً (8+ شكاوى)" />
+            <LegendItem color="bg-orange-500" label="حرج (6-8 شكاوى)" />
+            <LegendItem color="bg-yellow-500" label="مرتفع (4-6 شكاوى)" />
+            <LegendItem color="bg-green-500" label="متوسط (2-4 شكاوى)" />
+            <LegendItem color="bg-blue-500" label="منخفض (1-2 شكوى)" />
           </div>
         </CardContent>
       </Card>
     </div>
   );
+};
+
+const FitBounds = ({ positions, fallbackCenter }: { positions: [number, number][]; fallbackCenter: [number, number] }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (positions.length === 0) {
+      map.setView(fallbackCenter, 6);
+      return;
+    }
+
+    const bounds = L.latLngBounds(positions);
+    map.fitBounds(bounds, { padding: [MAP_PADDING, MAP_PADDING], maxZoom: MAX_FIT_ZOOM });
+  }, [fallbackCenter, map, positions]);
+
+  return null;
+};
+
+const LegendItem = ({ color, label }: { color: string; label: string }) => (
+  <div className="flex items-center gap-2">
+    <span className={`w-4 h-4 rounded ${color}`} />
+    <span>{label}</span>
+  </div>
+);
+
+const getLeafletColor = (intensity: number) => {
+  if (intensity >= 0.8) return '#dc2626';
+  if (intensity >= 0.6) return '#f97316';
+  if (intensity >= 0.4) return '#eab308';
+  if (intensity >= 0.2) return '#22c55e';
+  return '#2563eb';
+};
+
+const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const R = 6371; // km
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 };

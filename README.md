@@ -58,6 +58,14 @@ cp .env.example .env
 
 ---
 
+## Maps & location (Leaflet)
+
+- Provider: **Leaflet** with **OpenStreetMap** tiles (no API key required). Override the tile source with `VITE_MAP_TILE_URL` if needed while preserving attribution.
+- Issue maps and location pickers use browser geolocation; if permission is denied, users can still select a point manually.
+- Markers/heat overlays are rendered via Leaflet to keep the mapping layer lightweight for the MVP.
+
+---
+
 ## Production deployment (Vercel + Namecheap)
 
 **Build settings (Vercel)**

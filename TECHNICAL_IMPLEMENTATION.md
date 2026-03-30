@@ -289,7 +289,7 @@ const verificationLayers = [
 
 ### 12. DroneAINeedsRadar.tsx
 **الحجم:** ~420 أسطر
-**الاعتماديات:** TensorFlow.js, Mapbox
+**الاعتماديات:** TensorFlow.js, Leaflet (OpenStreetMap tiles)
 **الخوارزمية:** Computer Vision + Object Detection
 
 ```typescript
@@ -491,7 +491,7 @@ const API_ENDPOINT = 'https://api.haqak.org';
 - Stripe / Fawry (Crowdfunding)
 
 // Mapping Services
-- Mapbox / Google Maps (GIS)
+- Leaflet + OpenStreetMap (GIS baseline without API keys)
 
 // Authentication
 - OAuth 2.0 (Google, Facebook)

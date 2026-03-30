@@ -1,17 +1,8 @@
-import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { useEffect, useState } from "react";
+import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
 import { MapPin, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-
-// Fix default marker icon
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.webp",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.webp",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.webp",
-});
+import { ensureLeafletDefaults, TILE_LAYER_ATTRIBUTION, TILE_LAYER_URL } from "@/lib/leafletConfig";
 
 interface LocationPickerProps {
   latitude: number | null;
@@ -31,19 +22,41 @@ const MapClickHandler = ({ onClick }: { onClick: (lat: number, lng: number) => v
 
 const LocationPicker = ({ latitude, longitude, onChange, readonly = false }: LocationPickerProps) => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const defaultCenter: [number, number] = [26.8206, 30.8025]; // Egypt center
   const center: [number, number] = latitude && longitude ? [latitude, longitude] : defaultCenter;
   const zoom = latitude && longitude ? 15 : 6;
 
+  useEffect(() => {
+    ensureLeafletDefaults();
+  }, []);
+
+  useEffect(() => {
+    if (latitude && longitude) {
+      setError(null);
+    }
+  }, [latitude, longitude]);
+
   const handleGetCurrentLocation = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      setError("المتصفح لا يدعم تحديد الموقع الجغرافي.");
+      return;
+    }
+
     setLoading(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         onChange(pos.coords.latitude, pos.coords.longitude);
         setLoading(false);
       },
-      () => setLoading(false),
+      (err) => {
+        setLoading(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          setError("تم رفض إذن تحديد الموقع. يمكنك اختيار الموقع يدويًا على الخريطة.");
+        } else {
+          setError("تعذر الحصول على موقعك الحالي. حاول مرة أخرى أو اختر الموقع يدويًا.");
+        }
+      },
       { enableHighAccuracy: true }
     );
   };
@@ -73,8 +86,8 @@ const LocationPicker = ({ latitude, longitude, onChange, readonly = false }: Loc
           key={`${center[0]}-${center[1]}`}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.webp"
+            attribution={TILE_LAYER_ATTRIBUTION}
+            url={TILE_LAYER_URL}
           />
           {!readonly && <MapClickHandler onClick={onChange} />}
           {latitude && longitude && <Marker position={[latitude, longitude]} />}
@@ -86,6 +99,7 @@ const LocationPicker = ({ latitude, longitude, onChange, readonly = false }: Loc
           {latitude.toFixed(5)}, {longitude.toFixed(5)}
         </p>
       )}
+      {error && <p className="text-[11px] text-destructive">{error}</p>}
     </div>
   );
 };
