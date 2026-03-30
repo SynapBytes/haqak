@@ -87,38 +87,10 @@ export const ProjectCrowdfunding: React.FC = () => {
       toast.error('يجب تسجيل الدخول للمساهمة');
       return;
     }
-
-    if (contributionAmount < 10) {
-      toast.error('الحد الأدنى للمساهمة 10 جنيهات');
-      return;
-    }
-
-    if (contributionAmount > 100000) {
-      toast.error('الحد الأقصى للمساهمة 100,000 جنيه');
-      return;
-    }
-
-    setSubmittingContribution(true);
-    try {
-      // In a real scenario, this would integrate with payment gateway (Fawry/CIB/InstaPay)
-      // For now, we'll simulate the payment and mark it as completed
-      const { data, error } = await supabase
-        .from('project_contributions')
-        .insert([
-          {
-            project_id: selectedProject.id,
-            user_id: user.id,
-            amount: contributionAmount,
-            payment_status: 'completed', // In production, this would be 'pending' until payment is confirmed
-            payment_reference: `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast.success(`شكراً لمساهمتك بـ ${contributionAmount} جنيه في مشروع "${selectedProject.title}"`);
+    // project_contributions table not yet created
+    toast.info('ميزة المساهمة المالية قيد التطوير');
+    setSubmittingContribution(false);
+  };
       
       // Update local state
       setProjects(prev => prev.map(p => 
