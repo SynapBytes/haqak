@@ -15,6 +15,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { stripExifFromFile } from "@/lib/stripExif";
 import { sanitizeText } from "@/lib/sanitize";
+import { buildAvatarPath, uploadAvatar } from "@/lib/storage";
 
 const CitizenProfile = () => {
   const { user, profile, role } = useAuth();
@@ -78,16 +79,8 @@ const CitizenProfile = () => {
 
     setUploading(true);
     try {
-      const ext = cleanFile.name.split(".").pop();
-      const path = `${user.id}/avatar.${ext}`;
-
-      if (path.includes('..')) throw new Error('Invalid path');
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(path, cleanFile, { upsert: true });
-
-      if (uploadError) throw uploadError;
+      const path = buildAvatarPath(user.id, cleanFile.name);
+      await uploadAvatar(path, cleanFile);
 
       const { data: { publicUrl } } = supabase.storage
         .from("avatars")

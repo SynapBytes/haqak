@@ -190,6 +190,7 @@ export type Database = {
           file_name: string
           file_path: string
           file_type: string | null
+          bucket: string
           id: string
           issue_id: string
         }
@@ -198,6 +199,7 @@ export type Database = {
           file_name: string
           file_path: string
           file_type?: string | null
+          bucket?: string
           id?: string
           issue_id: string
         }
@@ -206,6 +208,7 @@ export type Database = {
           file_name?: string
           file_path?: string
           file_type?: string | null
+          bucket?: string
           id?: string
           issue_id?: string
         }
@@ -215,6 +218,54 @@ export type Database = {
             columns: ["issue_id"]
             isOneToOne: false
             referencedRelation: "issues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moderation_evidence: {
+        Row: {
+          bucket: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_type: string | null
+          id: string
+          issue_id: string
+          uploaded_by: string
+        }
+        Insert: {
+          bucket?: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_type?: string | null
+          id?: string
+          issue_id: string
+          uploaded_by: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_type?: string | null
+          id?: string
+          issue_id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_evidence_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "issues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_evidence_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]

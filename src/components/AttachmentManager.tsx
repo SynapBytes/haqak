@@ -3,13 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Download, FileText, Image as ImageIcon, ExternalLink, Loader2, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getSignedDownloadUrl } from "@/lib/storage";
 
 interface Attachment {
   id: string;
   file_path: string;
   file_name: string;
   file_type: string | null;
-  is_verified?: boolean;
+  bucket?: string;
 }
 
 const AttachmentManager = ({ issueId }: { issueId: string }) => {
@@ -20,7 +21,7 @@ const AttachmentManager = ({ issueId }: { issueId: string }) => {
     const fetchAttachments = async () => {
       const { data, error } = await supabase
         .from("issue_attachments")
-        .select("*")
+        .select("id,file_path,file_name,file_type,bucket")
         .eq("issue_id", issueId);
       
       if (error) {
@@ -34,17 +35,11 @@ const AttachmentManager = ({ issueId }: { issueId: string }) => {
     fetchAttachments();
   }, [issueId]);
 
-  const handleDownload = async (path: string, fileName: string) => {
+  const handleDownload = async (path: string, fileName: string, bucket?: string) => {
     try {
-      const { data, error } = await supabase.storage
-        .from("issue-attachments")
-        .download(path);
-      
-      if (error) throw error;
-
-      const url = window.URL.createObjectURL(data);
+      const signedUrl = await getSignedDownloadUrl(bucket || "issue-attachments", path, 120);
       const link = document.createElement("a");
-      link.href = url;
+      link.href = signedUrl;
       link.setAttribute("download", fileName);
       document.body.appendChild(link);
       link.click();
@@ -72,18 +67,18 @@ const AttachmentManager = ({ issueId }: { issueId: string }) => {
           >
             <div className="flex items-center gap-3 overflow-hidden">
               <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center text-accent">
-                {file.file_type.includes("image") ? <ImageIcon className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+                {file.file_type?.includes("image") ? <ImageIcon className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
               </div>
               <div className="overflow-hidden">
                 <p className="text-xs font-medium text-foreground truncate max-w-[120px]">{file.file_name}</p>
-                <p className="text-[10px] text-muted-foreground uppercase">{file.file_type.split("/")[1]}</p>
+                <p className="text-[10px] text-muted-foreground uppercase">{file.file_type?.split("/")[1] || "file"}</p>
               </div>
             </div>
             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={() => handleDownload(file.file_path, file.file_name)}
+                onClick={() => handleDownload(file.file_path, file.file_name, file.bucket)}
                 className="w-8 h-8 rounded-full hover:bg-accent/10 hover:text-accent"
               >
                 <Download className="w-4 h-4" />

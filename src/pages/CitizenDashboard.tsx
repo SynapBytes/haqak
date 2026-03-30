@@ -33,6 +33,7 @@ import { ALLOWED_FILE_TYPES } from "@/constants/uploadConstraints";
 import { useCsrfToken } from "@/hooks/useCsrfToken";
 import { hashFile } from "@/lib/fileIntegrityService";
 import { dispatchNotification } from "@/lib/notifications";
+import { ATTACHMENTS_BUCKET, buildIssueAttachmentPath, uploadIssueAttachment } from "@/lib/storage";
 
 const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitation", "education", "electricity", "other"] as const;
 
@@ -145,12 +146,11 @@ const CitizenDashboard = () => {
       // ── FIX #4: Compute SHA-256 hash BEFORE upload ───────────────────────────
       const preHash = await hashFile(file);
 
-      const ext = file.name.split(".").pop();
-      const path = `${user!.id}/${issueId}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("issue-attachments")
-        .upload(path, file);
-      if (uploadError) {
+      let path: string;
+      try {
+        path = buildIssueAttachmentPath(user!.id, issueId, file.name);
+        await uploadIssueAttachment(path, file);
+      } catch (uploadError) {
         console.error("Upload error:", uploadError);
         continue;
       }
@@ -170,6 +170,7 @@ const CitizenDashboard = () => {
 
       await supabase.from("issue_attachments").insert({
         issue_id: issueId,
+        bucket: ATTACHMENTS_BUCKET,
         file_path: path,
         file_name: file.name,
         file_type: file.type,
