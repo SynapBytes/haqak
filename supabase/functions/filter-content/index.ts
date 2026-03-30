@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
+import { analyzeImageSafety } from "../shared/ai-service.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -111,59 +111,35 @@ serve(async (req) => {
     result.isCollective = detectCollectiveIssue(combinedText);
 
     // --- Image filtering (if images provided) ---
+    let imageAnalysisMeta;
+
     if (imageUrls && Array.isArray(imageUrls) && imageUrls.length > 0) {
-      const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-      
-      if (GEMINI_API_KEY) {
-        for (const imageUrl of imageUrls) {
-          try {
-            // Use Gemini Vision API to analyze image
-            const validatedUrl = buildValidatedUrl(imageUrl);
-            const imageResponse = await fetch(validatedUrl);
-            if (!imageResponse.ok) continue;
+      for (const imageUrl of imageUrls) {
+        try {
+          const validatedUrl = buildValidatedUrl(imageUrl);
+          const imageResponse = await fetch(validatedUrl);
+          if (!imageResponse.ok) continue;
 
-            const imageBuffer = await imageResponse.arrayBuffer();
-            const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+          const imageBuffer = await imageResponse.arrayBuffer();
+          const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+          const mimeType = imageResponse.headers.get("content-type") || "image/jpeg";
 
-            const visionResponse = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  contents: [{
-                    role: "user",
-                    parts: [
-                      { text: "هل تحتوي هذه الصورة على محتوى جنسي أو عنيف أو مسيء؟ أجب بـ 'نعم' أو 'لا' فقط." },
-                      {
-                        inlineData: {
-                          mimeType: "image/jpeg",
-                          data: base64Image,
-                        },
-                      },
-                    ],
-                  }],
-                }),
-              }
-            );
+          const { flagged, meta } = await analyzeImageSafety(base64Image, mimeType);
+          imageAnalysisMeta = meta;
 
-            const visionData = await visionResponse.json();
-            const visionText = visionData.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-            if (visionText.includes("نعم") || visionText.includes("yes") || visionText.includes("Yes")) {
-              result.isClean = false;
-              result.reason = "الصورة المرفقة تحتوي على محتوى مسيء أو غير لائق";
-              break;
-            }
-          } catch (imageError) {
-            console.error("Image analysis error:", imageError);
-            // Continue with other images if one fails
+          if (flagged) {
+            result.isClean = false;
+            result.reason = "الصورة المرفقة تحتوي على محتوى مسيء أو غير لائق";
+            break;
           }
+        } catch (imageError) {
+          console.error("Image analysis error:", imageError);
+          // Continue with other images if one fails
         }
       }
     }
 
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify({ ...result, ai_meta: imageAnalysisMeta }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 

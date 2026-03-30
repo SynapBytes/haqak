@@ -3,7 +3,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 const RATE_LIMIT_WINDOW_MINUTES = 1;
 const RATE_LIMIT_MAX = 100;
 
-export const rateLimiter = async (supabase: any, userId: string, path: string) => {
+export const rateLimiter = async (
+  supabase: any,
+  userId: string,
+  path: string,
+  ipAddress = "unknown",
+  responseStatus = 200,
+) => {
   const now = new Date();
   const windowStart = new Date(now.getTime() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000);
 
@@ -30,7 +36,7 @@ export const rateLimiter = async (supabase: any, userId: string, path: string) =
   await supabase.from('rate_limit_logs').insert({
     user_id: userId,
     request_path: path,
-    response_status: 200, // Assuming success for now
-    ip_address: '0.0.0.0' // Placeholder, should be passed from the caller
+    response_status: responseStatus,
+    ip_address: ipAddress || 'unknown'
   });
 };

@@ -85,10 +85,17 @@ cp .env.example .env
   - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
   - `TURNSTILE_SECRET_KEY` (required in production; set `ENVIRONMENT=development` only if you intentionally allow local dev bypass)
   - Push: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, optional `VAPID_SUBJECT`
-  - Optional AI: `GEMINI_API_KEY`
+- AI (server-side only): `OPENAI_API_KEY` (text), optional `OPENAI_MODEL`/`OPENAI_BASE_URL`
+- Vision safety (optional): `GEMINI_API_KEY` (used only for image moderation)
   - Twilio (if SMS is enabled): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
   - Optional SMS locale: `TWILIO_DEFAULT_COUNTRY_CODE` (defaults to `+20`)
   - Email (Resend): `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
+
+### AI provider strategy (server-only)
+- Text drafting/summarization/classification runs through the shared Edge AI layer using OpenAI chat completions (no client keys).
+- Image/vision checks use Gemini only when inline image data is provided (e.g., attachment moderation); otherwise rule-based filters are applied.
+- All AI endpoints are authenticated, reuse the shared rate limiter (`rate_limit_logs`), and return `ai_meta` (provider/model/timestamp) for auditability.
+- Supported tasks today: issue triage/classification, user-report summarization, assistant replies (legal/ops), and short admin summaries. Extend by adding server-side functions that call the shared AI service—never from the client.
 
 ### Notification triggers (server-side `dispatch-notification`)
 - **Issue submitted:** notifies the citizen (confirmation) and the assigned MP (if provided).
