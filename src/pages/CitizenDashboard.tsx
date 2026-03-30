@@ -32,6 +32,7 @@ import { validateBeforeUpload, validateNewFiles } from "@/lib/fileValidation";
 import { ALLOWED_FILE_TYPES } from "@/constants/uploadConstraints";
 import { useCsrfToken } from "@/hooks/useCsrfToken";
 import { hashFile } from "@/lib/fileIntegrityService";
+import { dispatchNotification } from "@/lib/notifications";
 
 const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitation", "education", "electricity", "other"] as const;
 
@@ -279,6 +280,22 @@ const CitizenDashboard = () => {
 
       if (files.length > 0) {
         await uploadFiles(insertedIssue.id);
+      }
+
+      // Notify citizen and assigned MP (if provided)
+      await dispatchNotification({
+        recipients: [user.id],
+        issueId: insertedIssue.id,
+        event: "issue_submitted",
+      });
+
+      if (assignedMpId) {
+        await dispatchNotification({
+          recipients: [assignedMpId],
+          issueId: insertedIssue.id,
+          event: "issue_assigned",
+          actorName: senderName || undefined,
+        });
       }
 
       toast.success(t("dashboard.issue_submitted"));

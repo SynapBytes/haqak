@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { sendPushToUser } from "@/lib/pushNotifications";
+import { dispatchNotification } from "@/lib/notifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -171,12 +171,12 @@ const MPDashboard = () => {
       const { data: issueData } = await supabase.from("issues").select("user_id, title").eq("id", selectedIssue.id).single();
       if (issueData) {
         const statusLabel = newStatus === "resolved" ? t("mp_dashboard.resolved") : newStatus === "in-progress" ? t("mp_dashboard.in_progress") : t("mp_dashboard.received");
-        const notifMessage = `${issueData.title}: ${actionNote || statusLabel}`;
-        await supabase.from("notifications").insert({
-          user_id: issueData.user_id, title: statusLabel,
-          message: notifMessage, issue_id: selectedIssue.id,
+        await dispatchNotification({
+          recipients: [issueData.user_id],
+          issueId: selectedIssue.id,
+          event: "status_changed",
+          status: statusLabel,
         });
-        sendPushToUser(issueData.user_id, statusLabel, notifMessage, { issue_id: selectedIssue.id });
       }
 
       toast.success(t("mp_dashboard.status_updated"));

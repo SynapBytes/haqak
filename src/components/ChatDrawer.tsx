@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { sendPushToUser } from "@/lib/pushNotifications";
+import { dispatchNotification } from "@/lib/notifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,8 +88,12 @@ const ChatDrawer = ({ issueId, issueTitle, citizenUserId, citizenPhone, isMP, on
       setConversationId(data.id);
       setIsClosed(false);
       toast.success(t("chat.started"));
-      await supabase.from("notifications").insert({ user_id: citizenUserId, title: t("chat.new_chat_notif"), message: t("chat.new_chat_body", { title: issueTitle }), issue_id: issueId });
-      sendPushToUser(citizenUserId, t("chat.new_chat_notif"), t("chat.new_chat_body", { title: issueTitle }), { issue_id: issueId });
+      await dispatchNotification({
+        recipients: [citizenUserId],
+        issueId,
+        event: "moderation_update",
+        message: t("chat.new_chat_body", { title: issueTitle }),
+      });
     } catch (err: any) {
       if (err.message?.includes("unique")) { toast.error(t("chat.exists")); } else { toast.error(t("chat.error_start")); }
     } finally { setSending(false); }

@@ -79,6 +79,14 @@ cp .env.example .env
   - Push: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, optional `VAPID_SUBJECT`
   - Optional AI: `GEMINI_API_KEY`
   - Twilio (if SMS is enabled): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
+  - Optional SMS locale: `TWILIO_DEFAULT_COUNTRY_CODE` (defaults to `+20`)
+  - Email (Resend): `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
+
+### Notification triggers (server-side `dispatch-notification`)
+- **Issue submitted:** notifies the citizen (confirmation) and the assigned MP (if provided).
+- **Issue assigned / status changed:** notifies the citizen with the latest status.
+- **Admin approval/rejection:** notifies the MP applicant about the decision.
+- **Moderation/chat updates:** reusable for targeted updates where `message` is provided.
 
 **DNS (Namecheap → Vercel)**
 - Apex (`haqak.org`): A record → `76.76.21.21` (Vercel)

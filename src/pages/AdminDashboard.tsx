@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import { AppRole, resolvePrimaryRole } from "@/constants/roles";
+import { dispatchNotification } from "@/lib/notifications";
 
 interface UserProfile {
   id: string;
@@ -84,6 +85,11 @@ const AdminDashboard = () => {
       toast.error(t("admin_dashboard.error"));
     } else {
       toast.success(approve ? t("admin_dashboard.mp_approved") : t("admin_dashboard.mp_revoked"));
+      await dispatchNotification({
+        recipients: [userId],
+        event: "admin_decision",
+        reason: approve ? "approved" : "rejected",
+      });
       fetchData();
     }
     setApproving(null);
