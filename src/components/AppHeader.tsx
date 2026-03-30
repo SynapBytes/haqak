@@ -7,6 +7,19 @@ import { useTranslation } from "react-i18next";
 import NotificationBell from "./NotificationBell";
 import { useState } from "react";
 
+type SignInCTAProps = { label: string; className?: string; fullWidth?: boolean; onClick?: () => void };
+
+const SignInCTAButton = ({ label, className, fullWidth = false, onClick }: SignInCTAProps) => (
+  <Link to="/auth" className={className} onClick={onClick}>
+    <Button
+      size="sm"
+      className={`gap-2 bg-accent text-accent-foreground hover:bg-accent/90 shadow-md ${fullWidth ? "w-full justify-start" : ""}`}
+    >
+      <LogIn className="w-4 h-4" /> {label}
+    </Button>
+  </Link>
+);
+
 const AppHeader = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -25,10 +38,8 @@ const AppHeader = () => {
   const toggleLang = () => {
     const newLang = i18n.language === "ar" ? "en" : "ar";
     i18n.changeLanguage(newLang);
-    localStorage.setItem("lang", newLang);
-    document.documentElement.dir = newLang === "ar" ? "rtl" : "ltr";
-    document.documentElement.lang = newLang;
   };
+  // Language change side-effects (dir/lang/localStorage) are handled globally in src/i18n/index.ts
 
   const getLangLabel = () => {
     return i18n.language === "ar" ? "Switch to English" : "التبديل للعربية";
@@ -116,11 +127,7 @@ const AppHeader = () => {
               </Button>
             </div>
           ) : (
-            <Link to="/auth" className="hidden md:block">
-              <Button size="sm" className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
-                <LogIn className="w-4 h-4" /> {t("nav.login")}
-              </Button>
-            </Link>
+            <SignInCTAButton label={t("nav.login")} className="hidden md:block" />
           )}
 
           <button
@@ -183,11 +190,7 @@ const AppHeader = () => {
               </Button>
             </>
           ) : (
-            <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-              <Button size="sm" className="w-full justify-start gap-2 bg-accent text-accent-foreground">
-                <LogIn className="w-4 h-4" /> {t("nav.login")}
-              </Button>
-            </Link>
+            <SignInCTAButton label={t("nav.login")} className="block" fullWidth onClick={() => setMobileMenuOpen(false)} />
           )}
         </div>
       )}

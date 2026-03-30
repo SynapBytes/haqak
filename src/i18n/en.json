@@ -13,8 +13,8 @@
   },
   "hero": {
     "badge": "Egypt's First Civic Communication Platform",
-    "title_1": "Your Voice Reaches.",
-    "title_2": "Your Rights Realized.",
+    "title_1": "Civic Communication for Egypt.",
+    "title_2": "Direct Parliament Connection.",
     "subtitle": "Haqak connects citizens directly with members of parliament — submit your issue, track its resolution, and confirm the outcome. Everything is digital, transparent, and secure.",
     "cta_citizen": "Submit Your Issue Now",
     "cta_mp": "MP Login",
@@ -434,18 +434,97 @@
     "no_data": "No data yet"
   },
   "privacy_policy": {
-    "title": "Privacy Policy",
+    "title": "Privacy Policy for Civic Communication",
     "subtitle": "This page explains how we handle your data when using Haqak, and what your rights and data protection mechanisms are.",
     "badge": "Privacy Policy",
     "see_also": "You can also view",
-    "terms_link": "Terms of Service"
+    "terms_link": "Terms of Service",
+    "sections": [
+      {
+        "icon": "alert",
+        "title": "Important Notice",
+        "content": "The application is not an official government entity. It is a civic communication platform between citizens and representatives. Its purpose is to organize and clarify follow-up, not to replace official government channels."
+      },
+      {
+        "icon": "data",
+        "title": "Data We Collect",
+        "content": "We may collect your name, phone number, email, account details, complaint information, attachments you upload, and limited technical data needed to improve performance and user experience."
+      },
+      {
+        "icon": "eye",
+        "title": "How We Use Data",
+        "content": "Data is used to manage accounts, improve the service, route issues to relevant members of parliament, send notifications, and streamline follow-up for clarity and efficiency."
+      },
+      {
+        "icon": "lock",
+        "title": "Data Protection",
+        "content": "We commit to protecting user data and not sharing it with third parties without explicit consent unless legally required. We apply appropriate technical and organizational measures to secure stored and processed data."
+      },
+      {
+        "icon": "user",
+        "title": "Citizen Phone Privacy",
+        "content": "Citizen phone numbers are not publicly displayed in the platform. They are shared only with the relevant member of parliament when direct contact is needed for the submitted issue."
+      },
+      {
+        "icon": "bell",
+        "title": "Notifications & Communication",
+        "content": "We may use contact details to send critical updates about your case status or account and policy changes, keeping you informed about your request."
+      },
+      {
+        "icon": "trash",
+        "title": "User Rights",
+        "content": "You can request to edit or delete your data and can request account closure in line with platform policies. For any privacy or data protection inquiries, contact: admin@haqak.org"
+      }
+    ]
   },
   "terms_of_service": {
-    "title": "Terms of Service",
+    "title": "Civic Communication Terms of Service",
     "subtitle": "Please read these terms carefully before using Haqak, as they govern how you use the app and its limitations.",
     "badge": "Terms of Service",
     "see_also": "You can also view",
-    "privacy_link": "Privacy Policy"
+    "privacy_link": "Privacy Policy",
+    "sections": [
+      {
+        "icon": "alert",
+        "title": "Important Notice",
+        "content": "The app is not an official government channel. It is a digital civic platform connecting citizens and representatives. Using the app means you accept these terms and conditions."
+      },
+      {
+        "icon": "scale",
+        "title": "Service Nature",
+        "content": "The app acts as a digital intermediary between citizens and members of parliament to facilitate issue submission and follow-up. It does not guarantee specific outcomes or obligate MPs to take certain actions."
+      },
+      {
+        "icon": "shield",
+        "title": "Lawful Use",
+        "content": "You must use the app legally and honestly, providing accurate information and avoiding misleading, unlawful, or harmful activity to others or public entities."
+      },
+      {
+        "icon": "ban",
+        "title": "Prohibited Content",
+        "content": "It is prohibited to submit abusive, defamatory, threatening, hateful, deliberately false, or inappropriate content, or anything that violates law or public morals."
+      },
+      {
+        "icon": "users",
+        "title": "MP Responsibility",
+        "content": "Members of parliament are not obligated to solve every issue submitted. Decisions and handling approaches remain within their own authority and discretion."
+      },
+      {
+        "icon": "gavel",
+        "title": "Platform Rights",
+        "content": "The platform may review, hide, or remove violating content and may suspend or deactivate accounts that breach these terms or harm users or service integrity."
+      },
+      {
+        "icon": "file",
+        "title": "Disclaimer",
+        "content": "The app is provided as-is without explicit or implied warranties. The platform is not liable for non-responses from MPs or for actions taken outside the platform."
+      },
+      {
+        "icon": "contact",
+        "title": "Official Contact",
+        "content": "For any inquiries about terms, usage, or partnerships, reach the project team at: team@haqak.org"
+      }
+    ]
   },
   "not_found": {
     "title": "Page Not Found",

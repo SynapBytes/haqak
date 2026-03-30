@@ -25,6 +25,7 @@ import egyptianAnkh from "@/assets/egyptian-ankh.webp";
 import egyptianNefertiti from "@/assets/egyptian-nefertiti.webp";
 import ornament1 from "@/assets/egyptian-ornament-1.webp";
 import { validateEgyptianId, extractEgyptianIdInfo } from "@/lib/egyptianIdValidation";
+import { cn } from "@/lib/utils";
 
 type AuthMode = "login" | "login-otp" | "signup-citizen" | "signup-citizen-otp" | "signup-mp" | "signup-mp-otp" | "forgot-password" | "forgot-password-otp";
 
@@ -525,9 +526,9 @@ const Auth = () => {
                         <Phone className="w-4 h-4" />
                         {t("auth.phone")}
                       </label>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-center">
                         <Select value={countryCode} onValueChange={setCountryCode} disabled={loading}>
-                          <SelectTrigger className="w-24">
+                          <SelectTrigger className="w-full sm:w-28">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -546,7 +547,11 @@ const Auth = () => {
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           disabled={loading}
-                          className={`flex-1 ${phoneError ? "border-destructive" : ""}`}
+                          className={cn(
+                            "flex-1 text-center sm:text-left",
+                            "min-w-[200px] sm:min-w-[240px]",
+                            phoneError && "border-destructive"
+                          )}
                         />
                       </div>
                       {phoneError && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {phoneError}</p>}

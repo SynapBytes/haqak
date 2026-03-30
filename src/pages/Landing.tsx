@@ -162,14 +162,15 @@ const HeroInfoWindow = () => {
         {/* Header area */}
         <div className="px-6 pt-5 pb-4">
           <div className="flex items-center gap-3 mb-1">
-            {/* Egypt eagle icon */}
+            {/* Civic crest icon */}
             <motion.div
               initial={{ scale: 0, rotate: -20 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ delay: 0.7, type: "spring", stiffness: 200 }}
-              className="w-10 h-10 rounded-xl bg-gradient-to-br from-warning/20 to-warning/5 flex items-center justify-center border border-warning/20"
+              className="w-10 h-10 rounded-xl bg-gradient-to-br from-warning/20 to-warning/5 flex items-center justify-center border border-warning/20 text-warning"
+              aria-hidden="true"
             >
-              <span className="text-xl">🦅</span>
+              <Building2 className="w-5 h-5" />
             </motion.div>
             <div className="flex-1 min-w-0">
               <motion.h3
