@@ -139,8 +139,8 @@ const MPDashboard = () => {
   };
 
   const fetchResponses = async (issueId: string) => {
-    const { data } = await supabase.from("mp_responses").select("*").eq("issue_id", issueId).order("created_at", { ascending: false });
-    if (data) setMpResponses(data);
+    // mp_responses table not yet created
+    setMpResponses([]);
   };
 
   const openIssueDetail = (issue: Issue) => {
