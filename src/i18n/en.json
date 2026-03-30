@@ -245,7 +245,15 @@
     "filter_banned": "Banned",
     "filter_governorate": "Governorate",
     "all_governorates": "All Governorates",
-    "search_issues": "Search issues..."
+    "search_issues": "Search issues...",
+    "ban": "Temp Ban",
+    "unban": "Unban",
+    "ban_confirm_title": "Confirm Temporary Ban",
+    "ban_confirm_message": "This user will be banned for 7 days and prevented from submitting issues:",
+    "unban_confirm_title": "Confirm Unban",
+    "unban_confirm_message": "This user will be immediately unbanned:",
+    "user_banned": "User temporarily banned",
+    "user_unbanned": "User ban removed"
   },
   "profile": {
     "title": "Profile",

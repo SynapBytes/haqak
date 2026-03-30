@@ -52,6 +52,7 @@ const AdminDashboard = () => {
   const [approving, setApproving] = useState<string | null>(null);
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
+  const [banningUser, setBanningUser] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -133,6 +134,27 @@ const AdminDashboard = () => {
       toast.error(err.message || t("admin_dashboard.delete_error"));
     }
     setDeletingUser(null);
+  };
+
+  const BAN_DURATION_DAYS = 7;
+
+  const handleBanUser = async (userId: string, ban: boolean) => {
+    setBanningUser(userId);
+    const bannedUntil = ban
+      ? new Date(Date.now() + BAN_DURATION_DAYS * 24 * 60 * 60 * 1000).toISOString()
+      : null;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ banned_until: bannedUntil })
+      .eq("user_id", userId);
+    if (error) {
+      toast.error(t("admin_dashboard.error"));
+    } else {
+      toast.success(ban ? t("admin_dashboard.user_banned") : t("admin_dashboard.user_unbanned"));
+      analytics.track(ban ? "admin_banned_user" : "admin_unbanned_user");
+      fetchData();
+    }
+    setBanningUser(null);
   };
 
   // Gather unique governorates for filter
@@ -372,6 +394,48 @@ const AdminDashboard = () => {
                         </Button>
                       </>
                     )}
+
+                    {/* Ban / Unban */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="ghost"
+                          className={`h-9 px-3 text-xs rounded-xl ${isBanned(user) ? "text-success hover:bg-success/10" : "text-warning hover:bg-warning/10"}`}
+                          disabled={banningUser === user.user_id}>
+                          {banningUser === user.user_id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : isBanned(user) ? (
+                            t("admin_dashboard.unban")
+                          ) : (
+                            t("admin_dashboard.ban")
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            {isBanned(user) ? t("admin_dashboard.unban_confirm_title") : t("admin_dashboard.ban_confirm_title")}
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {isBanned(user)
+                              ? t("admin_dashboard.unban_confirm_message")
+                              : t("admin_dashboard.ban_confirm_message")}
+                            <br />
+                            <strong>{user.full_name}</strong> — {user.phone}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleBanUser(user.user_id, !isBanned(user))}
+                            className={isBanned(user)
+                              ? "bg-success text-white hover:bg-success/90"
+                              : "bg-warning text-white hover:bg-warning/90"}
+                          >
+                            {isBanned(user) ? t("admin_dashboard.unban") : t("admin_dashboard.ban")}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
 
                     {/* Delete Account */}
                     <AlertDialog>

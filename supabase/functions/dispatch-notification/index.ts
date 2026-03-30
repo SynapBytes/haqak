@@ -226,14 +226,6 @@ serve(async (req) => {
         );
       }
 
-      const isIssueParticipant = issueData.user_id === user.id || issueData.assigned_mp_id === user.id;
-      if (!isAdminOrModerator && !isIssueParticipant) {
-        return new Response(
-          JSON.stringify({ error: "Forbidden" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-
       issueTitle = issueData.title;
       const allowedRecipients = buildParticipantSet(issueData.user_id, issueData.assigned_mp_id);
       const isIssueParticipant = allowedRecipients.has(user.id);
@@ -271,6 +263,8 @@ serve(async (req) => {
     const profiles = (profileData ?? []) as ProfileContact[];
 
     const eventName = event;
+    // Idempotency: 1-hour window per (event, recipient, issue)
+    const hourSlot = Math.floor(Date.now() / 3_600_000);
 
     for (const recipient of recipients) {
       const profile = profiles.find((p) => p.user_id === recipient);
@@ -284,19 +278,32 @@ serve(async (req) => {
         console.error("Failed to fetch user email", err);
       }
 
-      await supabase
+      const dedupKey = `${eventName}:${recipient}:${issueId ?? ""}:${hourSlot}`;
+      const { data: notifData, error: notifError } = await supabase
         .from("notifications")
-        .insert({ user_id: recipient, title: content.title, message: content.body, issue_id: issueId })
+        .insert({ user_id: recipient, title: content.title, message: content.body, issue_id: issueId, dedup_key: dedupKey })
         .select("id")
-        .single()
-        .catch((err) => console.error(`Failed to insert notification for ${recipient} (${eventName})`, err));
+        .maybeSingle();
+
+      if (notifError) {
+        // 23505 = unique_violation: dedup_key already exists, skip this window
+        if (notifError.code === "23505") {
+          // Unique constraint violation: already sent in this window — skip external delivery
+          deliveryResults[`${recipient}-dedup`] = { skipped: true, reason: "duplicate_in_window" };
+          continue;
+        }
+        console.error(`Failed to insert notification for ${recipient} (${eventName})`, notifError);
+      }
+
+      const notifId: string | undefined = notifData?.id;
+      const recipientResults: Record<string, DeliveryResult> = {};
 
       if (enabledChannels.has("email") && email) {
-        deliveryResults[`${recipient}-email`] = await sendEmail(email, content.title, content.body);
+        recipientResults[`${recipient}-email`] = await sendEmail(email, content.title, content.body);
       }
 
       if (enabledChannels.has("sms") && phone) {
-        deliveryResults[`${recipient}-sms`] = await sendSms(phone, content.body);
+        recipientResults[`${recipient}-sms`] = await sendSms(phone, content.body);
       }
 
       if (enabledChannels.has("push")) {
@@ -305,15 +312,36 @@ serve(async (req) => {
             body: { user_id: recipient, title: content.title, body: content.body, data: { issue_id: issueId } },
           });
           if (pushError) {
-            deliveryResults[`${recipient}-push`] = { success: false, error: pushError.message };
+            recipientResults[`${recipient}-push`] = { success: false, error: pushError.message };
           } else {
-            deliveryResults[`${recipient}-push`] = { success: true };
+            recipientResults[`${recipient}-push`] = { success: true };
           }
         } catch (err) {
           console.error("Push invocation error:", err);
-          deliveryResults[`${recipient}-push`] = { success: false, error: String(err) };
+          recipientResults[`${recipient}-push`] = { success: false, error: String(err) };
         }
       }
+
+      // Audit: log each notification dispatch to the audit trail
+      // A result is considered a failure if success is explicitly false OR if the
+      // result has an error property (covers cases where success field is absent).
+      const anyFailure = Object.values(recipientResults).some(
+        (r) => r.success === false || (r.error !== undefined && !r.skipped),
+      );
+      await supabase
+        .from("audit_logs")
+        .insert({
+          user_id: user.id,
+          action: "notification_dispatched",
+          entity_type: "notification",
+          entity_id: notifId ?? null,
+          new_values: { event: eventName, recipient, issue_id: issueId ?? null, channels: Array.from(enabledChannels) },
+          context: recipientResults,
+          status: anyFailure ? "failure" : "success",
+        })
+        .catch((err) => console.error("Audit log insert failed", err));
+
+      Object.assign(deliveryResults, recipientResults);
     }
 
     return new Response(

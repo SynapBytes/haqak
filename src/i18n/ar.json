@@ -248,7 +248,15 @@
     "filter_banned": "محظور",
     "filter_governorate": "المحافظة",
     "all_governorates": "كل المحافظات",
-    "search_issues": "بحث في المشاكل..."
+    "search_issues": "بحث في المشاكل...",
+    "ban": "حظر مؤقت",
+    "unban": "رفع الحظر",
+    "ban_confirm_title": "تأكيد الحظر المؤقت",
+    "ban_confirm_message": "سيتم حظر هذا المستخدم لمدة 7 أيام وسيُمنع من نشر القضايا:",
+    "unban_confirm_title": "تأكيد رفع الحظر",
+    "unban_confirm_message": "سيتم رفع الحظر عن هذا المستخدم فوراً:",
+    "user_banned": "تم حظر المستخدم مؤقتاً",
+    "user_unbanned": "تم رفع الحظر عن المستخدم"
   },
   "profile": {
     "title": "الملف الشخصي",

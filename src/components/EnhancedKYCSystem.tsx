@@ -224,7 +224,8 @@ const EnhancedKYCSystem = ({ onVerified }: { onVerified: () => void }) => {
           is_approved: true,
         }).eq("user_id", user.id);
 
-        // KYC audit logging – audit_logs table not yet created
+        // DB trigger `audit_profile_approval_change` automatically logs the
+        // is_approved change to audit_logs; no manual insert needed here.
         console.log("KYC verification completed for user", user.id);
       }
 
