@@ -1,6 +1,6 @@
 {
   "project_name": "Haqak",
-  "project_domain": "www.haqak.com",
+  "project_domain": "haqak.org",
   "cib_bank_account": {
     "account_number": "[YOUR_CIB_ACCOUNT_NUMBER]",
     "account_holder": "[YOUR_COMPANY_NAME]",

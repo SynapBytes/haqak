@@ -58,6 +58,33 @@ cp .env.example .env
 
 ---
 
+## Production deployment (Vercel + Namecheap)
+
+**Build settings (Vercel)**
+- Framework preset: **Vite**
+- Build command: `npm run build`
+- Output directory: `dist`
+- Root directory: repository root
+- SPA routing: handled by `vercel.json` rewrite to `/index.html`
+
+**Required environment variables**
+- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- `VITE_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`
+- `VITE_VAPID_PUBLIC_KEY`
+- Twilio (if SMS is enabled): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
+- Optional: `VITE_ENV` (set to `production` on Vercel)
+
+**DNS (Namecheap → Vercel)**
+- Apex (`haqak.org`): A record → `76.76.21.21` (Vercel)
+- `www.haqak.org`: CNAME → `cname.vercel-dns.com`
+- Add both domains in the Vercel project and request HTTPS; Vercel will issue certificates automatically.
+
+**Cache / PWA**
+- Service worker is configured to `skipWaiting`/`clientsClaim` and `cleanupOutdatedCaches` to avoid stale deploys.
+- `vercel.json` sets `Cache-Control: no-cache` for `index.html`, `sw.js`, `registerSW.js`, and the manifest so new releases reach users immediately.
+
+---
+
 ## التوثيق (Docs)
 
 - العربي (الأساسي): [`docs/README.md`](./docs/README.md)
