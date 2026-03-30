@@ -94,8 +94,6 @@ export const ProjectCrowdfunding: React.FC = () => {
     setSubmittingContribution(false);
   };
       
-      // Update local state
-  };
 
   const daysRemaining = (deadline: string) => {
     const days = Math.ceil((new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));

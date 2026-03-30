@@ -70,58 +70,9 @@ export const ProjectVotingSystem: React.FC = () => {
   }, []);
 
   const fetchVotingProjects = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch projects in voting phase
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('project_proposals')
-        .select('*')
-        .eq('status', 'voting_active')
-        .gt('voting_deadline', new Date().toISOString())
-        .order('created_at', { ascending: false });
-
-      if (projectsError) throw projectsError;
-
-      // Fetch vote counts and user's votes
-      const projectsWithVotes = await Promise.all(
-        (projectsData || []).map(async (project) => {
-          const { data: votesData } = await supabase
-            .from('project_votes')
-            .select('vote_type')
-            .eq('project_id', project.id);
-
-          const upvotes = votesData?.filter(v => v.vote_type === 'upvote').length || 0;
-          const downvotes = votesData?.filter(v => v.vote_type === 'downvote').length || 0;
-
-          let userVote = null;
-          if (user) {
-            const { data: userVoteData } = await supabase
-              .from('project_votes')
-              .select('vote_type')
-              .eq('project_id', project.id)
-              .eq('user_id', user.id)
-              .single();
-
-            userVote = userVoteData?.vote_type || null;
-          }
-
-          return {
-            ...project,
-            upvotes,
-            downvotes,
-            userVote
-          };
-        })
-      );
-
-      setProjects(projectsWithVotes);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-      toast.error('فشل في تحميل المشاريع');
-    } finally {
-      setLoading(false);
-    }
+    // Tables project_proposals/project_votes not yet created
+    setProjects([]);
+    setLoading(false);
   };
 
   const handleVote = async (projectId: string, voteType: 'upvote' | 'downvote') => {
