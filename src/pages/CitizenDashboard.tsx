@@ -647,6 +647,7 @@ const CitizenDashboard = () => {
           issueId={chatIssue.id}
           issueTitle={chatIssue.title}
           citizenUserId={user?.id || ""}
+          isMP={false}
           onClose={() => setChatIssue(null)}
         />
       )}
