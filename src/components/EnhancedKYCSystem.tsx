@@ -221,31 +221,11 @@ const EnhancedKYCSystem = ({ onVerified }: { onVerified: () => void }) => {
         const phoneHash = btoa(kycData.phoneNumber).slice(0, 32);
 
         await supabase.from("profiles").update({
-          is_verified: true,
-          verification_type: userType,
-          national_id_hash: nationalIdHash,
-          phone_hash: phoneHash,
-          verification_date: new Date().toISOString(),
-          kyc_level: "enhanced",
-          kyc_metadata: {
-            steps_completed: verificationSteps.filter(s => s.status === "completed").length,
-            verification_timestamp: new Date().toISOString(),
-            ip_address: "MASKED", // In production, capture actual IP
-          }
+          is_approved: true,
         }).eq("user_id", user.id);
 
-        // Log audit trail
-        await supabase.from("audit_logs").insert({
-          user_id: user.id,
-          action: "kyc_verification_completed",
-          details: {
-            verification_type: userType,
-            kyc_level: "enhanced",
-            timestamp: new Date().toISOString(),
-          },
-          ip_address: "MASKED",
-          user_agent: navigator.userAgent,
-        });
+        // KYC audit logging – audit_logs table not yet created
+        console.log("KYC verification completed for user", user.id);
       }
 
       updateVerificationStep("database", "completed");

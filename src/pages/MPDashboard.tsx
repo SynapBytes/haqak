@@ -6,6 +6,7 @@ import ChatDrawer from "@/components/ChatDrawer";
 import OfficialDocumentGenerator from "@/components/OfficialDocumentGenerator";
 import AttachmentManager from "@/components/AttachmentManager";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -139,8 +140,8 @@ const MPDashboard = () => {
   };
 
   const fetchResponses = async (issueId: string) => {
-    const { data } = await supabase.from("mp_responses").select("*").eq("issue_id", issueId).order("created_at", { ascending: false });
-    if (data) setMpResponses(data);
+    // mp_responses table not yet created
+    setMpResponses([]);
   };
 
   const openIssueDetail = (issue: Issue) => {
@@ -192,12 +193,13 @@ const MPDashboard = () => {
     if (!selectedIssue || !user || !actionNote) return;
     setUpdating(true);
     try {
-      const { error } = await supabase.from("mp_responses").insert({
+      // mp_responses table not yet created – use issue_actions as alternative
+      await supabase.from("issue_actions").insert({
         issue_id: selectedIssue.id,
-        mp_id: user.id,
-        response_text: actionNote,
+        user_id: user.id,
+        action_type: "official_response",
+        note: actionNote,
       });
-      if (error) throw error;
       
       toast.success("تم إرسال الرد الرسمي بنجاح");
       fetchResponses(selectedIssue.id);

@@ -24,9 +24,7 @@ const IdentityVerification = ({ onVerified }: { onVerified: () => void }) => {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await supabase.from("profiles").update({
-            is_verified: true,
-            national_id_hash: btoa(nationalId), // Simulated hash
-            verification_date: new Date().toISOString()
+            is_approved: true,
           }).eq("user_id", user.id);
         }
         setStep("success");

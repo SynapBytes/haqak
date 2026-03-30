@@ -38,7 +38,8 @@ interface ProjectProposal {
 }
 
 export const ProjectVotingSystem: React.FC = () => {
-  const { user } = useAuth();
+  const { session } = useAuth();
+  const user = session?.user ?? null;
   const [projects, setProjects] = useState<ProjectProposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [votingProject, setVotingProject] = useState<string | null>(null);
@@ -69,130 +70,18 @@ export const ProjectVotingSystem: React.FC = () => {
   }, []);
 
   const fetchVotingProjects = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch projects in voting phase
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('project_proposals')
-        .select('*')
-        .eq('status', 'voting_active')
-        .gt('voting_deadline', new Date().toISOString())
-        .order('created_at', { ascending: false });
-
-      if (projectsError) throw projectsError;
-
-      // Fetch vote counts and user's votes
-      const projectsWithVotes = await Promise.all(
-        (projectsData || []).map(async (project) => {
-          const { data: votesData } = await supabase
-            .from('project_votes')
-            .select('vote_type')
-            .eq('project_id', project.id);
-
-          const upvotes = votesData?.filter(v => v.vote_type === 'upvote').length || 0;
-          const downvotes = votesData?.filter(v => v.vote_type === 'downvote').length || 0;
-
-          let userVote = null;
-          if (user) {
-            const { data: userVoteData } = await supabase
-              .from('project_votes')
-              .select('vote_type')
-              .eq('project_id', project.id)
-              .eq('user_id', user.id)
-              .single();
-
-            userVote = userVoteData?.vote_type || null;
-          }
-
-          return {
-            ...project,
-            upvotes,
-            downvotes,
-            userVote
-          };
-        })
-      );
-
-      setProjects(projectsWithVotes);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-      toast.error('فشل في تحميل المشاريع');
-    } finally {
-      setLoading(false);
-    }
+    // Tables project_proposals/project_votes not yet created
+    setProjects([]);
+    setLoading(false);
   };
 
-  const handleVote = async (projectId: string, voteType: 'upvote' | 'downvote') => {
+  const handleVote = async (_projectId: string, _voteType: 'upvote' | 'downvote') => {
     if (!user) {
       toast.error('يجب تسجيل الدخول للتصويت');
       return;
     }
-
-    setSubmittingVote(true);
-    try {
-      const project = projects.find(p => p.id === projectId);
-      if (!project) return;
-
-      // Check if user already voted
-      if (project.userVote) {
-        // Delete existing vote
-        const { error: deleteError } = await supabase
-          .from('project_votes')
-          .delete()
-          .eq('project_id', projectId)
-          .eq('user_id', user.id);
-
-        if (deleteError) throw deleteError;
-
-        // If voting for the same option, just remove the vote
-        if (project.userVote === voteType) {
-          setProjects(prev => prev.map(p => 
-            p.id === projectId 
-              ? {
-                  ...p,
-                  [voteType === 'upvote' ? 'upvotes' : 'downvotes']: Math.max(0, (voteType === 'upvote' ? p.upvotes : p.downvotes) - 1),
-                  userVote: null
-                }
-              : p
-          ));
-          toast.success('تم إلغاء تصويتك');
-          return;
-        }
-      }
-
-      // Add new vote
-      const { error: insertError } = await supabase
-        .from('project_votes')
-        .insert([
-          {
-            project_id: projectId,
-            user_id: user.id,
-            vote_type: voteType
-          }
-        ]);
-
-      if (insertError) throw insertError;
-
-      // Update local state
-      setProjects(prev => prev.map(p => 
-        p.id === projectId 
-          ? {
-              ...p,
-              upvotes: voteType === 'upvote' ? p.upvotes + 1 : (project.userVote === 'upvote' ? Math.max(0, p.upvotes - 1) : p.upvotes),
-              downvotes: voteType === 'downvote' ? p.downvotes + 1 : (project.userVote === 'downvote' ? Math.max(0, p.downvotes - 1) : p.downvotes),
-              userVote: voteType
-            }
-          : p
-      ));
-
-      toast.success(`تم تسجيل ${voteType === 'upvote' ? 'تأييدك' : 'رفضك'} للمشروع`);
-    } catch (error) {
-      console.error('Vote error:', error);
-      toast.error('حدث خطأ أثناء التصويت');
-    } finally {
-      setSubmittingVote(false);
-    }
+    // project_votes table not yet created
+    toast.info('ميزة التصويت قيد التطوير');
   };
 
   const daysRemaining = (deadline: string) => {

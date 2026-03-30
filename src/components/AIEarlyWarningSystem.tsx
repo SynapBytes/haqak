@@ -22,28 +22,9 @@ export const AIEarlyWarningSystem: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchAnomalies = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('ai_anomalies')
-          .select('*')
-          .eq('status', 'pending_alert')
-          .order('severity_score', { ascending: false });
-
-        if (error) throw error;
-        setAnomalies(data || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch anomalies');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAnomalies();
-    // Refresh every 5 minutes
-    const interval = setInterval(fetchAnomalies, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    // Table ai_anomalies not yet created – use empty mock data
+    setAnomalies([]);
+    setLoading(false);
   }, []);
 
   const getSeverityColor = (score: number): string => {

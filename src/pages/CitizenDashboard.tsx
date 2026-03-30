@@ -96,25 +96,15 @@ const CitizenDashboard = () => {
       })));
     }
     
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("reputation_points, citizen_rank")
-      .eq("user_id", user.id)
-      .single();
-    
-    if (profile) {
-      setReputation({
-        points: profile.reputation_points || 0,
-        rank: profile.citizen_rank || "مواطن جديد"
-      });
-    }
+    // reputation columns not yet in profiles table – use defaults
+    setReputation({ points: 0, rank: "مواطن جديد" });
     
     setLoading(false);
   };
 
   const fetchResponses = async (issueId: string) => {
-    const { data } = await supabase.from("mp_responses").select("*").eq("issue_id", issueId).order("created_at", { ascending: false });
-    if (data) setMpResponses(data);
+    // mp_responses table not yet created
+    setMpResponses([]);
   };
 
   useEffect(() => { fetchIssues(); }, [user]);
@@ -482,7 +472,7 @@ const CitizenDashboard = () => {
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input placeholder="حدد المنطقة أو العنوان التفصيلي" value={location} onChange={(e) => setLocation(e.target.value)} className="h-14 pl-12 rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent" />
                   </div>
-                  <LocationPicker onLocationSelect={(loc, lat, lng) => { setLocation(loc); setLatitude(lat); setLongitude(lng); }} />
+                  <LocationPicker latitude={latitude} longitude={longitude} onChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }} />
                 </div>
 
                 <div className="space-y-4">
@@ -657,6 +647,7 @@ const CitizenDashboard = () => {
           issueId={chatIssue.id}
           issueTitle={chatIssue.title}
           citizenUserId={user?.id || ""}
+          isMP={false}
           onClose={() => setChatIssue(null)}
         />
       )}

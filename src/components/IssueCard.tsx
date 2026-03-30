@@ -26,6 +26,8 @@ export interface Issue {
 interface IssueCardProps {
   issue: Issue;
   onClick?: () => void;
+  isMPView?: boolean;
+  citizenPhone?: string;
 }
 
 const IssueCard = ({ issue, onClick }: IssueCardProps) => {

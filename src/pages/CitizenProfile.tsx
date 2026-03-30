@@ -37,7 +37,7 @@ const CitizenProfile = () => {
       setLoading(true);
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("full_name, phone, avatar_url, is_verified")
+        .select("full_name, phone, avatar_url, is_approved")
         .eq("user_id", user.id)
         .single();
 
@@ -45,7 +45,7 @@ const CitizenProfile = () => {
         setFullName(profileData.full_name);
         setPhone(profileData.phone);
         setAvatarUrl(profileData.avatar_url);
-        setIsVerified(profileData.is_verified || false);
+        setIsVerified(profileData.is_approved || false);
       }
 
       const { data: issues } = await supabase
