@@ -75,76 +75,13 @@ export const ProjectVotingSystem: React.FC = () => {
     setLoading(false);
   };
 
-  const handleVote = async (projectId: string, voteType: 'upvote' | 'downvote') => {
+  const handleVote = async (_projectId: string, _voteType: 'upvote' | 'downvote') => {
     if (!user) {
       toast.error('يجب تسجيل الدخول للتصويت');
       return;
     }
-
-    setSubmittingVote(true);
-    try {
-      const project = projects.find(p => p.id === projectId);
-      if (!project) return;
-
-      // Check if user already voted
-      if (project.userVote) {
-        // Delete existing vote
-        const { error: deleteError } = await supabase
-          .from('project_votes')
-          .delete()
-          .eq('project_id', projectId)
-          .eq('user_id', user.id);
-
-        if (deleteError) throw deleteError;
-
-        // If voting for the same option, just remove the vote
-        if (project.userVote === voteType) {
-          setProjects(prev => prev.map(p => 
-            p.id === projectId 
-              ? {
-                  ...p,
-                  [voteType === 'upvote' ? 'upvotes' : 'downvotes']: Math.max(0, (voteType === 'upvote' ? p.upvotes : p.downvotes) - 1),
-                  userVote: null
-                }
-              : p
-          ));
-          toast.success('تم إلغاء تصويتك');
-          return;
-        }
-      }
-
-      // Add new vote
-      const { error: insertError } = await supabase
-        .from('project_votes')
-        .insert([
-          {
-            project_id: projectId,
-            user_id: user.id,
-            vote_type: voteType
-          }
-        ]);
-
-      if (insertError) throw insertError;
-
-      // Update local state
-      setProjects(prev => prev.map(p => 
-        p.id === projectId 
-          ? {
-              ...p,
-              upvotes: voteType === 'upvote' ? p.upvotes + 1 : (project.userVote === 'upvote' ? Math.max(0, p.upvotes - 1) : p.upvotes),
-              downvotes: voteType === 'downvote' ? p.downvotes + 1 : (project.userVote === 'downvote' ? Math.max(0, p.downvotes - 1) : p.downvotes),
-              userVote: voteType
-            }
-          : p
-      ));
-
-      toast.success(`تم تسجيل ${voteType === 'upvote' ? 'تأييدك' : 'رفضك'} للمشروع`);
-    } catch (error) {
-      console.error('Vote error:', error);
-      toast.error('حدث خطأ أثناء التصويت');
-    } finally {
-      setSubmittingVote(false);
-    }
+    // project_votes table not yet created
+    toast.info('ميزة التصويت قيد التطوير');
   };
 
   const daysRemaining = (deadline: string) => {
