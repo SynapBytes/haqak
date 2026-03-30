@@ -628,7 +628,7 @@ Sentry.init({
 - **QA Engineer:** [Name]
 
 ### Support Channels
-- 📧 Email: `team@haqak.org`
+- 📧 Support: `support@haqak.org`
 - 🐛 GitHub Issues: `SynapBytes/haqak/issues`
 
 ---

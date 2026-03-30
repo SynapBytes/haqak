@@ -404,5 +404,5 @@ const { data, error } = await supabase
 
 للمزيد من المعلومات أو الإبلاغ عن مشاكل، يرجى التواصل عبر:
 
-- البريد الإلكتروني: team@haqak.org
+- البريد الإلكتروني (الدعم والتصعيد): support@haqak.org
 - الموقع: https://www.haqak.org

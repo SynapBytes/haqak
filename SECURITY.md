@@ -13,7 +13,7 @@ Haqak is currently in **MVP / Pre-Production** stage. Security fixes are applied
 
 If you discover a security vulnerability in this project, please report it responsibly.
 
-**Contact:** [team@haqak.org](mailto:team@haqak.org)
+**Administrative/Security Contact:** [admin@haqak.org](mailto:admin@haqak.org)
 
 Please include in your report:
 - A clear description of the vulnerability

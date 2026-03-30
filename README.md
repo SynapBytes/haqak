@@ -105,4 +105,6 @@ Not specified yet.
 
 ## Contact
 
-For project inquiries, support, or collaboration, reach the team at **team@haqak.org**.
+- Official contact (partnerships & general): **team@haqak.org**
+- Support (issues, help, complaints): **support@haqak.org**
+- Administrative/legal: **admin@haqak.org**

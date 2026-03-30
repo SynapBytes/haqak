@@ -37,4 +37,5 @@ npm run dev
 
 ## Contact
 
-For inquiries, support, or collaboration: **[team@haqak.org](mailto:team@haqak.org)**
+- Official contact (partnerships & general): **[team@haqak.org](mailto:team@haqak.org)**
+- Support and issue reporting: **[support@haqak.org](mailto:support@haqak.org)**

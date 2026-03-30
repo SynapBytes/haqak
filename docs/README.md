@@ -100,4 +100,5 @@ cp .env.example .env
 
 ## التواصل
 
-للاستفسارات أو الدعم أو التعاون: **[team@haqak.org](mailto:team@haqak.org)**
+- التواصل الرسمي (الشراكات والأسئلة العامة): **[team@haqak.org](mailto:team@haqak.org)**
+- الدعم الفني والشكاوى: **[support@haqak.org](mailto:support@haqak.org)**
