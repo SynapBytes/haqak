@@ -25,6 +25,7 @@ import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { APP_CONFIG } from "@/lib/config";
 
 /* ─── Floating Particle Component ─── */
 const FloatingParticle = ({ delay, x, y, size, color }: { delay: number; x: string; y: string; size: number; color: string }) => (
@@ -241,7 +242,7 @@ const SupportForm = () => {
       setSent(true);
       setTimeout(() => setSent(false), 5000);
     } catch {
-      window.location.href = `mailto:support@haqak.app?subject=${encodeURIComponent(`${t("support.contact_us")}: ${name}`)}&body=${encodeURIComponent(message)}`;
+      window.location.href = `mailto:${APP_CONFIG.SUPPORT_EMAIL}?subject=${encodeURIComponent(`${t("support.contact_us")}: ${name}`)}&body=${encodeURIComponent(message)}`;
       toast.success(t("support.opening_email"));
     } finally {
       setSending(false);

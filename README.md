@@ -100,3 +100,9 @@ cp .env.example .env
 ## License
 
 Not specified yet.
+
+---
+
+## Contact
+
+For project inquiries, support, or collaboration, reach the team at **team@haqak.org**.
