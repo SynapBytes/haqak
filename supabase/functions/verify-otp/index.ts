@@ -35,7 +35,7 @@ function formatPhoneNumber(phone: string): string {
 function generateEmailFromPhone(phone: string): string {
   const cleaned = phone.replace(/\D/g, "");
   const timestamp = Date.now();
-  return `user_${cleaned}_${timestamp}@haqak.local`;
+  return `user_${cleaned}_${timestamp}@haqak.app`;
 }
 
 serve(async (req) => {

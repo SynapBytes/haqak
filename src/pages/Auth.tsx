@@ -25,7 +25,7 @@ import ornament2 from "@/assets/egyptian-ornament-2.webp";
 import egyptianAnkh from "@/assets/egyptian-ankh.webp";
 import egyptianNefertiti from "@/assets/egyptian-nefertiti.webp";
 import ornament1 from "@/assets/egyptian-ornament-1.webp";
-import { validateEgyptianId, extractEgyptianIdInfo } from "@/lib/egyptianIdValidation";
+import { validateEgyptianId, validateEgyptianIdWithReason, extractEgyptianIdInfo } from "@/lib/egyptianIdValidation";
 import { cn } from "@/lib/utils";
 
 type AuthMode = "login" | "login-otp" | "signup-citizen" | "signup-citizen-otp" | "signup-mp" | "signup-mp-otp" | "forgot-password" | "forgot-password-otp";
@@ -62,6 +62,7 @@ const Auth = () => {
   const [districtError, setDistrictError] = useState("");
   const [electoralError, setElectoralError] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
+  const [signupSuccessful, setSignupSuccessful] = useState(false);
 
   // Get user's location on component mount
   useEffect(() => {
@@ -116,10 +117,9 @@ const Auth = () => {
 
   useEffect(() => {
     if (nationalId && mode.includes("signup-citizen")) {
-      if (nationalId.length < 14) {
-        setNationalIdError(t("auth.national_id_incomplete"));
-      } else if (!validateEgyptianId(nationalId)) {
-        setNationalIdError(t("auth.national_id_invalid"));
+      const validation = validateEgyptianIdWithReason(nationalId);
+      if (!validation.valid) {
+        setNationalIdError(validation.reason || t("auth.national_id_invalid"));
       } else {
         const idInfo = extractEgyptianIdInfo(nationalId);
         if (idInfo && !idInfo.isEgyptian) {
@@ -259,6 +259,9 @@ const Auth = () => {
     if (msg.includes("OTP expired")) return t("auth.error_otp_expired");
     if (msg.includes("rate limit")) return t("auth.error_rate_limit");
     if (msg.includes("Too many requests")) return t("auth.error_too_many");
+    if (msg.includes("did not match the expected pattern")) return t("auth.error_pattern_mismatch");
+    if (msg.includes("Email not confirmed")) return t("auth.error_email_not_confirmed");
+    if (msg.includes("already registered") || msg.includes("already been registered")) return t("auth.error_already_registered");
     return msg;
   };
 
@@ -378,9 +381,12 @@ const Auth = () => {
         });
         if (error) throw error;
         analytics.track("signup_success", { role: signupRole });
-        toast.success(t("auth.signup_success"));
+        setSignupSuccessful(true);
         resetForm();
-        setMode("login");
+        setTimeout(() => {
+          setSignupSuccessful(false);
+          setMode("login");
+        }, 3000);
       } else if (mode === "forgot-password-otp") {
         // Reset password
         const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
@@ -434,6 +440,46 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <AppHeader />
+
+      {/* Signup success overlay */}
+      <AnimatePresence>
+        {signupSuccessful && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 flex items-center justify-center bg-black/60 z-50"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 200, damping: 18 }}
+              className="bg-card rounded-3xl p-8 text-center shadow-2xl max-w-sm mx-4"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 260, damping: 20 }}
+                className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4"
+              >
+                <CheckCircle2 className="w-12 h-12 text-green-600" />
+              </motion.div>
+              <h2 className="text-2xl font-bold text-foreground mb-2">{t("auth.signup_success_title")}</h2>
+              <p className="text-muted-foreground mb-4">{t("auth.signup_success_body")}</p>
+              <p className="text-sm text-muted-foreground">{t("auth.signup_success_redirect")}</p>
+              <div className="mt-4 h-1 bg-muted rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 3 }}
+                  className="h-full bg-green-600 rounded-full"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Egyptian decorations */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">

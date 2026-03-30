@@ -380,7 +380,11 @@
     "governorate_placeholder": "Select governorate",
     "district": "District / Section",
     "district_placeholder": "Select district or section",
-    "terms_agreement": "By signing up, you agree to our Terms of Service and Privacy Policy"
+    "terms_agreement": "By signing up, you agree to our Terms of Service and Privacy Policy",
+    "error_pattern_mismatch": "Account data error. Please verify all fields and try again",
+    "signup_success_title": "Congratulations! 🎉",
+    "signup_success_body": "Your account has been created successfully",
+    "signup_success_redirect": "Redirecting you to login..."
   },
   "mp_pending": {
     "pending_title": "Your Account is Under Review",

@@ -383,7 +383,11 @@
     "password_requirements": "يجب أن تحتوي على 8 أحرف وأرقام وحروف",
     "select_governorate": "اختر المحافظة",
     "select_district": "اختر المركز",
-    "terms_agreement": "بتسجيلك، أنت توافق على شروط الاستخدام وسياسة الخصوصية"
+    "terms_agreement": "بتسجيلك، أنت توافق على شروط الاستخدام وسياسة الخصوصية",
+    "error_pattern_mismatch": "خطأ في بيانات الحساب. تأكد من صحة جميع البيانات وحاول مرة أخرى",
+    "signup_success_title": "مبروك! 🎉",
+    "signup_success_body": "تم إنشاء حسابك بنجاح",
+    "signup_success_redirect": "سيتم نقلك لتسجيل الدخول بعد قليل..."
   },
   "mp_pending": {
     "pending_title": "حسابك قيد المراجعة",

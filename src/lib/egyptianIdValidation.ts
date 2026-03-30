@@ -17,6 +17,7 @@
  * - G: Final digit (historically used as checksum, often unreliable in data)
  */
 const CENTURY_BASE_YEARS: Record<number, number> = { 1: 1800, 2: 1900, 3: 2000 };
+const NATIONAL_ID_LENGTH = 14;
 
 export const validateEgyptianId = (id: string, currentTimestamp: number = Date.now()): boolean => {
   // Keep only digits
@@ -77,6 +78,88 @@ export const validateEgyptianId = (id: string, currentTimestamp: number = Date.n
   // digitization. Relying on it was blocking real users with valid 14-digit IDs,
   // so we intentionally accept structurally valid IDs without enforcing the digit.
   return true;
+};
+
+/**
+ * Validates Egyptian national ID and returns a specific reason for any failure.
+ * Returns { valid: true } on success, or { valid: false, reason: "<Arabic message>" } on failure.
+ */
+export const validateEgyptianIdWithReason = (
+  id: string,
+  currentTimestamp: number = Date.now(),
+): { valid: boolean; reason?: string } => {
+  const cleanId = id.replace(/\D/g, "");
+
+  if (cleanId.length === 0) {
+    return { valid: false, reason: "الرقم القومي مفقود" };
+  }
+  if (cleanId.length < NATIONAL_ID_LENGTH) {
+    return {
+      valid: false,
+      reason: `الرقم القومي ناقص — أدخل ${NATIONAL_ID_LENGTH} رقمًا (باقي ${NATIONAL_ID_LENGTH - cleanId.length})`,
+    };
+  }
+  if (cleanId.length > NATIONAL_ID_LENGTH) {
+    return { valid: false, reason: `الرقم القومي أطول من المطلوب — أدخل ${NATIONAL_ID_LENGTH} رقمًا فقط` };
+  }
+  if (!/^\d{14}$/.test(cleanId)) {
+    return { valid: false, reason: "الرقم القومي يجب أن يحتوي على أرقام فقط" };
+  }
+
+  const centuryIndicator = parseInt(cleanId[0], 10);
+  const baseYear = CENTURY_BASE_YEARS[centuryIndicator];
+  if (!baseYear) {
+    return {
+      valid: false,
+      reason: `رقم القرن غير صحيح (${cleanId[0]}) — يجب أن يبدأ الرقم القومي بـ 2 (مواليد 1900-1999) أو 3 (مواليد 2000 فأكثر)`,
+    };
+  }
+
+  const year = parseInt(cleanId.substring(1, 3), 10);
+  const month = parseInt(cleanId.substring(3, 5), 10);
+  const day = parseInt(cleanId.substring(5, 7), 10);
+  const governorate = parseInt(cleanId.substring(7, 9), 10);
+  const genderCode = parseInt(cleanId.substring(12, 13), 10);
+  const fullYear = baseYear + year;
+
+  if (month < 1 || month > 12) {
+    return {
+      valid: false,
+      reason: `شهر الميلاد غير صحيح (${month}) — يجب أن يكون بين 01 و 12`,
+    };
+  }
+
+  const date = new Date(Date.UTC(fullYear, month - 1, day));
+  if (
+    date.getUTCFullYear() !== fullYear ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return {
+      valid: false,
+      reason: `تاريخ الميلاد غير صحيح (${day}/${month}/${fullYear}) — اليوم لا يوجد في هذا الشهر`,
+    };
+  }
+
+  if (date.getTime() > currentTimestamp) {
+    return { valid: false, reason: "تاريخ الميلاد في المستقبل — تحقق من صحة الأرقام" };
+  }
+
+  if (governorate < 1 || governorate > 29) {
+    return {
+      valid: false,
+      reason: `كود المحافظة غير صحيح (${governorate}) — يجب أن يكون بين 01 و 29`,
+    };
+  }
+
+  if (genderCode < 1 || genderCode > 8) {
+    return {
+      valid: false,
+      reason: `كود الجنس غير صحيح (${genderCode}) — يجب أن يكون بين 1 و 8`,
+    };
+  }
+
+  return { valid: true };
 };
 
 /**
