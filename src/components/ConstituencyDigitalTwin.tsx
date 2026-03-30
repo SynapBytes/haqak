@@ -225,7 +225,7 @@ export const ConstituencyDigitalTwin: React.FC = () => {
                   <GraduationCap className="w-4 h-4 text-amber-500" />
                   <span className="text-sm">التعليم</span>
                 </div>
-                <Badge variant="warning" className="bg-amber-100 text-amber-700 border-amber-200 text-[10px] h-5">-25%</Badge>
+                <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-200 text-[10px] h-5">-25%</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
