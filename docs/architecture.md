@@ -54,6 +54,8 @@ Citizen
 ### 4) Transparency / Accountability Concept
 - Hash Chain: كل حدث مهم بيتسجل بـ SHA-256 hash مرتبط بالحدث اللي قبله
 - الهدف: صعّب التلاعب + اعمل audit trail واضح
+- Audit Trail: جدول `audit_logs` ملزم بـ append-only، يلتقط تغييرات الأدوار، حالات الموافقة، تغييرات حالة الشكوى، وإجراءات الإشراف على التعليقات. الكتابة تتم عبر service role أو triggers `SECURITY DEFINER` فقط، والقراءة محصورة في المدراء والمشرفين.
+- Issue status history remains in `issue_status_history` for fine-grained tracking tied إلى كل شكوى.
 
 ### 5) Optional / Feature-gated
 - AI Drafting (يتفعل حسب env/config)

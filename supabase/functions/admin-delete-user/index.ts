@@ -97,6 +97,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Record audit trail for the deletion
+    try {
+      await adminClient.from("audit_logs").insert({
+        user_id: callingUser.id,
+        action: "admin_delete_user",
+        entity_type: "user",
+        entity_id: target_user_id,
+        old_values: { user_id: target_user_id },
+        new_values: { deleted: true },
+        status: "success",
+      });
+    } catch (auditError) {
+      console.error(
+        `Failed to write audit log for user deletion ${target_user_id}:`,
+        auditError
+      );
+    }
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
