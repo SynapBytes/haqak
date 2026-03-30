@@ -34,6 +34,7 @@ import { useCsrfToken } from "@/hooks/useCsrfToken";
 import { hashFile } from "@/lib/fileIntegrityService";
 import { dispatchNotification } from "@/lib/notifications";
 import { ATTACHMENTS_BUCKET, buildIssueAttachmentPath, uploadIssueAttachment } from "@/lib/storage";
+import { analytics } from "@/lib/analytics";
 
 const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitation", "education", "electricity", "other"] as const;
 
@@ -300,6 +301,13 @@ const CitizenDashboard = () => {
       }
 
       toast.success(t("dashboard.issue_submitted"));
+      analytics.track("issue_submitted", {
+        category: finalCategory,
+        has_attachments: files.length > 0,
+        has_assigned_mp: !!assignedMpId,
+        issue_type: finalIssueType,
+        priority,
+      });
       setShowForm(false);
       setTitle("");
       setDescription("");
@@ -312,6 +320,7 @@ const CitizenDashboard = () => {
       rotateCsrf();
       fetchIssues();
     } catch (err: any) {
+      analytics.track("issue_submission_failed");
       toast.error(err.message || t("dashboard.error_submitting"));
     } finally {
       setSubmitting(false);

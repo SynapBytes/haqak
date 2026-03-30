@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 import { AppRole, resolvePrimaryRole } from "@/constants/roles";
+import { analytics } from "@/lib/analytics";
 
 interface Profile {
   id: string;
@@ -53,7 +54,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       ]);
       setProfile((profileRes.data as Profile) ?? null);
       const roles = (roleRes.data ?? []).map((r) => r.role as AppRole);
-      setRole(resolvePrimaryRole(roles));
+      const primary = resolvePrimaryRole(roles);
+      setRole(primary);
+      // Identify the user in analytics with their hashed ID and role only.
+      analytics.identify(userId, primary ?? "citizen");
     } catch {
       setProfile(null);
       setRole("citizen");
@@ -89,6 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    analytics.reset();
     setSession(null);
     setUser(null);
     setProfile(null);

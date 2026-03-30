@@ -18,6 +18,7 @@ import {
 } from "@/utils/egyptianElectoralData";
 import countryCodes from "@/data/countryCodes.json";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { analytics } from "@/lib/analytics";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
 import ornament2 from "@/assets/egyptian-ornament-2.webp";
@@ -312,6 +313,7 @@ const Auth = () => {
       return;
     }
 
+    const signupRole = mode.includes("mp") ? "mp" : "citizen";
     setOtpLoading(true);
     try {
       const response = await fetch("/.netlify/functions/verify-otp", {
@@ -330,7 +332,7 @@ const Auth = () => {
       if (!response.ok) throw new Error(data.error || "Failed to verify OTP");
 
       toast.success(t("auth.otp_verified"));
-      
+
       if (mode === "login-otp") {
         // Perform login
         const { error } = await supabase.auth.signInWithPassword({
@@ -338,6 +340,7 @@ const Auth = () => {
           password: password,
         });
         if (error) throw error;
+        analytics.track("login_success");
         const redirect = await getRoleRedirect(data.userId);
         navigate(redirect);
       } else if (mode.includes("signup")) {
@@ -350,7 +353,7 @@ const Auth = () => {
               full_name: fullName,
               phone,
               countryCode,
-              role: mode.includes("mp") ? "mp" : "citizen",
+              role: signupRole,
               ...(mode.includes("citizen") && {
                 national_id: nationalId,
               }),
@@ -366,6 +369,7 @@ const Auth = () => {
           },
         });
         if (error) throw error;
+        analytics.track("signup_success", { role: signupRole });
         toast.success(t("auth.signup_success"));
         resetForm();
         setMode("login");
@@ -380,6 +384,13 @@ const Auth = () => {
         setMode("login");
       }
     } catch (err: any) {
+      // Track auth failures without exposing the raw error message (which may
+      // contain phone numbers or other PII).
+      if (mode === "login-otp") {
+        analytics.track("login_failure");
+      } else if (mode.includes("signup")) {
+        analytics.track("signup_failure", { role: signupRole });
+      }
       toast.error(translateError(err.message || t("auth.otp_verify_error")));
     } finally {
       setOtpLoading(false);

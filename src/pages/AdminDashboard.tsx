@@ -19,6 +19,7 @@ import {
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import { AppRole, resolvePrimaryRole } from "@/constants/roles";
 import { dispatchNotification } from "@/lib/notifications";
+import { analytics } from "@/lib/analytics";
 
 interface UserProfile {
   id: string;
@@ -85,6 +86,7 @@ const AdminDashboard = () => {
       toast.error(t("admin_dashboard.error"));
     } else {
       toast.success(approve ? t("admin_dashboard.mp_approved") : t("admin_dashboard.mp_revoked"));
+      analytics.track(approve ? "admin_approved_mp" : "admin_rejected_mp");
       await dispatchNotification({
         recipients: [userId],
         event: "admin_decision",
