@@ -51,23 +51,80 @@ function detectCollectiveIssue(text: string): boolean {
   return collectiveKeywords.some(keyword => lowerText.includes(keyword));
 }
 
-function buildValidatedUrl(baseUrl: string): string {
-  try {
-    const url = new URL(baseUrl);
-    
-    const allowedDomains = ['example.com']; // add your allowed domains here
-    if (!allowedDomains.includes(url.hostname)) {
-      throw new Error('Invalid host');
+/**
+ * Allowed image host patterns loaded once from the environment.
+ *
+ * Configure via the ALLOWED_IMAGE_HOSTS edge-function secret (comma-separated).
+ * Supported patterns:
+ *   - Exact hostname:        "images.example.com"
+ *   - Wildcard subdomain:    "*.example.com"  (matches the bare domain and any sub)
+ *
+ * Entries containing schemes, ports, paths, or whitespace are silently
+ * discarded.  An empty list causes all image URLs to be rejected (fail-closed).
+ *
+ * NOTE: The validation helpers below mirror the logic in src/lib/ssrfGuard.ts.
+ * They are intentionally inlined here because Supabase Edge Functions run on
+ * Deno and cannot import from the Vite/Node src/ tree at runtime. Keep both
+ * copies in sync when modifying the validation rules.
+ */
+const _rawAllowedHosts =
+  (typeof Deno !== "undefined" ? Deno.env.get("ALLOWED_IMAGE_HOSTS") : undefined) ?? "";
+
+const ALLOWED_IMAGE_HOST_PATTERNS: string[] = _rawAllowedHosts
+  .split(",")
+  .map((h) => h.trim())
+  .filter((h) => h.length > 0)
+  .filter((h) => {
+    if (/[:/\s]/.test(h)) return false;
+    if (h.startsWith("*.")) {
+      const rest = h.slice(2);
+      return rest.length > 0 && /^[A-Za-z0-9.-]+$/.test(rest);
     }
-    
-    if (!['http:', 'https:'].includes(url.protocol)) {
-      throw new Error('Invalid protocol');
+    return /^[A-Za-z0-9.-]+$/.test(h);
+  });
+
+function isHostAllowed(hostname: string): boolean {
+  if (ALLOWED_IMAGE_HOST_PATTERNS.length === 0) return false;
+  for (const pattern of ALLOWED_IMAGE_HOST_PATTERNS) {
+    if (pattern.startsWith("*.")) {
+      const suffix = pattern.slice(1); // ".example.com"
+      const bare = suffix.slice(1);    // "example.com"
+      if (hostname === bare || hostname.endsWith(suffix)) return true;
+    } else if (hostname === pattern) {
+      return true;
     }
-    
-    return url.href;
-  } catch {
-    throw new Error('Invalid URL');
   }
+  return false;
+}
+
+function buildValidatedUrl(baseUrl: string): string {
+  let url: URL;
+  try {
+    url = new URL(baseUrl);
+  } catch (err) {
+    throw new Error("Invalid URL", { cause: err });
+  }
+
+  if (!["http:", "https:"].includes(url.protocol)) {
+    throw new Error("Invalid protocol");
+  }
+
+  if (!isHostAllowed(url.hostname)) {
+    throw new Error("Invalid host");
+  }
+
+  // Guard against path traversal via percent-encoded ".." segments.
+  let decodedPath: string;
+  try {
+    decodedPath = decodeURIComponent(url.pathname);
+  } catch (err) {
+    throw new Error("Invalid URL", { cause: err });
+  }
+  if (decodedPath.split("/").some((seg) => seg === "..")) {
+    throw new Error("Invalid path");
+  }
+
+  return url.href;
 }
 
 serve(async (req) => {
@@ -117,7 +174,9 @@ serve(async (req) => {
       for (const imageUrl of imageUrls) {
         try {
           const validatedUrl = buildValidatedUrl(imageUrl);
-          const imageResponse = await fetch(validatedUrl);
+          // redirect: "manual" prevents open-redirect-based SSRF: a 3xx
+          // response from an allowed host cannot redirect to an internal target.
+          const imageResponse = await fetch(validatedUrl, { redirect: "manual" });
           if (!imageResponse.ok) continue;
 
           const imageBuffer = await imageResponse.arrayBuffer();
