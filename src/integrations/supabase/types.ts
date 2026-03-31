@@ -146,51 +146,12 @@ export type Database = {
           },
         ]
       }
-      issue_assignments: {
-        Row: {
-          assigned_at: string
-          assigned_by: string
-          assigned_to: string
-          id: string
-          issue_id: string
-          reason: string | null
-          unassigned_at: string | null
-        }
-        Insert: {
-          assigned_at?: string
-          assigned_by: string
-          assigned_to: string
-          id?: string
-          issue_id: string
-          reason?: string | null
-          unassigned_at?: string | null
-        }
-        Update: {
-          assigned_at?: string
-          assigned_by?: string
-          assigned_to?: string
-          id?: string
-          issue_id?: string
-          reason?: string | null
-          unassigned_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "issue_assignments_issue_id_fkey"
-            columns: ["issue_id"]
-            isOneToOne: false
-            referencedRelation: "issues"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       issue_attachments: {
         Row: {
           created_at: string
           file_name: string
           file_path: string
           file_type: string | null
-          bucket: string
           id: string
           issue_id: string
         }
@@ -199,7 +160,6 @@ export type Database = {
           file_name: string
           file_path: string
           file_type?: string | null
-          bucket?: string
           id?: string
           issue_id: string
         }
@@ -208,99 +168,12 @@ export type Database = {
           file_name?: string
           file_path?: string
           file_type?: string | null
-          bucket?: string
           id?: string
           issue_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "issue_attachments_issue_id_fkey"
-            columns: ["issue_id"]
-            isOneToOne: false
-            referencedRelation: "issues"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      moderation_evidence: {
-        Row: {
-          bucket: string
-          created_at: string
-          file_name: string
-          file_path: string
-          file_type: string | null
-          id: string
-          issue_id: string
-          uploaded_by: string
-        }
-        Insert: {
-          bucket?: string
-          created_at?: string
-          file_name: string
-          file_path: string
-          file_type?: string | null
-          id?: string
-          issue_id: string
-          uploaded_by: string
-        }
-        Update: {
-          bucket?: string
-          created_at?: string
-          file_name?: string
-          file_path?: string
-          file_type?: string | null
-          id?: string
-          issue_id?: string
-          uploaded_by?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "moderation_evidence_issue_id_fkey"
-            columns: ["issue_id"]
-            isOneToOne: false
-            referencedRelation: "issues"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "moderation_evidence_uploaded_by_fkey"
-            columns: ["uploaded_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      issue_comments: {
-        Row: {
-          author_id: string
-          body: string
-          created_at: string
-          id: string
-          is_internal: boolean
-          issue_id: string
-          updated_at: string
-        }
-        Insert: {
-          author_id: string
-          body: string
-          created_at?: string
-          id?: string
-          is_internal?: boolean
-          issue_id: string
-          updated_at?: string
-        }
-        Update: {
-          author_id?: string
-          body?: string
-          created_at?: string
-          id?: string
-          is_internal?: boolean
-          issue_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "issue_comments_issue_id_fkey"
             columns: ["issue_id"]
             isOneToOne: false
             referencedRelation: "issues"
@@ -367,44 +240,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      issue_status_history: {
-        Row: {
-          changed_at: string
-          changed_by: string | null
-          id: string
-          issue_id: string
-          new_status: string
-          note: string | null
-          old_status: string | null
-        }
-        Insert: {
-          changed_at?: string
-          changed_by?: string | null
-          id?: string
-          issue_id: string
-          new_status: string
-          note?: string | null
-          old_status?: string | null
-        }
-        Update: {
-          changed_at?: string
-          changed_by?: string | null
-          id?: string
-          issue_id?: string
-          new_status?: string
-          note?: string | null
-          old_status?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "issue_status_history_issue_id_fkey"
-            columns: ["issue_id"]
-            isOneToOne: false
-            referencedRelation: "issues"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       notifications: {
         Row: {
@@ -551,23 +386,15 @@ export type Database = {
       get_public_issue_stats: { Args: never; Returns: Json }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
-        }
-        Returns: boolean
-      }
-      has_any_role: {
-        Args: {
           _user_id: string
-          _roles: Database["public"]["Enums"]["app_role"][]
         }
         Returns: boolean
       }
       is_active_mp: { Args: { _user_id: string }; Returns: boolean }
-      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "citizen" | "mp" | "admin" | "moderator"
+      app_role: "citizen" | "mp" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -695,7 +522,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["citizen", "mp", "admin", "moderator"],
+      app_role: ["citizen", "mp", "admin"],
     },
   },
 } as const
