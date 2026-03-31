@@ -103,7 +103,7 @@ const AdminDashboard = () => {
     try {
       const { error } = await supabase
         .from("user_roles")
-        .update({ role: newRole })
+        .update({ role: newRole as "admin" | "citizen" | "mp" })
         .eq("user_id", userId);
       if (error) throw error;
 

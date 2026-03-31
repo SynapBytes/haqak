@@ -328,18 +328,20 @@ serve(async (req) => {
       const anyFailure = Object.values(recipientResults).some(
         (r) => r.success === false || (r.error !== undefined && !r.skipped),
       );
-      await supabase
-        .from("audit_logs")
-        .insert({
-          user_id: user.id,
-          action: "notification_dispatched",
-          entity_type: "notification",
-          entity_id: notifId ?? null,
-          new_values: { event: eventName, recipient, issue_id: issueId ?? null, channels: Array.from(enabledChannels) },
-          context: recipientResults,
-          status: anyFailure ? "failure" : "success",
-        })
-        .catch((err) => console.error("Audit log insert failed", err));
+      const auditInsert = async () => {
+        try {
+          await supabase
+            .from("notifications")
+            .insert({
+              user_id: user.id,
+              title: `notification_dispatched: ${eventName}`,
+              message: JSON.stringify({ recipient, issue_id: issueId ?? null, channels: Array.from(enabledChannels), status: anyFailure ? "failure" : "success" }),
+            });
+        } catch (err: unknown) {
+          console.error("Audit log insert failed", err);
+        }
+      };
+      auditInsert();
 
       Object.assign(deliveryResults, recipientResults);
     }

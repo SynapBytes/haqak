@@ -27,7 +27,7 @@ export function initSentry() {
     replaysOnErrorSampleRate: 0,
     // Scrub common sensitive keys before they are sent.
     beforeSend(event) {
-      if (event.request?.cookies) event.request.cookies = "[Filtered]";
+      if (event.request?.cookies) event.request.cookies = {} as Record<string, string>;
       return event;
     },
   });

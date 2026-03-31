@@ -21,7 +21,7 @@ const AttachmentManager = ({ issueId }: { issueId: string }) => {
     const fetchAttachments = async () => {
       const { data, error } = await supabase
         .from("issue_attachments")
-        .select("id,file_path,file_name,file_type,bucket")
+        .select("id,file_path,file_name,file_type")
         .eq("issue_id", issueId);
       
       if (error) {
