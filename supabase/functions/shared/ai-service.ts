@@ -56,7 +56,7 @@ const readOpenAiContent = (data: any): string => {
   if (typeof message.content === "string") return message.content;
   if (Array.isArray(message.content)) {
     return message.content
-      .map((part) => (typeof part?.text === "string" ? part.text : ""))
+      .map((part: { text?: string }) => (typeof part?.text === "string" ? part.text : ""))
       .join("")
       .trim();
   }
