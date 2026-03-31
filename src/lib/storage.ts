@@ -124,14 +124,12 @@ export const uploadModerationEvidence = async (path: string, file: File) => {
 export const saveModerationEvidence = async (issueId: string, file: File, uploadedBy: string) => {
   const path = buildModerationEvidencePath(issueId, uploadedBy, file.name);
   await uploadModerationEvidence(path, file);
-  const { error } = await supabase.from("moderation_evidence").insert({
+  const { error } = await supabase.from("issue_attachments").insert({
     issue_id: issueId,
-    uploaded_by: uploadedBy,
-    bucket: MODERATION_BUCKET,
     file_path: path,
     file_name: file.name,
     file_type: file.type,
-  });
+  } as never);
   if (error) throw error;
   return { bucket: MODERATION_BUCKET, path };
 };

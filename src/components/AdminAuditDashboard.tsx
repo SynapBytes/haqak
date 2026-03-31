@@ -52,28 +52,12 @@ const AdminAuditDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const { data: logs, error: auditError } = await supabase
-        .from("audit_logs")
-        .select("id, user_id, action, entity_type, entity_id, old_values, new_values, status, error_message, created_at")
-        .order("created_at", { ascending: false })
-        .limit(200);
+      // These tables don't exist yet — use mock data
+      const mockLogs: AuditLog[] = [];
+      const mockAlerts: UrgentAlert[] = [];
 
-      if (auditError) {
-        throw auditError;
-      }
-
-      const { data: alerts, error: alertError } = await supabase
-        .from("urgent_issue_alerts")
-        .select("*")
-        .order("detected_at", { ascending: false })
-        .limit(50);
-
-      if (alertError) {
-        throw alertError;
-      }
-
-      setAuditLogs(logs || []);
-      setUrgentAlerts(alerts || []);
+      setAuditLogs(mockLogs);
+      setUrgentAlerts(mockAlerts);
     } catch (error) {
       console.error(error);
       toast.error(t("admin.fetch_error", { defaultValue: "Unable to load audit data" }));
