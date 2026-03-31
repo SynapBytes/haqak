@@ -135,83 +135,63 @@ const HeroInfoWindow = () => {
   const { t } = useTranslation();
 
   const infoSteps = [
-    { icon: FileCheck, text: t("hero.step1"), color: "from-accent to-accent/60" },
-    { icon: Shield, text: t("hero.step2"), color: "from-primary to-primary/60" },
-    { icon: Eye, text: t("hero.step3"), color: "from-warning to-warning/60" },
+    { icon: FileCheck, text: t("hero.step1"), accent: "warning" },
+    { icon: Shield, text: t("hero.step2"), accent: "primary" },
+    { icon: Eye, text: t("hero.step3"), accent: "accent" },
   ];
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40, rotateX: 8 }}
-      animate={{ opacity: 1, y: 0, rotateX: 0 }}
-      transition={{ delay: 0.5, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0, y: 50, scale: 0.92 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay: 0.4, duration: 1, ease: [0.16, 1, 0.3, 1] }}
       className="relative group perspective-1000"
     >
-      {/* Animated outer glow ring */}
-      <motion.div
-        className="absolute -inset-[2px] rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-        style={{
-          background: "conic-gradient(from 0deg, hsl(var(--warning)), hsl(var(--accent)), hsl(var(--primary)), hsl(var(--warning)))",
-        }}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-      />
-      <motion.div
-        className="absolute -inset-3 rounded-[2.5rem] blur-2xl opacity-40 group-hover:opacity-60 transition-opacity duration-700"
-        style={{
-          background: "radial-gradient(ellipse at center, hsl(var(--warning) / 0.3), transparent 70%)",
-        }}
+      {/* Ambient glow behind card */}
+      <div className="absolute -inset-8 rounded-[3rem] opacity-40 group-hover:opacity-60 transition-opacity duration-1000 blur-3xl pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at 50% 40%, hsl(var(--warning) / 0.25), hsl(var(--accent) / 0.1), transparent 70%)" }}
       />
 
-      <div className="relative bg-card/95 backdrop-blur-2xl rounded-[1.85rem] overflow-hidden shadow-2xl shadow-black/10 border border-border/30">
+      {/* Main card */}
+      <div className="relative rounded-[1.75rem] overflow-hidden border border-border/40 bg-card/80 backdrop-blur-3xl shadow-[0_25px_80px_-15px_rgba(0,0,0,0.12)] dark:shadow-[0_25px_80px_-15px_rgba(0,0,0,0.4)]">
         
-        {/* Animated top bar with Egyptian flag colors */}
-        <div className="relative h-1.5 w-full overflow-hidden">
-          <motion.div
-            className="absolute inset-0 flex"
-            initial={{ x: "100%" }}
-            animate={{ x: "0%" }}
-            transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
-          >
-            <div className="flex-1 bg-[#CE1126]" />
-            <div className="flex-1 bg-white dark:bg-white/90" />
-            <div className="flex-1 bg-[#111] dark:bg-white/20" />
-          </motion.div>
-        </div>
+        {/* Subtle top accent line */}
+        <motion.div
+          className="h-[2px] w-full"
+          style={{ background: "linear-gradient(90deg, hsl(var(--warning)), hsl(var(--accent)), hsl(var(--primary)))" }}
+          initial={{ scaleX: 0, originX: 1 }}
+          animate={{ scaleX: 1 }}
+          transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
+        />
 
-        {/* Header */}
-        <div className="px-6 pt-5 pb-3">
-          <div className="flex items-center gap-3">
+        {/* Header section */}
+        <div className="px-7 pt-6 pb-4">
+          <div className="flex items-center gap-4">
+            {/* Elegant icon */}
             <motion.div
-              initial={{ scale: 0, rotate: -180 }}
+              initial={{ scale: 0, rotate: -90 }}
               animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: 0.7, type: "spring", stiffness: 180, damping: 12 }}
-              className="relative"
+              transition={{ delay: 0.7, type: "spring", stiffness: 200, damping: 14 }}
+              className="relative flex-shrink-0"
             >
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-warning/25 to-warning/5 flex items-center justify-center border border-warning/20">
-                <Building2 className="w-5 h-5 text-warning" />
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-warning/20 via-warning/10 to-transparent flex items-center justify-center border border-warning/15 shadow-inner">
+                <Sparkles className="w-5.5 h-5.5 text-warning" />
               </div>
-              {/* Pulse ring */}
-              <motion.div
-                className="absolute inset-0 rounded-2xl border-2 border-warning/30"
-                animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-              />
             </motion.div>
             <div className="flex-1 min-w-0">
               <motion.h3
-                initial={{ opacity: 0, x: 15, filter: "blur(4px)" }}
+                initial={{ opacity: 0, x: 20, filter: "blur(6px)" }}
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                transition={{ delay: 0.8, duration: 0.5 }}
-                className="text-base font-bold text-foreground truncate"
+                transition={{ delay: 0.8, duration: 0.6 }}
+                className="text-lg font-bold text-foreground tracking-tight"
               >
                 {t("hero.welcome_title")}
               </motion.h3>
               <motion.p
-                initial={{ opacity: 0, x: 10 }}
+                initial={{ opacity: 0, x: 15 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.9, duration: 0.4 }}
-                className="text-xs text-muted-foreground"
+                transition={{ delay: 0.95, duration: 0.5 }}
+                className="text-[13px] text-muted-foreground mt-0.5"
               >
                 {t("hero.welcome_sub")}
               </motion.p>
@@ -219,65 +199,60 @@ const HeroInfoWindow = () => {
           </div>
         </div>
 
-        {/* Animated separator */}
-        <div className="mx-5 relative h-px">
+        {/* Elegant divider */}
+        <div className="mx-6 relative h-px">
           <motion.div
-            className="absolute inset-0 bg-gradient-to-l from-transparent via-warning/40 to-transparent"
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(90deg, transparent, hsl(var(--border)), transparent)" }}
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
-            transition={{ delay: 0.95, duration: 0.6, ease: "easeOut" }}
+            transition={{ delay: 1, duration: 0.7 }}
           />
         </div>
 
-        {/* Steps with staggered reveal */}
-        <div className="p-5 space-y-2">
+        {/* Steps */}
+        <div className="p-5 px-6 space-y-2">
           {infoSteps.map((step, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, x: 30, scale: 0.9 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              transition={{ delay: 1.0 + i * 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              whileHover={{ x: -4, scale: 1.02 }}
-              className="group/step flex items-center gap-3 rounded-xl px-3.5 py-3 bg-muted/30 hover:bg-muted/60 transition-all duration-300 border border-transparent hover:border-border/50 cursor-default"
+              initial={{ opacity: 0, x: 35, filter: "blur(3px)" }}
+              animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+              transition={{ delay: 1.1 + i * 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={{ x: -5, backgroundColor: "hsl(var(--muted) / 0.5)" }}
+              className="flex items-center gap-3.5 rounded-xl px-4 py-3 transition-all duration-300 cursor-default group/step"
             >
               <motion.div
-                className={`w-9 h-9 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center flex-shrink-0 shadow-sm`}
-                whileHover={{ rotate: [0, -10, 10, 0] }}
-                transition={{ duration: 0.4 }}
+                className={`w-10 h-10 rounded-xl bg-${step.accent}/10 flex items-center justify-center flex-shrink-0 border border-${step.accent}/10 group-hover/step:border-${step.accent}/25 transition-colors duration-300`}
+                whileHover={{ scale: 1.08, rotate: -5 }}
               >
-                <step.icon className="w-4 h-4 text-white" />
+                <step.icon className={`w-[18px] h-[18px] text-${step.accent}`} />
               </motion.div>
-              <span className="text-sm text-foreground/85 font-medium group-hover/step:text-foreground transition-colors">
+              <span className="text-sm text-foreground/80 font-medium group-hover/step:text-foreground transition-colors duration-300 leading-relaxed">
                 {step.text}
               </span>
-              <motion.div
-                className="mr-auto opacity-0 group-hover/step:opacity-100 transition-opacity"
-                initial={false}
-              >
-                <CheckCircle2 className="w-4 h-4 text-primary/60" />
-              </motion.div>
             </motion.div>
           ))}
         </div>
 
-        {/* Tagline footer with shimmer effect */}
+        {/* Footer tagline */}
         <motion.div
-          initial={{ opacity: 0, y: 15 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.5, duration: 0.5 }}
-          className="mx-5 mb-5"
+          className="mx-6 mb-6"
         >
-          <div className="relative overflow-hidden rounded-2xl border border-warning/20 px-4 py-3.5 text-center bg-gradient-to-l from-warning/[0.08] via-accent/[0.04] to-primary/[0.06]">
-            {/* Shimmer overlay */}
+          <div className="relative overflow-hidden rounded-xl px-5 py-3.5 text-center bg-muted/40 border border-border/30">
+            {/* Subtle shimmer */}
             <motion.div
-              className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent"
+              className="absolute inset-0 -translate-x-full"
+              style={{ background: "linear-gradient(90deg, transparent, hsl(var(--warning) / 0.06), transparent)" }}
               animate={{ translateX: ["-100%", "200%"] }}
-              transition={{ duration: 3, repeat: Infinity, repeatDelay: 2, ease: "easeInOut" }}
+              transition={{ duration: 4, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
             />
-            <p className="relative text-xs font-bold text-foreground/80 tracking-wide flex items-center justify-center gap-2">
-              <span className="text-warning">✦</span>
+            <p className="relative text-[13px] font-semibold text-foreground/70 tracking-wide flex items-center justify-center gap-2.5">
+              <span className="w-1 h-1 rounded-full bg-warning" />
               {t("hero.from_citizen")}
-              <span className="text-warning">✦</span>
+              <span className="w-1 h-1 rounded-full bg-warning" />
             </p>
           </div>
         </motion.div>
