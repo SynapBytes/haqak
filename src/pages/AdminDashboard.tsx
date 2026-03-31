@@ -21,6 +21,9 @@ import { AppRole, resolvePrimaryRole } from "@/constants/roles";
 import type { Database } from "@/integrations/supabase/types";
 import { dispatchNotification } from "@/lib/notifications";
 import { analytics } from "@/lib/analytics";
+import type { Tables } from "@/integrations/supabase/types";
+
+type IssueRow = Tables<"issues">;
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type IssueRow = Database["public"]["Tables"]["issues"]["Row"];
@@ -70,10 +73,10 @@ const AdminDashboard = () => {
       const rolesByUser = new Map<string, AppRole[]>();
       rolesRes.data.forEach((r: UserRoleRow) => {
         const existing = rolesByUser.get(r.user_id) ?? [];
-        rolesByUser.set(r.user_id, [...existing, r.role]);
+        rolesByUser.set(r.user_id, [...existing, r.role as AppRole]);
       });
       setUsers(
-        profilesRes.data.map((p: any) => {
+        profilesRes.data.map((p) => {
           const roles = rolesByUser.get(p.user_id) ?? [];
           return { ...p, role: resolvePrimaryRole(roles) };
         }),
@@ -135,8 +138,8 @@ const AdminDashboard = () => {
       if (data?.error) throw new Error(data.error);
       toast.success(t("admin_dashboard.account_deleted"));
       fetchData();
-    } catch (err: any) {
-      toast.error(err.message || t("admin_dashboard.delete_error"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("admin_dashboard.delete_error"));
     }
     setDeletingUser(null);
   };

@@ -97,8 +97,8 @@ const CitizenProfile = () => {
 
       setAvatarUrl(urlWithCacheBust);
       toast.success(t("profile.avatar_updated"));
-    } catch (err: any) {
-      toast.error(err.message || t("profile.avatar_error"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("profile.avatar_error"));
     } finally {
       setUploading(false);
     }
@@ -118,8 +118,8 @@ const CitizenProfile = () => {
         .eq("user_id", user.id);
       if (error) throw error;
       toast.success(t("profile.saved"));
-    } catch (err: any) {
-      toast.error(err.message || t("profile.save_error"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("profile.save_error"));
     } finally {
       setSaving(false);
     }

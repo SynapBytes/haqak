@@ -30,6 +30,10 @@ import { cn } from "@/lib/utils";
 
 type AuthMode = "login" | "login-otp" | "signup-citizen" | "signup-citizen-otp" | "signup-mp" | "signup-mp-otp" | "forgot-password" | "forgot-password-otp";
 
+const PHONE_REGEX = /^01[0125][0-9]{8}$/;
+const MEMBERSHIP_NUMBER_REGEX = /^[0-9]+$/;
+const MAX_MEMBERSHIP_NUMBER = 568;
+
 const Auth = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -85,9 +89,7 @@ const Auth = () => {
     detectLocation();
   }, []);
 
-  const phoneRegex = /^01[0125][0-9]{8}$/;
-  const membershipNumberRegex = /^[0-9]+$/;
-  const MAX_MEMBERSHIP_NUMBER = 568;
+  const MAX_MEMBERSHIP_NUMBER = MAX_MEMBERSHIP_NUMBER;
   const passwordHasNumber = useMemo(() => /\d/.test(password), [password]);
   const passwordHasLetter = useMemo(() => /[a-zA-Z\u0600-\u06FF]/.test(password), [password]);
   const governorateOptions = useMemo(() => getGovernorateOptions(), []);

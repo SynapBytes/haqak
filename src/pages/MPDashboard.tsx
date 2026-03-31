@@ -123,6 +123,7 @@ const MPDashboard = () => {
     setLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchIssues(); }, [user]);
 
   const fetchCitizenData = async (userId: string) => {
