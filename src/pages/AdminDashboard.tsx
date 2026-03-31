@@ -18,8 +18,13 @@ import {
 } from "lucide-react";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import { AppRole, resolvePrimaryRole } from "@/constants/roles";
+import type { Database } from "@/integrations/supabase/types";
 import { dispatchNotification } from "@/lib/notifications";
 import { analytics } from "@/lib/analytics";
+
+type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+type IssueRow = Database["public"]["Tables"]["issues"]["Row"];
+type UserRoleRow = Database["public"]["Tables"]["user_roles"]["Row"];
 
 interface UserProfile {
   id: string;
@@ -41,7 +46,7 @@ interface UserWithRole extends UserProfile {
 const AdminDashboard = () => {
   const { t } = useTranslation();
   const [users, setUsers] = useState<UserWithRole[]>([]);
-  const [issues, setIssues] = useState<any[]>([]);
+  const [issues, setIssues] = useState<IssueRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [issueSearchQuery, setIssueSearchQuery] = useState("");
@@ -63,7 +68,7 @@ const AdminDashboard = () => {
     ]);
     if (profilesRes.data && rolesRes.data) {
       const rolesByUser = new Map<string, AppRole[]>();
-      rolesRes.data.forEach((r: any) => {
+      rolesRes.data.forEach((r: UserRoleRow) => {
         const existing = rolesByUser.get(r.user_id) ?? [];
         rolesByUser.set(r.user_id, [...existing, r.role]);
       });

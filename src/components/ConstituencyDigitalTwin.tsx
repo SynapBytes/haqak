@@ -104,7 +104,7 @@ export const ConstituencyDigitalTwin: React.FC = () => {
         {/* Main Visualization Card */}
         <Card className="lg:col-span-2 overflow-hidden border-indigo-100 shadow-sm">
           <CardHeader className="bg-indigo-50/50 pb-3">
-            <Tabs defaultValue="population" onValueChange={(v) => setActiveLayer(v as any)}>
+            <Tabs defaultValue="population" onValueChange={(v) => setActiveLayer(v as 'population' | 'services' | 'infrastructure')}>
               <div className="flex justify-between items-center">
                 <TabsList>
                   <TabsTrigger value="population">السكان</TabsTrigger>

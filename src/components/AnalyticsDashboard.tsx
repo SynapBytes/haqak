@@ -10,10 +10,21 @@ import { useTranslation } from "react-i18next";
 
 const COLORS = ["#D4AF37", "#8B4513", "#2F4F4F", "#556B2F", "#A0522D", "#6B8E23"];
 
+interface ChartDataPoint {
+  name: string;
+  value: number;
+}
+
+interface AnalyticsStats {
+  govChartData: ChartDataPoint[];
+  statusChartData: ChartDataPoint[];
+  timeChartData: ChartDataPoint[];
+}
+
 const AnalyticsDashboard = () => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<AnalyticsStats | null>(null);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -126,7 +137,7 @@ const AnalyticsDashboard = () => {
                 paddingAngle={5}
                 dataKey="value"
               >
-                {stats?.statusChartData.map((entry: any, index: number) => (
+                {stats?.statusChartData.map((entry: ChartDataPoint, index: number) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>

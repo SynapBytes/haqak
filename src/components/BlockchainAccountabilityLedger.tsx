@@ -230,7 +230,7 @@ export const BlockchainAccountabilityLedger: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <Tabs defaultValue="all" onValueChange={(v) => setFilterType(v as any)}>
+          <Tabs defaultValue="all" onValueChange={(v) => setFilterType(v as 'all' | 'promise' | 'complaint' | 'resolution')}>
             <TabsList className="w-full rounded-none border-b bg-slate-50/50 px-4 py-2">
               <TabsTrigger value="all">الكل</TabsTrigger>
               <TabsTrigger value="promise">الوعود</TabsTrigger>

@@ -90,7 +90,7 @@ const MPDashboard = () => {
       }
     }
 
-    let query = supabase.from("issues").select("*").order("created_at", { ascending: false });
+    const query = supabase.from("issues").select("*").order("created_at", { ascending: false });
     const { data } = await query;
     
     if (data) {
@@ -106,17 +106,17 @@ const MPDashboard = () => {
         id: d.id,
         title: d.title,
         description: d.description,
-        refined_title: (d as any).refined_title || d.title,
-        refined_description: (d as any).refined_description || d.description,
+        refined_title: d.refined_title || d.title,
+        refined_description: d.refined_description || d.description,
         status: d.status as Issue["status"],
         category: d.category,
         location: d.location,
         timeAgo: new Date(d.created_at).toLocaleDateString("ar-EG"),
-        issue_type: (d as any).issue_type || "individual",
-        is_flagged: (d as any).is_flagged || false,
-        citizen_confirmed: (d as any).citizen_confirmed || false,
+        issue_type: (d.issue_type || "individual") as Issue["issue_type"],
+        is_flagged: d.is_flagged || false,
+        citizen_confirmed: d.citizen_confirmed || false,
         ai_summary: d.ai_summary || undefined,
-        priority: (d as any).priority || "normal",
+        priority: (d.priority || "normal") as Issue["priority"],
         user_id: d.user_id,
       })));
     }
@@ -182,8 +182,8 @@ const MPDashboard = () => {
       toast.success(t("mp_dashboard.status_updated"));
       setSelectedIssue(null);
       fetchIssues();
-    } catch (err: any) {
-      toast.error(err.message || t("mp_dashboard.error_update"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("mp_dashboard.error_update"));
     } finally {
       setUpdating(false);
     }
@@ -204,7 +204,7 @@ const MPDashboard = () => {
       toast.success("تم إرسال الرد الرسمي بنجاح");
       fetchResponses(selectedIssue.id);
       setActionNote("");
-    } catch (err: any) {
+    } catch (err) {
       toast.error("فشل إرسال الرد");
     } finally {
       setUpdating(false);
@@ -361,7 +361,7 @@ const MPDashboard = () => {
                   </SelectContent>
                 </Select>
 
-                <Select value={selectedStatus} onValueChange={(val) => setSelectedStatus(val as any)}>
+                <Select value={selectedStatus} onValueChange={(val) => setSelectedStatus(val as "all" | IssueStatus)}>
                   <SelectTrigger>{t("mp_dashboard.filter_all")}</SelectTrigger>
                   <SelectContent>
                     {statusFilters.map((filter) => (
@@ -370,7 +370,7 @@ const MPDashboard = () => {
                   </SelectContent>
                 </Select>
 
-                <Select value={selectedType} onValueChange={(val) => setSelectedType(val as any)}>
+                <Select value={selectedType} onValueChange={(val) => setSelectedType(val as "all" | "individual" | "collective")}>
                   <SelectTrigger>{t("mp_dashboard.filter_all")}</SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t("mp_dashboard.filter_all")}</SelectItem>
@@ -379,7 +379,7 @@ const MPDashboard = () => {
                   </SelectContent>
                 </Select>
 
-                <Select value={selectedPriority} onValueChange={(val) => setSelectedPriority(val as any)}>
+                <Select value={selectedPriority} onValueChange={(val) => setSelectedPriority(val as "all" | "urgent" | "humanitarian" | "normal")}>
                   <SelectTrigger>جميع الأولويات</SelectTrigger>
                   <SelectContent>
                     {priorityFilters.map((filter) => (

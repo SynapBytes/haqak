@@ -71,7 +71,7 @@ const ChatDrawer = ({ issueId, issueTitle, citizenUserId, citizenPhone, isMP, on
         setMessages((prev) => { if (prev.some(m => m.id === newMsg.id)) return prev; return [...prev, newMsg]; });
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_conversations", filter: `id=eq.${conversationId}` }, (payload) => {
-        setIsClosed((payload.new as any).is_closed);
+        setIsClosed((payload.new as { is_closed: boolean }).is_closed);
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -94,8 +94,8 @@ const ChatDrawer = ({ issueId, issueTitle, citizenUserId, citizenPhone, isMP, on
         event: "moderation_update",
         message: t("chat.new_chat_body", { title: issueTitle }),
       });
-    } catch (err: any) {
-      if (err.message?.includes("unique")) { toast.error(t("chat.exists")); } else { toast.error(t("chat.error_start")); }
+    } catch (err) {
+      if (err instanceof Error && err.message?.includes("unique")) { toast.error(t("chat.exists")); } else { toast.error(t("chat.error_start")); }
     } finally { setSending(false); }
   };
 

@@ -153,8 +153,8 @@ const IssueCreationWithUrgency = ({ onSuccess, onError }: IssueCreationProps) =>
       setUrgencyKeywords([]);
 
       onSuccess?.();
-    } catch (error: any) {
-      const errorMsg = error.message || t("issues.creation_error");
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : t("issues.creation_error");
       toast.error(errorMsg);
       onError?.(errorMsg);
     } finally {
