@@ -125,7 +125,7 @@ export function buildValidatedUrl(rawUrl: string, patterns: string[]): string {
   try {
     url = new URL(rawUrl);
   } catch (err) {
-    throw new Error("Invalid URL", { cause: err });
+    throw new Error("Invalid URL");
   }
 
   if (!["http:", "https:"].includes(url.protocol)) {
