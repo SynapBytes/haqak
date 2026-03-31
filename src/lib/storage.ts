@@ -37,7 +37,7 @@ const uniqueKey = () => {
       return `${Date.now()}-${crypto.randomUUID()}`;
     }
     const buffer = new Uint32Array(2);
-    crypto.getRandomValues(buffer);
+    (crypto as Crypto).getRandomValues(buffer);
     const randomHex = Array.from(buffer).map((n) => n.toString(16)).join("");
     return `${Date.now()}-${randomHex}`;
   }
