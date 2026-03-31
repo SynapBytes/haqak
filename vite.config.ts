@@ -24,7 +24,18 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
-        navigateFallbackDenylist: [/^\/~oauth/],
+        // Exclude auth-sensitive routes from service worker navigation handling.
+        // These paths must always hit the network so stale cached content cannot
+        // serve a logged-out user an apparently-authenticated page.
+        navigateFallbackDenylist: [
+          /^\/~oauth/,
+          /^\/auth/,
+          /^\/login/,
+          /^\/logout/,
+          /^\/signup/,
+          /^\/reset-password/,
+          /^\/verify/,
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

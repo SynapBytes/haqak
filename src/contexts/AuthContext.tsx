@@ -94,6 +94,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     await supabase.auth.signOut();
     analytics.reset();
+    // Purge all service-worker caches on sign-out so auth-sensitive content
+    // is not served from cache to the next user of the same browser profile.
+    if (typeof caches !== "undefined") {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      } catch {
+        // Best-effort — do not block sign-out if cache API is unavailable.
+      }
+    }
     setSession(null);
     setUser(null);
     setProfile(null);

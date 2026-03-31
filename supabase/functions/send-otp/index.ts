@@ -6,9 +6,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Limits for OTP/auth sensitive paths
+const OTP_RATE_LIMIT_PER_PHONE = 5;   // max sends per phone per window
+const OTP_RATE_LIMIT_PER_IP = 10;     // max sends per IP per window
+const OTP_WINDOW_MINUTES = 10;
+const OTP_MAX_VERIFY_ATTEMPTS = 5;    // max failed verify attempts before lock
+const OTP_LOCK_MINUTES = 15;          // lock duration after too many failures
+const OTP_TTL_MINUTES = 5;            // OTP validity window
+
 interface SendOtpRequest {
   phone: string;
   mode: "login" | "signup-citizen" | "signup-mp" | "forgot-password";
+  turnstileToken?: string;
 }
 
 interface TwilioResponse {
@@ -18,27 +27,58 @@ interface TwilioResponse {
   message?: string;
 }
 
-// Generate a random 6-digit OTP
+/** Generate a cryptographically secure 6-digit OTP */
 function generateOTP(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  const arr = new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  return String(100000 + (arr[0] % 900000));
 }
 
-// Format phone number to E.164 format
+/** Compute HMAC-SHA256 of `message` with `key`, return hex string */
+async function hmacSha256Hex(key: string, message: string): Promise<string> {
+  const enc = new TextEncoder();
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(key),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, enc.encode(message));
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/** Format a raw phone string to E.164, using TWILIO_DEFAULT_COUNTRY_CODE env (default +20) */
 function formatPhoneNumber(phone: string): string {
-  // Remove any non-digit characters
+  const countryCode = Deno.env.get("TWILIO_DEFAULT_COUNTRY_CODE") ?? "+20";
+  const numeric = countryCode.replace(/\D/g, "");
   const cleaned = phone.replace(/\D/g, "");
-  
-  // If it starts with 0, replace with 20 (Egypt country code)
-  if (cleaned.startsWith("0")) {
-    return `+20${cleaned.slice(1)}`;
-  }
-  
-  // If it doesn't start with 20, assume it's Egyptian
-  if (!cleaned.startsWith("20")) {
-    return `+20${cleaned}`;
-  }
-  
+  if (cleaned.startsWith("0")) return `+${numeric}${cleaned.slice(1)}`;
+  if (!cleaned.startsWith(numeric)) return `+${numeric}${cleaned}`;
   return `+${cleaned}`;
+}
+
+/** Verify a Cloudflare Turnstile token. Returns true when verification succeeds or is disabled. */
+async function verifyTurnstile(token: string | undefined, ip: string): Promise<boolean> {
+  const secret = Deno.env.get("TURNSTILE_SECRET_KEY");
+  if (!secret) return true; // Turnstile not configured — allow (operator choice)
+  if (!token) return false;
+  try {
+    const form = new FormData();
+    form.append("secret", secret);
+    form.append("response", token);
+    form.append("remoteip", ip);
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      body: form,
+    });
+    const data = await res.json() as { success: boolean };
+    return data.success === true;
+  } catch {
+    return false;
+  }
 }
 
 serve(async (req) => {
@@ -48,47 +88,136 @@ serve(async (req) => {
   }
 
   try {
-    const { phone, mode } = (await req.json()) as SendOtpRequest;
+    // Extract client IP from standard Cloudflare/Vercel headers
+    const clientIp =
+      req.headers.get("CF-Connecting-IP") ??
+      req.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() ??
+      "0.0.0.0";
 
-    // Validate input
+    const { phone, mode, turnstileToken } = (await req.json()) as SendOtpRequest;
+
+    // Validate required fields
     if (!phone || !mode) {
       return new Response(
         JSON.stringify({ error: "Missing required fields: phone and mode" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Validate phone number format (Egyptian)
-    const phoneRegex = /^01[0125][0-9]{8}$/;
+    // Validate phone number — configurable via env, defaults to Egyptian format
+    const phoneRegexSrc =
+      Deno.env.get("PHONE_REGEX") ?? "^01[0125][0-9]{8}$";
+    const phoneRegex = new RegExp(phoneRegexSrc);
     if (!phoneRegex.test(phone)) {
       return new Response(
-        JSON.stringify({ error: "Invalid Egyptian phone number format" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Invalid phone number format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Get environment variables
+    // Verify Turnstile CAPTCHA (required when TURNSTILE_SECRET_KEY is set)
+    const turnstileOk = await verifyTurnstile(turnstileToken, clientIp);
+    if (!turnstileOk) {
+      return new Response(
+        JSON.stringify({ error: "CAPTCHA verification failed" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Load required env vars
     const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
     const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
     const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    // TODO[Vault]: move SUPABASE_SERVICE_ROLE_KEY to Supabase Vault / secrets manager
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-      console.error("Missing Twilio configuration");
+    // HMAC key for signing OTP tokens — must be set in production
+    const otpHmacSecret = Deno.env.get("OTP_HMAC_SECRET");
+    if (!otpHmacSecret) {
+      // OTP_HMAC_SECRET is required in production; refuse to proceed without it
+      // to avoid storing OTP tokens that offer no HMAC protection.
+      console.error("OTP_HMAC_SECRET is not configured");
       return new Response(
         JSON.stringify({ error: "Server configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Generate OTP
-    const otp = generateOTP();
-    const formattedPhone = formatPhoneNumber(phone);
+    if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
+      return new Response(
+        JSON.stringify({ error: "Server configuration error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
-    // Send SMS via Twilio
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(
+        JSON.stringify({ error: "Server configuration error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const formattedPhone = formatPhoneNumber(phone);
+    const windowStart = new Date(Date.now() - OTP_WINDOW_MINUTES * 60 * 1000).toISOString();
+
+    // ── Per-phone rate limit ──────────────────────────────────────────────────
+    const { count: phoneCount } = await supabase
+      .from("otp_codes")
+      .select("*", { count: "exact", head: true })
+      .eq("phone", formattedPhone)
+      .gte("created_at", windowStart);
+
+    if ((phoneCount ?? 0) >= OTP_RATE_LIMIT_PER_PHONE) {
+      return new Response(
+        JSON.stringify({ error: "Too many OTP requests for this phone. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": String(OTP_WINDOW_MINUTES * 60) } },
+      );
+    }
+
+    // ── Per-IP rate limit ─────────────────────────────────────────────────────
+    const { count: ipCount } = await supabase
+      .from("rate_limit_logs")
+      .select("*", { count: "exact", head: true })
+      .eq("ip_address", clientIp)
+      .eq("request_path", "/send-otp")
+      .gte("request_timestamp", windowStart);
+
+    if ((ipCount ?? 0) >= OTP_RATE_LIMIT_PER_IP) {
+      return new Response(
+        JSON.stringify({ error: "Too many requests from your network. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": String(OTP_WINDOW_MINUTES * 60) } },
+      );
+    }
+
+    // ── Check for a locked phone (too many failed verification attempts) ──────
+    const lockWindow = new Date(Date.now() - OTP_LOCK_MINUTES * 60 * 1000).toISOString();
+    const { data: lockedRows } = await supabase
+      .from("otp_codes")
+      .select("attempts")
+      .eq("phone", formattedPhone)
+      .gte("created_at", lockWindow)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (lockedRows && lockedRows.length > 0 && lockedRows[0].attempts >= OTP_MAX_VERIFY_ATTEMPTS) {
+      return new Response(
+        JSON.stringify({ error: "Account temporarily locked due to too many failed attempts. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": String(OTP_LOCK_MINUTES * 60) } },
+      );
+    }
+
+    // ── Generate OTP and compute HMAC token (raw OTP is never stored) ─────────
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000).toISOString();
+
+    // The stored token is HMAC(secret, phone + ":" + otp + ":" + expiresAt)
+    const tokenInput = `${formattedPhone}:${otp}:${expiresAt}`;
+    const hashedToken = await hmacSha256Hex(otpHmacSecret, tokenInput);
+
+    // ── Send SMS via Twilio ───────────────────────────────────────────────────
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
-    
+
     const twilioResponse = await fetch(twilioUrl, {
       method: "POST",
       headers: {
@@ -98,57 +227,52 @@ serve(async (req) => {
       body: new URLSearchParams({
         From: twilioPhoneNumber,
         To: formattedPhone,
-        Body: `رمز التحقق الخاص بك في حقك: ${otp}\nلا تشارك هذا الرمز مع أحد\nصلاحية الرمز 5 دقائق`,
+        Body: `رمز التحقق الخاص بك في حقك: ${otp}\nلا تشارك هذا الرمز مع أحد\nصلاحية الرمز ${OTP_TTL_MINUTES} دقائق`,
       }).toString(),
     });
 
     const twilioData = (await twilioResponse.json()) as TwilioResponse;
 
     if (!twilioResponse.ok) {
-      console.error("Twilio error:", twilioData);
       return new Response(
         JSON.stringify({ error: "Failed to send OTP" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Store OTP in Supabase with expiration
-    if (supabaseUrl && supabaseServiceKey) {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
-      
-      // Store OTP with 5-minute expiration
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-      
-      const { error: dbError } = await supabase
-        .from("otp_codes")
-        .insert({
-          phone: formattedPhone,
-          code: otp,
-          mode,
-          expires_at: expiresAt,
-          attempts: 0,
-          created_at: new Date().toISOString(),
-        });
+    // ── Persist HMAC token (not raw OTP) with expiry and zero attempts ────────
+    const { error: dbError } = await supabase
+      .from("otp_codes")
+      .insert({
+        phone: formattedPhone,
+        code: hashedToken, // HMAC token, not raw OTP
+        mode,
+        expires_at: expiresAt,
+        attempts: 0,
+        created_at: new Date().toISOString(),
+      });
 
-      if (dbError) {
-        console.error("Database error:", dbError);
-        // Don't fail the request if DB storage fails, SMS was sent successfully
-      }
+    if (dbError) {
+      // Log only the error code, not any sensitive data
+      console.error("OTP DB insert failed:", dbError.code);
     }
 
+    // ── Log IP-based request for rate limiting ────────────────────────────────
+    await supabase.from("rate_limit_logs").insert({
+      user_id: "00000000-0000-0000-0000-000000000000", // anonymous placeholder
+      request_path: "/send-otp",
+      response_status: 200,
+      ip_address: clientIp,
+    });
+
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: "OTP sent successfully",
-        sid: twilioData.sid,
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ success: true, message: "OTP sent successfully" }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  } catch (error) {
-    console.error("Error:", error);
+  } catch {
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
