@@ -135,56 +135,82 @@ const HeroInfoWindow = () => {
   const { t } = useTranslation();
 
   const infoSteps = [
-    { icon: FileCheck, text: t("hero.step1"), delay: 0.9 },
-    { icon: Shield, text: t("hero.step2"), delay: 1.05 },
-    { icon: Eye, text: t("hero.step3"), delay: 1.2 },
+    { icon: FileCheck, text: t("hero.step1"), color: "from-accent to-accent/60" },
+    { icon: Shield, text: t("hero.step2"), color: "from-primary to-primary/60" },
+    { icon: Eye, text: t("hero.step3"), color: "from-warning to-warning/60" },
   ];
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay: 0.5, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      className="relative group"
+      initial={{ opacity: 0, y: 40, rotateX: 8 }}
+      animate={{ opacity: 1, y: 0, rotateX: 0 }}
+      transition={{ delay: 0.5, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      className="relative group perspective-1000"
     >
-      {/* Outer glow */}
-      <div className="absolute -inset-1 rounded-[2rem] bg-gradient-to-br from-[hsl(var(--warning)/0.25)] via-transparent to-[hsl(var(--primary)/0.15)] blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-700" />
+      {/* Animated outer glow ring */}
+      <motion.div
+        className="absolute -inset-[2px] rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+        style={{
+          background: "conic-gradient(from 0deg, hsl(var(--warning)), hsl(var(--accent)), hsl(var(--primary)), hsl(var(--warning)))",
+        }}
+        animate={{ rotate: 360 }}
+        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+      />
+      <motion.div
+        className="absolute -inset-3 rounded-[2.5rem] blur-2xl opacity-40 group-hover:opacity-60 transition-opacity duration-700"
+        style={{
+          background: "radial-gradient(ellipse at center, hsl(var(--warning) / 0.3), transparent 70%)",
+        }}
+      />
 
-      <div className="relative bg-card/90 backdrop-blur-2xl border border-border/40 rounded-[1.75rem] overflow-hidden shadow-2xl shadow-black/10">
+      <div className="relative bg-card/95 backdrop-blur-2xl rounded-[1.85rem] overflow-hidden shadow-2xl shadow-black/10 border border-border/30">
         
-        {/* Egypt flag stripe — red, white, black with golden eagle silhouette */}
-        <div className="relative h-2 w-full flex">
-          <div className="flex-1 bg-[#CE1126]" />
-          <div className="flex-1 bg-white" />
-          <div className="flex-1 bg-[#111]" />
+        {/* Animated top bar with Egyptian flag colors */}
+        <div className="relative h-1.5 w-full overflow-hidden">
+          <motion.div
+            className="absolute inset-0 flex"
+            initial={{ x: "100%" }}
+            animate={{ x: "0%" }}
+            transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
+          >
+            <div className="flex-1 bg-[#CE1126]" />
+            <div className="flex-1 bg-white dark:bg-white/90" />
+            <div className="flex-1 bg-[#111] dark:bg-white/20" />
+          </motion.div>
         </div>
 
-        {/* Header area */}
-        <div className="px-6 pt-5 pb-4">
-          <div className="flex items-center gap-3 mb-1">
-            {/* Civic crest icon */}
+        {/* Header */}
+        <div className="px-6 pt-5 pb-3">
+          <div className="flex items-center gap-3">
             <motion.div
-              initial={{ scale: 0, rotate: -20 }}
+              initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: 0.7, type: "spring", stiffness: 200 }}
-              className="w-10 h-10 rounded-xl bg-gradient-to-br from-warning/20 to-warning/5 flex items-center justify-center border border-warning/20 text-warning"
-              aria-hidden="true"
+              transition={{ delay: 0.7, type: "spring", stiffness: 180, damping: 12 }}
+              className="relative"
             >
-              <Building2 className="w-5 h-5" />
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-warning/25 to-warning/5 flex items-center justify-center border border-warning/20">
+                <Building2 className="w-5 h-5 text-warning" />
+              </div>
+              {/* Pulse ring */}
+              <motion.div
+                className="absolute inset-0 rounded-2xl border-2 border-warning/30"
+                animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+              />
             </motion.div>
             <div className="flex-1 min-w-0">
               <motion.h3
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.75 }}
+                initial={{ opacity: 0, x: 15, filter: "blur(4px)" }}
+                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                transition={{ delay: 0.8, duration: 0.5 }}
                 className="text-base font-bold text-foreground truncate"
               >
                 {t("hero.welcome_title")}
               </motion.h3>
               <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.85 }}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.9, duration: 0.4 }}
                 className="text-xs text-muted-foreground"
               >
                 {t("hero.welcome_sub")}
@@ -193,38 +219,65 @@ const HeroInfoWindow = () => {
           </div>
         </div>
 
-        {/* Separator */}
-        <div className="mx-5 h-px bg-gradient-to-l from-transparent via-border to-transparent" />
+        {/* Animated separator */}
+        <div className="mx-5 relative h-px">
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-l from-transparent via-warning/40 to-transparent"
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ delay: 0.95, duration: 0.6, ease: "easeOut" }}
+          />
+        </div>
 
-        {/* Steps */}
-        <div className="p-5 space-y-2.5">
+        {/* Steps with staggered reveal */}
+        <div className="p-5 space-y-2">
           {infoSteps.map((step, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: step.delay, duration: 0.45, ease: "easeOut" }}
-              className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 bg-muted/40 hover:bg-muted/70 transition-colors duration-200 border border-transparent hover:border-border/40"
+              initial={{ opacity: 0, x: 30, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              transition={{ delay: 1.0 + i * 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={{ x: -4, scale: 1.02 }}
+              className="group/step flex items-center gap-3 rounded-xl px-3.5 py-3 bg-muted/30 hover:bg-muted/60 transition-all duration-300 border border-transparent hover:border-border/50 cursor-default"
             >
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-warning/15 to-accent/10 flex items-center justify-center flex-shrink-0 border border-warning/10">
-                <step.icon className="w-4 h-4 text-warning" />
-              </div>
-              <span className="text-sm text-foreground/85 font-medium">{step.text}</span>
+              <motion.div
+                className={`w-9 h-9 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center flex-shrink-0 shadow-sm`}
+                whileHover={{ rotate: [0, -10, 10, 0] }}
+                transition={{ duration: 0.4 }}
+              >
+                <step.icon className="w-4 h-4 text-white" />
+              </motion.div>
+              <span className="text-sm text-foreground/85 font-medium group-hover/step:text-foreground transition-colors">
+                {step.text}
+              </span>
+              <motion.div
+                className="mr-auto opacity-0 group-hover/step:opacity-100 transition-opacity"
+                initial={false}
+              >
+                <CheckCircle2 className="w-4 h-4 text-primary/60" />
+              </motion.div>
             </motion.div>
           ))}
         </div>
 
-        {/* Tagline footer */}
+        {/* Tagline footer with shimmer effect */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.35, duration: 0.5 }}
+          transition={{ delay: 1.5, duration: 0.5 }}
           className="mx-5 mb-5"
         >
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-l from-[#CE1126]/[0.08] via-warning/[0.06] to-[#111]/[0.06] border border-warning/15 px-4 py-3 text-center">
-            <div className="absolute inset-0 bg-gradient-to-l from-[#CE1126]/5 to-transparent opacity-50" />
-            <p className="relative text-xs font-bold text-foreground/80 tracking-wide">
+          <div className="relative overflow-hidden rounded-2xl border border-warning/20 px-4 py-3.5 text-center bg-gradient-to-l from-warning/[0.08] via-accent/[0.04] to-primary/[0.06]">
+            {/* Shimmer overlay */}
+            <motion.div
+              className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent"
+              animate={{ translateX: ["-100%", "200%"] }}
+              transition={{ duration: 3, repeat: Infinity, repeatDelay: 2, ease: "easeInOut" }}
+            />
+            <p className="relative text-xs font-bold text-foreground/80 tracking-wide flex items-center justify-center gap-2">
+              <span className="text-warning">✦</span>
               {t("hero.from_citizen")}
+              <span className="text-warning">✦</span>
             </p>
           </div>
         </motion.div>
