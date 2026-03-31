@@ -134,64 +134,160 @@ const HeroStatsCard = () => {
 const HeroInfoWindow = () => {
   const { t } = useTranslation();
 
+  const papyrusTexture = {
+    backgroundColor: "#F5DEB3",
+    backgroundImage: `
+      linear-gradient(120deg, rgba(212, 175, 55, 0.12), transparent 35%),
+      linear-gradient(300deg, rgba(227, 197, 142, 0.35), transparent 45%),
+      repeating-linear-gradient(90deg, rgba(179, 137, 68, 0.08), rgba(179, 137, 68, 0.08) 1px, transparent 3px, transparent 12px),
+      repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05) 1px, transparent 6px, transparent 14px)
+    `,
+    backgroundSize: "100% 100%, 100% 100%, 240px 100%, 100% 220px",
+  };
+
+  const ReedPenIcon = () => (
+    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#7a4c1c]" fill="none" stroke="currentColor" strokeWidth="3">
+      <path d="M10 52c10-6 24-28 30-42l6 6C32 34 16 48 10 52Z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M33 27 19 41" strokeLinecap="round" />
+      <circle cx="45" cy="19" r="3" fill="currentColor" />
+    </svg>
+  );
+
+  const ShieldEyeIcon = () => (
+    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#6d5123]" fill="none" stroke="currentColor" strokeWidth="3">
+      <path d="M32 58s20-8 20-26V12L32 6 12 12v20c0 18 20 26 20 26Z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M20 32s5-8 12-8 12 8 12 8-5 8-12 8-12-8-12-8Z" />
+      <circle cx="32" cy="32" r="4" fill="currentColor" />
+    </svg>
+  );
+
+  const SunEyeIcon = () => (
+    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#8a5a24]" fill="none" stroke="currentColor" strokeWidth="3">
+      <circle cx="32" cy="32" r="10" />
+      <circle cx="32" cy="32" r="5" fill="currentColor" />
+      <path d="M32 8v8M32 48v8M56 32h-8M16 32H8M48.5 15.5 43 21M21 43l-5.5 5.5M48.5 48.5 43 43M21 21l-5.5-5.5" strokeLinecap="round" />
+    </svg>
+  );
+
+  const BridgeIcon = () => (
+    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#7c5625]" fill="none" stroke="currentColor" strokeWidth="3">
+      <path d="M10 38h44" strokeLinecap="round" />
+      <path d="M14 38v10M50 38v10" strokeLinecap="round" />
+      <path d="M18 26c6-4 12-4 18 0s12 4 18 0" strokeLinecap="round" />
+      <path d="M26 38v-6M38 38v-6" strokeLinecap="round" />
+      <circle cx="18" cy="26" r="3" fill="currentColor" />
+      <circle cx="46" cy="26" r="3" fill="currentColor" />
+    </svg>
+  );
+
+  const CornerMotif = ({ className }: { className: string }) => (
+    <svg viewBox="0 0 64 64" className={`w-10 h-10 text-[#d4af37] opacity-70 drop-shadow-sm ${className}`} fill="none" stroke="currentColor" strokeWidth="3">
+      <path d="M10 10c18 0 18 18 36 18" strokeLinecap="round" />
+      <path d="M22 10c0 10 12 12 12 24" strokeLinecap="round" />
+      <circle cx="48" cy="28" r="4" fill="currentColor" />
+    </svg>
+  );
+
   const infoSteps = [
-    { icon: FileCheck, text: t("hero.step1"), accent: "warning" },
-    { icon: Shield, text: t("hero.step2"), accent: "primary" },
-    { icon: Eye, text: t("hero.step3"), accent: "accent" },
+    { icon: ReedPenIcon, text: t("hero.step1"), accent: "#C08A3C" },
+    { icon: ShieldEyeIcon, text: t("hero.step2"), accent: "#AF8B43" },
+    { icon: SunEyeIcon, text: t("hero.step3"), accent: "#9E7B2F" },
+    { icon: BridgeIcon, text: t("hero.from_citizen"), accent: "#7F6230" },
   ];
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 50, scale: 0.92 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay: 0.4, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+      initial={{ opacity: 0, y: 60, scaleX: 0.82, scaleY: 0.95, originX: 0.5 }}
+      animate={{ opacity: 1, y: 0, scaleX: 1, scaleY: 1 }}
+      transition={{ delay: 0.35, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+      whileHover={{ scale: 1.005 }}
       className="relative group perspective-1000"
     >
       {/* Ambient glow behind card */}
-      <div className="absolute -inset-8 rounded-[3rem] opacity-40 group-hover:opacity-60 transition-opacity duration-1000 blur-3xl pointer-events-none"
-        style={{ background: "radial-gradient(ellipse at 50% 40%, hsl(var(--warning) / 0.25), hsl(var(--accent) / 0.1), transparent 70%)" }}
+      <div
+        className="absolute -inset-10 rounded-[3rem] opacity-60 group-hover:opacity-80 transition-opacity duration-1000 blur-3xl pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at 50% 40%, rgba(212,175,55,0.35), rgba(158,123,47,0.12), transparent 70%)" }}
       />
 
       {/* Main card */}
-      <div className="relative rounded-[1.75rem] overflow-hidden border border-border/40 bg-card/80 backdrop-blur-3xl shadow-[0_25px_80px_-15px_rgba(0,0,0,0.12)] dark:shadow-[0_25px_80px_-15px_rgba(0,0,0,0.4)]">
-        
-        {/* Subtle top accent line */}
-        <motion.div
-          className="h-[2px] w-full"
-          style={{ background: "linear-gradient(90deg, hsl(var(--warning)), hsl(var(--accent)), hsl(var(--primary)))" }}
-          initial={{ scaleX: 0, originX: 1 }}
-          animate={{ scaleX: 1 }}
-          transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
+      <motion.div
+        initial={{ scaleX: 0.86, originX: 0.5 }}
+        animate={{ scaleX: 1 }}
+        transition={{ delay: 0.45, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+        className="relative overflow-hidden rounded-[28px] shadow-[0_25px_80px_-20px_rgba(53,30,8,0.35)] backdrop-blur-xl border border-border/20"
+        style={{
+          ...papyrusTexture,
+          clipPath: "polygon(3% 0%, 97% 2%, 100% 8%, 98% 92%, 94% 100%, 6% 98%, 0 90%, 2% 6%)",
+          WebkitMaskImage:
+            "radial-gradient(120% 120% at 50% 50%, rgba(0,0,0,0.98) 55%, rgba(0,0,0,0.92) 70%, rgba(0,0,0,0.55) 85%, transparent 100%)",
+          maskImage:
+            "radial-gradient(120% 120% at 50% 50%, rgba(0,0,0,0.98) 55%, rgba(0,0,0,0.92) 70%, rgba(0,0,0,0.55) 85%, transparent 100%)",
+          fontFamily: "'Cairo', 'Amiri', 'IBM Plex Sans Arabic', sans-serif",
+        }}
+      >
+        <div
+          className="absolute inset-0 opacity-40 mix-blend-multiply pointer-events-none"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.25), transparent 38%), radial-gradient(circle at 80% 12%, rgba(255,255,255,0.18), transparent 30%), linear-gradient(90deg, rgba(116,78,37,0.16) 1px, transparent 2px), linear-gradient(0deg, rgba(116,78,37,0.12) 1px, transparent 3px)",
+            backgroundSize: "100% 100%, 100% 100%, 140px 100%, 100% 180px",
+          }}
+        />
+
+        {/* Ornamental border */}
+        <div
+          className="absolute inset-[10px] rounded-[22px] pointer-events-none"
+          style={{
+            border: "1.5px solid rgba(212, 175, 55, 0.45)",
+            boxShadow:
+              "inset 0 0 0 1px rgba(124, 88, 36, 0.25), 0 0 0 1px rgba(0,0,0,0.03)",
+            background:
+              "linear-gradient(135deg, rgba(212,175,55,0.06), rgba(124,88,36,0.07))",
+          }}
+        />
+
+        {/* Corner motifs */}
+        <CornerMotif className="absolute -left-1 -top-1" />
+        <CornerMotif className="absolute -right-1 -top-1 rotate-90" />
+        <CornerMotif className="absolute -right-1 -bottom-1 rotate-180" />
+        <CornerMotif className="absolute -left-1 -bottom-1 -rotate-90" />
+
+        {/* Subtle papyrus grain */}
+        <div
+          className="absolute inset-0 opacity-25 pointer-events-none mix-blend-soft-light"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0.35'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='0.35'/%3E%3CfeFuncG type='linear' slope='0.35'/%3E%3CfeFuncB type='linear' slope='0.3'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23f)' opacity='0.6' fill='%23d2b48c'/%3E%3C/svg%3E\")",
+          }}
         />
 
         {/* Header section */}
-        <div className="px-7 pt-6 pb-4">
+        <div className="relative px-8 pt-7 pb-5">
           <div className="flex items-center gap-4">
-            {/* Elegant icon */}
             <motion.div
-              initial={{ scale: 0, rotate: -90 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: 0.7, type: "spring", stiffness: 200, damping: 14 }}
+              initial={{ scale: 0.85, rotate: -12, y: 4 }}
+              animate={{ scale: 1, rotate: 0, y: 0 }}
+              transition={{ delay: 0.6, type: "spring", stiffness: 180, damping: 14 }}
               className="relative flex-shrink-0"
             >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-warning/20 via-warning/10 to-transparent flex items-center justify-center border border-warning/15 shadow-inner">
-                <Sparkles className="w-5.5 h-5.5 text-warning" />
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#E3C58E]/60 via-[#F5DEB3]/70 to-[#D2B48C]/40 flex items-center justify-center border border-[rgba(212,175,55,0.35)] shadow-inner shadow-[rgba(124,88,36,0.15)]">
+                <Sparkles className="w-6 h-6 text-[#b88a3c]" />
               </div>
             </motion.div>
             <div className="flex-1 min-w-0">
               <motion.h3
                 initial={{ opacity: 0, x: 20, filter: "blur(6px)" }}
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                transition={{ delay: 0.8, duration: 0.6 }}
-                className="text-lg font-bold text-foreground tracking-tight"
+                transition={{ delay: 0.75, duration: 0.6 }}
+                className="text-xl font-bold tracking-tight text-[#5a3b18]"
               >
                 {t("hero.welcome_title")}
               </motion.h3>
               <motion.p
                 initial={{ opacity: 0, x: 15 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.95, duration: 0.5 }}
-                className="text-[13px] text-muted-foreground mt-0.5"
+                transition={{ delay: 0.9, duration: 0.5 }}
+                className="text-sm mt-1 text-[#5f4626]"
               >
                 {t("hero.welcome_sub")}
               </motion.p>
@@ -199,11 +295,11 @@ const HeroInfoWindow = () => {
           </div>
         </div>
 
-        {/* Elegant divider */}
-        <div className="mx-6 relative h-px">
+        {/* Golden divider */}
+        <div className="mx-7 relative h-px">
           <motion.div
             className="absolute inset-0"
-            style={{ background: "linear-gradient(90deg, transparent, hsl(var(--border)), transparent)" }}
+            style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.65), transparent)" }}
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
             transition={{ delay: 1, duration: 0.7 }}
@@ -211,23 +307,31 @@ const HeroInfoWindow = () => {
         </div>
 
         {/* Steps */}
-        <div className="p-5 px-6 space-y-2">
+        <div className="relative px-7 py-5 space-y-3">
           {infoSteps.map((step, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, x: 35, filter: "blur(3px)" }}
               animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-              transition={{ delay: 1.1 + i * 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-              whileHover={{ x: -5, backgroundColor: "hsl(var(--muted) / 0.5)" }}
-              className="flex items-center gap-3.5 rounded-xl px-4 py-3 transition-all duration-300 cursor-default group/step"
+              transition={{ delay: 1.05 + i * 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={{
+                x: -6,
+                boxShadow: "0 12px 30px -18px rgba(124,88,36,0.55)",
+              }}
+              className="flex items-center gap-3.5 rounded-2xl px-4 py-3 transition-all duration-500 cursor-default bg-[rgba(255,255,255,0.28)] backdrop-blur-[2px] border border-[rgba(124,88,36,0.12)]"
             >
               <motion.div
-                className={`w-10 h-10 rounded-xl bg-${step.accent}/10 flex items-center justify-center flex-shrink-0 border border-${step.accent}/10 group-hover/step:border-${step.accent}/25 transition-colors duration-300`}
-                whileHover={{ scale: 1.08, rotate: -5 }}
+                className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner"
+                style={{
+                  background: `linear-gradient(135deg, ${step.accent}1a, rgba(245,222,179,0.8))`,
+                  border: `1.5px solid ${step.accent}80`,
+                  boxShadow: "0 6px 14px -10px rgba(68,45,12,0.6)",
+                }}
+                whileHover={{ scale: 1.05, rotate: -4 }}
               >
-                <step.icon className={`w-[18px] h-[18px] text-${step.accent}`} />
+                <step.icon />
               </motion.div>
-              <span className="text-sm text-foreground/80 font-medium group-hover/step:text-foreground transition-colors duration-300 leading-relaxed">
+              <span className="text-sm font-semibold text-[#4a3217] leading-relaxed">
                 {step.text}
               </span>
             </motion.div>
@@ -239,24 +343,23 @@ const HeroInfoWindow = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.5, duration: 0.5 }}
-          className="mx-6 mb-6"
+          className="mx-7 mb-6"
         >
-          <div className="relative overflow-hidden rounded-xl px-5 py-3.5 text-center bg-muted/40 border border-border/30">
-            {/* Subtle shimmer */}
+          <div className="relative overflow-hidden rounded-2xl px-5 py-3.5 text-center border border-[rgba(212,175,55,0.35)] bg-[rgba(227,197,142,0.35)] shadow-[inset_0_8px_30px_rgba(255,255,255,0.18)]">
             <motion.div
               className="absolute inset-0 -translate-x-full"
-              style={{ background: "linear-gradient(90deg, transparent, hsl(var(--warning) / 0.06), transparent)" }}
-              animate={{ translateX: ["-100%", "200%"] }}
-              transition={{ duration: 4, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
+              style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.16), transparent)" }}
+              animate={{ translateX: ["-120%", "160%"] }}
+              transition={{ duration: 4, repeat: Infinity, repeatDelay: 2.2, ease: "easeInOut" }}
             />
-            <p className="relative text-[13px] font-semibold text-foreground/70 tracking-wide flex items-center justify-center gap-2.5">
-              <span className="w-1 h-1 rounded-full bg-warning" />
+            <p className="relative text-sm font-bold tracking-wide text-[#5a3b18] flex items-center justify-center gap-2.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]" />
               {t("hero.from_citizen")}
-              <span className="w-1 h-1 rounded-full bg-warning" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]" />
             </p>
           </div>
         </motion.div>
-      </div>
+      </motion.div>
 
       {/* Floating weekly stats badge */}
       <HeroStatsCard />
