@@ -562,7 +562,7 @@ const Landing = () => {
                   className="flex items-center gap-5 text-sm text-muted-foreground"
                 >
                   <div className="flex items-center gap-1.5">
-                    <Shield className="w-4 h-4 text-emerald-400" />
+                    <Shield className="w-4 h-4 text-primary" />
                     <span>{t("hero.encrypted")}</span>
                   </div>
                   <div className="w-px h-4 bg-border" />
