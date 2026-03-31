@@ -196,10 +196,6 @@ export type Database = {
           location: string
           longitude: number | null
           mp_notes: string | null
-          priority: string | null
-          refined_description: string | null
-          refined_title: string | null
-          resolution_rating: number | null
           status: string
           title: string
           updated_at: string
@@ -219,10 +215,6 @@ export type Database = {
           location: string
           longitude?: number | null
           mp_notes?: string | null
-          priority?: string | null
-          refined_description?: string | null
-          refined_title?: string | null
-          resolution_rating?: number | null
           status?: string
           title: string
           updated_at?: string
@@ -242,10 +234,6 @@ export type Database = {
           location?: string
           longitude?: number | null
           mp_notes?: string | null
-          priority?: string | null
-          refined_description?: string | null
-          refined_title?: string | null
-          resolution_rating?: number | null
           status?: string
           title?: string
           updated_at?: string

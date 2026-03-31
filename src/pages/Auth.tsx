@@ -89,7 +89,8 @@ const Auth = () => {
     detectLocation();
   }, []);
 
-  const MAX_MEMBERSHIP_NUMBER = MAX_MEMBERSHIP_NUMBER;
+  const phoneRegex = PHONE_REGEX;
+  const membershipNumberRegex = MEMBERSHIP_NUMBER_REGEX;
   const passwordHasNumber = useMemo(() => /\d/.test(password), [password]);
   const passwordHasLetter = useMemo(() => /[a-zA-Z\u0600-\u06FF]/.test(password), [password]);
   const governorateOptions = useMemo(() => getGovernorateOptions(), []);

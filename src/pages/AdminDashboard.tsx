@@ -21,9 +21,6 @@ import { AppRole, resolvePrimaryRole } from "@/constants/roles";
 import type { Database } from "@/integrations/supabase/types";
 import { dispatchNotification } from "@/lib/notifications";
 import { analytics } from "@/lib/analytics";
-import type { Tables } from "@/integrations/supabase/types";
-
-type IssueRow = Tables<"issues">;
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type IssueRow = Database["public"]["Tables"]["issues"]["Row"];

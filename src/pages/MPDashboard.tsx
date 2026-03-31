@@ -106,8 +106,8 @@ const MPDashboard = () => {
         id: d.id,
         title: d.title,
         description: d.description,
-        refined_title: d.refined_title || d.title,
-        refined_description: d.refined_description || d.description,
+        refined_title: (d as any).refined_title || d.title,
+        refined_description: (d as any).refined_description || d.description,
         status: d.status as Issue["status"],
         category: d.category,
         location: d.location,
@@ -116,7 +116,7 @@ const MPDashboard = () => {
         is_flagged: d.is_flagged || false,
         citizen_confirmed: d.citizen_confirmed || false,
         ai_summary: d.ai_summary || undefined,
-        priority: (d.priority || "normal") as Issue["priority"],
+        priority: ((d as any).priority || "normal") as Issue["priority"],
         user_id: d.user_id,
       })));
     }
