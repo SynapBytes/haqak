@@ -380,7 +380,39 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      mp_public_profiles: {
+        Row: {
+          avatar_url: string | null
+          center: string | null
+          constituency: string | null
+          contact_phone: string | null
+          full_name: string | null
+          governorate: string | null
+          is_approved: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          center?: string | null
+          constituency?: string | null
+          contact_phone?: string | null
+          full_name?: string | null
+          governorate?: string | null
+          is_approved?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          center?: string | null
+          constituency?: string | null
+          contact_phone?: string | null
+          full_name?: string | null
+          governorate?: string | null
+          is_approved?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_public_issue_stats: { Args: never; Returns: Json }
