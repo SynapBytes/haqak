@@ -35,10 +35,7 @@ const MPsDirectory = () => {
   useEffect(() => {
     const fetchMPs = async () => {
       setLoading(true);
-      const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "mp");
-      if (!roles || roles.length === 0) { setLoading(false); return; }
-      const mpUserIds = roles.map(r => r.user_id);
-      const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, avatar_url, constituency, governorate, center, is_approved").in("user_id", mpUserIds).eq("is_approved", true);
+      const { data: profiles } = await supabase.from("mp_public_profiles").select("user_id, full_name, avatar_url, constituency, governorate, center");
       if (!profiles) { setLoading(false); return; }
       const { data: issues } = await supabase.from("issues").select("assigned_mp_id, status").in("assigned_mp_id", mpUserIds);
       const statsMap: Record<string, { total: number; resolved: number }> = {};
