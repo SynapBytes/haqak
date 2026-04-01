@@ -1,28 +1,30 @@
-import { useEffect, useRef } from "react";
-
-const SPLASH_DURATION_MS = 2500;
-const SPLASH_VIDEO_SRC = "/video-black.mov";
+import { useEffect, useState } from "react";
 
 const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [stage, setStage] = useState<"logo" | "brand" | "exit">("logo");
 
   useEffect(() => {
-    timerRef.current = setTimeout(onFinish, SPLASH_DURATION_MS);
+    // المرحلة الأولى: عرض اللوجو (الريشة) لمدة 1.5 ثانية
+    const logoTimer = setTimeout(() => {
+      setStage("brand");
+    }, 1800);
+
+    // المرحلة الثانية: عرض اسم البراند (HAQAK) لمدة 1.5 ثانية
+    const brandTimer = setTimeout(() => {
+      setStage("exit");
+    }, 3600);
+
+    // إنهاء الشاشة الترحيبية
+    const finishTimer = setTimeout(() => {
+      onFinish();
+    }, 4200);
+
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      clearTimeout(logoTimer);
+      clearTimeout(brandTimer);
+      clearTimeout(finishTimer);
     };
   }, [onFinish]);
-
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    const attempt = () => v.play().catch(() => {});
-    const p = v.play();
-    if (p && typeof p.catch === "function") {
-      p.catch(() => setTimeout(attempt, 150));
-    }
-  }, []);
 
   return (
     <div
@@ -31,56 +33,57 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
         inset: 0,
         zIndex: 9999,
         backgroundColor: "#000",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         overflow: "hidden",
+        transition: "opacity 0.6s ease-in-out",
+        opacity: stage === "exit" ? 0 : 1,
+        pointerEvents: "none",
       }}
     >
       <style>{`
-        .splash-video,
-        .splash-video * {
-          user-select: none;
-          -webkit-user-select: none;
+        @keyframes fadeInOut {
+          0% { opacity: 0; transform: scale(0.9); filter: blur(10px); }
+          20% { opacity: 1; transform: scale(1); filter: blur(0px); }
+          80% { opacity: 1; transform: scale(1); filter: blur(0px); }
+          100% { opacity: 0; transform: scale(1.05); filter: blur(10px); }
         }
-        .splash-video::-webkit-media-controls,
-        .splash-video::-webkit-media-controls-enclosure,
-        .splash-video::-webkit-media-controls-start-playback-button,
-        .splash-video::-webkit-media-controls-play-button {
-          display: none !important;
-          opacity: 0 !important;
-          visibility: hidden !important;
-          pointer-events: none !important;
+        
+        .splash-content {
+          max-width: 80%;
+          max-height: 60%;
+          object-fit: contain;
+          animation: fadeInOut 2s ease-in-out forwards;
+        }
+
+        .glow-effect {
+          position: absolute;
+          width: 300px;
+          height: 300px;
+          background: radial-gradient(circle, rgba(255, 69, 0, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+          border-radius: 50%;
+          pointer-events: none;
         }
       `}</style>
 
-      <video
-        ref={videoRef}
-        className="splash-video"
-        autoPlay
-        muted
-        playsInline
-        preload="auto"
-        loop={false}
-        controls={false}
-        controlsList="nodownload noremoteplayback nofullscreen noplaybackrate"
-        disablePictureInPicture
-        disableRemotePlayback
-        tabIndex={-1}
-        onContextMenu={(e) => e.preventDefault()}
-        onMouseDown={(e) => e.preventDefault()}
-        onTouchStart={(e) => e.preventDefault()}
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          pointerEvents: "none",
-          backgroundColor: "#000",
-        }}
-      >
-        <source src={SPLASH_VIDEO_SRC} type="video/quicktime" />
-        <source src={SPLASH_VIDEO_SRC} type="video/mp4" />
-      </video>
+      <div className="glow-effect" />
+
+      {stage === "logo" && (
+        <img
+          src="/assets/splash/logo.png"
+          alt="Logo"
+          className="splash-content"
+        />
+      )}
+
+      {stage === "brand" && (
+        <img
+          src="/assets/splash/brand.png"
+          alt="Brand"
+          className="splash-content"
+        />
+      )}
     </div>
   );
 };
