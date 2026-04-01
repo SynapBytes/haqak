@@ -76,7 +76,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
     init();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, s) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
+      // INITIAL_SESSION is already handled by init() above; skip it to avoid
+      // a redundant profile fetch and unnecessary re-renders.
+      if (event === "INITIAL_SESSION") return;
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {

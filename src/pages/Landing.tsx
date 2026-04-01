@@ -131,7 +131,7 @@ const HeroStatsCard = () => {
 };
 
 /* ─── Hero Info Window ─── */
-const HeroInfoWindow = () => {
+const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped: boolean }) => {
   const { t } = useTranslation();
 
   const papyrusTexture = {
@@ -723,7 +723,7 @@ const Landing = () => {
 
               {/* ── Right: Info window ── */}
               <div className="w-full max-w-sm lg:w-[340px] flex-shrink-0">
-                <HeroInfoWindow />
+                <HeroInfoWindow opened={opened} ropeDropped={ropeDropped} />
               </div>
 
             </div>
