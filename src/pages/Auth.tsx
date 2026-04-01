@@ -116,7 +116,7 @@ const Auth = () => {
     } else {
       setPhoneError("");
     }
-  }, [phone, t]);
+  }, [phone, t, phoneRegex]);
 
   useEffect(() => {
     if (nationalId && mode.includes("signup-citizen")) {
@@ -151,7 +151,7 @@ const Auth = () => {
     } else {
       setMembershipNumberError("");
     }
-  }, [registrationNumber, mode, t]);
+  }, [registrationNumber, mode, t, membershipNumberRegex]);
 
   useEffect(() => {
     const validateForm = () => {
@@ -195,7 +195,7 @@ const Auth = () => {
       return false;
     };
     setIsFormValid(validateForm());
-  }, [mode, phone, password, passwordHasNumber, passwordHasLetter, fullName, displayName, governorate, district, electoralDistrict, registrationNumber, membershipNumberError, nationalId, nationalIdError, governorateError, districtError, electoralError]);
+  }, [mode, phone, password, passwordHasNumber, passwordHasLetter, fullName, displayName, governorate, district, electoralDistrict, registrationNumber, membershipNumberError, nationalId, nationalIdError, governorateError, districtError, electoralError, phoneRegex, membershipNumberRegex]);
 
   useEffect(() => {
     if (!mode.includes("signup-mp")) {
@@ -313,8 +313,8 @@ const Auth = () => {
       else if (mode === "signup-citizen") setMode("signup-citizen-otp");
       else if (mode === "signup-mp") setMode("signup-mp-otp");
       else if (mode === "forgot-password") setMode("forgot-password-otp");
-    } catch (err: any) {
-      toast.error(translateError(err.message || t("auth.otp_send_error")));
+    } catch (err: unknown) {
+      toast.error(translateError((err instanceof Error ? err.message : String(err)) || t("auth.otp_send_error")));
     } finally {
       setLoading(false);
     }
@@ -400,7 +400,7 @@ const Auth = () => {
         resetForm();
         setMode("login");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Track auth failures without exposing the raw error message (which may
       // contain phone numbers or other PII).
       if (mode === "login-otp") {
@@ -408,7 +408,7 @@ const Auth = () => {
       } else if (mode.includes("signup")) {
         analytics.track("signup_failure", { role: signupRole });
       }
-      toast.error(translateError(err.message || t("auth.otp_verify_error")));
+      toast.error(translateError((err instanceof Error ? err.message : String(err)) || t("auth.otp_verify_error")));
     } finally {
       setOtpLoading(false);
     }

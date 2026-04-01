@@ -102,23 +102,26 @@ const MPDashboard = () => {
           )
         : data;
 
-      setIssues(filtered.map((d) => ({
-        id: d.id,
-        title: d.title,
-        description: d.description,
-        refined_title: (d as any).refined_title || d.title,
-        refined_description: (d as any).refined_description || d.description,
-        status: d.status as Issue["status"],
-        category: d.category,
-        location: d.location,
-        timeAgo: new Date(d.created_at).toLocaleDateString("ar-EG"),
-        issue_type: (d.issue_type || "individual") as Issue["issue_type"],
-        is_flagged: d.is_flagged || false,
-        citizen_confirmed: d.citizen_confirmed || false,
-        ai_summary: d.ai_summary || undefined,
-        priority: ((d as any).priority || "normal") as Issue["priority"],
-        user_id: d.user_id,
-      })));
+      setIssues(filtered.map((d) => {
+        const row = d as Record<string, unknown>;
+        return {
+          id: d.id,
+          title: d.title,
+          description: d.description,
+          refined_title: (row.refined_title as string) || d.title,
+          refined_description: (row.refined_description as string) || d.description,
+          status: d.status as Issue["status"],
+          category: d.category,
+          location: d.location,
+          timeAgo: new Date(d.created_at).toLocaleDateString("ar-EG"),
+          issue_type: (d.issue_type || "individual") as Issue["issue_type"],
+          is_flagged: d.is_flagged || false,
+          citizen_confirmed: d.citizen_confirmed || false,
+          ai_summary: d.ai_summary || undefined,
+          priority: ((row.priority as string) || "normal") as Issue["priority"],
+          user_id: d.user_id,
+        };
+      }));
     }
     setLoading(false);
   };

@@ -64,7 +64,7 @@ const CitizenDashboard = () => {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [reputation, setReputation] = useState({ points: 0, rank: "مواطن جديد" });
-  const [mpResponses, setMpResponses] = useState<any[]>([]);
+  const [mpResponses, setMpResponses] = useState<Record<string, unknown>[]>([]);
 
   const isFormValid = title.trim() !== "" && 
                       description.trim() !== "" && 
@@ -80,23 +80,26 @@ const CitizenDashboard = () => {
       .order("created_at", { ascending: false });
 
     if (data) {
-      setIssues(data.map((d) => ({
-        id: d.id,
-        title: d.title,
-        description: d.description,
-        status: d.status as Issue["status"],
-        category: d.category,
-        location: d.location,
-        timeAgo: new Date(d.created_at).toLocaleDateString("ar-EG"),
-        issue_type: (d as any).issue_type || "individual",
-        is_flagged: (d as any).is_flagged || false,
-        citizen_confirmed: (d as any).citizen_confirmed || false,
-        ai_summary: d.ai_summary || undefined,
-        user_id: d.user_id,
-        resolution_rating: (d as any).resolution_rating,
-        refined_title: (d as any).refined_title,
-        refined_description: (d as any).refined_description,
-      })));
+      setIssues(data.map((d) => {
+        const row = d as Record<string, unknown>;
+        return {
+          id: d.id,
+          title: d.title,
+          description: d.description,
+          status: d.status as Issue["status"],
+          category: d.category,
+          location: d.location,
+          timeAgo: new Date(d.created_at).toLocaleDateString("ar-EG"),
+          issue_type: (row.issue_type as string) || "individual",
+          is_flagged: (row.is_flagged as boolean) || false,
+          citizen_confirmed: (row.citizen_confirmed as boolean) || false,
+          ai_summary: d.ai_summary || undefined,
+          user_id: d.user_id,
+          resolution_rating: row.resolution_rating as number | undefined,
+          refined_title: row.refined_title as string | undefined,
+          refined_description: row.refined_description as string | undefined,
+        };
+      }));
     }
     
     // reputation columns not yet in profiles table – use defaults
@@ -110,7 +113,7 @@ const CitizenDashboard = () => {
     setMpResponses([]);
   };
 
-  useEffect(() => { fetchIssues(); }, [user]);
+  useEffect(() => { fetchIssues(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (mpIdParam && mpNameParam) {
@@ -120,7 +123,7 @@ const CitizenDashboard = () => {
       setSearchParams({}, { replace: true });
       setCaptchaToken(null);
     }
-  }, [mpIdParam, mpNameParam]);
+  }, [mpIdParam, mpNameParam, setSearchParams]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
@@ -319,9 +322,9 @@ const CitizenDashboard = () => {
       setCaptchaToken(null);
       rotateCsrf();
       fetchIssues();
-    } catch (err: any) {
+    } catch (err: unknown) {
       analytics.track("issue_submission_failed");
-      toast.error(err.message || t("dashboard.error_submitting"));
+      toast.error((err instanceof Error ? err.message : String(err)) || t("dashboard.error_submitting"));
     } finally {
       setSubmitting(false);
     }

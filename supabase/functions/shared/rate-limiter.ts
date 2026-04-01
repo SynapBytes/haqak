@@ -34,7 +34,7 @@ export class RateLimitError extends Error {
  * a 429 response with a `Retry-After` header.
  */
 export const rateLimiter = async (
-  supabase: any,
+  supabase: ReturnType<typeof createClient>,
   userId: string,
   path: string,
   ipAddress = "0.0.0.0",

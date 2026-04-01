@@ -73,7 +73,7 @@ serve(async (req) => {
       });
     }
 
-    let parsedBody: any = {};
+    let parsedBody: Record<string, unknown> = {};
     try {
       parsedBody = rawBody ? JSON.parse(rawBody) : {};
     } catch {

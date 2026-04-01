@@ -50,7 +50,7 @@ const safeJsonParse = (value: string) => {
   }
 };
 
-const readOpenAiContent = (data: any): string => {
+const readOpenAiContent = (data: Record<string, unknown>): string => {
   const message = data?.choices?.[0]?.message;
   if (!message) return "";
   if (typeof message.content === "string") return message.content;
@@ -125,7 +125,7 @@ export type ClassificationInput = {
 };
 
 const validateClassificationResult = (
-  raw: Record<string, any>,
+  raw: Record<string, unknown>,
   input: ClassificationInput,
   unavailable: boolean,
 ): ClassificationResult => {
