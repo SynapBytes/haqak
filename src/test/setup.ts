@@ -1,10 +1,10 @@
 import "@testing-library/jest-dom";
 import { webcrypto } from "node:crypto";
 
-// Vitest runs on Node 18 in CI, where `globalThis.crypto` may be undefined.
-// Provide a Web Crypto polyfill so tests using `crypto.subtle` behave
-// consistently across environments.
-if (!globalThis.crypto) {
+// Vitest runs on Node 18 in CI, where `globalThis.crypto` may be undefined
+// or present (via jsdom) but without a working `.subtle`. Provide the Node.js
+// Web Crypto polyfill so tests using `crypto.subtle` behave consistently.
+if (!globalThis.crypto?.subtle) {
   globalThis.crypto = webcrypto as Crypto;
 }
 

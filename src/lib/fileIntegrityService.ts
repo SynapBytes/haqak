@@ -1,6 +1,9 @@
 import { webcrypto as nodeCrypto } from "node:crypto";
 
-const subtle = (globalThis.crypto ?? nodeCrypto).subtle;
+// Prefer globalThis.crypto.subtle when available (browser/modern Node).
+// In jsdom, globalThis.crypto exists but .subtle is undefined, so fall back
+// to the Node.js webcrypto implementation in that case.
+const subtle = globalThis.crypto?.subtle ?? nodeCrypto.subtle;
 
 export interface IntegrityResult {
   valid: boolean;
