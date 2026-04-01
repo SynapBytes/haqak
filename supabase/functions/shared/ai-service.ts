@@ -21,6 +21,21 @@ export type AiMeta = {
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL") ?? "gpt-4o-mini";
 const OPENAI_BASE_URL = Deno.env.get("OPENAI_BASE_URL") ?? "https://api.openai.com/v1";
 
+// Models that use reasoning_effort instead of temperature.
+// gpt-5.1-codex-max only accepts 'medium'; o1/o3 series accept 'low'|'medium'|'high'.
+const REASONING_MODELS = new Set([
+  "o1",
+  "o1-mini",
+  "o1-preview",
+  "o3",
+  "o3-mini",
+  "o4-mini",
+  "gpt-5.1-codex-max",
+]);
+
+const isReasoningModel = (model: string): boolean =>
+  REASONING_MODELS.has(model) || model.startsWith("o1-") || model.startsWith("o3-") || model.startsWith("o4-");
+
 const buildMeta = (provider: AiProvider, model?: string, unavailable = false): AiMeta => ({
   provider,
   model,
@@ -75,6 +90,12 @@ const callOpenAi = async (
     throw new Error("OpenAI API key is not configured");
   }
 
+  // Reasoning models (e.g. gpt-5.1-codex-max) do not accept a numeric temperature;
+  // they use reasoning_effort instead. gpt-5.1-codex-max only supports 'medium'.
+  const modelParams = isReasoningModel(OPENAI_MODEL)
+    ? { reasoning_effort: "medium" }
+    : { temperature };
+
   const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
@@ -83,7 +104,7 @@ const callOpenAi = async (
     },
     body: JSON.stringify({
       model: OPENAI_MODEL,
-      temperature,
+      ...modelParams,
       messages,
       ...(responseFormat ? { response_format: responseFormat } : {}),
     }),
