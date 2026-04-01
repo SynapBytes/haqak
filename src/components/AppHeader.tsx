@@ -49,8 +49,15 @@ const AppHeader = () => {
     <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50">
       <div className="container flex items-center justify-between h-14 md:h-16 px-4">
         <Link to="/" className="flex items-center gap-2.5 group">
-          <img src="/logo-haqak.webp" alt={t("app_name")} className="w-9 h-9 rounded-xl shadow-sm group-hover:shadow-md transition-shadow object-contain" />
-          <span className="text-xl font-bold text-foreground tracking-tight">{t("app_name")}</span>
+          <picture className="h-8 md:h-9 flex items-center">
+            <source srcSet="/haqak-wordmark.webp" type="image/webp" />
+            <img
+              src="/haqak-wordmark.png"
+              alt={t("app_name")}
+              className="h-8 md:h-9 w-auto drop-shadow-sm transition-transform duration-200 group-hover:scale-[1.02]"
+            />
+          </picture>
+          <span className="sr-only">{t("app_name")}</span>
         </Link>
 
         {/* Desktop Nav */}

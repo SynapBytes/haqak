@@ -239,12 +239,13 @@ const Careers = () => {
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
               <div className="flex items-center gap-3">
                 <Link to="/">
-                  <img src="/logo-haqak.webp" alt={t("app_name")} className="w-10 h-10 rounded-2xl shadow-md object-contain" />
+                  <picture className="h-10 flex items-center">
+                    <source srcSet="/haqak-wordmark.webp" type="image/webp" />
+                    <img src="/haqak-wordmark.png" alt={t("app_name")} className="h-10 w-auto drop-shadow" />
+                  </picture>
                 </Link>
-                <div>
-                  <span className="font-bold text-lg text-foreground block">{t("app_name")}</span>
-                  <span className="text-xs text-muted-foreground">{t("tagline")}</span>
-                </div>
+                <span className="sr-only">{t("app_name")}</span>
+                <span className="hidden sm:block text-xs text-muted-foreground">{t("tagline")}</span>
               </div>
               <div className="flex items-center gap-6 text-sm text-muted-foreground flex-wrap justify-center md:justify-end">
                 <Link to="/auth" className="hover:text-foreground transition-colors">{t("footer.login")}</Link>

@@ -7,8 +7,8 @@ self.addEventListener("push", (event) => {
     event.waitUntil(
       self.registration.showNotification(title || "حقك", {
         body: body || "",
-        icon: icon || "/logo-haqak.webp",
-        badge: "/logo-haqak.webp",
+        icon: icon || "/haqak-logo-192.png",
+        badge: "/haqak-logo-192.png",
         data: data || {},
       })
     );
