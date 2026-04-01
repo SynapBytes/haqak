@@ -1,92 +1,110 @@
 import { useEffect, useState } from "react";
 
+/**
+ * SplashScreen Component - Standalone & Resilient
+ * This component is designed to be independent of the app's internal state
+ * to ensure it always renders and finishes correctly.
+ */
 const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
   const [stage, setStage] = useState<"logo" | "brand" | "exit">("logo");
 
   useEffect(() => {
-    // المرحلة الأولى: عرض اللوجو (الريشة) لمدة 1.8 ثانية
-    const logoTimer = setTimeout(() => {
-      setStage("brand");
-    }, 1800);
-
-    // المرحلة الثانية: عرض اسم البراند (HAQAK) لمدة 1.8 ثانية إضافية
-    const brandTimer = setTimeout(() => {
-      setStage("exit");
-    }, 3600);
-
-    // إنهاء الشاشة الترحيبية تماماً بعد 4.2 ثانية
+    // Force body background to black during splash
+    document.body.style.backgroundColor = "#000";
+    
+    const logoTimer = setTimeout(() => setStage("brand"), 2000);
+    const brandTimer = setTimeout(() => setStage("exit"), 4000);
     const finishTimer = setTimeout(() => {
+      document.body.style.backgroundColor = ""; // Reset background
       onFinish();
-    }, 4200);
+    }, 4600);
 
     return () => {
       clearTimeout(logoTimer);
       clearTimeout(brandTimer);
       clearTimeout(finishTimer);
+      document.body.style.backgroundColor = "";
     };
   }, [onFinish]);
 
   return (
     <div
+      id="haqak-splash-root"
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 99999,
+        zIndex: 999999,
         backgroundColor: "#000",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        overflow: "hidden",
-        transition: "opacity 0.5s ease-in-out",
+        flexDirection: "column",
+        transition: "opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
         opacity: stage === "exit" ? 0 : 1,
         pointerEvents: "none",
+        userSelect: "none",
       }}
     >
       <style>{`
-        @keyframes splashFade {
-          0% { opacity: 0; transform: scale(0.92); filter: blur(10px); }
-          20% { opacity: 1; transform: scale(1); filter: blur(0px); }
-          80% { opacity: 1; transform: scale(1); filter: blur(0px); }
-          100% { opacity: 0; transform: scale(1.05); filter: blur(10px); }
+        @keyframes splash-entry {
+          0% { opacity: 0; transform: scale(0.85); filter: blur(12px); }
+          100% { opacity: 1; transform: scale(1); filter: blur(0px); }
         }
         
-        .splash-img {
-          max-width: 280px;
-          width: 70%;
-          height: auto;
-          object-fit: contain;
-          animation: splashFade 2s ease-in-out forwards;
+        @keyframes splash-exit {
+          0% { opacity: 1; transform: scale(1); filter: blur(0px); }
+          100% { opacity: 0; transform: scale(1.05); filter: blur(12px); }
         }
 
-        .splash-glow {
+        .splash-asset {
+          max-width: 300px;
+          width: 75%;
+          height: auto;
+          object-fit: contain;
+          animation: splash-entry 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        .splash-asset.exit {
+          animation: splash-exit 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        .splash-glow-orb {
           position: absolute;
-          width: 400px;
-          height: 400px;
-          background: radial-gradient(circle, rgba(255, 80, 0, 0.12) 0%, rgba(0, 0, 0, 0) 70%);
+          width: 500px;
+          height: 500px;
+          background: radial-gradient(circle, rgba(255, 80, 0, 0.08) 0%, rgba(0, 0, 0, 0) 70%);
           border-radius: 50%;
           pointer-events: none;
+          animation: pulse-glow 4s infinite ease-in-out;
+        }
+
+        @keyframes pulse-glow {
+          0%, 100% { transform: scale(1); opacity: 0.4; }
+          50% { transform: scale(1.15); opacity: 0.7; }
         }
       `}</style>
 
-      <div className="splash-glow" />
+      <div className="splash-glow-orb" />
 
-      {stage === "logo" && (
-        <img
-          src="/assets/splash/logo.png"
-          alt="Logo"
-          className="splash-img"
-          key="logo-img"
-        />
-      )}
+      <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}>
+        {stage === "logo" && (
+          <img
+            src="/assets/splash/logo.png"
+            alt="HAQAK Logo"
+            className="splash-asset"
+            key="splash-logo"
+          />
+        )}
 
-      {stage === "brand" && (
-        <img
-          src="/assets/splash/brand.png"
-          alt="Brand"
-          className="splash-img"
-          key="brand-img"
-        />
-      )}
+        {stage === "brand" && (
+          <img
+            src="/assets/splash/brand.png"
+            alt="HAQAK Brand"
+            className="splash-asset"
+            key="splash-brand"
+          />
+        )}
+      </div>
     </div>
   );
 };
