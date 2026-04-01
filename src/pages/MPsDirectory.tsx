@@ -36,7 +36,8 @@ const MPsDirectory = () => {
     const fetchMPs = async () => {
       setLoading(true);
       const { data: profiles } = await supabase.from("mp_public_profiles").select("user_id, full_name, avatar_url, constituency, governorate, center");
-      if (!profiles) { setLoading(false); return; }
+      if (!profiles || profiles.length === 0) { setLoading(false); return; }
+      const mpUserIds = profiles.map(p => p.user_id);
       const { data: issues } = await supabase.from("issues").select("assigned_mp_id, status").in("assigned_mp_id", mpUserIds);
       const statsMap: Record<string, { total: number; resolved: number }> = {};
       issues?.forEach(issue => {
