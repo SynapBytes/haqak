@@ -8,8 +8,6 @@
     <meta name="description" content="منصة حقك للتواصل المدني تربط المواطنين مباشرة بأعضاء مجلس النواب المصري لتقديم المشكلات ومتابعة الحلول بأمان وشفافية.">
     <meta name="keywords" content="Civic Communication, Egyptian Parliament Connection, citizen platform, MPs, حقك, منصة حقك, تواصل النواب, خدمات المواطنين">
     <meta name="author" content="حقك" />
-
-    
     
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://haqak.org/" />
@@ -20,19 +18,119 @@
     <meta name="twitter:site" content="@haqak_org" />
     <meta name="twitter:image" content="https://haqak.org/haqak-wordmark.png">
     <meta property="og:title" content="حقك | Civic Communication Platform">
-  <meta name="twitter:title" content="حقك | Civic Communication Platform">
+    <meta name="twitter:title" content="حقك | Civic Communication Platform">
     <meta property="og:description" content="منصة حقك للتواصل المدني تربط المواطنين بأعضاء مجلس النواب المصري لتقديم المشكلات ومتابعة الحلول بأمان وشفافية.">
-  <meta name="twitter:description" content="منصة حقك للتواصل المدني تربط المواطنين بأعضاء مجلس النواب المصري لتقديم المشكلات ومتابعة الحلول بأمان وشفافية.">
+    <meta name="twitter:description" content="منصة حقك للتواصل المدني تربط المواطنين بأعضاء مجلس النواب المصري لتقديم المشكلات ومتابعة الحلول بأمان وشفافية.">
   
     <!-- Security Headers -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.socket.io; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https: wss:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    
+    <style>
+      #haqak-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 999999;
+        background-color: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        transition: opacity 0.8s ease-in-out;
+      }
+      .splash-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+      }
+      .splash-asset {
+        position: absolute;
+        max-width: 280px;
+        width: 70%;
+        height: auto;
+        opacity: 0;
+        transform: scale(0.95);
+        filter: blur(10px);
+        transition: all 1s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .splash-asset.active {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0px);
+      }
+      .splash-asset.fade-out {
+        opacity: 0;
+        transform: scale(1.05);
+        filter: blur(10px);
+      }
+      .splash-glow {
+        position: absolute;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(255, 80, 0, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+        border-radius: 50%;
+        pointer-events: none;
+      }
+    </style>
 </head>
 
-  <body>
+  <body style="background-color: #000;">
+    <div id="haqak-splash">
+      <div class="splash-glow"></div>
+      <div class="splash-container">
+        <img id="splash-logo" src="/assets/splash/logo.png" class="splash-asset" alt="Logo">
+        <img id="splash-brand" src="/assets/splash/brand.png" class="splash-asset" alt="Brand">
+      </div>
+    </div>
+
+    <script>
+      (function() {
+        const logo = document.getElementById('splash-logo');
+        const brand = document.getElementById('splash-brand');
+        const splash = document.getElementById('haqak-splash');
+
+        // Stage 1: Show Logo
+        setTimeout(() => {
+          logo.classList.add('active');
+        }, 100);
+
+        // Stage 2: Transition to Brand
+        setTimeout(() => {
+          logo.classList.remove('active');
+          logo.classList.add('fade-out');
+          setTimeout(() => {
+            brand.classList.add('active');
+          }, 400);
+        }, 2000);
+
+        // Stage 3: Exit Splash
+        setTimeout(() => {
+          brand.classList.remove('active');
+          brand.classList.add('fade-out');
+          setTimeout(() => {
+            splash.style.opacity = '0';
+            setTimeout(() => {
+              splash.remove();
+              document.body.style.backgroundColor = '';
+            }, 800);
+          }, 400);
+        }, 4200);
+
+        // Safety: Ensure splash is removed even if something fails
+        setTimeout(() => {
+          if (document.getElementById('haqak-splash')) {
+            document.getElementById('haqak-splash').remove();
+            document.body.style.backgroundColor = '';
+          }
+        }, 6000);
+      })();
+    </script>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

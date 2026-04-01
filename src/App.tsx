@@ -6,7 +6,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import SplashScreen from "@/components/SplashScreen";
 import PushNotificationProvider from "@/components/PushNotificationProvider";
 import { useTranslation } from "react-i18next";
 import { AppRole } from "@/constants/roles";
@@ -64,24 +63,12 @@ function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode;
 }
 
 function App() {
-  const [showSplash, setShowSplash] = useState(true);
-  const handleSplashFinish = useCallback(() => setShowSplash(false), []);
-
-  // Safety: Ensure splash is removed even if onFinish is not called
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 6000);
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
           <BrowserRouter>
             <AuthProvider>
               <PushNotificationProvider />
