@@ -48,7 +48,15 @@ const AppHeader = () => {
   return (
     <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50">
       <div className="container flex items-center justify-between h-14 md:h-16 px-4">
-        <Link to="/" className="flex items-center gap-2.5 group">
+        <Link to="/" className="flex items-center gap-3 group">
+          <picture className="flex items-center">
+            <source srcSet="/haqak-logo.webp" type="image/webp" />
+            <img
+              src="/haqak-logo.png"
+              alt="HAQAK logo"
+              className="h-8 md:h-9 w-8 md:w-9 drop-shadow-sm transition-transform duration-200 group-hover:scale-[1.04]"
+            />
+          </picture>
           <picture className="h-8 md:h-9 flex items-center">
             <source srcSet="/haqak-wordmark.webp" type="image/webp" />
             <img

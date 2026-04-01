@@ -987,6 +987,10 @@ const Landing = () => {
 
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
               <div className="flex items-center gap-3">
+                <picture className="flex items-center">
+                  <source srcSet="/haqak-logo.webp" type="image/webp" />
+                  <img src="/haqak-logo.png" alt="HAQAK logo" className="h-10 w-10 drop-shadow" />
+                </picture>
                 <picture className="h-10 flex items-center">
                   <source srcSet="/haqak-wordmark.webp" type="image/webp" />
                   <img src="/haqak-wordmark.png" alt={t("app_name")} className="h-10 w-auto drop-shadow" />
