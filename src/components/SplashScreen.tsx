@@ -1,30 +1,38 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
   const [stage, setStage] = useState<"logo" | "brand" | "exit">("logo");
+  const [isFinished, setIsFinished] = useState(false);
+
+  const handleFinish = useCallback(() => {
+    if (!isFinished) {
+      setIsFinished(true);
+      onFinish();
+    }
+  }, [isFinished, onFinish]);
 
   useEffect(() => {
-    // المرحلة الأولى: عرض اللوجو (الريشة) لمدة 1.5 ثانية
+    // المرحلة الأولى: عرض اللوجو (الريشة)
     const logoTimer = setTimeout(() => {
       setStage("brand");
-    }, 1800);
+    }, 2000);
 
-    // المرحلة الثانية: عرض اسم البراند (HAQAK) لمدة 1.5 ثانية
+    // المرحلة الثانية: عرض اسم البراند (HAQAK)
     const brandTimer = setTimeout(() => {
       setStage("exit");
-    }, 3600);
+    }, 4000);
 
-    // إنهاء الشاشة الترحيبية
+    // إنهاء الشاشة الترحيبية (Safety Timeout)
     const finishTimer = setTimeout(() => {
-      onFinish();
-    }, 4200);
+      handleFinish();
+    }, 4600);
 
     return () => {
       clearTimeout(logoTimer);
       clearTimeout(brandTimer);
       clearTimeout(finishTimer);
     };
-  }, [onFinish]);
+  }, [handleFinish]);
 
   return (
     <div
@@ -44,26 +52,35 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
     >
       <style>{`
         @keyframes fadeInOut {
-          0% { opacity: 0; transform: scale(0.9); filter: blur(10px); }
-          20% { opacity: 1; transform: scale(1); filter: blur(0px); }
-          80% { opacity: 1; transform: scale(1); filter: blur(0px); }
-          100% { opacity: 0; transform: scale(1.05); filter: blur(10px); }
+          0% { opacity: 0; transform: scale(0.95); filter: blur(8px); }
+          15% { opacity: 1; transform: scale(1); filter: blur(0px); }
+          85% { opacity: 1; transform: scale(1); filter: blur(0px); }
+          100% { opacity: 0; transform: scale(1.02); filter: blur(8px); }
         }
         
         .splash-content {
-          max-width: 80%;
-          max-height: 60%;
+          max-width: 280px;
+          width: 80%;
+          height: auto;
           object-fit: contain;
-          animation: fadeInOut 2s ease-in-out forwards;
+          animation: fadeInOut 2.2s ease-in-out forwards;
+          user-select: none;
+          -webkit-user-drag: none;
         }
 
         .glow-effect {
           position: absolute;
-          width: 300px;
-          height: 300px;
-          background: radial-gradient(circle, rgba(255, 69, 0, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+          width: 400px;
+          height: 400px;
+          background: radial-gradient(circle, rgba(255, 100, 0, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
           border-radius: 50%;
           pointer-events: none;
+          animation: pulseGlow 4s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+          0%, 100% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.2); opacity: 0.8; }
         }
       `}</style>
 
@@ -74,6 +91,7 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
           src="/assets/splash/logo.png"
           alt="Logo"
           className="splash-content"
+          onError={handleFinish}
         />
       )}
 
@@ -82,6 +100,7 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
           src="/assets/splash/brand.png"
           alt="Brand"
           className="splash-content"
+          onError={handleFinish}
         />
       )}
     </div>
