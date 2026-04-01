@@ -1,97 +1,81 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 
 const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
   const [stage, setStage] = useState<"logo" | "brand" | "exit">("logo");
-  const [isFinished, setIsFinished] = useState(false);
-
-  const handleFinish = useCallback(() => {
-    if (!isFinished) {
-      setIsFinished(true);
-      onFinish();
-    }
-  }, [isFinished, onFinish]);
 
   useEffect(() => {
-    // المرحلة الأولى: عرض اللوجو (الريشة)
+    // المرحلة الأولى: عرض اللوجو (الريشة) لمدة 1.8 ثانية
     const logoTimer = setTimeout(() => {
       setStage("brand");
-    }, 2000);
+    }, 1800);
 
-    // المرحلة الثانية: عرض اسم البراند (HAQAK)
+    // المرحلة الثانية: عرض اسم البراند (HAQAK) لمدة 1.8 ثانية إضافية
     const brandTimer = setTimeout(() => {
       setStage("exit");
-    }, 4000);
+    }, 3600);
 
-    // إنهاء الشاشة الترحيبية (Safety Timeout)
+    // إنهاء الشاشة الترحيبية تماماً بعد 4.2 ثانية
     const finishTimer = setTimeout(() => {
-      handleFinish();
-    }, 4600);
+      onFinish();
+    }, 4200);
 
     return () => {
       clearTimeout(logoTimer);
       clearTimeout(brandTimer);
       clearTimeout(finishTimer);
     };
-  }, [handleFinish]);
+  }, [onFinish]);
 
   return (
     <div
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 9999,
+        zIndex: 99999,
         backgroundColor: "#000",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         overflow: "hidden",
-        transition: "opacity 0.6s ease-in-out",
+        transition: "opacity 0.5s ease-in-out",
         opacity: stage === "exit" ? 0 : 1,
         pointerEvents: "none",
       }}
     >
       <style>{`
-        @keyframes fadeInOut {
-          0% { opacity: 0; transform: scale(0.95); filter: blur(8px); }
-          15% { opacity: 1; transform: scale(1); filter: blur(0px); }
-          85% { opacity: 1; transform: scale(1); filter: blur(0px); }
-          100% { opacity: 0; transform: scale(1.02); filter: blur(8px); }
+        @keyframes splashFade {
+          0% { opacity: 0; transform: scale(0.92); filter: blur(10px); }
+          20% { opacity: 1; transform: scale(1); filter: blur(0px); }
+          80% { opacity: 1; transform: scale(1); filter: blur(0px); }
+          100% { opacity: 0; transform: scale(1.05); filter: blur(10px); }
         }
         
-        .splash-content {
+        .splash-img {
           max-width: 280px;
-          width: 80%;
+          width: 70%;
           height: auto;
           object-fit: contain;
-          animation: fadeInOut 2.2s ease-in-out forwards;
-          user-select: none;
-          -webkit-user-drag: none;
+          animation: splashFade 2s ease-in-out forwards;
         }
 
-        .glow-effect {
+        .splash-glow {
           position: absolute;
           width: 400px;
           height: 400px;
-          background: radial-gradient(circle, rgba(255, 100, 0, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+          background: radial-gradient(circle, rgba(255, 80, 0, 0.12) 0%, rgba(0, 0, 0, 0) 70%);
           border-radius: 50%;
           pointer-events: none;
-          animation: pulseGlow 4s infinite ease-in-out;
-        }
-
-        @keyframes pulseGlow {
-          0%, 100% { transform: scale(1); opacity: 0.5; }
-          50% { transform: scale(1.2); opacity: 0.8; }
         }
       `}</style>
 
-      <div className="glow-effect" />
+      <div className="splash-glow" />
 
       {stage === "logo" && (
         <img
           src="/assets/splash/logo.png"
           alt="Logo"
-          className="splash-content"
-          onError={handleFinish}
+          className="splash-img"
+          key="logo-img"
         />
       )}
 
@@ -99,8 +83,8 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
         <img
           src="/assets/splash/brand.png"
           alt="Brand"
-          className="splash-content"
-          onError={handleFinish}
+          className="splash-img"
+          key="brand-img"
         />
       )}
     </div>
