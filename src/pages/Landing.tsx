@@ -981,6 +981,8 @@ const Landing = () => {
                 <Link to="/privacy" className="hover:text-foreground transition-colors">{t("footer.privacy")}</Link>
                 <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
                 <Link to="/terms" className="hover:text-foreground transition-colors">{t("footer.terms")}</Link>
+                <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
+                <Link to="/careers" className="hover:text-foreground transition-colors font-medium text-accent">{t("footer.careers")}</Link>
               </div>
             </div>
             <div className="pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3">
