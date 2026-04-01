@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -36,7 +36,7 @@ const Support = () => {
 
   const suggestedAmounts = [50, 100, 200, 500];
 
-  useState(() => {
+  useEffect(() => {
     const fetchContributors = async () => {
       try {
         const { data } = await supabase
@@ -55,7 +55,7 @@ const Support = () => {
       }
     };
     fetchContributors();
-  });
+  }, []);
 
   const handleContribute = async () => {
     const finalAmount = amount === "other" ? parseFloat(customAmount) : amount;
@@ -122,10 +122,16 @@ const Support = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-100/70 relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 opacity-60">
+        <div className="absolute -left-32 -top-20 w-80 h-80 rounded-full bg-amber-200 blur-3xl" />
+        <div className="absolute right-[-10%] top-10 w-[320px] h-[320px] rounded-full bg-emerald-200 blur-3xl" />
+        <div className="absolute bottom-[-10%] left-[15%] w-[240px] h-[240px] rounded-full bg-amber-100 blur-2xl" />
+      </div>
+
       <AppHeader />
       
-      <main className="container max-w-4xl mx-auto px-4 py-12 md:py-20">
+      <main className="relative container max-w-5xl mx-auto px-4 py-12 md:py-20">
         <AnimatePresence mode="wait">
           {step === "form" ? (
             <motion.div
@@ -141,16 +147,20 @@ const Support = () => {
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.2 }}
-                  className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10 text-accent mb-4"
+                  className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-xl shadow-amber-200/60 ring-8 ring-white/70 mb-4"
                 >
                   <Heart className="w-8 h-8 fill-current" />
                 </motion.div>
                 <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground">
                   {t("contribute.title")}
                 </h1>
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
                   {t("contribute.subtitle")}
                 </p>
+                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/70 backdrop-blur shadow-lg shadow-amber-100/50 border border-white/80 text-sm text-amber-700 font-semibold">
+                  <Shield className="w-4 h-4" />
+                  <span>{t("contribute.transparency_desc")}</span>
+                </div>
               </div>
 
               {/* Usage Section */}
@@ -160,12 +170,15 @@ const Support = () => {
                   { icon: Smartphone, text: t("contribute.use_2") },
                   { icon: Shield, text: t("contribute.use_3") },
                 ].map((item, i) => (
-                  <Card key={i} className="border-none bg-accent/5 shadow-none">
+                  <Card 
+                    key={i} 
+                    className="border border-white/70 bg-white/70 backdrop-blur-xl shadow-[0_20px_80px_rgba(15,23,42,0.07)]"
+                  >
                     <CardContent className="pt-6 flex flex-col items-center text-center space-y-3">
-                      <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center text-accent shadow-sm">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-100 to-white flex items-center justify-center text-amber-700 shadow-inner shadow-amber-100">
                         <item.icon className="w-5 h-5" />
                       </div>
-                      <p className="text-sm font-medium text-foreground">{item.text}</p>
+                      <p className="text-sm font-semibold text-foreground">{item.text}</p>
                     </CardContent>
                   </Card>
                 ))}
@@ -182,19 +195,29 @@ const Support = () => {
                         <Button
                           key={amt}
                           variant={amount === amt ? "default" : "outline"}
-                          className={`h-14 text-lg font-bold rounded-xl transition-all ${
-                            amount === amt ? "shadow-lg shadow-accent/20 scale-[1.02]" : ""
+                          className={`h-14 text-lg font-bold rounded-xl transition-all border-2 ${
+                            amount === amt
+                              ? "bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-[0_20px_60px_rgba(245,158,11,0.35)] border-amber-200"
+                              : "bg-white/70 backdrop-blur border-white/80 hover:border-amber-200 hover:shadow-lg hover:shadow-amber-100/60"
                           }`}
                           onClick={() => setAmount(amt)}
                         >
-                          {amt} <span className="text-xs ml-1 opacity-70">{t("contribute.egp")}</span>
+                          <span className="flex items-baseline gap-1">
+                            <span className="text-sm opacity-80">{t("contribute.egp")}</span>
+                            {amt}
+                          </span>
+                          {amount === amt && <CheckCircle2 className="w-5 h-5 ml-2" />}
                         </Button>
                       ))}
                     </div>
                     <div className="relative">
                       <Button
                         variant={amount === "other" ? "default" : "outline"}
-                        className="w-full h-14 justify-between px-4 rounded-xl font-medium"
+                        className={`w-full h-14 justify-between px-4 rounded-xl font-medium border-2 ${
+                          amount === "other"
+                            ? "bg-gradient-to-br from-amber-500 to-amber-600 text-white border-amber-200 shadow-[0_20px_60px_rgba(245,158,11,0.35)]"
+                            : "bg-white/70 backdrop-blur border-white/80 hover:border-amber-200"
+                        }`}
                         onClick={() => setAmount("other")}
                       >
                         <span>{t("contribute.other_amount")}</span>
@@ -224,7 +247,7 @@ const Support = () => {
                   </section>
 
                   {/* Personal Info */}
-                  <section className="space-y-6 p-6 rounded-2xl border bg-card/50 backdrop-blur-sm">
+                  <section className="space-y-6 p-6 rounded-2xl border border-white/70 bg-white/70 backdrop-blur-xl shadow-[0_18px_60px_rgba(15,23,42,0.07)]">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="name">{t("contribute.name_label")}</Label>
@@ -271,37 +294,43 @@ const Support = () => {
                   </section>
                 </div>
 
-                {/* Payment & Summary */}
-                <div className="lg:col-span-2 space-y-6">
-                  <Card className="border-accent/20 shadow-xl shadow-accent/5 rounded-2xl overflow-hidden">
-                    <CardHeader className="bg-accent/5 border-b border-accent/10">
-                      <CardTitle className="text-lg">{t("contribute.payment_methods")}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6 space-y-6">
-                      <div className="grid grid-cols-2 gap-3">
-                        {[
-                          { icon: CreditCard, label: "Visa/Master" },
+                 {/* Payment & Summary */}
+                 <div className="lg:col-span-2 space-y-6">
+                   <Card className="border border-white/70 bg-white/80 backdrop-blur-2xl shadow-[0_24px_80px_rgba(245,158,11,0.15)] rounded-2xl overflow-hidden">
+                     <CardHeader className="bg-gradient-to-r from-amber-500/10 to-emerald-500/10 border-b border-white/60">
+                       <CardTitle className="text-lg flex items-center gap-2">
+                         <Lock className="w-4 h-4 text-amber-600" />
+                         {t("contribute.payment_methods")}
+                       </CardTitle>
+                     </CardHeader>
+                     <CardContent className="p-6 space-y-6">
+                       <div className="grid grid-cols-2 gap-3">
+                         {[
+                           { icon: CreditCard, label: "Visa/Master" },
                           { icon: Building2, label: "InstaPay" },
                           { icon: Wallet, label: "Wallets" },
                           { icon: Zap, label: "Fawry" },
                         ].map((method, i) => (
-                          <div key={i} className="flex flex-col items-center p-3 rounded-xl border bg-background/50 hover:border-accent/50 transition-colors cursor-pointer group">
-                            <method.icon className="w-6 h-6 mb-2 text-muted-foreground group-hover:text-accent transition-colors" />
-                            <span className="text-[10px] font-medium">{method.label}</span>
+                          <div 
+                            key={i} 
+                            className="flex flex-col items-center p-3 rounded-xl border-2 border-white/70 bg-white/70 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-100/70 transition-all cursor-pointer group"
+                          >
+                            <method.icon className="w-6 h-6 mb-2 text-amber-600 group-hover:scale-110 transition-transform" />
+                            <span className="text-xs font-semibold text-foreground">{method.label}</span>
                           </div>
                         ))}
-                      </div>
+                       </div>
 
-                      <div className="pt-4 border-t space-y-4">
+                      <div className="pt-4 border-t border-white/60 space-y-4">
                         <div className="flex justify-between items-center text-sm">
                           <span className="text-muted-foreground">{t("dashboard.total_issues").replace("إجمالي المشاكل", "المبلغ")}</span>
-                          <span className="font-bold text-lg">
+                          <span className="font-bold text-xl text-amber-700">
                             {amount === "other" ? customAmount || "0" : amount} {t("contribute.egp")}
                           </span>
                         </div>
                         
                         <Button 
-                          className="w-full h-14 text-lg font-bold rounded-xl gap-2"
+                          className="w-full h-14 text-lg font-bold rounded-xl gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-[0_20px_60px_rgba(245,158,11,0.35)]"
                           onClick={handleContribute}
                           disabled={loading}
                         >
