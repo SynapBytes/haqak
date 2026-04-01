@@ -1,0 +1,22 @@
+name: "Copilot Setup Steps"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    env:
+      # gpt-5.1-codex-max only supports 'medium' for its creativity/reasoning-effort
+      # parameter; 'low' and 'high' are not supported by this model.
+      GITHUB_COPILOT_CODING_AGENT_CREATIVITY: medium
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history is required so that git diff against main succeeds.
+          fetch-depth: 0
