@@ -26,6 +26,7 @@ const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const GeniusEnhancements = lazy(() => import("./pages/GeniusEnhancements"));
 const Careers = lazy(() => import("./pages/Careers"));
+const Support = lazy(() => import("./pages/Support"));
 
 const queryClient = new QueryClient();
 
@@ -84,6 +85,7 @@ function App() {
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/terms" element={<TermsOfService />} />
                   <Route path="/careers" element={<Careers />} />
+                  <Route path="/support" element={<Support />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

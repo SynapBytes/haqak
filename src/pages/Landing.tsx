@@ -963,6 +963,28 @@ const Landing = () => {
         <FooterDecorations isDark={isDark} />
         <div className="container px-4">
           <div className="max-w-5xl mx-auto">
+            {/* Contribution Card in Footer */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mb-16 p-8 rounded-3xl bg-gradient-to-br from-accent/5 via-background to-accent/5 border border-accent/10 relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-accent/10 transition-colors" />
+              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                <div className="text-center md:text-right space-y-2">
+                  <h4 className="text-xl font-bold text-foreground">{t("footer.support_haqak")}</h4>
+                  <p className="text-sm text-muted-foreground max-w-md">{t("footer.support_haqak_desc")}</p>
+                </div>
+                <Link to="/support">
+                  <Button className="h-12 px-8 rounded-xl font-bold gap-2 shadow-lg shadow-accent/20 hover:shadow-accent/30 transition-all">
+                    {t("footer.support_haqak_btn")}
+                    <Heart className="w-4 h-4 fill-current" />
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
               <div className="flex items-center gap-3">
                 <img src="/logo-haqak.webp" alt={t("app_name")} className="w-10 h-10 rounded-2xl shadow-md object-contain" />
@@ -975,6 +997,8 @@ const Landing = () => {
                 <Link to="/auth" className="hover:text-foreground transition-colors">{t("footer.login")}</Link>
                 <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
                 <Link to="/auth" className="hover:text-foreground transition-colors">{t("footer.register")}</Link>
+                <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
+                <Link to="/support" className="hover:text-foreground transition-colors font-medium text-accent">{t("footer.support_haqak_btn")}</Link>
                 <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
                 <button onClick={() => document.getElementById('support')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-foreground transition-colors cursor-pointer bg-transparent border-none p-0 text-sm text-muted-foreground">{t("footer.support")}</button>
                 <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />

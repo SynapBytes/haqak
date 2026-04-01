@@ -137,3 +137,8 @@ Not specified yet.
 - Official contact (partnerships & general): **team@haqak.org**
 - Support (issues, help, complaints): **support@haqak.org**
 - Administrative/legal: **admin@haqak.org**
+
+---
+
+## 💖 Support Haqak
+Haqak is an independent platform. You can now contribute to its development through our [Contribution Page](/support). For more details on how the contribution system works, check the [Contribution System Documentation](docs/CONTRIBUTION_SYSTEM.md).

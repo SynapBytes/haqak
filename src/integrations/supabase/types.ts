@@ -373,10 +373,87 @@ export type Database = {
         }
         Update: {
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
+          role: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
+      }
+      contributions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          email: string | null
+          id: string
+          metadata: Json | null
+          name: string | null
+          payment_provider: string | null
+          provider_reference: string | null
+          show_name: boolean
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          email?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string | null
+          payment_provider?: string | null
+          provider_reference?: string | null
+          show_name?: boolean
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          email?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string | null
+          payment_provider?: string | null
+          provider_reference?: string | null
+          show_name?: boolean
+          status?: string
+        }
+        Relationships: []
+      }
+      feedbacks: {
+        Row: {
+          contribution_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          message: string
+          name: string | null
+        }
+        Insert: {
+          contribution_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          message: string
+          name?: string | null
+        }
+        Update: {
+          contribution_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+          name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedbacks_contribution_id_fkey"
+            columns: ["contribution_id"]
+            isOneToOne: false
+            referencedRelation: "contributions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
