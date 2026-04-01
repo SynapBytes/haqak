@@ -66,7 +66,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+          {/* {showSplash && <SplashScreen onFinish={handleSplashFinish} />} */}
           <BrowserRouter>
             <AuthProvider>
               <PushNotificationProvider />
