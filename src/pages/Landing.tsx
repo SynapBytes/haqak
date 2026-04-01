@@ -568,6 +568,18 @@ const Landing = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const heroRef = useRef<HTMLDivElement>(null);
+  const [opened, setOpened] = useState(false);
+  const [ropeDropped, setRopeDropped] = useState(false);
+
+  useEffect(() => {
+    const timer1 = setTimeout(() => setRopeDropped(true), 400);
+    const timer2 = setTimeout(() => setOpened(true), 1000);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
+
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 100]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
