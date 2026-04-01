@@ -1,11 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { buildCorsHeaders } from "../shared/cors.ts";
 
 /** Allowed MIME types and their magic-byte signatures. */
 const MAGIC_RULES: Record<string, Array<{ offset: number; bytes: number[] }>> = {
@@ -41,14 +36,16 @@ function matchesAnyRule(
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const cors = buildCorsHeaders(req.headers.get("Origin"), true);
+
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized", valid: false }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -57,7 +54,7 @@ serve(async (req) => {
     if (!contentType.includes("multipart/form-data")) {
       return new Response(
         JSON.stringify({ error: "Expected multipart/form-data", valid: false }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
@@ -67,7 +64,7 @@ serve(async (req) => {
     if (!(file instanceof File)) {
       return new Response(JSON.stringify({ error: "No file provided", valid: false }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -121,19 +118,19 @@ serve(async (req) => {
     if (!isValid) {
       return new Response(
         JSON.stringify({ valid: false, error: rejectionReason }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
     return new Response(
       JSON.stringify({ valid: true, mimeType: declaredMime, fileName: file.name }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { headers: { ...cors, "Content-Type": "application/json" } },
     );
   } catch (e) {
     console.error("validate-file-upload error:", e);
     return new Response(JSON.stringify({ error: "Internal server error", valid: false }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 });

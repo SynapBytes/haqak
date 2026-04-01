@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { buildCorsHeaders } from "../shared/cors.ts";
 
 // Limits for OTP/auth sensitive paths
 const OTP_RATE_LIMIT_PER_PHONE = 5;   // max sends per phone per window
@@ -82,9 +78,11 @@ async function verifyTurnstile(token: string | undefined, ip: string): Promise<b
 }
 
 serve(async (req) => {
+  const cors = buildCorsHeaders(req.headers.get("Origin"));
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   try {
@@ -100,18 +98,30 @@ serve(async (req) => {
     if (!phone || !mode) {
       return new Response(
         JSON.stringify({ error: "Missing required fields: phone and mode" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
-    // Validate phone number — configurable via env, defaults to Egyptian format
-    const phoneRegexSrc =
-      Deno.env.get("PHONE_REGEX") ?? "^01[0125][0-9]{8}$";
-    const phoneRegex = new RegExp(phoneRegexSrc);
+    // Validate phone number — configurable via env, defaults to Egyptian format.
+    // VULN-09 fix: guard against ReDoS by validating the pattern before use.
+    const DEFAULT_PHONE_REGEX = "^01[0125][0-9]{8}$";
+    const phoneRegexSrc = Deno.env.get("PHONE_REGEX") ?? DEFAULT_PHONE_REGEX;
+    let phoneRegex: RegExp;
+    try {
+      phoneRegex = new RegExp(phoneRegexSrc);
+      // Reject patterns that are suspiciously long or contain nested quantifiers
+      // which are the primary source of catastrophic ReDoS backtracking.
+      if (phoneRegexSrc.length > 200 || /(\+|\*|\?)\s*(\+|\*|\?)/.test(phoneRegexSrc) || /\([^)]*(\+|\*|\?)\)\s*(\+|\*|\?)/.test(phoneRegexSrc)) {
+        throw new Error("Unsafe regex pattern");
+      }
+    } catch {
+      console.error("Invalid or unsafe PHONE_REGEX env var, falling back to default");
+      phoneRegex = new RegExp(DEFAULT_PHONE_REGEX);
+    }
     if (!phoneRegex.test(phone)) {
       return new Response(
         JSON.stringify({ error: "Invalid phone number format" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
@@ -120,7 +130,7 @@ serve(async (req) => {
     if (!turnstileOk) {
       return new Response(
         JSON.stringify({ error: "CAPTCHA verification failed" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 403, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
@@ -139,21 +149,21 @@ serve(async (req) => {
       console.error("OTP_HMAC_SECRET is not configured");
       return new Response(
         JSON.stringify({ error: "Server configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
     if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
       return new Response(
         JSON.stringify({ error: "Server configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(
         JSON.stringify({ error: "Server configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
@@ -171,7 +181,7 @@ serve(async (req) => {
     if ((phoneCount ?? 0) >= OTP_RATE_LIMIT_PER_PHONE) {
       return new Response(
         JSON.stringify({ error: "Too many OTP requests for this phone. Please try again later." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": String(OTP_WINDOW_MINUTES * 60) } },
+        { status: 429, headers: { ...cors, "Content-Type": "application/json", "Retry-After": String(OTP_WINDOW_MINUTES * 60) } },
       );
     }
 
@@ -186,7 +196,7 @@ serve(async (req) => {
     if ((ipCount ?? 0) >= OTP_RATE_LIMIT_PER_IP) {
       return new Response(
         JSON.stringify({ error: "Too many requests from your network. Please try again later." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": String(OTP_WINDOW_MINUTES * 60) } },
+        { status: 429, headers: { ...cors, "Content-Type": "application/json", "Retry-After": String(OTP_WINDOW_MINUTES * 60) } },
       );
     }
 
@@ -203,7 +213,7 @@ serve(async (req) => {
     if (lockedRows && lockedRows.length > 0 && lockedRows[0].attempts >= OTP_MAX_VERIFY_ATTEMPTS) {
       return new Response(
         JSON.stringify({ error: "Account temporarily locked due to too many failed attempts. Please try again later." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": String(OTP_LOCK_MINUTES * 60) } },
+        { status: 429, headers: { ...cors, "Content-Type": "application/json", "Retry-After": String(OTP_LOCK_MINUTES * 60) } },
       );
     }
 
@@ -236,7 +246,7 @@ serve(async (req) => {
     if (!twilioResponse.ok) {
       return new Response(
         JSON.stringify({ error: "Failed to send OTP" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
@@ -267,12 +277,12 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ success: true, message: "OTP sent successfully" }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 200, headers: { ...cors, "Content-Type": "application/json" } },
     );
   } catch {
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
     );
   }
 });

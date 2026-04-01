@@ -1,10 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { buildCorsHeaders } from "../shared/cors.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+/** Compute HMAC-SHA256 of `message` with `key`, return lower-case hex string */
+async function hmacSha256Hex(key: string, message: string): Promise<string> {
+  const enc = new TextEncoder();
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(key),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, enc.encode(message));
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
 
 interface VerifyOtpRequest {
   phone: string;
@@ -39,9 +51,10 @@ function generateEmailFromPhone(phone: string): string {
 }
 
 serve(async (req) => {
+  const cors = buildCorsHeaders(req.headers.get("Origin"));
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   try {
@@ -52,7 +65,7 @@ serve(async (req) => {
     if (!phone || !otp || !mode) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -60,53 +73,81 @@ serve(async (req) => {
     if (!/^\d{6}$/.test(otp)) {
       return new Response(
         JSON.stringify({ error: "Invalid OTP format" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    // HMAC key used by send-otp to hash OTP tokens before storage
+    const otpHmacSecret = Deno.env.get("OTP_HMAC_SECRET");
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(
         JSON.stringify({ error: "Server configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!otpHmacSecret) {
+      console.error("OTP_HMAC_SECRET is not configured");
+      return new Response(
+        JSON.stringify({ error: "Server configuration error" }),
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const formattedPhone = formatPhoneNumber(phone);
 
-    // Verify OTP from database
+    // Fetch the most recent active (not used, not expired) OTP record for
+    // this phone + mode.  We do NOT filter by the code column here because
+    // the stored value is an HMAC hash — the raw OTP must be verified via
+    // constant-time HMAC recomputation below (VULN-01 fix).
     const { data: otpRecord, error: otpError } = await supabase
       .from("otp_codes")
       .select("*")
       .eq("phone", formattedPhone)
-      .eq("code", otp)
       .eq("mode", mode)
-      .single();
+      .eq("used", false)
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (otpError || !otpRecord) {
       return new Response(
         JSON.stringify({ error: "Invalid OTP" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
-    // Check if OTP is expired
-    const expiresAt = new Date(otpRecord.expires_at);
-    if (expiresAt < new Date()) {
-      return new Response(
-        JSON.stringify({ error: "OTP expired" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Check attempt limit
-    if (otpRecord.attempts >= 3) {
+    // Check attempt limit before doing any further work (prevents oracle)
+    if ((otpRecord.attempts ?? 0) >= 3) {
       return new Response(
         JSON.stringify({ error: "Too many attempts" }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 429, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Recompute the HMAC using the same inputs as send-otp and compare.
+    // This is the correct fix for VULN-01: comparing the raw OTP against the
+    // stored HMAC hash always failed because "123456" !== "a3f7b2...".
+    const expectedHmac = await hmacSha256Hex(
+      otpHmacSecret,
+      `${formattedPhone}:${otp}:${otpRecord.expires_at}`,
+    );
+
+    if (expectedHmac !== otpRecord.code) {
+      // VULN-08 fix: increment attempts on every failure so the 3-attempt
+      // limit is actually enforced.
+      await supabase
+        .from("otp_codes")
+        .update({ attempts: (otpRecord.attempts ?? 0) + 1 })
+        .eq("id", otpRecord.id);
+      return new Response(
+        JSON.stringify({ error: "Invalid OTP" }),
+        { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -128,18 +169,18 @@ serve(async (req) => {
       if (!profile) {
         return new Response(
           JSON.stringify({ error: "User not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 404, headers: { ...cors, "Content-Type": "application/json" } }
         );
       }
 
-      // Get user email from auth
-      const { data: { users } } = await supabase.auth.admin.listUsers();
-      const user = users.find((u) => u.id === profile.user_id);
+      // VULN-12 fix: use getUserById instead of listUsers() which loads ALL
+      // users into memory and is O(n) per login request.
+      const { data: { user } } = await supabase.auth.admin.getUserById(profile.user_id);
 
       if (!user?.email) {
         return new Response(
           JSON.stringify({ error: "User email not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 404, headers: { ...cors, "Content-Type": "application/json" } }
         );
       }
 
@@ -150,7 +191,7 @@ serve(async (req) => {
           userId: profile.user_id,
           message: "OTP verified successfully",
         }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...cors, "Content-Type": "application/json" } }
       );
     } else if (mode === "signup-citizen" || mode === "signup-mp") {
       // Check if phone already registered
@@ -163,7 +204,7 @@ serve(async (req) => {
       if (existingProfile) {
         return new Response(
           JSON.stringify({ error: "Phone number already registered" }),
-          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 409, headers: { ...cors, "Content-Type": "application/json" } }
         );
       }
 
@@ -174,7 +215,7 @@ serve(async (req) => {
       if (!fullName || !password) {
         return new Response(
           JSON.stringify({ error: "Missing signup data" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
         );
       }
 
@@ -182,7 +223,7 @@ serve(async (req) => {
         if (!governorate || !district || !electoralDistrict) {
           return new Response(
             JSON.stringify({ error: "Missing MP-specific data" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
           );
         }
       }
@@ -194,7 +235,7 @@ serve(async (req) => {
           phone: formattedPhone,
           message: "OTP verified. Ready for signup.",
         }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...cors, "Content-Type": "application/json" } }
       );
     } else if (mode === "forgot-password") {
       // Find user by phone
@@ -207,18 +248,17 @@ serve(async (req) => {
       if (!profile) {
         return new Response(
           JSON.stringify({ error: "User not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 404, headers: { ...cors, "Content-Type": "application/json" } }
         );
       }
 
-      // Get user email
-      const { data: { users } } = await supabase.auth.admin.listUsers();
-      const user = users.find((u) => u.id === profile.user_id);
+      // VULN-12 fix: use getUserById instead of listUsers()
+      const { data: { user } } = await supabase.auth.admin.getUserById(profile.user_id);
 
       if (!user?.email) {
         return new Response(
           JSON.stringify({ error: "User email not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 404, headers: { ...cors, "Content-Type": "application/json" } }
         );
       }
 
@@ -228,19 +268,19 @@ serve(async (req) => {
           email: user.email,
           message: "OTP verified. Ready for password reset.",
         }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
     return new Response(
       JSON.stringify({ error: "Invalid mode" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Error:", error);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
     );
   }
 });

@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { buildCorsHeaders } from "../shared/cors.ts";
 
 /** Maximum age of a CAPTCHA challenge response we accept (5 minutes). */
 const TOKEN_TTL_SECONDS = 5 * 60;
@@ -23,7 +19,9 @@ async function sha256(input: string): Promise<string> {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const cors = buildCorsHeaders(req.headers.get("Origin"), true);
+
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
   const ipAddress =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
@@ -43,7 +41,7 @@ serve(async (req) => {
     if (!token) {
       return new Response(JSON.stringify({ error: "CAPTCHA token is required", valid: false }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -60,7 +58,7 @@ serve(async (req) => {
       if ((count ?? 0) >= RATE_LIMIT_MAX) {
         return new Response(
           JSON.stringify({ error: "Too many CAPTCHA attempts. Please wait and try again.", valid: false }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          { status: 429, headers: { ...cors, "Content-Type": "application/json" } },
         );
       }
 
@@ -82,12 +80,12 @@ serve(async (req) => {
       // Only allow bypass in explicit development environment
       if (IS_DEV) {
         return new Response(JSON.stringify({ valid: true, score: 1.0, dev_mode: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...cors, "Content-Type": "application/json" },
         });
       }
       return new Response(JSON.stringify({ error: "CAPTCHA service unavailable", valid: false }), {
         status: 503,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -104,7 +102,7 @@ serve(async (req) => {
       if (existing) {
         return new Response(
           JSON.stringify({ error: "CAPTCHA token has already been used", valid: false }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
         );
       }
     }
@@ -123,7 +121,7 @@ serve(async (req) => {
       console.error("Turnstile verification failed:", response.status);
       return new Response(JSON.stringify({ error: "CAPTCHA verification failed", valid: false }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -136,7 +134,7 @@ serve(async (req) => {
         error: "CAPTCHA validation failed",
         errorCodes: data["error-codes"]
       }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -147,7 +145,7 @@ serve(async (req) => {
       if (ageSeconds > TOKEN_TTL_SECONDS) {
         return new Response(
           JSON.stringify({ error: "CAPTCHA token has expired. Please solve the challenge again.", valid: false }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
         );
       }
     }
@@ -171,13 +169,13 @@ serve(async (req) => {
       hostname: data.hostname,
       errorCodes: data["error-codes"] || [],
     }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("verify-captcha error:", e);
     return new Response(JSON.stringify({ error: "Internal server error", valid: false }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 });

@@ -1,11 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { buildParticipantSet } from "../shared/access-control.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { buildCorsHeaders } from "../shared/cors.ts";
+import { requireCsrfToken } from "../shared/csrf.ts";
 
 type NotificationEvent =
   | "issue_submitted"
@@ -149,8 +146,10 @@ async function sendSms(to: string, body: string) {
 }
 
 serve(async (req) => {
+  const cors = buildCorsHeaders(req.headers.get("Origin"));
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   try {
@@ -160,7 +159,7 @@ serve(async (req) => {
     if (!recipients || recipients.length === 0 || !event) {
       return new Response(
         JSON.stringify({ error: "recipients and event are required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
@@ -168,9 +167,13 @@ serve(async (req) => {
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 401, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
+
+    // VULN-10: CSRF protection on notification dispatch
+    const csrfError = requireCsrfToken(req, cors);
+    if (csrfError) return csrfError;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -178,7 +181,7 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(
         JSON.stringify({ error: "Server configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
@@ -192,7 +195,7 @@ serve(async (req) => {
     if (!user) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 401, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
@@ -205,7 +208,7 @@ serve(async (req) => {
       console.error("Failed to load roles", roleError);
       return new Response(
         JSON.stringify({ error: "Unable to verify permissions" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
     const roles = new Set(roleRows?.map((r) => r.role) ?? []);
@@ -222,7 +225,7 @@ serve(async (req) => {
       if (issueError || !issueData) {
         return new Response(
           JSON.stringify({ error: "Issue not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          { status: 404, headers: { ...cors, "Content-Type": "application/json" } },
         );
       }
 
@@ -233,7 +236,7 @@ serve(async (req) => {
       if (!isAdminOrModerator && !isIssueParticipant) {
         return new Response(
           JSON.stringify({ error: "Forbidden" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          { status: 403, headers: { ...cors, "Content-Type": "application/json" } },
         );
       }
 
@@ -242,14 +245,14 @@ serve(async (req) => {
         if (unauthorized) {
           return new Response(
             JSON.stringify({ error: "Recipients not allowed" }),
-            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+            { status: 403, headers: { ...cors, "Content-Type": "application/json" } },
           );
         }
       }
     } else if (!isAdminOrModerator) {
       return new Response(
         JSON.stringify({ error: "Forbidden" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 403, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
@@ -348,13 +351,13 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ success: true, results: deliveryResults }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 200, headers: { ...cors, "Content-Type": "application/json" } },
     );
   } catch (err) {
     console.error("Dispatch error:", err);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
     );
   }
 });

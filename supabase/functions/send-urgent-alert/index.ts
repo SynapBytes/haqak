@@ -1,11 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { buildParticipantSet } from "../shared/access-control.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { buildCorsHeaders } from "../shared/cors.ts";
+import { requireCsrfToken } from "../shared/csrf.ts";
 
 interface SendUrgentAlertRequest {
   issueId: string;
@@ -69,9 +66,11 @@ function detectUrgency(title: string, description: string): { level: string; key
 }
 
 serve(async (req) => {
+  const cors = buildCorsHeaders(req.headers.get("Origin"));
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   try {
@@ -82,7 +81,7 @@ serve(async (req) => {
     if (!issueId || !title || !description) {
       return new Response(
         JSON.stringify({ success: false, error: "Missing required fields" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -90,9 +89,13 @@ serve(async (req) => {
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
         JSON.stringify({ success: false, error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
+
+    // VULN-10: CSRF protection on urgent alert dispatch
+    const csrfError = requireCsrfToken(req, cors);
+    if (csrfError) return csrfError;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -103,7 +106,7 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(
         JSON.stringify({ success: false, error: "Server configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -116,7 +119,7 @@ serve(async (req) => {
     if (!user) {
       return new Response(
         JSON.stringify({ success: false, error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -129,7 +132,7 @@ serve(async (req) => {
       console.error("Failed to load roles", roleError);
       return new Response(
         JSON.stringify({ success: false, error: "Unable to verify permissions" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
     const roles = new Set(roleRows?.map((r) => r.role) ?? []);
@@ -144,7 +147,7 @@ serve(async (req) => {
     if (issueError || !issueData) {
       return new Response(
         JSON.stringify({ success: false, error: "Issue not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 404, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -153,7 +156,7 @@ serve(async (req) => {
     if (!isAdminOrModerator && !isIssueParticipant) {
       return new Response(
         JSON.stringify({ success: false, error: "Forbidden" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 403, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -175,7 +178,7 @@ serve(async (req) => {
       console.error("Alert creation error:", alertError);
       return new Response(
         JSON.stringify({ success: false, error: "Failed to create alert" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -212,9 +215,20 @@ serve(async (req) => {
     // Send SMS notifications
     let notifiedCount = 0;
     const urgencyEmoji = urgencyLevel === "critical" ? "🚨" : urgencyLevel === "high" ? "⚠️" : "ℹ️";
+    // VULN-15 fix: sanitize user-supplied title against SMS header injection
+    // (newline characters in the title would add fraudulent lines to the SMS).
+    // Also validate issueId is a UUID to prevent URL manipulation.
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(issueId)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid issueId" }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+    const safeTitle = title.replace(/[\r\n]/g, " ").slice(0, 100);
 
     for (const recipient of notificationRecipients) {
-      const message = `${urgencyEmoji} تنبيه عاجل من حقك:\n${title}\nالأولوية: ${urgencyLevel}\nتابع: https://haqak.org/issues/${issueId}`;
+      const message = `${urgencyEmoji} تنبيه عاجل من حقك:\n${safeTitle}\nالأولوية: ${urgencyLevel}\nتابع: https://haqak.org/issues/${issueId}`;
 
       // Send via Twilio
       if (twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
@@ -272,13 +286,13 @@ serve(async (req) => {
         notifiedMps: mpIds.length,
         notifiedAdmins: adminIds.length,
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...cors, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Error:", error);
     return new Response(
       JSON.stringify({ success: false, error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
     );
   }
 });

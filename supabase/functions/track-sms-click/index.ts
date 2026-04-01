@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { buildCorsHeaders } from "../shared/cors.ts";
 
 interface TrackingResponse {
   success: boolean;
@@ -15,9 +11,11 @@ interface TrackingResponse {
 }
 
 serve(async (req) => {
+  const cors = buildCorsHeaders(req.headers.get("Origin"));
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   try {
@@ -28,7 +26,7 @@ serve(async (req) => {
     if (!shortCode) {
       return new Response(
         JSON.stringify({ success: false, error: "Missing tracking code" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -38,7 +36,7 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(
         JSON.stringify({ success: false, error: "Server configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -54,13 +52,31 @@ serve(async (req) => {
     if (linkError || !trackingLink) {
       return new Response(
         JSON.stringify({ success: false, error: "Tracking link not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 404, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
-    // Extract user agent and IP
-    const userAgent = req.headers.get("user-agent") || "unknown";
-    const ipAddress = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    // Extract user agent and IP.
+    // VULN-11 fix: sanitize both values before storing in the database to
+    // prevent stored XSS if an admin dashboard renders them as HTML.
+    const MAX_UA_LEN = 512;
+    const MAX_IP_LEN = 45;
+    function sanitizeHeader(value: string | null, maxLen: number): string {
+      if (!value) return "unknown";
+      const withoutHtmlChars = value.replace(/[<>"'&]/g, "");
+      const withoutControlChars = Array.from(withoutHtmlChars)
+        .filter((ch) => {
+          const code = ch.charCodeAt(0);
+          return code >= 0x20 && code !== 0x7f;
+        })
+        .join("");
+      return withoutControlChars.slice(0, maxLen);
+    }
+    const userAgent = sanitizeHeader(req.headers.get("user-agent"), MAX_UA_LEN);
+    const ipAddress = sanitizeHeader(
+      req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip"),
+      MAX_IP_LEN,
+    );
 
     // Update click tracking
     const now = new Date().toISOString();
@@ -120,13 +136,13 @@ serve(async (req) => {
         recipientType: trackingLink.recipient_type,
         redirectUrl,
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...cors, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Error:", error);
     return new Response(
       JSON.stringify({ success: false, error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
     );
   }
 });
