@@ -209,155 +209,213 @@ const HeroInfoWindow = () => {
         style={{ background: "radial-gradient(ellipse at 50% 40%, rgba(212,175,55,0.35), rgba(158,123,47,0.12), transparent 70%)" }}
       />
 
-      {/* Main card */}
+      {/* Main card reimagined as premium papyrus scroll */}
       <motion.div
         initial={{ scaleX: 0.86, originX: 0.5 }}
         animate={{ scaleX: 1 }}
         transition={{ delay: 0.45, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-        className="relative overflow-hidden rounded-[28px] shadow-[0_25px_80px_-20px_rgba(53,30,8,0.35)] backdrop-blur-xl border border-border/20"
-        style={{
-          ...papyrusTexture,
-          clipPath: "polygon(3% 0%, 97% 2%, 100% 8%, 98% 92%, 94% 100%, 6% 98%, 0 90%, 2% 6%)",
-          WebkitMaskImage:
-            "radial-gradient(120% 120% at 50% 50%, rgba(0,0,0,0.98) 55%, rgba(0,0,0,0.92) 70%, rgba(0,0,0,0.55) 85%, transparent 100%)",
-          maskImage:
-            "radial-gradient(120% 120% at 50% 50%, rgba(0,0,0,0.98) 55%, rgba(0,0,0,0.92) 70%, rgba(0,0,0,0.55) 85%, transparent 100%)",
-          fontFamily: "'Cairo', 'Amiri', 'IBM Plex Sans Arabic', sans-serif",
-        }}
+        className="relative overflow-visible"
+        style={{ fontFamily: "'Cairo', 'Amiri', 'IBM Plex Sans Arabic', sans-serif" }}
       >
-        <div
-          className="absolute inset-0 opacity-40 mix-blend-multiply pointer-events-none"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.25), transparent 38%), radial-gradient(circle at 80% 12%, rgba(255,255,255,0.18), transparent 30%), linear-gradient(90deg, rgba(116,78,37,0.16) 1px, transparent 2px), linear-gradient(0deg, rgba(116,78,37,0.12) 1px, transparent 3px)",
-            backgroundSize: "100% 100%, 100% 100%, 140px 100%, 100% 180px",
+        <div className="absolute -inset-8 rounded-[32px] bg-gradient-to-br from-amber-200/12 via-amber-500/8 to-yellow-900/5 blur-3xl pointer-events-none" />
+
+        {/* Hanging rope + seal */}
+        <motion.div
+          initial={{ y: -90, opacity: 0, scaleY: 0.6 }}
+          animate={{ y: ropeDropped ? 0 : -90, opacity: 1, scaleY: ropeDropped ? 1 : 0.6 }}
+          transition={{ type: "spring", stiffness: 120, damping: 10, delay: 0.2 }}
+          className="absolute left-1/2 -translate-x-1/2 -top-24 flex flex-col items-center z-10 select-none"
+        >
+          <div className="w-px h-16 bg-gradient-to-b from-amber-900/50 via-amber-600/60 to-amber-400/70" />
+          <motion.div
+            initial={{ rotate: -8, scale: 0.85 }}
+            animate={{ rotate: ropeDropped ? 0 : -8, scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.35 }}
+            className="relative w-12 h-12 rounded-full bg-gradient-to-br from-[#f4d9a4] via-[#d8b36b] to-[#a57934] shadow-xl border border-white/30 flex items-center justify-center"
+          >
+            <Sparkles className="w-6 h-6 text-[#6b4719]" />
+            <div className="absolute inset-0 rounded-full border border-amber-500/30 animate-ping opacity-60" />
+          </motion.div>
+        </motion.div>
+
+        {/* Papyrus scroll */}
+        <motion.div
+          initial={{ height: 120, scaleY: 0.5, opacity: 0, y: -30 }}
+          animate={{
+            height: opened ? 420 : 120,
+            scaleY: opened ? 1 : 0.5,
+            opacity: 1,
+            y: 0,
           }}
-        />
-
-        {/* Ornamental border */}
-        <div
-          className="absolute inset-[10px] rounded-[22px] pointer-events-none"
+          transition={{ duration: 1.1, delay: 0.55, ease: [0.2, 0.9, 0.3, 1] }}
+          className="relative overflow-hidden rounded-[26px] shadow-[0_35px_90px_-35px_rgba(63,38,9,0.45)] backdrop-blur-xl border border-[rgba(128,88,28,0.22)]"
           style={{
-            border: "1.5px solid rgba(212, 175, 55, 0.45)",
-            boxShadow:
-              "inset 0 0 0 1px rgba(124, 88, 36, 0.25), 0 0 0 1px rgba(0,0,0,0.03)",
-            background:
-              "linear-gradient(135deg, rgba(212,175,55,0.06), rgba(124,88,36,0.07))",
+            ...papyrusTexture,
+            clipPath: "polygon(3% 0%, 97% 1%, 100% 8%, 98% 95%, 95% 100%, 5% 99%, 0 90%, 2% 6%)",
           }}
-        />
+        >
+          {/* Rods */}
+          <div className="absolute -top-10 inset-x-3 h-10 rounded-full bg-gradient-to-b from-[#c99d5a] via-[#b07b34] to-[#8d5e20] shadow-[0_12px_20px_rgba(0,0,0,0.18)]" />
+          <div className="absolute -bottom-10 inset-x-3 h-10 rounded-full bg-gradient-to-t from-[#c99d5a] via-[#b07b34] to-[#8d5e20] shadow-[0_-12px_20px_rgba(0,0,0,0.14)]" />
+          <div className="absolute -top-11 left-3 w-4 h-12 rounded-full bg-gradient-to-b from-amber-200 to-amber-600 shadow-md" />
+          <div className="absolute -top-11 right-3 w-4 h-12 rounded-full bg-gradient-to-b from-amber-200 to-amber-600 shadow-md" />
+          <div className="absolute -bottom-11 left-3 w-4 h-12 rounded-full bg-gradient-to-b from-amber-200 to-amber-600 shadow-inner" />
+          <div className="absolute -bottom-11 right-3 w-4 h-12 rounded-full bg-gradient-to-b from-amber-200 to-amber-600 shadow-inner" />
 
-        {/* Corner motifs */}
-        <CornerMotif className="absolute -left-1 -top-1" />
-        <CornerMotif className="absolute -right-1 -top-1 rotate-90" />
-        <CornerMotif className="absolute -right-1 -bottom-1 rotate-180" />
-        <CornerMotif className="absolute -left-1 -bottom-1 -rotate-90" />
+          {/* Grain */}
+          <div
+            className="absolute inset-0 opacity-40 mix-blend-multiply pointer-events-none"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.25), transparent 38%), radial-gradient(circle at 80% 12%, rgba(255,255,255,0.18), transparent 30%), linear-gradient(90deg, rgba(116,78,37,0.16) 1px, transparent 2px), linear-gradient(0deg, rgba(116,78,37,0.12) 1px, transparent 3px)",
+              backgroundSize: "100% 100%, 100% 100%, 140px 100%, 100% 180px",
+            }}
+          />
 
-        {/* Subtle papyrus grain */}
-        <div
-          className="absolute inset-0 opacity-25 pointer-events-none mix-blend-soft-light"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0.35'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='0.35'/%3E%3CfeFuncG type='linear' slope='0.35'/%3E%3CfeFuncB type='linear' slope='0.3'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23f)' opacity='0.6' fill='%23d2b48c'/%3E%3C/svg%3E\")",
-          }}
-        />
+          {/* Inner frame */}
+          <div
+            className="absolute inset-[12px] rounded-[22px] pointer-events-none"
+            style={{
+              border: "1.5px solid rgba(212, 175, 55, 0.45)",
+              boxShadow: "inset 0 0 0 1px rgba(124, 88, 36, 0.22)",
+              background: "linear-gradient(135deg, rgba(212,175,55,0.05), rgba(124,88,36,0.06))",
+            }}
+          />
 
-        {/* Header section */}
-        <div className="relative px-8 pt-7 pb-5">
-          <div className="flex items-center gap-4">
+          {/* Corner motifs */}
+          <CornerMotif className="absolute -left-1 -top-1" />
+          <CornerMotif className="absolute -right-1 -top-1 rotate-90" />
+          <CornerMotif className="absolute -right-1 -bottom-1 rotate-180" />
+          <CornerMotif className="absolute -left-1 -bottom-1 -rotate-90" />
+
+          <div className="relative h-full flex flex-col">
+            {/* Header */}
             <motion.div
-              initial={{ scale: 0.85, rotate: -12, y: 4 }}
-              animate={{ scale: 1, rotate: 0, y: 0 }}
-              transition={{ delay: 0.6, type: "spring", stiffness: 180, damping: 14 }}
-              className="relative flex-shrink-0"
+              initial={{ opacity: 0, y: 30, filter: "blur(6px)" }}
+              animate={{ opacity: opened ? 1 : 0, y: opened ? 0 : 30, filter: opened ? "blur(0px)" : "blur(6px)" }}
+              transition={{ delay: 1, duration: 0.6 }}
+              className="px-8 pt-8 pb-5"
             >
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#E3C58E]/60 via-[#F5DEB3]/70 to-[#D2B48C]/40 flex items-center justify-center border border-[rgba(212,175,55,0.35)] shadow-inner shadow-[rgba(124,88,36,0.15)]">
-                <Sparkles className="w-6 h-6 text-[#b88a3c]" />
+              <div className="flex items-center gap-4">
+                <motion.div
+                  initial={{ scale: 0.85, rotate: -8 }}
+                  animate={{ scale: opened ? 1 : 0.85, rotate: opened ? 0 : -8 }}
+                  transition={{ type: "spring", stiffness: 180, damping: 14, delay: 1.05 }}
+                  className="relative flex-shrink-0"
+                >
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#E3C58E]/60 via-[#F5DEB3]/70 to-[#D2B48C]/40 flex items-center justify-center border border-[rgba(212,175,55,0.35)] shadow-inner shadow-[rgba(124,88,36,0.15)]">
+                    <Shield className="w-7 h-7 text-[#8b5b20]" />
+                  </div>
+                </motion.div>
+                <div className="flex-1 min-w-0">
+                  <motion.h3
+                    initial={{ opacity: 0, x: 20, filter: "blur(6px)" }}
+                    animate={{ opacity: opened ? 1 : 0, x: opened ? 0 : 20, filter: opened ? "blur(0px)" : "blur(6px)" }}
+                    transition={{ delay: 1.1, duration: 0.6 }}
+                    className="text-xl font-bold tracking-tight text-[#5a3b18]"
+                  >
+                    {t("hero.welcome_title")}
+                  </motion.h3>
+                  <motion.p
+                    initial={{ opacity: 0, x: 15 }}
+                    animate={{ opacity: opened ? 1 : 0, x: opened ? 0 : 15 }}
+                    transition={{ delay: 1.2, duration: 0.5 }}
+                    className="text-sm mt-1 text-[#5f4626]"
+                  >
+                    {t("hero.welcome_sub")}
+                  </motion.p>
+                </div>
               </div>
             </motion.div>
-            <div className="flex-1 min-w-0">
-              <motion.h3
-                initial={{ opacity: 0, x: 20, filter: "blur(6px)" }}
-                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                transition={{ delay: 0.75, duration: 0.6 }}
-                className="text-xl font-bold tracking-tight text-[#5a3b18]"
-              >
-                {t("hero.welcome_title")}
-              </motion.h3>
-              <motion.p
-                initial={{ opacity: 0, x: 15 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.9, duration: 0.5 }}
-                className="text-sm mt-1 text-[#5f4626]"
-              >
-                {t("hero.welcome_sub")}
-              </motion.p>
-            </div>
-          </div>
-        </div>
 
-        {/* Golden divider */}
-        <div className="mx-7 relative h-px">
-          <motion.div
-            className="absolute inset-0"
-            style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.65), transparent)" }}
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ delay: 1, duration: 0.7 }}
-          />
-        </div>
-
-        {/* Steps */}
-        <div className="relative px-7 py-5 space-y-3">
-          {infoSteps.map((step, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: 35, filter: "blur(3px)" }}
-              animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-              transition={{ delay: 1.05 + i * 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-              whileHover={{
-                x: -6,
-                boxShadow: "0 12px 30px -18px rgba(124,88,36,0.55)",
-              }}
-              className="flex items-center gap-3.5 rounded-2xl px-4 py-3 transition-all duration-500 cursor-default bg-[rgba(255,255,255,0.28)] backdrop-blur-[2px] border border-[rgba(124,88,36,0.12)]"
-            >
+            {/* Divider */}
+            <div className="mx-7 relative h-px">
               <motion.div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner"
-                style={{
-                  background: `linear-gradient(135deg, ${step.accent}1a, rgba(245,222,179,0.8))`,
-                  border: `1.5px solid ${step.accent}80`,
-                  boxShadow: "0 6px 14px -10px rgba(68,45,12,0.6)",
-                }}
-                whileHover={{ scale: 1.05, rotate: -4 }}
-              >
-                <step.icon />
-              </motion.div>
-              <span className="text-sm font-semibold text-[#4a3217] leading-relaxed">
-                {step.text}
-              </span>
+                className="absolute inset-0"
+                style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.75), transparent)" }}
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: opened ? 1 : 0 }}
+                transition={{ delay: 1.1, duration: 0.7 }}
+              />
+            </div>
+
+            {/* Steps */}
+            <div className="relative px-7 py-5 space-y-3 flex-1">
+              {infoSteps.map((step, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: 35, filter: "blur(3px)" }}
+                  animate={{ opacity: opened ? 1 : 0, x: opened ? 0 : 35, filter: opened ? "blur(0px)" : "blur(3px)" }}
+                  transition={{ delay: 1.2 + i * 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                  whileHover={{
+                    x: -6,
+                    boxShadow: "0 12px 30px -18px rgba(124,88,36,0.55)",
+                  }}
+                  className="flex items-center gap-3.5 rounded-2xl px-4 py-3 transition-all duration-500 cursor-default bg-[rgba(255,255,255,0.28)] backdrop-blur-[2px] border border-[rgba(124,88,36,0.12)]"
+                >
+                  <motion.div
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner"
+                    style={{
+                      background: `linear-gradient(135deg, ${step.accent}1a, rgba(245,222,179,0.8))`,
+                      border: `1.5px solid ${step.accent}80`,
+                      boxShadow: "0 6px 14px -10px rgba(68,45,12,0.6)",
+                    }}
+                    whileHover={{ scale: 1.05, rotate: -4 }}
+                  >
+                    <step.icon />
+                  </motion.div>
+                  <span className="text-sm font-semibold text-[#4a3217] leading-relaxed">
+                    {step.text}
+                  </span>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Footer tagline */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: opened ? 1 : 0, y: opened ? 0 : 10 }}
+              transition={{ delay: 1.6, duration: 0.5 }}
+              className="mx-7 mb-6"
+            >
+              <div className="relative overflow-hidden rounded-2xl px-5 py-3.5 text-center border border-[rgba(212,175,55,0.35)] bg-[rgba(227,197,142,0.35)] shadow-[inset_0_8px_30px_rgba(255,255,255,0.18)]">
+                <motion.div
+                  className="absolute inset-0 -translate-x-full"
+                  style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.16), transparent)" }}
+                  animate={{ translateX: ["-120%", "160%"] }}
+                  transition={{ duration: 4, repeat: Infinity, repeatDelay: 2.2, ease: "easeInOut" }}
+                />
+                <p className="relative text-sm font-bold tracking-wide text-[#5a3b18] flex items-center justify-center gap-2.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]" />
+                  {t("hero.from_citizen")}
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]" />
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Rolled parchments under main scroll */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: opened ? 1 : 0, y: opened ? 0 : 20 }}
+          transition={{ delay: 1.3, duration: 0.6 }}
+          className="mt-8 flex items-center justify-center gap-3"
+        >
+          {["#d8b36b", "#cfa15a", "#d6b072"].map((color, idx) => (
+            <motion.div
+              key={color}
+              whileHover={{ y: -4, rotate: idx === 1 ? 2 : -2 }}
+              className="relative w-24 h-10 rounded-full shadow-[0_12px_25px_-12px_rgba(0,0,0,0.35)]"
+              style={{
+                background: `linear-gradient(135deg, ${color}, ${color}cc)`,
+              }}
+            >
+              <div className="absolute inset-0 rounded-full border border-amber-700/25 mix-blend-multiply" />
+              <div className="absolute inset-y-1 left-1/2 -translate-x-1/2 w-3 rounded-full bg-amber-900/70 shadow-inner" />
+              <div className="absolute inset-0 opacity-35 mix-blend-overlay" style={{ background: "radial-gradient(circle at 30% 40%, rgba(255,255,255,0.9), transparent 55%)" }} />
             </motion.div>
           ))}
-        </div>
-
-        {/* Footer tagline */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.5, duration: 0.5 }}
-          className="mx-7 mb-6"
-        >
-          <div className="relative overflow-hidden rounded-2xl px-5 py-3.5 text-center border border-[rgba(212,175,55,0.35)] bg-[rgba(227,197,142,0.35)] shadow-[inset_0_8px_30px_rgba(255,255,255,0.18)]">
-            <motion.div
-              className="absolute inset-0 -translate-x-full"
-              style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.16), transparent)" }}
-              animate={{ translateX: ["-120%", "160%"] }}
-              transition={{ duration: 4, repeat: Infinity, repeatDelay: 2.2, ease: "easeInOut" }}
-            />
-            <p className="relative text-sm font-bold tracking-wide text-[#5a3b18] flex items-center justify-center gap-2.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]" />
-              {t("hero.from_citizen")}
-              <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]" />
-            </p>
-          </div>
         </motion.div>
       </motion.div>
 
