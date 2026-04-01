@@ -1,9 +1,13 @@
-import { webcrypto as nodeCrypto } from "node:crypto";
+// Prefer globalThis.crypto.subtle (browser / Node 20+).
+// Node 18 exposes WebCrypto under globalThis.crypto.webcrypto.subtle instead.
+const subtle =
+  globalThis.crypto?.subtle ??
+  (globalThis as typeof globalThis & { crypto?: { webcrypto?: Crypto } }).crypto?.webcrypto
+    ?.subtle;
 
-// Prefer globalThis.crypto.subtle when available (browser/modern Node).
-// In jsdom, globalThis.crypto exists but .subtle is undefined, so fall back
-// to the Node.js webcrypto implementation in that case.
-const subtle = globalThis.crypto?.subtle ?? nodeCrypto.subtle;
+if (!subtle) {
+  throw new Error("WebCrypto SubtleCrypto is not available in this environment.");
+}
 
 export interface IntegrityResult {
   valid: boolean;
