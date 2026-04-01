@@ -20,3 +20,9 @@ jobs:
         with:
           # Full history is required so that git diff against main succeeds.
           fetch-depth: 0
+
+      - name: Fetch main branch
+        # Ensure the local 'main' ref exists so that `git diff main ...` works
+        # when the agent runs on a non-main branch (e.g. copilot/* branches).
+        # This fetch is idempotent and safe to run even when already on main.
+        run: git fetch origin main:main
