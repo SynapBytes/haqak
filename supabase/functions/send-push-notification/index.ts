@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
-const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") || "mailto:team@haqak.org";
+const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") || "mailto:admin@haqak.org";
 
 async function generateVapidAuth(endpoint: string, p256dh: string, auth: string, payload: string) {
   const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
