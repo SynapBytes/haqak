@@ -14,7 +14,8 @@ import DecorativeBackground, { FooterDecorations } from "@/components/Decorative
 
 const Careers = () => {
   const { t } = useTranslation();
-  const { isDark } = useTheme();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const openRoles = [
     {

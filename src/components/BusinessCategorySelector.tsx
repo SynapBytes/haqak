@@ -25,7 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
-type LucideIcon = (props: React.ComponentProps<"svg">) => JSX.Element;
+type LucideIcon = React.ComponentType<React.ComponentProps<"svg">>;
 
 export type BusinessCategory = {
   id: string;
