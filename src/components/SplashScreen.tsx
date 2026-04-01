@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-const SPLASH_DURATION_MS = 7000;
+const SPLASH_DURATION_MS = 2500;
 const SPLASH_VIDEO_SRC = "/video-black.mov";
 
 const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
