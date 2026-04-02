@@ -39,15 +39,15 @@ const Support = () => {
   useEffect(() => {
     const fetchContributors = async () => {
       try {
-        const { data } = await supabase
-          .from("contributions")
+        const { data } = await (supabase
+          .from("contributions" as any)
           .select("name")
           .eq("show_name", true)
           .eq("status", "succeeded")
           .order("created_at", { ascending: false })
-          .limit(20);
+          .limit(20) as any);
         
-        if (data) setContributors(data.filter(c => c.name) as { name: string }[]);
+        if (data) setContributors((data as any[]).filter((c: any) => c.name) as { name: string }[]);
       } catch (error) {
         console.error("Error fetching contributors:", error);
       } finally {
@@ -75,14 +75,14 @@ const Support = () => {
     try {
       // In a real app, we would call a payment provider here.
       // For now, we'll simulate a successful contribution.
-      const { data, error } = await supabase.from("contributions").insert({
+      const { data, error } = await (supabase.from("contributions" as any).insert({
         amount: finalAmount,
         name: name ? sanitizeText(name) : null,
         email: email ? sanitizeText(email) : null,
         show_name: showName,
-        status: "succeeded", // Simulated success
+        status: "succeeded",
         payment_provider: "placeholder",
-      }).select().single();
+      } as any).select().single() as any);
 
       if (error) throw error;
 
@@ -102,12 +102,12 @@ const Support = () => {
     
     setLoading(true);
     try {
-      const { error } = await supabase.from("feedbacks").insert({
+      const { error } = await (supabase.from("feedbacks" as any).insert({
         contribution_id: contributionId,
         message: sanitizeText(feedback),
         name: name ? sanitizeText(name) : null,
         email: email ? sanitizeText(email) : null,
-      });
+      } as any) as any);
 
       if (error) throw error;
       

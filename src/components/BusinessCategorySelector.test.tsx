@@ -12,8 +12,7 @@ import {
 
 beforeAll(() => {
   // Polyfill ResizeObserver for Radix ScrollArea in jsdom
-  // @ts-expect-error - jsdom global assignment for tests
-  global.ResizeObserver = class ResizeObserver {
+  (global as Record<string, unknown>).ResizeObserver = class ResizeObserver {
     observe() {}
     unobserve() {}
     disconnect() {}

@@ -64,7 +64,7 @@ const CitizenDashboard = () => {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [reputation, setReputation] = useState({ points: 0, rank: "مواطن جديد" });
-  const [mpResponses, setMpResponses] = useState<Record<string, unknown>[]>([]);
+  const [mpResponses, setMpResponses] = useState<{ id: string; response_text: string; created_at: string; [key: string]: unknown }[]>([]);
 
   const isFormValid = title.trim() !== "" && 
                       description.trim() !== "" && 
@@ -90,7 +90,7 @@ const CitizenDashboard = () => {
           category: d.category,
           location: d.location,
           timeAgo: new Date(d.created_at).toLocaleDateString("ar-EG"),
-          issue_type: (row.issue_type as string) || "individual",
+          issue_type: ((row.issue_type as string) || "individual") as "collective" | "individual",
           is_flagged: (row.is_flagged as boolean) || false,
           citizen_confirmed: (row.citizen_confirmed as boolean) || false,
           ai_summary: d.ai_summary || undefined,
