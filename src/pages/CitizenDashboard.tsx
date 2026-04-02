@@ -90,7 +90,7 @@ const CitizenDashboard = () => {
           category: d.category,
           location: d.location,
           timeAgo: new Date(d.created_at).toLocaleDateString("ar-EG"),
-          issue_type: (row.issue_type as string) || "individual",
+          issue_type: ((row.issue_type as string) || "individual") as "collective" | "individual",
           is_flagged: (row.is_flagged as boolean) || false,
           citizen_confirmed: (row.citizen_confirmed as boolean) || false,
           ai_summary: d.ai_summary || undefined,
