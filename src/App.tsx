@@ -20,6 +20,7 @@ const MPDashboard = lazy(() => import("./pages/MPDashboard"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const Auth = lazy(() => import("./pages/Auth"));
 const MPProfilePage = lazy(() => import("./pages/MPProfilePage"));
+const CenterOnboarding = lazy(() => import("./pages/CenterOnboarding"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
@@ -43,7 +44,15 @@ const PageLoader = () => (
   </div>
 );
 
-function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode; requiredRole?: AppRole }) {
+function ProtectedRoute({
+  children,
+  requiredRole,
+  allowMissingCenter = false,
+}: {
+  children: React.ReactNode;
+  requiredRole?: AppRole;
+  allowMissingCenter?: boolean;
+}) {
   const { session, role, loading, profile } = useAuth();
   const { t } = useTranslation();
   if (loading) return <PageLoader />;
@@ -61,6 +70,9 @@ function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode;
         </div>
       </div>
     );
+  }
+  if (!allowMissingCenter && (role === "citizen" || role === "mp") && !profile?.center_id) {
+    return <Navigate to="/onboarding/center" replace />;
   }
   return <>{children}</>;
 }
@@ -86,6 +98,7 @@ function App() {
                   <Route path="/mps" element={<ProtectedRoute><MPsDirectory /></ProtectedRoute>} />
                   <Route path="/mp" element={<ProtectedRoute requiredRole="mp"><MPDashboard /></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+                  <Route path="/onboarding/center" element={<ProtectedRoute allowMissingCenter><CenterOnboarding /></ProtectedRoute>} />
                   <Route path="/mp-profile/:id" element={<MPProfilePage />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/terms" element={<TermsOfService />} />

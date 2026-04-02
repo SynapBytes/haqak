@@ -334,12 +334,17 @@
     "delete_error": "خطأ في حذف الحساب",
     "filter_active": "نشط",
     "filter_banned": "محظور",
+    "filter_center": "المركز",
     "filter_governorate": "المحافظة",
     "all_governorates": "كل المحافظات",
     "center_counts_title": "توزيع المستخدمين حسب المركز/القسم",
     "center_counts_empty": "لا توجد بيانات مراكز متاحة حالياً",
     "center_citizens_count": "مواطنون: {{count}}",
     "center_mps_count": "نواب: {{count}}",
+    "center_verified_citizens_count": "مواطنون موثقون: {{count}}",
+    "center_verified_mps_count": "نواب موثقون: {{count}}",
+    "verification_requests_stub_title": "طلبات التحقق (نسخة أولية)",
+    "verification_requests_stub_subtitle": "سيتم توسيع هذه القائمة في Sprint 2/3.",
     "search_issues": "بحث في المشاكل...",
     "ban": "حظر مؤقت",
     "unban": "رفع الحظر",
@@ -529,7 +534,19 @@
     "total": "إجمالي",
     "rate": "نسبة الحل",
     "registered_count": "{{count}} نائب مسجّل",
-    "all": "الكل"
+    "all": "الكل",
+    "all_centers": "كل المراكز"
+  },
+  "center_onboarding": {
+    "title": "اختر مركزك",
+    "subtitle": "يجب اختيار مركز قبل المتابعة.",
+    "governorate": "المحافظة",
+    "all_governorates": "كل المحافظات",
+    "center": "المركز",
+    "continue": "متابعة",
+    "load_error": "تعذر تحميل المراكز",
+    "save_error": "تعذر حفظ المركز",
+    "saved": "تم حفظ المركز"
   },
   "mp_profile": {
     "badge": "نائب",

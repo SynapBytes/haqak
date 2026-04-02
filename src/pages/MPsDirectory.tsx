@@ -20,22 +20,30 @@ interface MPItem {
   constituency: string | null;
   governorate: string | null;
   center: string | null;
+  center_id?: string | null;
   stats: { total: number; resolved: number; rate: number };
 }
 
 const MPsDirectory = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { role } = useAuth();
+  const { role, profile } = useAuth();
   const [mps, setMps] = useState<MPItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterGovernorate, setFilterGovernorate] = useState("all");
+  const [filterCenter, setFilterCenter] = useState("all");
 
   useEffect(() => {
     const fetchMPs = async () => {
       setLoading(true);
-      const { data: profiles } = await supabase.from("mp_public_profiles").select("user_id, full_name, avatar_url, constituency, governorate, center");
+      let query = supabase
+        .from("mp_public_profiles")
+        .select("user_id, full_name, avatar_url, constituency, governorate, center, center_id");
+      if (role === "citizen" && profile?.center_id) {
+        query = query.eq("center_id", profile.center_id);
+      }
+      const { data: profiles } = await query;
       if (!profiles || profiles.length === 0) { setLoading(false); return; }
       const mpUserIds = profiles.map(p => p.user_id);
       const { data: issues } = await supabase.from("issues").select("assigned_mp_id, status").in("assigned_mp_id", mpUserIds);
@@ -56,14 +64,16 @@ const MPsDirectory = () => {
       setLoading(false);
     };
     fetchMPs();
-  }, []);
+  }, [profile?.center_id, role]);
 
   const governorates = ["all", ...Array.from(new Set(mps.map(m => m.governorate).filter(Boolean) as string[]))];
+  const centers = ["all", ...Array.from(new Set(mps.map(m => m.center).filter(Boolean) as string[]))];
 
   const filtered = mps.filter(mp => {
     const matchesSearch = !searchQuery || mp.full_name.includes(searchQuery) || mp.constituency?.includes(searchQuery) || mp.governorate?.includes(searchQuery);
     const matchesGov = filterGovernorate === "all" || mp.governorate === filterGovernorate;
-    return matchesSearch && matchesGov;
+    const matchesCenter = filterCenter === "all" || mp.center === filterCenter;
+    return matchesSearch && matchesGov && matchesCenter;
   });
 
   return (
@@ -99,6 +109,15 @@ const MPsDirectory = () => {
                   <Button key={gov} variant={filterGovernorate === gov ? "secondary" : "ghost"} size="sm" onClick={() => setFilterGovernorate(gov)} className="text-xs h-8 rounded-lg gap-1">
                     {gov !== "all" && <MapPin className="w-3 h-3" />}
                     {gov === "all" ? t("mps_directory.all") : gov}
+                  </Button>
+                ))}
+              </div>
+            )}
+            {centers.length > 1 && (
+              <div className="flex gap-2 flex-wrap">
+                {centers.map(center => (
+                  <Button key={center} variant={filterCenter === center ? "secondary" : "ghost"} size="sm" onClick={() => setFilterCenter(center)} className="text-xs h-8 rounded-lg gap-1">
+                    {center === "all" ? t("mps_directory.all_centers") : center}
                   </Button>
                 ))}
               </div>

@@ -38,6 +38,7 @@ interface UserProfile {
   governorate: string | null;
   district: string | null;
   center_id: string | null;
+  verification_status?: "unverified" | "pending" | "verified" | "rejected" | null;
   banned_until: string | null;
 }
 
@@ -67,8 +68,11 @@ const AdminDashboard = () => {
       district: string | null;
       citizens: number;
       mps: number;
+      verified_citizens: number;
+      verified_mps: number;
     }>
   >([]);
+  const [filterCenterId, setFilterCenterId] = useState<string>("all");
 
   const fetchData = async () => {
     setLoading(true);
@@ -102,9 +106,13 @@ const AdminDashboard = () => {
           district: u.district,
           citizens: 0,
           mps: 0,
+          verified_citizens: 0,
+          verified_mps: 0,
         };
         if (u.role === "mp") row.mps += 1;
         if (u.role === "citizen") row.citizens += 1;
+        if (u.role === "mp" && u.verification_status === "verified") row.verified_mps += 1;
+        if (u.role === "citizen" && u.verification_status === "verified") row.verified_citizens += 1;
         grouped.set(key, row);
       });
       setCenterCounts(
@@ -210,7 +218,8 @@ const AdminDashboard = () => {
       (filterStatus === "active" && (!u.banned_until || new Date(u.banned_until) <= new Date())) ||
       (filterStatus === "banned" && u.banned_until && new Date(u.banned_until) > new Date());
     const matchesGov = filterGov === "all" || u.governorate === filterGov;
-    return matchesSearch && matchesRole && matchesStatus && matchesGov;
+    const matchesCenter = filterCenterId === "all" || u.center_id === filterCenterId;
+    return matchesSearch && matchesRole && matchesStatus && matchesGov && matchesCenter;
   });
 
   const filteredIssues = issues.filter((issue) => {
@@ -336,17 +345,34 @@ const AdminDashboard = () => {
                     ))}
                   </div>
                   {governorates.length > 0 && (
-                    <Select value={filterGov} onValueChange={setFilterGov}>
-                      <SelectTrigger className="w-[180px] h-9 rounded-lg text-xs border-border/50">
-                        <SelectValue placeholder={t("admin_dashboard.filter_governorate")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">{t("admin_dashboard.all_governorates")}</SelectItem>
-                        {governorates.map((g) => (
-                          <SelectItem key={g} value={g}>{g}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-2">
+                      <Select value={filterGov} onValueChange={setFilterGov}>
+                        <SelectTrigger className="w-[180px] h-9 rounded-lg text-xs border-border/50">
+                          <SelectValue placeholder={t("admin_dashboard.filter_governorate")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{t("admin_dashboard.all_governorates")}</SelectItem>
+                          {governorates.map((g) => (
+                            <SelectItem key={g} value={g}>{g}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={filterCenterId} onValueChange={setFilterCenterId}>
+                        <SelectTrigger className="w-[220px] h-9 rounded-lg text-xs border-border/50">
+                          <SelectValue placeholder={t("admin_dashboard.filter_center")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{t("mps_directory.all_centers")}</SelectItem>
+                          {centerCounts
+                            .filter((c) => !!c.center_id)
+                            .map((c) => (
+                              <SelectItem key={c.center_id!} value={c.center_id!}>
+                                {c.governorate} / {c.district}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   )}
                 </div>
               </div>
@@ -545,11 +571,28 @@ const AdminDashboard = () => {
                       <div className="flex items-center gap-3 shrink-0">
                         <span className="text-[11px] text-muted-foreground">{t("admin_dashboard.center_citizens_count", { count: center.citizens })}</span>
                         <span className="text-[11px] text-muted-foreground">{t("admin_dashboard.center_mps_count", { count: center.mps })}</span>
+                        <span className="text-[11px] text-muted-foreground">{t("admin_dashboard.center_verified_citizens_count", { count: center.verified_citizens })}</span>
+                        <span className="text-[11px] text-muted-foreground">{t("admin_dashboard.center_verified_mps_count", { count: center.verified_mps })}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-5">
+              <h3 className="font-semibold text-sm text-foreground mb-2">{t("admin_dashboard.verification_requests_stub_title")}</h3>
+              <p className="text-xs text-muted-foreground">{t("admin_dashboard.verification_requests_stub_subtitle")}</p>
+              <div className="mt-3 space-y-2">
+                {users
+                  .filter((u) => u.verification_status === "pending")
+                  .slice(0, 20)
+                  .map((u) => (
+                    <div key={u.user_id} className="text-xs border rounded-lg px-3 py-2">
+                      {u.full_name} — {u.role} — {u.governorate ?? "-"} / {u.district ?? "-"}
+                    </div>
+                  ))}
+              </div>
             </motion.div>
           </>
         ) : activeTab === "issues" ? (

@@ -1,0 +1,37 @@
+[
+  {
+    "code": "EG-C-Cairo-NasrCity",
+    "name_ar": "مدينة نصر",
+    "name_en": "Nasr City",
+    "governorate_ar": "القاهرة",
+    "governorate_en": "Cairo"
+  },
+  {
+    "code": "EG-C-Cairo-Heliopolis",
+    "name_ar": "مصر الجديدة",
+    "name_en": "Heliopolis",
+    "governorate_ar": "القاهرة",
+    "governorate_en": "Cairo"
+  },
+  {
+    "code": "EG-C-Giza-Dokki",
+    "name_ar": "الدقي",
+    "name_en": "Dokki",
+    "governorate_ar": "الجيزة",
+    "governorate_en": "Giza"
+  },
+  {
+    "code": "EG-C-Alexandria-Montaza",
+    "name_ar": "المنتزه",
+    "name_en": "Montaza",
+    "governorate_ar": "الإسكندرية",
+    "governorate_en": "Alexandria"
+  },
+  {
+    "code": "EG-C-Sharqia-Zagazig",
+    "name_ar": "الزقازيق",
+    "name_en": "Zagazig",
+    "governorate_ar": "الشرقية",
+    "governorate_en": "Sharqia"
+  }
+]

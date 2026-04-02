@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
   Search, Filter, BarChart3, AlertCircle, CheckCircle2, Clock, Loader2,
-  X, Users, User, FileText, TrendingUp, PieChart, MessageCircle, Phone,
+  X, Users, User, FileText, TrendingUp, PieChart, MessageCircle,
   LayoutDashboard, List, ShieldCheck, Send
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -61,8 +61,7 @@ const MPDashboard = () => {
   const [actionLogs, setActionLogs] = useState<ActionLog[]>([]);
   const [updating, setUpdating] = useState(false);
   const [chatIssue, setChatIssue] = useState<Issue | null>(null);
-  const [citizenPhones, setCitizenPhones] = useState<Record<string, string>>({});
-  const [citizenNames, setCitizenNames] = useState<Record<string, string>>({});
+  const [centerCitizensCount, setCenterCitizensCount] = useState<number>(0);
   const [mpResponses, setMpResponses] = useState<MPResponse[]>([]);
 
   const categories = [
@@ -126,17 +125,10 @@ const MPDashboard = () => {
     setLoading(false);
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchIssues(); }, [user]);
-
-  const fetchCitizenData = async (userId: string) => {
-    if (citizenNames[userId]) return;
-    const { data } = await supabase.from("profiles").select("full_name, phone").eq("user_id", userId).single();
-    if (data) {
-      setCitizenNames((prev) => ({ ...prev, [userId]: data.full_name }));
-      setCitizenPhones((prev) => ({ ...prev, [userId]: data.phone }));
-    }
-  };
+  useEffect(() => {
+    fetchIssues();
+    fetchCenterAggregate();
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchActionLogs = async (issueId: string) => {
     const { data } = await supabase.from("issue_actions").select("*").eq("issue_id", issueId).order("created_at", { ascending: false });
@@ -154,7 +146,11 @@ const MPDashboard = () => {
     setActionNote("");
     fetchActionLogs(issue.id);
     fetchResponses(issue.id);
-    if (issue.user_id) fetchCitizenData(issue.user_id);
+  };
+
+  const fetchCenterAggregate = async () => {
+    const { data } = await supabase.rpc("get_mp_center_citizens_count");
+    setCenterCitizensCount(Number(data ?? 0));
   };
 
   const handleUpdateStatus = async () => {
@@ -338,6 +334,17 @@ const MPDashboard = () => {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+              className="bg-card/50 border border-border/50 rounded-2xl p-4 md:p-6"
+            >
+              <div className="flex items-center gap-4 flex-wrap text-sm">
+                <span className="font-medium text-foreground">{t("mp_dashboard.total_issues")}: {totalIssues}</span>
+                <span className="text-muted-foreground">Citizens in my center: {centerCitizensCount}</span>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               className="bg-card/50 border border-border/50 rounded-2xl p-4 md:p-6 mb-6"
             >
               <div className="flex items-center gap-2 mb-4">
@@ -413,7 +420,6 @@ const MPDashboard = () => {
                       issue={issue}
                       onClick={() => openIssueDetail(issue)}
                       isMPView
-                      citizenPhone={citizenPhones[issue.user_id]}
                     />
                   </motion.div>
                 ))}
@@ -476,7 +482,7 @@ const MPDashboard = () => {
                         id: selectedIssue.id,
                         title: selectedIssue.refined_title || selectedIssue.title,
                         description: selectedIssue.refined_description || selectedIssue.description,
-                        citizenName: citizenNames[selectedIssue.user_id || ""] || "مواطن مسجل",
+                        citizenName: "مواطن مسجل",
                         category: selectedIssue.category,
                         location: selectedIssue.location || "غير محدد",
                         date: selectedIssue.timeAgo,
@@ -521,7 +527,7 @@ const MPDashboard = () => {
                                       id: selectedIssue.id,
                                       title: selectedIssue.refined_title || selectedIssue.title,
                                       description: selectedIssue.refined_description || selectedIssue.description,
-                                      citizenName: citizenNames[selectedIssue.user_id || ""] || "مواطن مسجل",
+                                      citizenName: "مواطن مسجل",
                                       mpName: user?.email || "عضو مجلس النواب",
                                       category: selectedIssue.category,
                                       location: selectedIssue.location || "غير محدد",
