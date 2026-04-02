@@ -17,10 +17,33 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["logo-haqak.webp", "placeholder.svg"],
+      includeAssets: [
+        "haqak-logo.png",
+        "haqak-logo.webp",
+        "haqak-logo-192.png",
+        "haqak-logo-512.png",
+        "haqak-wordmark.png",
+        "haqak-wordmark.webp",
+        "placeholder.svg",
+      ],
       workbox: {
+        navigateFallback: "/index.html",
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        navigateFallbackDenylist: [/^\/~oauth/],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        // Exclude auth-sensitive routes from service worker navigation handling.
+        // These paths must always hit the network so stale cached content cannot
+        // serve a logged-out user an apparently-authenticated page.
+        navigateFallbackDenylist: [
+          /^\/~oauth/,
+          /^\/auth/,
+          /^\/login/,
+          /^\/logout/,
+          /^\/signup/,
+          /^\/reset-password/,
+          /^\/verify/,
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -46,8 +69,8 @@ export default defineConfig(({ mode }) => ({
         start_url: "/",
         scope: "/",
         icons: [
-          { src: "/logo-haqak.webp", sizes: "192x192", type: "image/png" },
-          { src: "/logo-haqak.webp", sizes: "512x512", type: "image/png", purpose: "any maskable" },
+          { src: "/haqak-logo-192.png", sizes: "192x192", type: "image/png" },
+          { src: "/haqak-logo-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
         ],
       },
     }),

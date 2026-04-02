@@ -24,7 +24,7 @@ const OfficialDocumentGenerator: React.FC<DocumentProps> = ({ type, data }) => {
   const componentRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
-    content: () => componentRef.current,
+    contentRef: componentRef as React.RefObject<Element>,
     documentTitle: `Haqak_Official_${data.id}`,
     onAfterPrint: () => toast.success("تم تجهيز المستند للطباعة"),
   });

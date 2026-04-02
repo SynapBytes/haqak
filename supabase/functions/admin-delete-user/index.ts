@@ -1,14 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { buildCorsHeaders } from "../shared/cors.ts";
+import { requireCsrfToken } from "../shared/csrf.ts";
 
 Deno.serve(async (req) => {
+  const cors = buildCorsHeaders(req.headers.get("Origin"));
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: cors });
   }
 
   try {
@@ -16,9 +13,13 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing authorization" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
+
+    // VULN-10: CSRF protection on this destructive admin operation
+    const csrfError = requireCsrfToken(req, cors);
+    if (csrfError) return csrfError;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -34,7 +35,7 @@ Deno.serve(async (req) => {
     if (!callingUser) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -50,7 +51,7 @@ Deno.serve(async (req) => {
     if (!roleData) {
       return new Response(JSON.stringify({ error: "Admin access required" }), {
         status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -60,7 +61,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "target_user_id is required" }),
         {
           status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...cors, "Content-Type": "application/json" },
         }
       );
     }
@@ -71,7 +72,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Cannot delete your own account" }),
         {
           status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...cors, "Content-Type": "application/json" },
         }
       );
     }
@@ -93,18 +94,36 @@ Deno.serve(async (req) => {
     if (deleteError) {
       return new Response(JSON.stringify({ error: deleteError.message }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
+    }
+
+    // Record audit trail for the deletion
+    try {
+      await adminClient.from("audit_logs").insert({
+        user_id: callingUser.id,
+        action: "admin_delete_user",
+        entity_type: "user",
+        entity_id: target_user_id,
+        old_values: { user_id: target_user_id },
+        new_values: { deleted: true },
+        status: "success",
+      });
+    } catch (auditError) {
+      console.error(
+        `Failed to write audit log for user deletion ${target_user_id}:`,
+        auditError
+      );
     }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (err) {
     return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 });

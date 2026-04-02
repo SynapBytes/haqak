@@ -11,6 +11,7 @@ import { AILegalBot } from "@/components/AILegalBot";
 import { MobileAppFeatures } from "@/components/MobileAppFeatures";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Smartphone } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,12 +26,22 @@ import { useTranslation } from "react-i18next";
 import { stripExifFromFiles } from "@/lib/stripExif";
 import { sanitizeText } from "@/lib/sanitize";
 import { validateIssueLocation, isLocationInEgypt } from "@/lib/egyptLocationValidation";
+import TurnstileCaptcha from "@/components/TurnstileCaptcha";
+import { verifyCaptchaToken } from "@/lib/captchaVerification";
+import { validateBeforeUpload, validateNewFiles } from "@/lib/fileValidation";
+import { ALLOWED_FILE_TYPES } from "@/constants/uploadConstraints";
+import { useCsrfToken } from "@/hooks/useCsrfToken";
+import { hashFile } from "@/lib/fileIntegrityService";
+import { dispatchNotification } from "@/lib/notifications";
+import { ATTACHMENTS_BUCKET, buildIssueAttachmentPath, uploadIssueAttachment } from "@/lib/storage";
+import { analytics } from "@/lib/analytics";
 
 const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitation", "education", "electricity", "other"] as const;
 
 const CitizenDashboard = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { csrfToken, csrfHeader, rotate: rotateCsrf } = useCsrfToken();
   const [searchParams, setSearchParams] = useSearchParams();
   const mpIdParam = searchParams.get("mp_id");
   const mpNameParam = searchParams.get("mp_name");
@@ -48,11 +59,12 @@ const CitizenDashboard = () => {
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [chatIssue, setChatIssue] = useState<Issue | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [reputation, setReputation] = useState({ points: 0, rank: "مواطن جديد" });
-  const [mpResponses, setMpResponses] = useState<any[]>([]);
+  const [mpResponses, setMpResponses] = useState<{ id: string; response_text: string; created_at: string; [key: string]: unknown }[]>([]);
 
   const isFormValid = title.trim() !== "" && 
                       description.trim() !== "" && 
@@ -68,47 +80,40 @@ const CitizenDashboard = () => {
       .order("created_at", { ascending: false });
 
     if (data) {
-      setIssues(data.map((d) => ({
-        id: d.id,
-        title: d.title,
-        description: d.description,
-        status: d.status as Issue["status"],
-        category: d.category,
-        location: d.location,
-        timeAgo: new Date(d.created_at).toLocaleDateString("ar-EG"),
-        issue_type: (d as any).issue_type || "individual",
-        is_flagged: (d as any).is_flagged || false,
-        citizen_confirmed: (d as any).citizen_confirmed || false,
-        ai_summary: d.ai_summary || undefined,
-        user_id: d.user_id,
-        resolution_rating: (d as any).resolution_rating,
-        refined_title: (d as any).refined_title,
-        refined_description: (d as any).refined_description,
-      })));
+      setIssues(data.map((d) => {
+        const row = d as Record<string, unknown>;
+        return {
+          id: d.id,
+          title: d.title,
+          description: d.description,
+          status: d.status as Issue["status"],
+          category: d.category,
+          location: d.location,
+          timeAgo: new Date(d.created_at).toLocaleDateString("ar-EG"),
+          issue_type: ((row.issue_type as string) || "individual") as "collective" | "individual",
+          is_flagged: (row.is_flagged as boolean) || false,
+          citizen_confirmed: (row.citizen_confirmed as boolean) || false,
+          ai_summary: d.ai_summary || undefined,
+          user_id: d.user_id,
+          resolution_rating: row.resolution_rating as number | undefined,
+          refined_title: row.refined_title as string | undefined,
+          refined_description: row.refined_description as string | undefined,
+        };
+      }));
     }
     
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("reputation_points, citizen_rank")
-      .eq("user_id", user.id)
-      .single();
-    
-    if (profile) {
-      setReputation({
-        points: profile.reputation_points || 0,
-        rank: profile.citizen_rank || "مواطن جديد"
-      });
-    }
+    // reputation columns not yet in profiles table – use defaults
+    setReputation({ points: 0, rank: "مواطن جديد" });
     
     setLoading(false);
   };
 
   const fetchResponses = async (issueId: string) => {
-    const { data } = await supabase.from("mp_responses").select("*").eq("issue_id", issueId).order("created_at", { ascending: false });
-    if (data) setMpResponses(data);
+    // mp_responses table not yet created
+    setMpResponses([]);
   };
 
-  useEffect(() => { fetchIssues(); }, [user]);
+  useEffect(() => { fetchIssues(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (mpIdParam && mpNameParam) {
@@ -116,13 +121,15 @@ const CitizenDashboard = () => {
       setAssignedMpName(decodeURIComponent(mpNameParam));
       setShowForm(true);
       setSearchParams({}, { replace: true });
+      setCaptchaToken(null);
     }
-  }, [mpIdParam, mpNameParam]);
+  }, [mpIdParam, mpNameParam, setSearchParams]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
-    if (selected.length + files.length > 5) {
-      toast.error(t("dashboard.max_files"));
+    const validation = validateNewFiles(files, selected);
+    if (!validation.valid) {
+      toast.error(validation.error || t("dashboard.max_files"));
       return;
     }
     setFiles((prev) => [...prev, ...selected]);
@@ -133,19 +140,41 @@ const CitizenDashboard = () => {
   };
 
   const uploadFiles = async (issueId: string) => {
+    const validation = validateBeforeUpload(files);
+    if (!validation.valid) {
+      toast.error(validation.error || t("dashboard.max_files"));
+      return;
+    }
     const cleanedFiles = await stripExifFromFiles(files);
     for (const file of cleanedFiles) {
-      const ext = file.name.split(".").pop();
-      const path = `${user!.id}/${issueId}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("issue-attachments")
-        .upload(path, file);
-      if (uploadError) {
+      // ── FIX #4: Compute SHA-256 hash BEFORE upload ───────────────────────────
+      const preHash = await hashFile(file);
+
+      let path: string;
+      try {
+        path = buildIssueAttachmentPath(user!.id, issueId, file.name);
+        await uploadIssueAttachment(path, file);
+      } catch (uploadError) {
         console.error("Upload error:", uploadError);
         continue;
       }
+
+      // ── FIX #4: Verify integrity via Edge Function ───────────────────────────
+      const { data: integrityData, error: integrityError } = await supabase.functions.invoke(
+        "verify-upload-integrity",
+        { body: { storagePath: path, expectedHash: preHash } },
+      );
+      if (integrityError || !integrityData?.valid) {
+        console.error("Integrity check failed for", file.name, integrityError ?? integrityData?.error);
+        // Remove the corrupted upload
+        await supabase.storage.from("issue-attachments").remove([path]);
+        toast.error(`${t("dashboard.file_integrity_failed")}: ${file.name}`);
+        continue;
+      }
+
       await supabase.from("issue_attachments").insert({
         issue_id: issueId,
+        bucket: ATTACHMENTS_BUCKET,
         file_path: path,
         file_name: file.name,
         file_type: file.type,
@@ -159,6 +188,10 @@ const CitizenDashboard = () => {
       toast.error(t("dashboard.fill_all_fields"));
       return;
     }
+    if (!captchaToken) {
+      toast.error(t("support.fill_all_captcha"));
+      return;
+    }
 
     // Validate that the issue location is within Egypt
     if (latitude && longitude) {
@@ -170,6 +203,14 @@ const CitizenDashboard = () => {
 
     setSubmitting(true);
     try {
+      const captchaResult = await verifyCaptchaToken(captchaToken);
+      if (!captchaResult.valid) {
+        toast.error(t("support.captcha_failed"));
+        setCaptchaToken(null);
+        setSubmitting(false);
+        return;
+      }
+
       let finalTitle = sanitizeText(title);
       let finalDescription = sanitizeText(description);
       let finalCategory = category;
@@ -195,6 +236,7 @@ const CitizenDashboard = () => {
             location: { address: location, lat: latitude, lng: longitude },
             isEgyptianLocation: latitude && longitude ? isLocationInEgypt(latitude, longitude) : true
           },
+          headers: { [csrfHeader]: csrfToken },
         });
 
         if (!classifyError && classifyData) {
@@ -218,6 +260,9 @@ const CitizenDashboard = () => {
         }
       } catch (err) {
         console.error("AI classification failed:", err);
+        toast.error("حدث خطأ في خوادم الفحص، يرجى المحاولة لاحقاً.");
+        setSubmitting(false);
+        return;
       }
 
       const { data: insertedIssue, error } = await supabase.from("issues").insert({
@@ -242,7 +287,30 @@ const CitizenDashboard = () => {
         await uploadFiles(insertedIssue.id);
       }
 
+      // Notify citizen and assigned MP (if provided)
+      await dispatchNotification({
+        recipients: [user.id],
+        issueId: insertedIssue.id,
+        event: "issue_submitted",
+      });
+
+      if (assignedMpId) {
+        await dispatchNotification({
+          recipients: [assignedMpId],
+          issueId: insertedIssue.id,
+          event: "issue_assigned",
+          actorName: senderName || undefined,
+        });
+      }
+
       toast.success(t("dashboard.issue_submitted"));
+      analytics.track("issue_submitted", {
+        category: finalCategory,
+        has_attachments: files.length > 0,
+        has_assigned_mp: !!assignedMpId,
+        issue_type: finalIssueType,
+        priority,
+      });
       setShowForm(false);
       setTitle("");
       setDescription("");
@@ -251,9 +319,12 @@ const CitizenDashboard = () => {
       setFiles([]);
       setAssignedMpId(null);
       setAssignedMpName(null);
+      setCaptchaToken(null);
+      rotateCsrf();
       fetchIssues();
-    } catch (err: any) {
-      toast.error(err.message || t("dashboard.error_submitting"));
+    } catch (err: unknown) {
+      analytics.track("issue_submission_failed");
+      toast.error((err instanceof Error ? err.message : String(err)) || t("dashboard.error_submitting"));
     } finally {
       setSubmitting(false);
     }
@@ -372,7 +443,15 @@ const CitizenDashboard = () => {
                   <h2 className="text-2xl font-bold text-foreground">{t("dashboard.new_issue")}</h2>
                   <p className="text-sm text-muted-foreground mt-1">أدخل تفاصيل مشكلتك ليتم معالجتها باحترافية</p>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setShowForm(false)} className="rounded-full hover:bg-destructive/10 hover:text-destructive">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setShowForm(false);
+                    setCaptchaToken(null);
+                  }}
+                  className="rounded-full hover:bg-destructive/10 hover:text-destructive"
+                >
                   <X className="w-6 h-6" />
                 </Button>
               </div>
@@ -423,7 +502,7 @@ const CitizenDashboard = () => {
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input placeholder="حدد المنطقة أو العنوان التفصيلي" value={location} onChange={(e) => setLocation(e.target.value)} className="h-14 pl-12 rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent" />
                   </div>
-                  <LocationPicker onLocationSelect={(loc, lat, lng) => { setLocation(loc); setLatitude(lat); setLongitude(lng); }} />
+                  <LocationPicker latitude={latitude} longitude={longitude} onChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }} />
                 </div>
 
                 <div className="space-y-4">
@@ -444,11 +523,23 @@ const CitizenDashboard = () => {
                       </button>
                     )}
                   </div>
-                  <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple accept="image/*,application/pdf" className="hidden" />
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    multiple
+                    accept={ALLOWED_FILE_TYPES.map((ext) => `.${ext}`).join(",")}
+                    className="hidden"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-foreground px-1">التحقق البشري (CAPTCHA)</p>
+                  <TurnstileCaptcha onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
                 </div>
 
                 <div className="pt-4 border-t border-border/50">
-                  <Button type="submit" disabled={submitting || !isFormValid} className="w-full h-16 rounded-2xl bg-accent hover:bg-accent/90 text-lg font-bold shadow-xl shadow-accent/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                  <Button type="submit" disabled={submitting || !isFormValid || !captchaToken} className="w-full h-16 rounded-2xl bg-accent hover:bg-accent/90 text-lg font-bold shadow-xl shadow-accent/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
                     {submitting ? (
                       <div className="flex items-center gap-3">
                         <Loader2 className="w-6 h-6 animate-spin" />
@@ -586,6 +677,7 @@ const CitizenDashboard = () => {
           issueId={chatIssue.id}
           issueTitle={chatIssue.title}
           citizenUserId={user?.id || ""}
+          isMP={false}
           onClose={() => setChatIssue(null)}
         />
       )}

@@ -1,32 +1,144 @@
-# مشروع Haqak (اسم مؤقت)
+# Haqak (حقك) — منصة Civic‑Tech مصرية مستقلة (MVP)
 
-## نظرة عامة على المشروع
+**Haqak (حقك)** منصة Civic‑Tech مصرية بتنظم تواصل ومتابعة القضايا المحلية بين **المواطنين** و**نواب مجلس الشعب** و**الإدارة** — بشكل واضح وسهل وشفاف:  
+تقديم قضية/شكوى → متابعة → مخرجات → رؤية أحسن للأولويات.
 
-يهدف مشروع Haqak إلى بناء منصة مجتمعية مبتكرة تتيح للمواطنين المساهمة في تمويل وتنفيذ المشاريع التنموية والخدمية في مجتمعاتهم المحلية. تركز المنصة على الشفافية المطلقة، الأمان المالي، والمساءلة الكاملة لضمان وصول المساهمات إلى أهدافها المحددة.
+> **الحالة الحالية:** MVP / Prototype (Pre‑Production) — مناسبة للتجربة والتطوير.  
+> 🇪🇬 **Scope:** مصر فقط حاليًا.
 
-## الميزات الرئيسية
+---
 
-*   **نظام مالي متكامل:** يعتمد على نموذج الـ Escrow التجاري بالتعاون مع بنك CIB، مما يضمن إدارة آمنة وشفافة للأموال.
-*   **نظام المقاول المعتمد (Verified Vendor System):** يضمن أن جميع المشاريع يتم تنفيذها بواسطة جهات رسمية وموثوقة، بعد عملية تحقق صارمة.
-*   **آلية الدفع على مراحل (Milestone Payments):** يتم صرف الأموال للمقاولين بناءً على الإنجاز الفعلي للمشروع، مع إمكانية تصويت المساهمين على كل دفعة.
-*   **آلية التصويت على الاسترداد (Refund Voting):** تحمي حقوق المساهمين من خلال إتاحة خيار استرداد الأموال في حال فشل المشروع أو عدم اكتمال التمويل، بناءً على تصويت الأغلبية (51%).
-*   **تكامل مع بوابات الدفع المحلية:** دعم الدفع عبر Fawry و InstaPay لتسهيل المساهمات على جميع المواطنين.
-*   **شفافية البلوكشين (Blockchain Transparency):** جميع المعاملات والأحداث الرئيسية تسجل في سجل بلوكشين غير قابل للتغيير، مما يوفر أعلى مستويات التدقيق والمساءلة.
-*   **هيكل إعدادات مرن:** يسمح بتغيير اسم المشروع، الدومين، وتفاصيل الحساب البنكي بسهولة في المستقبل.
+## Disclaimer
 
-## الوثائق التقنية
+Haqak مشروع Civic‑Tech **مستقل** ومش تابع/مش ممثّل لأي جهة حكومية.  
+المنصة بتتعامل مع "نواب مجلس الشعب" كـ **فئة مستخدمين (User Role)** داخل النظام، **من غير** أي تكامل رسمي أو شراكة حكومية في المرحلة الحالية.
 
-للحصول على تفاصيل أعمق حول التصميم التقني والمالي للمشروع، يرجى مراجعة الوثائق التالية في مجلد `docs`:
+---
 
-*   [تصميم النظام المالي المتكامل لمشروع Haqak](docs/haqak_financial_system_design.md)
-*   [نظام المقاول المعتمد (Verified Vendor System)](docs/verified_vendor_system.md)
-*   [آلية الدفع على مراحل (Milestone Payments) وآلية التصويت على الاسترداد (Refund Voting)](docs/milestone_payments_refund_voting.md)
-*   [دليل خطوات التفعيل المالي](docs/financial_activation_guide.md)
+## بيعمل إيه؟ (بالمختصر)
 
-## الإعدادات
+- **أدوار واضحة:** Citizen / MP / Admin
+- **المسار الأساسي:** تقديم قضايا + متابعة الحالة + تنظيم الأولويات
+- **شفافية/مساءلة:** فكرة Ledger (Hash Chain) لتوثيق الوعود/التحديثات
+- **AI (اختياري):** مساعدة في صياغة مسودات وتحليلات أولية
+- **خرائط وتحليلات:** GIS + Charts
+- **i18n & PWA:** موجودة كبنية قابلة للتوسع
 
-يمكنك العثور على مثال لملف الإعدادات في `config.example.json`.
+---
 
-## البدء السريع (Quick Start)
+## Routes (Quick Map)
 
-(سيتم إضافة تعليمات البدء السريع هنا بعد اكتمال تطوير الواجهة الأمامية والخلفية).
+`/` `/auth` `/reset-password` `/citizen` `/mp` `/admin` `/mps` `/profile` `/genius` `/privacy` `/terms`
+
+---
+
+## Tech Stack
+
+React + TypeScript + Vite + Tailwind + shadcn/ui  
+Supabase + React Query + i18next + Leaflet + Recharts  
+Vitest (ومهيأ للتوسع بـ Playwright)
+
+---
+
+## Quick Start
+
+**Requirements:** Node.js >= 20
+
+```bash
+git clone https://github.com/SynapBytes/haqak.git
+cd haqak
+npm install
+npm run dev
+```
+
+```bash
+cp .env.example .env
+# fill env values
+```
+
+---
+
+## Maps & location (Leaflet)
+
+- Provider: **Leaflet** with **OpenStreetMap** tiles (no API key required). Override the tile source with `VITE_MAP_TILE_URL` if needed while preserving attribution.
+- Issue maps and location pickers use browser geolocation; if permission is denied, users can still select a point manually.
+- Markers/heat overlays are rendered via Leaflet to keep the mapping layer lightweight for the MVP.
+
+---
+
+## Production deployment (Vercel + Namecheap)
+
+**Build settings (Vercel)**
+- Framework preset: **Vite**
+- Build command: `npm run build`
+- Output directory: `dist`
+- Root directory: repository root
+- SPA routing: handled by `vercel.json` rewrite to `/index.html` (keeps client-side routing working on refresh/deep links)
+
+**Environment variables**
+- Frontend (Vercel project):
+  - `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`
+  - `VITE_TURNSTILE_SITE_KEY`
+  - `VITE_VAPID_PUBLIC_KEY`
+  - Optional: `VITE_ENV=production`
+- Server / Supabase Edge Functions (Supabase project or Vercel server env):
+  - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+  - `TURNSTILE_SECRET_KEY` (required in production; set `ENVIRONMENT=development` only if you intentionally allow local dev bypass)
+  - Push: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, optional `VAPID_SUBJECT`
+- AI (server-side only): `OPENAI_API_KEY` (text), optional `OPENAI_MODEL`/`OPENAI_BASE_URL`
+- Vision safety (optional): `GEMINI_API_KEY` (used only for image moderation)
+  - Twilio (if SMS is enabled): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
+  - Optional SMS locale: `TWILIO_DEFAULT_COUNTRY_CODE` (defaults to `+20`)
+  - Email (Resend): `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
+
+### AI provider strategy (server-only)
+- Text drafting/summarization/classification runs through the shared Edge AI layer using OpenAI chat completions (no client keys).
+- Image/vision checks use Gemini only when inline image data is provided (e.g., attachment moderation); otherwise rule-based filters are applied.
+- All AI endpoints are authenticated, reuse the shared rate limiter (`rate_limit_logs`), and return `ai_meta` (provider/model/timestamp) for auditability.
+- Supported tasks today: issue triage/classification, user-report summarization, assistant replies (legal/ops), and short admin summaries. Extend by adding server-side functions that call the shared AI service—never from the client.
+
+### Notification triggers (server-side `dispatch-notification`)
+- **Issue submitted:** notifies the citizen (confirmation) and the assigned MP (if provided).
+- **Issue assigned / status changed:** notifies the citizen with the latest status.
+- **Admin approval/rejection:** notifies the MP applicant about the decision.
+- **Moderation/chat updates:** reusable for targeted updates where `message` is provided.
+
+**DNS (Namecheap → Vercel)**
+- Apex (`haqak.org`): A record → `76.76.21.21` (Vercel)
+- `www.haqak.org`: CNAME → `cname.vercel-dns.com`
+- Add both domains in the Vercel project and request HTTPS; Vercel will issue certificates automatically.
+
+**Cache / PWA**
+- Service worker is configured to `skipWaiting`/`clientsClaim` and `cleanupOutdatedCaches` to avoid stale deploys.
+- `vercel.json` sets `Cache-Control: no-cache` for `index.html`, `sw.js`, `registerSW.js`, and the manifest so new releases reach users immediately.
+
+---
+
+## التوثيق (Docs)
+
+- العربي (الأساسي): [`docs/README.md`](./docs/README.md)
+- English (short): [`docs/README_EN.md`](./docs/README_EN.md)
+- Architecture: [`docs/architecture.md`](./docs/architecture.md)
+- Roadmap: [`docs/roadmap.md`](./docs/roadmap.md)
+- Glossary (مصري): [`docs/glossary_eg.md`](./docs/glossary_eg.md)
+- Technical (موجود): [`TECHNICAL_IMPLEMENTATION.md`](./TECHNICAL_IMPLEMENTATION.md)
+- Security (موجود): [`SECURITY.md`](./SECURITY.md) + [`SECURITY_AUDIT_REPORT.md`](./SECURITY_AUDIT_REPORT.md)
+
+---
+
+## License
+
+Not specified yet.
+
+---
+
+## Contact
+
+- Official contact (partnerships & general): **team@haqak.org**
+- Support (issues, help, complaints): **support@haqak.org**
+- Administrative/legal: **admin@haqak.org**
+
+---
+
+## 💖 Support Haqak
+Haqak is an independent platform. You can now contribute to its development through our [Contribution Page](/support). For more details on how the contribution system works, check the [Contribution System Documentation](docs/CONTRIBUTION_SYSTEM.md).

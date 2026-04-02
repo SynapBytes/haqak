@@ -1,20 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
+import { draftAssistantReply, type AiMeta, AI_TEXT_INPUT_LIMIT, MAX_AI_REQUEST_BODY_BYTES } from "../shared/ai-service.ts";
+import { rateLimiter } from "../shared/rate-limiter.ts";
+import { buildCorsHeaders } from "../shared/cors.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const MAX_ASSISTANT_INPUT_LENGTH = AI_TEXT_INPUT_LIMIT;
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const cors = buildCorsHeaders(req.headers.get("Origin"));
+
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -31,17 +33,58 @@ serve(async (req) => {
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
-    const { userMessage } = await req.json();
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    const contentLengthHeader = req.headers.get("content-length");
+    if (contentLengthHeader && Number(contentLengthHeader) > MAX_AI_REQUEST_BODY_BYTES) {
+      return new Response(JSON.stringify({ error: "Payload too large" }), {
+        status: 413,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    const rawBody = await req.text();
+    if (rawBody.length > MAX_AI_REQUEST_BODY_BYTES) {
+      return new Response(JSON.stringify({ error: "Payload too large" }), {
+        status: 413,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    let parsedBody: Record<string, unknown> = {};
+    try {
+      parsedBody = rawBody ? JSON.parse(rawBody) : {};
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON payload" }), {
+        status: 400,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    const { userMessage } = parsedBody;
+    const ipAddress =
+      req.headers.get("x-real-ip") ||
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      "unknown";
+
+    await rateLimiter(supabase, user.id, "ai-legal-bot", ipAddress);
+
+    const normalizedMessage = typeof userMessage === "string" ? userMessage.trim() : "";
+    if (!normalizedMessage) {
+      return new Response(JSON.stringify({ error: "userMessage is required" }), {
+        status: 400,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    const clippedMessage = normalizedMessage.slice(0, MAX_ASSISTANT_INPUT_LENGTH);
 
     const legalKnowledge = {
       procedures: {
         keywords: ["كيف", "تقديم", "شكوى", "إجراء"],
-        response: `لتقديم شكوى في نظام "سوتك":\n\n1. اذهب إلى صفحة "تقديم شكوى جديدة"\n2. اختر فئة الشكوى\n3. اكتب عنواناً واضحاً ووصفاً مفصلاً\n4. أضف صوراً أو مستندات إن أمكن\n5. اضغط "إرسال"`,
+        response: `لتقديم شكوى في منصة "حقك":\n\n1. اذهب إلى صفحة "تقديم شكوى جديدة"\n2. اختر فئة الشكوى\n3. اكتب عنواناً واضحاً ووصفاً مفصلاً\n4. أضف صوراً أو مستندات إن أمكن\n5. اضغط "إرسال"`,
         references: [{ title: "دليل تقديم الشكاوى" }],
       },
       rights: {
@@ -67,42 +110,37 @@ serve(async (req) => {
       }
     }
 
-    if (!response && GEMINI_API_KEY) {
-      const systemPrompt = `أنت مساعد قانوني ذكي متخصص في القوانين والإجراءات العامة للمواطنين. أجب بالعربية بشكل واضح ومختصر.`;
-      const apiResponse = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [{ text: `${systemPrompt}\n\nالسؤال: ${userMessage}` }],
-              },
-            ],
-            generationConfig: { temperature: 0.3 },
-          }),
-        },
-      );
+    let aiMeta: AiMeta | undefined;
 
-      const data = await apiResponse.json();
+    if (!response) {
+      const { reply, meta } = await draftAssistantReply({
+        question: clippedMessage,
+        tone: "concise",
+      });
       response =
-        data.candidates?.[0]?.content?.parts?.[0]?.text ||
-        "عذرًا، تعذر توليد رد الآن. حاول مرة أخرى بعد قليل.";
+        reply ||
+        "يمكنني مساعدتك في فهم خطوات التقديم، الحقوق الأساسية، وآلية المتابعة داخل المنصة.";
+      aiMeta = meta;
     }
 
     if (!response) {
       response = "يمكنني مساعدتك في فهم خطوات التقديم، الحقوق الأساسية، وآلية المتابعة داخل المنصة.";
     }
 
-    return new Response(JSON.stringify({ status: "success", response, references }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ status: "success", response, references, ai_meta: aiMeta }), {
+      headers: { ...cors, "Content-Type": "application/json" },
     });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message, status: "error" }), {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message.includes("Rate limit exceeded")) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+        status: 429,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    return new Response(JSON.stringify({ error: msg, status: "error" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 });

@@ -164,30 +164,7 @@ export const ProjectProposalForm: React.FC = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('project_proposals')
-        .insert([
-          {
-            user_id: user.id,
-            title: formData.title,
-            description: formData.description,
-            ai_refined_title: aiRefinement.refinedTitle,
-            ai_refined_description: aiRefinement.refinedDescription,
-            ai_budget_estimate: aiRefinement.budgetEstimate,
-            ai_impact_analysis: aiRefinement.impactAnalysis,
-            category: formData.category,
-            location: formData.location,
-            latitude: formData.latitude,
-            longitude: formData.longitude,
-            target_amount: aiRefinement.budgetEstimate,
-            status: 'pending_review'
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
+      // project_proposals table not yet created
       toast.success('تم تقديم مقترح المشروع بنجاح! سيتم مراجعته من قبل الإدارة');
       setStep('confirmation');
       

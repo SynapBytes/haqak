@@ -5,8 +5,10 @@ import { TrendingUp, Users, Clock, CheckCircle2, Map as MapIcon, FileDown } from
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+import type { Issue } from "@/components/IssueCard";
+
 interface AnalyticsProps {
-  issues: any[];
+  issues: Issue[];
   mpName: string;
 }
 

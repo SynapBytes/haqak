@@ -15,6 +15,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { stripExifFromFile } from "@/lib/stripExif";
 import { sanitizeText } from "@/lib/sanitize";
+import { buildAvatarPath, uploadAvatar } from "@/lib/storage";
 
 const CitizenProfile = () => {
   const { user, profile, role } = useAuth();
@@ -37,7 +38,7 @@ const CitizenProfile = () => {
       setLoading(true);
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("full_name, phone, avatar_url, is_verified")
+        .select("full_name, phone, avatar_url, is_approved")
         .eq("user_id", user.id)
         .single();
 
@@ -45,7 +46,7 @@ const CitizenProfile = () => {
         setFullName(profileData.full_name);
         setPhone(profileData.phone);
         setAvatarUrl(profileData.avatar_url);
-        setIsVerified(profileData.is_verified || false);
+        setIsVerified(profileData.is_approved || false);
       }
 
       const { data: issues } = await supabase
@@ -78,16 +79,8 @@ const CitizenProfile = () => {
 
     setUploading(true);
     try {
-      const ext = cleanFile.name.split(".").pop();
-      const path = `${user.id}/avatar.${ext}`;
-
-      if (path.includes('..')) throw new Error('Invalid path');
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(path, cleanFile, { upsert: true });
-
-      if (uploadError) throw uploadError;
+      const path = buildAvatarPath(user.id, cleanFile.name);
+      await uploadAvatar(path, cleanFile);
 
       const { data: { publicUrl } } = supabase.storage
         .from("avatars")
@@ -104,8 +97,8 @@ const CitizenProfile = () => {
 
       setAvatarUrl(urlWithCacheBust);
       toast.success(t("profile.avatar_updated"));
-    } catch (err: any) {
-      toast.error(err.message || t("profile.avatar_error"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("profile.avatar_error"));
     } finally {
       setUploading(false);
     }
@@ -125,8 +118,8 @@ const CitizenProfile = () => {
         .eq("user_id", user.id);
       if (error) throw error;
       toast.success(t("profile.saved"));
-    } catch (err: any) {
-      toast.error(err.message || t("profile.save_error"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("profile.save_error"));
     } finally {
       setSaving(false);
     }

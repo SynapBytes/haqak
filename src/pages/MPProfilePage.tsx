@@ -34,9 +34,17 @@ interface IssueStats {
   categories: Record<string, number>;
 }
 
+interface IssueRow {
+  status: string;
+  issue_type: string;
+  citizen_confirmed: boolean;
+  category: string;
+}
+
 const MPProfilePage = () => {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
+  const { theme } = useTheme();
   const [profile, setProfile] = useState<MPProfile | null>(null);
   const [stats, setStats] = useState<IssueStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,14 +60,14 @@ const MPProfilePage = () => {
       const { data: issues } = await supabase.from("issues").select("status, issue_type, citizen_confirmed, category").eq("assigned_mp_id", id);
       if (issues) {
         const categories: Record<string, number> = {};
-        issues.forEach((i: any) => { categories[i.category] = (categories[i.category] || 0) + 1; });
+        issues.forEach((i: IssueRow) => { categories[i.category] = (categories[i.category] || 0) + 1; });
         setStats({
           total: issues.length,
-          resolved: issues.filter((i: any) => i.status === "resolved").length,
-          inProgress: issues.filter((i: any) => i.status === "in-progress").length,
-          received: issues.filter((i: any) => i.status === "received").length,
-          collective: issues.filter((i: any) => i.issue_type === "collective").length,
-          confirmed: issues.filter((i: any) => i.citizen_confirmed).length,
+          resolved: issues.filter((i: IssueRow) => i.status === "resolved").length,
+          inProgress: issues.filter((i: IssueRow) => i.status === "in-progress").length,
+          received: issues.filter((i: IssueRow) => i.status === "received").length,
+          collective: issues.filter((i: IssueRow) => i.issue_type === "collective").length,
+          confirmed: issues.filter((i: IssueRow) => i.citizen_confirmed).length,
           categories,
         });
       } else {
@@ -95,7 +103,6 @@ const MPProfilePage = () => {
     );
   }
 
-  const { theme } = useTheme();
   const isDark = theme === "dark";
   const decoStyle = (op: [number, number]) => ({
     opacity: isDark ? op[0] : op[1],

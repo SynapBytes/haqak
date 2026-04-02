@@ -1,4 +1,4 @@
--- Enterprise Grade Enhancements for "Sutak"
+-- Enterprise Grade Enhancements for "Haqak"
 
 -- ============================================================================
 -- 1. AI-Powered Triage & Sentiment Analysis

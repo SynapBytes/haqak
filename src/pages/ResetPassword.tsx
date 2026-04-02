@@ -37,8 +37,8 @@ const ResetPassword = () => {
       if (error) throw error;
       toast.success(t("reset_password.success"));
       navigate("/auth");
-    } catch (err: any) {
-      toast.error(err.message || t("reset_password.error"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("reset_password.error"));
     } finally {
       setLoading(false);
     }

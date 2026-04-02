@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { BusinessCategorySelector } from "@/components/BusinessCategorySelector";
 
 const sections = [
   {
@@ -125,6 +126,10 @@ const GeniusEnhancements = () => {
               );
             })}
           </Tabs>
+
+          <div className="mt-10">
+            <BusinessCategorySelector />
+          </div>
         </div>
       </main>
     </div>

@@ -1,19 +1,27 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { Session, User } from "@supabase/supabase-js";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
-
-type AppRole = Database["public"]["Enums"]["app_role"];
+import type { Session, User } from "@supabase/supabase-js";
+import { AppRole, resolvePrimaryRole } from "@/constants/roles";
+import { analytics } from "@/lib/analytics";
 
 interface Profile {
+  id: string;
+  user_id: string;
   full_name: string;
   phone: string;
-  registration_number: string | null;
+  governorate?: string | null;
+  constituency?: string | null;
+  center?: string | null;
+  avatar_url?: string | null;
   is_approved: boolean;
-  avatar_url: string | null;
+  contact_phone?: string | null;
+  registration_number?: string | null;
+  banned_until?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-interface AuthContextType {
+interface AuthContextValue {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
@@ -22,7 +30,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
+const AuthContext = createContext<AuthContextValue>({
   session: null,
   user: null,
   profile: null,
@@ -31,42 +39,54 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
 });
 
-export const useAuth = () => useContext(AuthContext);
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserData = async (userId: string) => {
-    const [profileRes, roleRes] = await Promise.all([
-      supabase.from("profiles").select("full_name, phone, registration_number, is_approved, avatar_url").eq("user_id", userId).single(),
-      supabase.from("user_roles").select("role").eq("user_id", userId).single(),
-    ]);
-    if (profileRes.data) setProfile(profileRes.data);
-    if (roleRes.data) setRole(roleRes.data.role);
+  const fetchProfileAndRole = async (userId: string) => {
+    try {
+      const [profileRes, roleRes] = await Promise.all([
+        supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", userId),
+      ]);
+      setProfile((profileRes.data as Profile) ?? null);
+      const roles = (roleRes.data ?? []).map((r) => r.role as AppRole);
+      const primary = resolvePrimaryRole(roles);
+      setRole(primary);
+      // Identify the user in analytics with their hashed ID and role only.
+      analytics.identify(userId, primary ?? "citizen");
+    } catch {
+      setProfile(null);
+      setRole("citizen");
+    }
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        setTimeout(() => fetchUserData(session.user.id), 0);
+    const init = async () => {
+      const { data: { session: s } } = await supabase.auth.getSession();
+      setSession(s);
+      setUser(s?.user ?? null);
+      if (s?.user) {
+        await fetchProfileAndRole(s.user.id);
+      }
+      setLoading(false);
+    };
+    init();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
+      // INITIAL_SESSION is already handled by init() above; skip it to avoid
+      // a redundant profile fetch and unnecessary re-renders.
+      if (event === "INITIAL_SESSION") return;
+      setSession(s);
+      setUser(s?.user ?? null);
+      if (s?.user) {
+        await fetchProfileAndRole(s.user.id);
       } else {
         setProfile(null);
         setRole(null);
-      }
-      setLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserData(session.user.id);
       }
       setLoading(false);
     });
@@ -76,6 +96,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    analytics.reset();
+    // Purge all service-worker caches on sign-out so auth-sensitive content
+    // is not served from cache to the next user of the same browser profile.
+    if (typeof caches !== "undefined") {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      } catch {
+        // Best-effort — do not block sign-out if cache API is unavailable.
+      }
+    }
+    setSession(null);
+    setUser(null);
     setProfile(null);
     setRole(null);
   };
@@ -86,3 +119,5 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     </AuthContext.Provider>
   );
 };
+
+export const useAuth = () => useContext(AuthContext);

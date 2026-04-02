@@ -134,7 +134,7 @@ BEGIN
     -- In a real scenario, we would join with profiles to find users in the same district/location
     -- For now, we'll create a notification for all citizens as a placeholder for "hyper-local"
     INSERT INTO public.notifications (user_id, title, message, type)
-    SELECT user_id, 'مقترح مشروع جديد في منطقتك', 'تم اقتراح مشروع جديد: ' || NEW.title || '. شارك برأيك وصوتك الآن!', 'project_proposal'
+    SELECT user_id, 'مقترح مشروع جديد في منطقتك', 'تم اقتراح مشروع جديد: ' || NEW.title || '. شارك برأيك عبر حقك الآن!', 'project_proposal'
     FROM public.user_roles
     WHERE role = 'citizen' AND user_id != NEW.user_id;
     
