@@ -1,15 +1,24 @@
 /**
- * CORS header builder scoped to a single allowed origin.
+ * CORS header builder scoped to a strict allowlist.
  *
- * Set the ALLOWED_ORIGIN edge-function secret to the frontend origin
- * (e.g. "https://haqak.org").  Falls back to that value when the env var
- * is absent.  For local development add ALLOWED_ORIGIN=http://localhost:5173
- * to the edge-function environment.
+ * Set ALLOWED_ORIGINS as comma-separated exact origins, e.g.
+ *   https://haqak.org,https://www.haqak.org,https://haqak-git-main-synapbytes.vercel.app
  *
- * The wildcard "*" is intentionally avoided: it allows any page to make
- * credentialed cross-origin requests, which is unsafe for admin endpoints.
+ * Optionally set ALLOWED_ORIGIN_REGEX to support preview subdomains, e.g.
+ *   ^https://haqak-git-[a-z0-9-]+-synapbytes\\.vercel\\.app$
+ *
+ * Wildcard "*" is intentionally avoided to prevent credentialed abuse from
+ * untrusted origins on authenticated/admin endpoints.
  */
-const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") ?? "https://haqak.org";
+const ALLOWED_ORIGINS = new Set(
+  (Deno.env.get("ALLOWED_ORIGINS") ?? "https://haqak.org")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+);
+
+const ALLOWED_ORIGIN_REGEX_RAW = Deno.env.get("ALLOWED_ORIGIN_REGEX")?.trim() ?? "";
+const ALLOWED_ORIGIN_REGEX = ALLOWED_ORIGIN_REGEX_RAW ? new RegExp(ALLOWED_ORIGIN_REGEX_RAW) : null;
 
 const BASE_HEADERS = "authorization, x-client-info, apikey, content-type";
 
@@ -26,11 +35,15 @@ export function buildCorsHeaders(
   requestOrigin: string | null,
   extended = false,
 ): Record<string, string> {
-  const origin =
-    requestOrigin && requestOrigin === ALLOWED_ORIGIN ? ALLOWED_ORIGIN : "";
+  const origin = requestOrigin &&
+    (ALLOWED_ORIGINS.has(requestOrigin) || (ALLOWED_ORIGIN_REGEX?.test(requestOrigin) ?? false))
+    ? requestOrigin
+    : "";
   return {
     "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": extended ? EXTENDED_HEADERS : BASE_HEADERS,
+    "Access-Control-Max-Age": "86400",
     "Vary": "Origin",
   };
 }

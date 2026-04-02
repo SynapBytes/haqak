@@ -32,10 +32,17 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
+        // Only public routes should receive app-shell offline fallback.
+        navigateFallbackAllowlist: [
+          /^\/$/,
+          /^\/(reset-password|privacy|terms|careers|support|genius)(\/|$)/,
+          /^\/mp-profile\/[^/]+$/,
+        ],
         // Exclude auth-sensitive routes from service worker navigation handling.
         // These paths must always hit the network so stale cached content cannot
         // serve a logged-out user an apparently-authenticated page.
         navigateFallbackDenylist: [
+          /^\/api\//,
           /^\/~oauth/,
           /^\/auth/,
           /^\/login/,
@@ -52,14 +59,32 @@ export default defineConfig(({ mode }) => ({
         ],
         runtimeCaching: [
           {
+            // Never cache same-origin API responses.
+            urlPattern: ({ url }) => url.origin === self.location.origin && url.pathname.startsWith("/api/"),
+            handler: "NetworkOnly",
+          },
+          {
+            // Never cache Supabase traffic (auth/functions/rest/realtime negotiation).
+            urlPattern: /^https:\/\/[a-z0-9-]+\.supabase\.co\/.*/i,
+            handler: "NetworkOnly",
+          },
+          {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: "CacheFirst",
-            options: { cacheName: "google-fonts-cache", expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } },
+            options: {
+              cacheName: "google-fonts-cache",
+              cacheableResponse: { statuses: [200] },
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            },
           },
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
             handler: "CacheFirst",
-            options: { cacheName: "gstatic-fonts-cache", expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } },
+            options: {
+              cacheName: "gstatic-fonts-cache",
+              cacheableResponse: { statuses: [200] },
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            },
           },
         ],
       },
