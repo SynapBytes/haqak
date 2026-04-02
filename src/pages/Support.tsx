@@ -75,14 +75,14 @@ const Support = () => {
     try {
       // In a real app, we would call a payment provider here.
       // For now, we'll simulate a successful contribution.
-      const { data, error } = await supabase.from("contributions").insert({
+      const { data, error } = await (supabase.from("contributions" as any).insert({
         amount: finalAmount,
         name: name ? sanitizeText(name) : null,
         email: email ? sanitizeText(email) : null,
         show_name: showName,
-        status: "succeeded", // Simulated success
+        status: "succeeded",
         payment_provider: "placeholder",
-      }).select().single();
+      } as any).select().single() as any);
 
       if (error) throw error;
 
