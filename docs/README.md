@@ -128,3 +128,29 @@ cp .env.example .env
 - Strict RLS policies added on all new tables.
 - Audit hooks record creation/updates/publication/decision actions in `audit_logs`.
 - Notification edge function now supports center+role targeting for verified-only MP center broadcasts (`verified_only`).
+
+## Sprint 8: Community Projects / Donations / Refunds (strict privacy + verified-only)
+
+- New workflow tables: `community_projects`, `project_founders`, `project_donations`, `project_refund_requests`, `project_refund_batches`, `project_mp_nominations`, `project_mp_nomination_approvals`.
+- VERIFIED-only enforcement:
+  - Only verified citizens can create projects, join founders, approve founder actions, donate/pledge, and request refunds.
+  - Only verified MPs can accept/reject receiving funds.
+  - MP transfer acceptance/admin approval path requires an admin-verified bank account snapshot.
+- Center scoping enforcement:
+  - `community_projects.center_id` must equal creator `profiles.center_id`.
+  - Founders and nominated MPs must belong to the same center as the project.
+- Privacy hard line:
+  - Founder/donor identities are not publicly exposed.
+  - MPs have no direct read policy on `project_donations` and `project_founders`.
+  - Anonymous aggregates only through `community_project_public_stats` / `get_project_public_aggregate`.
+- Refund rule:
+  - Cancellation triggers when refund requests reach `>=51%` of distinct donors.
+  - On trigger: project status is cancelled, notifications sent to donors + founders, and manual admin refund batch is created.
+  - Refund fee is configurable via `project_system_settings` (`refund_fee_percent`).
+- Instapay SOON mode:
+  - Donation pledges are created with `reference_code` and `payment_status = 'payment_soon'`.
+  - No bank/payment instructions are exposed in UI.
+- Transfer workflow:
+  - Founder nomination requires 3/5 approvals.
+  - MP acceptance requires legal acknowledgment + timestamp.
+  - Admin approval captures `bank_snapshot`; transfer completion requires receipt upload in private bucket `project-transfer-receipts`.

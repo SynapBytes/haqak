@@ -10,7 +10,8 @@ type NotificationEvent =
   | "poll_published"
   | "announcement_published"
   | "renomination_approved"
-  | "renomination_request_submitted";
+  | "renomination_request_submitted"
+  | "project_refund_threshold_met";
 
 type NotificationRoleTarget = "citizen" | "mp" | "admin";
 

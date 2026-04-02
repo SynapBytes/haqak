@@ -1,111 +1,185 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Vote,
-  ThumbsUp,
-  ThumbsDown,
-  Users,
-  MapPin,
-  Calendar,
-  TrendingUp,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  Loader2
-} from 'lucide-react';
+import { Vote, ThumbsUp, Users, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 
-interface ProjectProposal {
-  id: string;
+interface CommunityProjectSummary {
+  project_id: string;
   title: string;
-  ai_refined_description: string;
-  category: string;
-  location: string;
-  ai_impact_analysis: string;
   status: string;
-  voting_deadline: string;
-  upvotes: number;
-  downvotes: number;
-  userVote?: 'upvote' | 'downvote' | null;
+  founders_verified_count: number;
+  founders_display: string;
+  distinct_donor_count: number;
+  refund_request_percentage: number;
+}
+
+interface NominationItem {
+  id: string;
+  project_id: string;
+  nominated_mp_user_id: string;
+  status: string;
 }
 
 export const ProjectVotingSystem: React.FC = () => {
-  const { session } = useAuth();
-  const user = session?.user ?? null;
-  const [projects, setProjects] = useState<ProjectProposal[]>([]);
+  const { user } = useAuth();
+  const [projects, setProjects] = useState<CommunityProjectSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [votingProject, setVotingProject] = useState<string | null>(null);
-  const [submittingVote, setSubmittingVote] = useState(false);
+  const [nominatingProject, setNominatingProject] = useState<string | null>(null);
+  const [approvingNomination, setApprovingNomination] = useState<string | null>(null);
+  const [profile, setProfile] = useState<{ center_id: string | null; verification_status: string | null } | null>(null);
+  const [hasMpRole, setHasMpRole] = useState(false);
+
+  const isVerifiedCitizenOnly = !!user && profile?.verification_status === 'verified' && !!profile?.center_id && !hasMpRole;
 
   useEffect(() => {
-    fetchVotingProjects();
-    
-    // Subscribe to real-time updates
-    const subscription = supabase
-      .channel('project_votes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'project_votes'
-        },
-        () => {
-          fetchVotingProjects();
-        }
-      )
-      .subscribe();
+    fetchMe();
+    fetchProjects();
+  }, [user?.id]);
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+  const fetchMe = async () => {
+    if (!user) {
+      setProfile(null);
+      setHasMpRole(false);
+      return;
+    }
 
-  const fetchVotingProjects = async () => {
-    // Tables project_proposals/project_votes not yet created
-    setProjects([]);
+    const [{ data: profileData }, { data: roles }] = await Promise.all([
+      supabase.from('profiles').select('center_id, verification_status').eq('user_id', user.id).maybeSingle(),
+      supabase.from('user_roles').select('role').eq('user_id', user.id),
+    ]);
+
+    setProfile(profileData ?? null);
+    setHasMpRole((roles ?? []).some((r) => r.role === 'mp'));
+  };
+
+  const fetchProjects = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('community_project_public_stats')
+      .select('project_id, title, status, founders_verified_count, founders_display, distinct_donor_count, refund_request_percentage')
+      .eq('status', 'target_reached');
+
+    if (error) {
+      toast.error('تعذر تحميل المشاريع الجاهزة لترشيح النائب');
+      setProjects([]);
+      setLoading(false);
+      return;
+    }
+
+    setProjects(
+      (data ?? []).map((row) => ({
+        project_id: row.project_id,
+        title: row.title,
+        status: row.status,
+        founders_verified_count: Number(row.founders_verified_count ?? 0),
+        founders_display: row.founders_display,
+        distinct_donor_count: Number(row.distinct_donor_count ?? 0),
+        refund_request_percentage: Number(row.refund_request_percentage ?? 0),
+      })),
+    );
     setLoading(false);
   };
 
-  const handleVote = async (_projectId: string, _voteType: 'upvote' | 'downvote') => {
-    if (!user) {
-      toast.error('يجب تسجيل الدخول للتصويت');
+  const nominateRandomCenterMp = async (projectId: string) => {
+    if (!user || !isVerifiedCitizenOnly || !profile?.center_id) {
+      toast.error('الترشيح متاح فقط للمؤسسين المواطنين الموثقين من نفس المركز');
       return;
     }
-    // project_votes table not yet created
-    toast.info('ميزة التصويت قيد التطوير');
+
+    setNominatingProject(projectId);
+    const { data: mpRoleRows, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'mp');
+
+    if (rolesError || !mpRoleRows || mpRoleRows.length === 0) {
+      toast.error('لا يوجد نائب موثق متاح في نفس المركز');
+      setNominatingProject(null);
+      return;
+    }
+
+    const mpUserIds = mpRoleRows.map((row) => row.user_id);
+    const { data: mpCandidates, error: candidatesError } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .in('user_id', mpUserIds)
+      .eq('center_id', profile.center_id)
+      .eq('verification_status', 'verified')
+      .limit(1);
+
+    if (candidatesError || !mpCandidates || mpCandidates.length === 0) {
+      toast.error('لا يوجد نائب موثق متاح في نفس المركز');
+      setNominatingProject(null);
+      return;
+    }
+
+    const nominatedMpUserId = mpCandidates[0].user_id;
+
+    const { error } = await supabase.from('project_mp_nominations').insert({
+      project_id: projectId,
+      nominated_mp_user_id: nominatedMpUserId,
+      nominated_by_founder_user_id: user.id,
+      status: 'pending_founder_approvals',
+    });
+
+    if (error) {
+      toast.error(error.message || 'تعذر إنشاء ترشيح النائب');
+      setNominatingProject(null);
+      return;
+    }
+
+    toast.success('تم إنشاء ترشيح نائب من نفس المركز، ويحتاج موافقة 3/5 مؤسسين');
+    setNominatingProject(null);
   };
 
-  const daysRemaining = (deadline: string) => {
-    const days = Math.ceil((new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-    return Math.max(0, days);
-  };
+  const approveLatestNomination = async (projectId: string) => {
+    if (!user || !isVerifiedCitizenOnly) {
+      toast.error('الموافقة متاحة فقط للمؤسسين المواطنين الموثقين');
+      return;
+    }
 
-  const getVotePercentage = (votes: number, total: number) => {
-    if (total === 0) return 0;
-    return Math.round((votes / total) * 100);
-  };
+    setApprovingNomination(projectId);
 
-  const getCategoryBadgeColor = (category: string) => {
-    const colors: Record<string, string> = {
-      'البنية التحتية': 'bg-blue-100 text-blue-800',
-      'الخدمات العامة': 'bg-purple-100 text-purple-800',
-      'الخدمات الأساسية': 'bg-green-100 text-green-800',
-      'التعليم والثقافة': 'bg-yellow-100 text-yellow-800',
-      'الصحة والرعاية الاجتماعية': 'bg-red-100 text-red-800',
-      'البيئة والتشجير': 'bg-emerald-100 text-emerald-800',
-      'الرياضة والترفيه': 'bg-orange-100 text-orange-800',
-      'الأمان والسلامة': 'bg-indigo-100 text-indigo-800'
-    };
-    return colors[category] || 'bg-gray-100 text-gray-800';
+    const { data: nominations, error: nominationError } = await supabase
+      .from('project_mp_nominations')
+      .select('id, project_id, nominated_mp_user_id, status')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (nominationError || !nominations || nominations.length === 0) {
+      toast.error('لا يوجد ترشيح نشط لهذا المشروع');
+      setApprovingNomination(null);
+      return;
+    }
+
+    const nomination = nominations[0] as NominationItem;
+    if (nomination.status !== 'pending_founder_approvals') {
+      toast.info('هذا الترشيح لم يعد في مرحلة الموافقات');
+      setApprovingNomination(null);
+      return;
+    }
+
+    const { error: approvalError } = await supabase.from('project_mp_nomination_approvals').insert({
+      nomination_id: nomination.id,
+      founder_user_id: user.id,
+    });
+
+    if (approvalError) {
+      toast.error(approvalError.message || 'تعذر تسجيل الموافقة');
+      setApprovingNomination(null);
+      return;
+    }
+
+    toast.success('تم تسجيل موافقتك على ترشيح النائب');
+    setApprovingNomination(null);
+    fetchProjects();
   };
 
   return (
@@ -114,15 +188,24 @@ export const ProjectVotingSystem: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Vote className="w-6 h-6 text-primary" />
-            التصويت على المشاريع المقترحة
+            ترشيح نائب التحويل والموافقات
           </h2>
-          <p className="text-muted-foreground">حقك مهم - ساعد في اختيار المشاريع التي ستطور دائرتك</p>
+          <p className="text-muted-foreground">بعد بلوغ الهدف: يلزم ترشيح نائب من نفس المركز + موافقة 3/5 مؤسسين.</p>
         </div>
         <Badge variant="outline" className="px-3 py-1 gap-1">
           <Users className="w-4 h-4" />
-          ديمقراطية تشاركية
+          حوكمة المؤسسين
         </Badge>
       </div>
+
+      {!isVerifiedCitizenOnly && (
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800">
+            الترشيح والموافقة متاحان فقط للمؤسسين المواطنين الموثقين.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {loading ? (
         <Card>
@@ -135,109 +218,55 @@ export const ProjectVotingSystem: React.FC = () => {
         <Card>
           <CardContent className="pt-6 flex flex-col items-center justify-center py-12">
             <AlertCircle className="w-12 h-12 text-muted-foreground opacity-20 mb-4" />
-            <p className="text-muted-foreground">لا توجد مشاريع قيد التصويت حالياً</p>
+            <p className="text-muted-foreground">لا توجد مشاريع وصلت للهدف بعد</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
           {projects.map((project, idx) => (
-            <motion.div
-              key={project.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-            >
+            <motion.div key={project.project_id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}>
               <Card className="overflow-hidden border-l-4 border-l-primary hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge className={getCategoryBadgeColor(project.category)}>
-                          {project.category}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          <Clock className="w-3 h-3 ml-1" />
-                          {daysRemaining(project.voting_deadline)} أيام متبقية
-                        </Badge>
+                        <Badge variant="outline">{project.status}</Badge>
+                        <Badge variant="secondary">{project.founders_display}</Badge>
+                        <Badge variant="outline">{project.distinct_donor_count} متبرع</Badge>
                       </div>
                       <CardTitle className="text-lg">{project.title}</CardTitle>
                     </div>
                   </div>
                 </CardHeader>
 
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">{project.ai_refined_description}</p>
-
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="w-4 h-4" />
-                    {project.location}
-                  </div>
-
-                  {project.ai_impact_analysis && (
-                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-                      <p className="text-xs font-semibold text-blue-900 mb-1">الأثر المتوقع:</p>
-                      <p className="text-xs text-blue-800">{project.ai_impact_analysis}</p>
-                    </div>
-                  )}
-
-                  {/* Vote Stats */}
-                  <div className="space-y-3 pt-2">
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-semibold flex items-center gap-1">
-                          <ThumbsUp className="w-4 h-4 text-emerald-600" />
-                          أؤيد المشروع
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {project.upvotes} ({getVotePercentage(project.upvotes, project.upvotes + project.downvotes)}%)
-                        </span>
-                      </div>
-                      <Progress 
-                        value={getVotePercentage(project.upvotes, project.upvotes + project.downvotes)} 
-                        className="h-2 bg-emerald-100"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-semibold flex items-center gap-1">
-                          <ThumbsDown className="w-4 h-4 text-red-600" />
-                          لا أؤيد المشروع
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {project.downvotes} ({getVotePercentage(project.downvotes, project.upvotes + project.downvotes)}%)
-                        </span>
-                      </div>
-                      <Progress 
-                        value={getVotePercentage(project.downvotes, project.upvotes + project.downvotes)} 
-                        className="h-2 bg-red-100"
-                      />
-                    </div>
-
-                    <div className="text-xs text-muted-foreground text-center pt-1">
-                      إجمالي الأصوات: {project.upvotes + project.downvotes}
-                    </div>
-                  </div>
+                <CardContent className="space-y-2">
+                  <Alert className="border-blue-200 bg-blue-50">
+                    <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-800 text-xs">
+                      عند قبول النائب يجب تسجيل الإقرار القانوني مع التاريخ، ولا يتم أي تحويل بدون موافقة الإدارة.
+                    </AlertDescription>
+                  </Alert>
+                  <p className="text-xs text-muted-foreground">
+                    نسبة طلبات الاسترداد: {project.refund_request_percentage.toFixed(2)}%
+                  </p>
                 </CardContent>
 
                 <CardFooter className="bg-muted/10 border-t pt-4 flex gap-2">
                   <Button
-                    variant={project.userVote === 'upvote' ? 'default' : 'outline'}
-                    onClick={() => handleVote(project.id, 'upvote')}
-                    disabled={submittingVote}
+                    onClick={() => nominateRandomCenterMp(project.project_id)}
+                    disabled={nominatingProject === project.project_id || !isVerifiedCitizenOnly}
                     className="flex-1 gap-2"
                   >
-                    <ThumbsUp className="w-4 h-4" />
-                    أؤيد
+                    {nominatingProject === project.project_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ThumbsUp className="w-4 h-4" />}
+                    ترشيح نائب من نفس المركز
                   </Button>
                   <Button
-                    variant={project.userVote === 'downvote' ? 'destructive' : 'outline'}
-                    onClick={() => handleVote(project.id, 'downvote')}
-                    disabled={submittingVote}
-                    className="flex-1 gap-2"
+                    variant="outline"
+                    onClick={() => approveLatestNomination(project.project_id)}
+                    disabled={approvingNomination === project.project_id || !isVerifiedCitizenOnly}
+                    className="flex-1"
                   >
-                    <ThumbsDown className="w-4 h-4" />
-                    لا أؤيد
+                    {approvingNomination === project.project_id ? '...' : 'موافقة مؤسس'}
                   </Button>
                 </CardFooter>
               </Card>

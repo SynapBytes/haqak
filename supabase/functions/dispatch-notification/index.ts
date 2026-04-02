@@ -14,7 +14,8 @@ type NotificationEvent =
   | "poll_published"
   | "announcement_published"
   | "renomination_approved"
-  | "renomination_request_submitted";
+  | "renomination_request_submitted"
+  | "project_refund_threshold_met";
 
 type DeliveryChannel = "inapp" | "sms" | "email";
 type RoleTarget = "citizen" | "mp" | "admin";
@@ -73,6 +74,7 @@ const ALLOWED_EVENTS = new Set<NotificationEvent>([
   "announcement_published",
   "renomination_approved",
   "renomination_request_submitted",
+  "project_refund_threshold_met",
 ]);
 const ALLOWED_LEGACY_CHANNELS = new Set<LegacyChannel>(["email", "sms", "push"]);
 const MAX_RECIPIENTS = 300;
@@ -140,6 +142,11 @@ function buildContent(payload: DispatchRequest, issueTitle?: string): Notificati
       return {
         title: "طلب إعادة ترشح جديد",
         body: message || "تم استلام طلب إعادة ترشح جديد من نائب.",
+      };
+    case "project_refund_threshold_met":
+      return {
+        title: "إلغاء مشروع وبدء الاسترداد",
+        body: message || "تم بلوغ حد الاسترداد (51%) وسيتم تنفيذ الاسترداد يدوياً بواسطة الإدارة.",
       };
     default:
       return { title: "إشعار جديد", body: message || "لديك إشعار جديد." };

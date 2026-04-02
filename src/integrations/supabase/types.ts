@@ -174,6 +174,267 @@ export type Database = {
         }
         Relationships: []
       }
+      community_projects: {
+        Row: {
+          center_id: string
+          created_at: string
+          creator_user_id: string
+          description: string
+          id: string
+          raised_amount: number
+          refund_triggered_at: string | null
+          status: string
+          target_amount: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          center_id: string
+          created_at?: string
+          creator_user_id: string
+          description: string
+          id?: string
+          raised_amount?: number
+          refund_triggered_at?: string | null
+          status?: string
+          target_amount: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          center_id?: string
+          created_at?: string
+          creator_user_id?: string
+          description?: string
+          id?: string
+          raised_amount?: number
+          refund_triggered_at?: string | null
+          status?: string
+          target_amount?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      project_donations: {
+        Row: {
+          admin_verified_at: string | null
+          admin_verified_by: string | null
+          amount: number
+          created_at: string
+          donor_user_id: string
+          id: string
+          payment_status: string
+          project_id: string
+          reference_code: string
+          updated_at: string
+        }
+        Insert: {
+          admin_verified_at?: string | null
+          admin_verified_by?: string | null
+          amount: number
+          created_at?: string
+          donor_user_id: string
+          id?: string
+          payment_status?: string
+          project_id: string
+          reference_code: string
+          updated_at?: string
+        }
+        Update: {
+          admin_verified_at?: string | null
+          admin_verified_by?: string | null
+          amount?: number
+          created_at?: string
+          donor_user_id?: string
+          id?: string
+          payment_status?: string
+          project_id?: string
+          reference_code?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      project_founders: {
+        Row: {
+          created_at: string
+          founder_user_id: string
+          id: string
+          project_id: string
+        }
+        Insert: {
+          created_at?: string
+          founder_user_id: string
+          id?: string
+          project_id: string
+        }
+        Update: {
+          created_at?: string
+          founder_user_id?: string
+          id?: string
+          project_id?: string
+        }
+        Relationships: []
+      }
+      project_mp_nomination_approvals: {
+        Row: {
+          created_at: string
+          founder_user_id: string
+          id: string
+          nomination_id: string
+        }
+        Insert: {
+          created_at?: string
+          founder_user_id: string
+          id?: string
+          nomination_id: string
+        }
+        Update: {
+          created_at?: string
+          founder_user_id?: string
+          id?: string
+          nomination_id?: string
+        }
+        Relationships: []
+      }
+      project_mp_nominations: {
+        Row: {
+          admin_approved_at: string | null
+          admin_approved_by: string | null
+          bank_snapshot: Json | null
+          created_at: string
+          id: string
+          legal_acknowledged: boolean
+          legal_acknowledged_at: string | null
+          mp_decided_at: string | null
+          nominated_by_founder_user_id: string
+          nominated_mp_user_id: string
+          project_id: string
+          status: string
+          transfer_completed_at: string | null
+          transfer_receipt_path: string | null
+          transfer_receipt_uploaded_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_approved_at?: string | null
+          admin_approved_by?: string | null
+          bank_snapshot?: Json | null
+          created_at?: string
+          id?: string
+          legal_acknowledged?: boolean
+          legal_acknowledged_at?: string | null
+          mp_decided_at?: string | null
+          nominated_by_founder_user_id: string
+          nominated_mp_user_id: string
+          project_id: string
+          status?: string
+          transfer_completed_at?: string | null
+          transfer_receipt_path?: string | null
+          transfer_receipt_uploaded_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_approved_at?: string | null
+          admin_approved_by?: string | null
+          bank_snapshot?: Json | null
+          created_at?: string
+          id?: string
+          legal_acknowledged?: boolean
+          legal_acknowledged_at?: string | null
+          mp_decided_at?: string | null
+          nominated_by_founder_user_id?: string
+          nominated_mp_user_id?: string
+          project_id?: string
+          status?: string
+          transfer_completed_at?: string | null
+          transfer_receipt_path?: string | null
+          transfer_receipt_uploaded_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      project_refund_batches: {
+        Row: {
+          created_at: string
+          fee_percent: number
+          id: string
+          notes: string | null
+          processed_at: string | null
+          processed_by: string | null
+          project_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fee_percent: number
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          project_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fee_percent?: number
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          project_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      project_refund_requests: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          requester_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          requester_user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          requester_user_id?: string
+        }
+        Relationships: []
+      }
+      project_system_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value_numeric: number | null
+          value_text: string | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value_numeric?: number | null
+          value_text?: string | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value_numeric?: number | null
+          value_text?: string | null
+        }
+        Relationships: []
+      }
       fcm_tokens: {
         Row: {
           created_at: string
@@ -851,6 +1112,51 @@ export type Database = {
       }
     }
     Views: {
+      community_project_public_stats: {
+        Row: {
+          center_id: string | null
+          description: string | null
+          distinct_donor_count: number | null
+          founders_display: string | null
+          founders_verified_count: number | null
+          project_id: string | null
+          raised_amount: number | null
+          refund_request_count: number | null
+          refund_request_percentage: number | null
+          status: string | null
+          target_amount: number | null
+          title: string | null
+        }
+        Insert: {
+          center_id?: string | null
+          description?: string | null
+          distinct_donor_count?: number | null
+          founders_display?: string | null
+          founders_verified_count?: number | null
+          project_id?: string | null
+          raised_amount?: number | null
+          refund_request_count?: number | null
+          refund_request_percentage?: number | null
+          status?: string | null
+          target_amount?: number | null
+          title?: string | null
+        }
+        Update: {
+          center_id?: string | null
+          description?: string | null
+          distinct_donor_count?: number | null
+          founders_display?: string | null
+          founders_verified_count?: number | null
+          project_id?: string | null
+          raised_amount?: number | null
+          refund_request_count?: number | null
+          refund_request_percentage?: number | null
+          status?: string | null
+          target_amount?: number | null
+          title?: string | null
+        }
+        Relationships: []
+      }
       poll_results: {
         Row: {
           center_id: string | null
@@ -931,6 +1237,37 @@ export type Database = {
       }
     }
     Functions: {
+      create_project_donation_pledge: {
+        Args: { _amount: number; _project_id: string }
+        Returns: {
+          admin_verified_at: string | null
+          admin_verified_by: string | null
+          amount: number
+          created_at: string
+          donor_user_id: string
+          id: string
+          payment_status: string
+          project_id: string
+          reference_code: string
+          updated_at: string
+        }
+      }
+      get_project_public_aggregate: {
+        Args: { _project_id: string }
+        Returns: {
+          center_id: string
+          distinct_donor_count: number
+          founders_display: string
+          founders_verified_count: number
+          project_id: string
+          raised_amount: number
+          refund_request_count: number
+          refund_request_percentage: number
+          status: string
+          target_amount: number
+        }[]
+      }
+      get_project_refund_fee_percent: { Args: never; Returns: number }
       get_mp_center_citizens_count: { Args: never; Returns: number }
       get_poll_vote_counts: {
         Args: { _poll_id: string }
@@ -945,6 +1282,8 @@ export type Database = {
         Returns: boolean
       }
       is_active_mp: { Args: { _user_id: string }; Returns: boolean }
+      is_verified_citizen: { Args: { _user_id: string }; Returns: boolean }
+      is_verified_mp: { Args: { _user_id: string }; Returns: boolean }
       resolve_center_id: {
         Args: { _district: string; _governorate: string }
         Returns: string
