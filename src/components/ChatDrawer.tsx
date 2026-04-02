@@ -65,7 +65,7 @@ const ChatDrawer = ({ issueId, issueTitle, citizenUserId, citizenPhone, isMP, on
   useEffect(() => {
     if (!conversationId) return;
     const channel = supabase
-      .channel(`chat-${conversationId}`)
+      .channel(`chat-${conversationId}`, { config: { private: true } })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages", filter: `conversation_id=eq.${conversationId}` }, (payload) => {
         const newMsg = payload.new as ChatMessage;
         setMessages((prev) => { if (prev.some(m => m.id === newMsg.id)) return prev; return [...prev, newMsg]; });
