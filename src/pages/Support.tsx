@@ -16,7 +16,78 @@ import {
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { sanitizeText } from "@/lib/sanitize";
+
+type ExtendedPublicTables = Database["public"]["Tables"] & {
+  contributions: {
+    Row: {
+      id: string;
+      name: string | null;
+      show_name: boolean;
+      status: string;
+      created_at: string;
+    };
+    Insert: {
+      amount: number;
+      name?: string | null;
+      email?: string | null;
+      show_name: boolean;
+      status: string;
+      payment_provider: string;
+    };
+    Update: {
+      amount?: number;
+      name?: string | null;
+      email?: string | null;
+      show_name?: boolean;
+      status?: string;
+      payment_provider?: string;
+    };
+    Relationships: [];
+  };
+  feedbacks: {
+    Row: {
+      id: string;
+      contribution_id: string | null;
+      message: string;
+      name: string | null;
+      email: string | null;
+      created_at: string;
+    };
+    Insert: {
+      contribution_id?: string | null;
+      message: string;
+      name?: string | null;
+      email?: string | null;
+    };
+    Update: {
+      contribution_id?: string | null;
+      message?: string;
+      name?: string | null;
+      email?: string | null;
+    };
+    Relationships: [];
+  };
+};
+
+type ExtendedDatabase = Omit<Database, "public"> & {
+  public: Omit<Database["public"], "Tables"> & {
+    Tables: ExtendedPublicTables;
+  };
+};
+
+type ContributionInsertPayload = ExtendedDatabase["public"]["Tables"]["contributions"]["Insert"];
+type FeedbackInsertPayload = ExtendedDatabase["public"]["Tables"]["feedbacks"]["Insert"];
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const hasStringName = (value: unknown): value is { name: string } =>
+  isRecord(value) && typeof value.name === "string";
+
+const supportSupabase = supabase as unknown as SupabaseClient<ExtendedDatabase>;
 
 const Support = () => {
   const { t, i18n } = useTranslation();
@@ -39,15 +110,21 @@ const Support = () => {
   useEffect(() => {
     const fetchContributors = async () => {
       try {
-        const { data } = await (supabase
-          .from("contributions" as any)
+        const { data } = await supportSupabase
+          .from("contributions")
           .select("name")
           .eq("show_name", true)
           .eq("status", "succeeded")
           .order("created_at", { ascending: false })
-          .limit(20) as any);
+          .limit(20);
         
-        if (data) setContributors((data as any[]).filter((c: any) => c.name) as { name: string }[]);
+        if (Array.isArray(data)) {
+          const filteredContributors = data
+            .filter(hasStringName)
+            .filter(({ name: contributorName }) => contributorName.trim().length > 0)
+            .map(({ name: contributorName }) => ({ name: contributorName }));
+          setContributors(filteredContributors);
+        }
       } catch (error) {
         console.error("Error fetching contributors:", error);
       } finally {
@@ -75,16 +152,24 @@ const Support = () => {
     try {
       // In a real app, we would call a payment provider here.
       // For now, we'll simulate a successful contribution.
-      const { data, error } = await (supabase.from("contributions" as any).insert({
+      const contributionPayload: ContributionInsertPayload = {
         amount: finalAmount,
         name: name ? sanitizeText(name) : null,
         email: email ? sanitizeText(email) : null,
         show_name: showName,
         status: "succeeded",
         payment_provider: "placeholder",
-      } as any).select().single() as any);
+      };
+      const { data, error } = await supportSupabase
+        .from("contributions")
+        .insert(contributionPayload)
+        .select()
+        .single();
 
       if (error) throw error;
+      if (!isRecord(data) || typeof data.id !== "string") {
+        throw new Error("Invalid contribution response");
+      }
 
       setContributionId(data.id);
       setStep("success");
@@ -102,12 +187,13 @@ const Support = () => {
     
     setLoading(true);
     try {
-      const { error } = await (supabase.from("feedbacks" as any).insert({
+      const feedbackPayload: FeedbackInsertPayload = {
         contribution_id: contributionId,
         message: sanitizeText(feedback),
         name: name ? sanitizeText(name) : null,
         email: email ? sanitizeText(email) : null,
-      } as any) as any);
+      };
+      const { error } = await supportSupabase.from("feedbacks").insert(feedbackPayload);
 
       if (error) throw error;
       
