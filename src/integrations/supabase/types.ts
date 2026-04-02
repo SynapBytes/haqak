@@ -279,6 +279,42 @@ export type Database = {
           },
         ]
       }
+      otp_codes: {
+        Row: {
+          attempts: number
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          mode: string
+          phone: string
+          used: boolean
+          used_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          mode: string
+          phone: string
+          used?: boolean
+          used_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          mode?: string
+          phone?: string
+          used?: boolean
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -357,6 +393,33 @@ export type Database = {
           p256dh?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      rate_limit_logs: {
+        Row: {
+          id: string
+          ip_address: string
+          request_path: string
+          request_timestamp: string
+          response_status: number | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          ip_address: string
+          request_path: string
+          request_timestamp?: string
+          response_status?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          ip_address?: string
+          request_path?: string
+          request_timestamp?: string
+          response_status?: number | null
+          user_id?: string | null
         }
         Relationships: []
       }
