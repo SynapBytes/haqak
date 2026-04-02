@@ -38,3 +38,6 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Audit production deps (fail on high+)
+        run: npm audit --omit=dev --audit-level=high
