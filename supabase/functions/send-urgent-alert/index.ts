@@ -20,6 +20,12 @@ interface UrgentAlertResponse {
   error?: string;
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const ALLOWED_URGENCY_LEVELS = new Set(["critical", "high", "medium"]);
+const MAX_TITLE_LENGTH = 200;
+const MAX_DESCRIPTION_LENGTH = 4000;
+
 // Urgent keywords for detection
 const CRITICAL_KEYWORDS = ["قتل", "اغتصاب", "عنف مسلح", "كارثة", "حريق"];
 const HIGH_KEYWORDS = ["عنف", "تهديد", "حادث", "طوارئ"];
@@ -81,6 +87,27 @@ serve(async (req) => {
     if (!issueId || !title || !description) {
       return new Response(
         JSON.stringify({ success: false, error: "Missing required fields" }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (
+      !UUID_REGEX.test(issueId) ||
+      typeof title !== "string" ||
+      typeof description !== "string" ||
+      title.length > MAX_TITLE_LENGTH ||
+      description.length > MAX_DESCRIPTION_LENGTH ||
+      (urgencyLevel !== undefined && !ALLOWED_URGENCY_LEVELS.has(urgencyLevel))
+    ) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid request fields" }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (assignedMpId && !UUID_REGEX.test(assignedMpId)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid assignedMpId" }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
@@ -217,14 +244,6 @@ serve(async (req) => {
     const urgencyEmoji = urgencyLevel === "critical" ? "🚨" : urgencyLevel === "high" ? "⚠️" : "ℹ️";
     // VULN-15 fix: sanitize user-supplied title against SMS header injection
     // (newline characters in the title would add fraudulent lines to the SMS).
-    // Also validate issueId is a UUID to prevent URL manipulation.
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(issueId)) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Invalid issueId" }),
-        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
-      );
-    }
     const safeTitle = title.replace(/[\r\n]/g, " ").slice(0, 100);
 
     for (const recipient of notificationRecipients) {

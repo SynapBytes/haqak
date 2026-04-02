@@ -38,6 +38,18 @@ interface ContentOptions {
   message?: string;
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const ALLOWED_EVENTS = new Set<NotificationEvent>([
+  "issue_submitted",
+  "issue_assigned",
+  "status_changed",
+  "admin_decision",
+  "moderation_update",
+]);
+const ALLOWED_CHANNELS = new Set(["email", "sms", "push"]);
+const MAX_RECIPIENTS = 100;
+
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "Haqak <no-reply@haqak.org>";
 const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
@@ -159,6 +171,51 @@ serve(async (req) => {
     if (!recipients || recipients.length === 0 || !event) {
       return new Response(
         JSON.stringify({ error: "recipients and event are required" }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
+      );
+    }
+
+    if (!Array.isArray(recipients)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid recipients" }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
+      );
+    }
+    if (recipients.length > MAX_RECIPIENTS) {
+      return new Response(
+        JSON.stringify({ error: `Too many recipients (max ${MAX_RECIPIENTS})` }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
+      );
+    }
+    if (!recipients.every((id) => typeof id === "string" && UUID_REGEX.test(id))) {
+      return new Response(
+        JSON.stringify({ error: "Invalid recipients" }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
+      );
+    }
+
+    if (!ALLOWED_EVENTS.has(event)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid event" }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
+      );
+    }
+
+    if (issueId && !UUID_REGEX.test(issueId)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid issueId" }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
+      );
+    }
+
+    if (
+      channels &&
+      (!Array.isArray(channels) ||
+        channels.length === 0 ||
+        channels.some((channel) => !ALLOWED_CHANNELS.has(channel)))
+    ) {
+      return new Response(
+        JSON.stringify({ error: "Invalid channels" }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }

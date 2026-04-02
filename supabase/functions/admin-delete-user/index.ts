@@ -2,6 +2,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildCorsHeaders } from "../shared/cors.ts";
 import { requireCsrfToken } from "../shared/csrf.ts";
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 Deno.serve(async (req) => {
   const cors = buildCorsHeaders(req.headers.get("Origin"));
   if (req.method === "OPTIONS") {
@@ -59,6 +62,16 @@ Deno.serve(async (req) => {
     if (!target_user_id || typeof target_user_id !== "string") {
       return new Response(
         JSON.stringify({ error: "target_user_id is required" }),
+        {
+          status: 400,
+          headers: { ...cors, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (!UUID_REGEX.test(target_user_id)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid target_user_id" }),
         {
           status: 400,
           headers: { ...cors, "Content-Type": "application/json" },

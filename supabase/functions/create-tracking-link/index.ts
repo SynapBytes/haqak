@@ -17,6 +17,10 @@ interface TrackingLinkResponse {
   error?: string;
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const ALLOWED_RECIPIENT_TYPES = new Set(["citizen", "mp", "admin"]);
+
 // VULN-05 fix: use CSPRNG (crypto.getRandomValues) instead of Math.random()
 // which is a predictable PRNG unsuitable for security-sensitive tokens.
 function generateShortCode(): string {
@@ -43,6 +47,17 @@ serve(async (req) => {
     if (!issueId || !recipientType || !recipientId) {
       return new Response(
         JSON.stringify({ success: false, error: "Missing required fields" }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (
+      !UUID_REGEX.test(issueId) ||
+      !UUID_REGEX.test(recipientId) ||
+      !ALLOWED_RECIPIENT_TYPES.has(recipientType)
+    ) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid request fields" }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
