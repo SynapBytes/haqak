@@ -29,6 +29,7 @@ import { DigitalTwinIntegration } from "@/components/DigitalTwinIntegration";
 import { PredictiveCrisisEngine } from "@/components/PredictiveCrisisEngine";
 import { SmartContractsAccountability } from "@/components/SmartContractsAccountability";
 import { UnifiedNationalIDIntegration } from "@/components/UnifiedNationalIDIntegration";
+import MPEngagementPanel from "@/components/MPEngagementPanel";
 import type { Issue } from "@/components/IssueCard";
 import type { IssueStatus } from "@/components/StatusBadge";
 
@@ -295,6 +296,10 @@ const MPDashboard = () => {
                 <Users className="w-4 h-4" />
                 الديمقراطية المباشرة
               </TabsTrigger>
+              <TabsTrigger value="engagement" className="gap-2 data-[state=active]:bg-accent">
+                <Send className="w-4 h-4" />
+                تفاعل المركز
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -328,6 +333,10 @@ const MPDashboard = () => {
 
           <TabsContent value="democracy">
             <UnifiedNationalIDIntegration />
+          </TabsContent>
+
+          <TabsContent value="engagement">
+            <MPEngagementPanel />
           </TabsContent>
 
           <TabsContent value="list" className="space-y-8">

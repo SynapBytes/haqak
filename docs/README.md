@@ -103,3 +103,28 @@ cp .env.example .env
 - التواصل الرسمي (الشراكات والأسئلة العامة): **team@haqak.org**
 - الدعم الفني والشكاوى: **support@haqak.org**
 - الإدارة والأمور التقنية والقانونية: **admin@haqak.org**
+
+
+## Sprint 3–5: MP Engagement (Center-scoped, Verified-only)
+
+### Polls (Yes/No)
+- New tables: `polls`, `poll_votes` with `UNIQUE(poll_id, voter_user_id)` to prevent double-voting.
+- Verified-only rules: only verified MPs can create/manage polls; only verified citizens can vote.
+- Privacy rules: citizens can only read their own vote rows; MPs do not get row-level vote access.
+- Secure aggregates: `poll_results` view exposes counts/percentages only (no voter identities).
+
+### Announcements / Events
+- New table: `announcements` for event/conference/opening/general content scoped by `center_id`.
+- Verified-only rules: only verified MPs can create/update/publish for their own center.
+- Citizens can read published center announcements only.
+
+### MP → Admin re-nomination
+- New table: `mp_admin_requests` with pending/approved/rejected decisions and actor metadata.
+- Verified MP can submit own requests only; admin can review and decide all requests.
+- Approval broadcast uses unified notification pipeline to verified citizens in target center.
+- Submission email fallback queue: `outbound_email_tasks` (admin@haqak.org).
+
+### Security & audit
+- Strict RLS policies added on all new tables.
+- Audit hooks record creation/updates/publication/decision actions in `audit_logs`.
+- Notification edge function now supports center+role targeting for verified-only MP center broadcasts (`verified_only`).

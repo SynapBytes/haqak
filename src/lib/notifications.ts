@@ -6,7 +6,11 @@ type NotificationEvent =
   | "issue_assigned"
   | "status_changed"
   | "admin_decision"
-  | "moderation_update";
+  | "moderation_update"
+  | "poll_published"
+  | "announcement_published"
+  | "renomination_approved"
+  | "renomination_request_submitted";
 
 type NotificationRoleTarget = "citizen" | "mp" | "admin";
 
@@ -24,6 +28,7 @@ interface DispatchOptions {
     center_id?: string;
     user_ids?: string[];
     all_users?: boolean;
+    verified_only?: boolean;
   };
   title?: string;
   body?: string;

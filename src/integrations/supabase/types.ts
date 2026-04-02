@@ -87,6 +87,57 @@ export type Database = {
           },
         ]
       }
+      announcements: {
+        Row: {
+          address_text: string | null
+          body: string
+          center_id: string
+          created_at: string
+          event_datetime: string | null
+          id: string
+          images: Json
+          lat: number | null
+          lng: number | null
+          mp_user_id: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          address_text?: string | null
+          body: string
+          center_id: string
+          created_at?: string
+          event_datetime?: string | null
+          id?: string
+          images?: Json
+          lat?: number | null
+          lng?: number | null
+          mp_user_id: string
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          address_text?: string | null
+          body?: string
+          center_id?: string
+          created_at?: string
+          event_datetime?: string | null
+          id?: string
+          images?: Json
+          lat?: number | null
+          lng?: number | null
+          mp_user_id?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       centers: {
         Row: {
           created_at: string
@@ -496,6 +547,149 @@ export type Database = {
         }
         Relationships: []
       }
+      mp_admin_requests: {
+        Row: {
+          center_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          id: string
+          message: string
+          mp_user_id: string
+          status: string
+          type: string
+        }
+        Insert: {
+          center_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          id?: string
+          message: string
+          mp_user_id: string
+          status?: string
+          type?: string
+        }
+        Update: {
+          center_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          id?: string
+          message?: string
+          mp_user_id?: string
+          status?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      outbound_email_tasks: {
+        Row: {
+          body: string
+          context: Json
+          created_at: string
+          created_by: string | null
+          error: string | null
+          id: string
+          processed_at: string | null
+          status: string
+          subject: string
+          to_email: string
+        }
+        Insert: {
+          body: string
+          context?: Json
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          processed_at?: string | null
+          status?: string
+          subject: string
+          to_email: string
+        }
+        Update: {
+          body?: string
+          context?: Json
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          processed_at?: string | null
+          status?: string
+          subject?: string
+          to_email?: string
+        }
+        Relationships: []
+      }
+      poll_votes: {
+        Row: {
+          created_at: string
+          id: string
+          poll_id: string
+          vote_value: string
+          voter_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          poll_id: string
+          vote_value: string
+          voter_user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          poll_id?: string
+          vote_value?: string
+          voter_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      polls: {
+        Row: {
+          center_id: string
+          created_at: string
+          description: string | null
+          id: string
+          mp_user_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          center_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          mp_user_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          center_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          mp_user_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -657,6 +851,42 @@ export type Database = {
       }
     }
     Views: {
+      poll_results: {
+        Row: {
+          center_id: string | null
+          mp_user_id: string | null
+          no_count: number | null
+          no_percentage: number | null
+          poll_id: string | null
+          status: string | null
+          total: number | null
+          yes_count: number | null
+          yes_percentage: number | null
+        }
+        Insert: {
+          center_id?: string | null
+          mp_user_id?: string | null
+          no_count?: number | null
+          no_percentage?: number | null
+          poll_id?: string | null
+          status?: string | null
+          total?: number | null
+          yes_count?: number | null
+          yes_percentage?: number | null
+        }
+        Update: {
+          center_id?: string | null
+          mp_user_id?: string | null
+          no_count?: number | null
+          no_percentage?: number | null
+          poll_id?: string | null
+          status?: string | null
+          total?: number | null
+          yes_count?: number | null
+          yes_percentage?: number | null
+        }
+        Relationships: []
+      }
       mp_public_profiles: {
         Row: {
           avatar_url: string | null
@@ -701,6 +931,11 @@ export type Database = {
       }
     }
     Functions: {
+      get_mp_center_citizens_count: { Args: never; Returns: number }
+      get_poll_vote_counts: {
+        Args: { _poll_id: string }
+        Returns: { no_count: number; total: number; yes_count: number }[]
+      }
       get_public_issue_stats: { Args: never; Returns: Json }
       has_role: {
         Args: {

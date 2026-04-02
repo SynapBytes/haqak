@@ -10,7 +10,11 @@ type NotificationEvent =
   | "issue_assigned"
   | "status_changed"
   | "admin_decision"
-  | "moderation_update";
+  | "moderation_update"
+  | "poll_published"
+  | "announcement_published"
+  | "renomination_approved"
+  | "renomination_request_submitted";
 
 type DeliveryChannel = "inapp" | "sms" | "email";
 type RoleTarget = "citizen" | "mp" | "admin";
@@ -30,6 +34,7 @@ interface DispatchRequest {
     center_id?: string;
     user_ids?: string[];
     all_users?: boolean;
+    verified_only?: boolean;
   };
   title?: string;
   body?: string;
@@ -64,6 +69,10 @@ const ALLOWED_EVENTS = new Set<NotificationEvent>([
   "status_changed",
   "admin_decision",
   "moderation_update",
+  "poll_published",
+  "announcement_published",
+  "renomination_approved",
+  "renomination_request_submitted",
 ]);
 const ALLOWED_LEGACY_CHANNELS = new Set<LegacyChannel>(["email", "sms", "push"]);
 const MAX_RECIPIENTS = 300;
@@ -111,6 +120,26 @@ function buildContent(payload: DispatchRequest, issueTitle?: string): Notificati
       return {
         title: "تحديث إشرافي",
         body: message || "هناك تحديث إشرافي يتعلق بطلبك أو محتواك.",
+      };
+    case "poll_published":
+      return {
+        title: "استطلاع جديد من النائب",
+        body: message || "تم نشر استطلاع جديد في دائرتك. شارك برأيك الآن.",
+      };
+    case "announcement_published":
+      return {
+        title: "إعلان جديد في دائرتك",
+        body: message || "نشر النائب إعلانًا/فعالية جديدة في دائرتك.",
+      };
+    case "renomination_approved":
+      return {
+        title: "إخطار رسمي من الإدارة",
+        body: message || "اعتمدت الإدارة طلب إعادة الترشح الخاص بالنائب في دائرتكم.",
+      };
+    case "renomination_request_submitted":
+      return {
+        title: "طلب إعادة ترشح جديد",
+        body: message || "تم استلام طلب إعادة ترشح جديد من نائب.",
       };
     default:
       return { title: "إشعار جديد", body: message || "لديك إشعار جديد." };
@@ -334,11 +363,43 @@ serve(async (req) => {
     }
 
     if (body.target?.roles?.length || body.target?.center_id) {
+      const isCenterRoleBroadcast = !!body.target?.center_id && (body.target?.roles?.length ?? 0) > 0;
+      const isVerifiedOnly = body.target?.verified_only ?? false;
+
       if (!isAdmin && !isModerator) {
-        return new Response(JSON.stringify({ error: "Role/center targeting requires admin or moderator" }), {
-          status: 403,
-          headers: { ...cors, "Content-Type": "application/json" },
-        });
+        const allowVerifiedMpCenterBroadcast =
+          isMp &&
+          isCenterRoleBroadcast &&
+          isVerifiedOnly &&
+          body.target?.roles?.length === 1 &&
+          body.target.roles[0] === "citizen";
+
+        if (!allowVerifiedMpCenterBroadcast) {
+          return new Response(JSON.stringify({ error: "Role/center targeting requires admin or moderator" }), {
+            status: 403,
+            headers: { ...cors, "Content-Type": "application/json" },
+          });
+        }
+
+        const { data: mpProfile } = await supabase
+          .from("profiles")
+          .select("center_id, verification_status")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (!mpProfile || mpProfile.verification_status !== "verified") {
+          return new Response(JSON.stringify({ error: "Verified MP required" }), {
+            status: 403,
+            headers: { ...cors, "Content-Type": "application/json" },
+          });
+        }
+
+        if (mpProfile.center_id !== body.target?.center_id) {
+          return new Response(JSON.stringify({ error: "MP can target only own center" }), {
+            status: 403,
+            headers: { ...cors, "Content-Type": "application/json" },
+          });
+        }
       }
 
       const targetRoles = (body.target?.roles ?? []).filter(
@@ -354,10 +415,14 @@ serve(async (req) => {
       }
 
       if (targetRoles.length > 0 && body.target?.center_id) {
-        const { data: centerProfiles } = await supabase
+        let centerQuery = supabase
           .from("profiles")
           .select("user_id")
           .eq("center_id", body.target.center_id);
+        if (isVerifiedOnly) {
+          centerQuery = centerQuery.eq("verification_status", "verified");
+        }
+        const { data: centerProfiles } = await centerQuery;
         const centerSet = new Set((centerProfiles ?? []).map((p) => p.user_id));
         roleUsers.forEach((id) => {
           if (centerSet.has(id)) recipientSet.add(id);
@@ -365,10 +430,14 @@ serve(async (req) => {
       } else if (targetRoles.length > 0) {
         roleUsers.forEach((id) => recipientSet.add(id));
       } else if (body.target?.center_id) {
-        const { data: centerProfiles } = await supabase
+        let centerQuery = supabase
           .from("profiles")
           .select("user_id")
           .eq("center_id", body.target.center_id);
+        if (isVerifiedOnly) {
+          centerQuery = centerQuery.eq("verification_status", "verified");
+        }
+        const { data: centerProfiles } = await centerQuery;
         (centerProfiles ?? []).forEach((p) => recipientSet.add(p.user_id));
       }
     }

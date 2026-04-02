@@ -12,6 +12,7 @@ import { MobileAppFeatures } from "@/components/MobileAppFeatures";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Smartphone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import CitizenEngagementPanel from "@/components/CitizenEngagementPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -395,6 +396,10 @@ const CitizenDashboard = () => {
                 <Smartphone className="w-4 h-4" />
                 تطبيق حقك
               </TabsTrigger>
+              <TabsTrigger value="engagement" className="gap-2 data-[state=active]:bg-accent">
+                <FileText className="w-4 h-4" />
+                الاستطلاعات والإعلانات
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="issues" className="space-y-6">
@@ -429,6 +434,10 @@ const CitizenDashboard = () => {
 
             <TabsContent value="mobile-app">
               <MobileAppFeatures />
+            </TabsContent>
+
+            <TabsContent value="engagement">
+              <CitizenEngagementPanel />
             </TabsContent>
           </Tabs>
       </main>
