@@ -4,6 +4,7 @@ import {
   buildAvatarPath,
   buildIdentityVerificationPath,
   buildIssueAttachmentPath,
+  buildMpPublicImagePath,
   buildModerationEvidencePath,
 } from "@/lib/storagePaths";
 
@@ -12,12 +13,14 @@ export const AVATARS_BUCKET = "avatars";
 export const MODERATION_BUCKET = "moderation-evidence";
 export const ID_VERIFICATIONS_BUCKET = "id_verifications";
 export const RECEIPTS_BUCKET = "receipts";
+export const MP_PUBLIC_IMAGES_BUCKET = "mp-public-images";
 const DEFAULT_SIGNED_URL_EXPIRY = 60; // seconds
 
 export {
   buildAvatarPath,
   buildIdentityVerificationPath,
   buildIssueAttachmentPath,
+  buildMpPublicImagePath,
   buildModerationEvidencePath,
 } from "@/lib/storagePaths";
 
@@ -79,6 +82,20 @@ export const uploadIdentityVerificationImage = async (path: string, file: File) 
   const { error } = await supabase.storage.from(ID_VERIFICATIONS_BUCKET).upload(path, file, { upsert: false });
   if (error) throw error;
   return { bucket: ID_VERIFICATIONS_BUCKET, path };
+};
+
+export const uploadMpPublicImage = async (path: string, file: File) => {
+  const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+  if (!allowedTypes.has(file.type)) {
+    throw new Error("Only JPG/PNG/WEBP images are allowed");
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error("Image size must be 5MB or smaller");
+  }
+  await avScanFile(file);
+  const { error } = await supabase.storage.from(MP_PUBLIC_IMAGES_BUCKET).upload(path, file, { upsert: false });
+  if (error) throw error;
+  return { bucket: MP_PUBLIC_IMAGES_BUCKET, path };
 };
 
 export const saveModerationEvidence = async (issueId: string, file: File, uploadedBy: string) => {

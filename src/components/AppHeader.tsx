@@ -94,6 +94,13 @@ const AppHeader = () => {
                   </Button>
                 </Link>
               )}
+              {role === "mp" && (
+                <Link to="/mp/settings">
+                  <Button variant={isActive("/mp/settings") ? "secondary" : "ghost"} size="sm" className="gap-2">
+                    <User className="w-4 h-4" /> إعدادات النائب
+                  </Button>
+                </Link>
+              )}
               {role === "admin" && (
                 <Link to="/admin">
                   <Button variant={isActive("/admin") ? "secondary" : "ghost"} size="sm" className="gap-2">
@@ -190,6 +197,13 @@ const AppHeader = () => {
                 <Link to="/mp" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant={isActive("/mp") ? "secondary" : "ghost"} size="sm" className="w-full justify-start gap-2">
                     <LayoutDashboard className="w-4 h-4" /> {t("nav.mp_dashboard")}
+                  </Button>
+                </Link>
+              )}
+              {role === "mp" && (
+                <Link to="/mp/settings" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant={isActive("/mp/settings") ? "secondary" : "ghost"} size="sm" className="w-full justify-start gap-2">
+                    <User className="w-4 h-4" /> إعدادات النائب
                   </Button>
                 </Link>
               )}

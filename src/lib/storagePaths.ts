@@ -82,3 +82,13 @@ export const buildIdentityVerificationPath = (
   if (hasTraversal(path)) throw new Error("Invalid path");
   return path;
 };
+
+export const buildMpPublicImagePath = (userId: string, originalName: string) => {
+  assertSafeSegment(userId, "user id");
+  const safe = sanitizeFileName(originalName);
+  const ext = resolveExtension(safe, "jpg");
+  const base = safe.replace(FILE_EXTENSION_PATTERN, "") || "mp-public";
+  const path = `${userId}/${uniqueKey()}-${base}.${ext}`;
+  if (hasTraversal(path)) throw new Error("Invalid path");
+  return path;
+};

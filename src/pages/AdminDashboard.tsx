@@ -23,6 +23,7 @@ import { dispatchNotification } from "@/lib/notifications";
 import { analytics } from "@/lib/analytics";
 import { getSignedDownloadUrl } from "@/lib/storage";
 import AdminRenominationPanel from "@/components/AdminRenominationPanel";
+import AdminBankVerificationPanel from "@/components/AdminBankVerificationPanel";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type IssueRow = Database["public"]["Tables"]["issues"]["Row"];
@@ -68,7 +69,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [issueSearchQuery, setIssueSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "issues" | "analytics" | "verifications" | "renomination">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "issues" | "analytics" | "verifications" | "renomination" | "banks">("users");
   const [filterRole, setFilterRole] = useState<"all" | AppRole>("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "banned">("all");
   const [filterGov, setFilterGov] = useState<string>("all");
@@ -341,6 +342,7 @@ const AdminDashboard = () => {
     { key: "issues" as const, label: t("admin_dashboard.tab_issues"), icon: FileText },
     { key: "verifications" as const, label: "التحقق من الهوية", icon: ShieldCheck },
     { key: "renomination" as const, label: "طلبات إعادة الترشح", icon: FileText },
+    { key: "banks" as const, label: "توثيق الحسابات البنكية", icon: ShieldCheck },
     { key: "analytics" as const, label: t("admin_dashboard.tab_analytics"), icon: BarChart3 },
   ];
 
@@ -415,6 +417,8 @@ const AdminDashboard = () => {
           </div>
         ) : activeTab === "analytics" ? (
           <AnalyticsDashboard />
+        ) : activeTab === "banks" ? (
+          <AdminBankVerificationPanel />
         ) : activeTab === "users" ? (
           <>
             {/* Search & Filter */}

@@ -17,6 +17,7 @@ interface Profile {
   center_id?: string | null;
   avatar_url?: string | null;
   is_approved: boolean;
+  verification_status?: string | null;
   contact_phone?: string | null;
   membership_number?: string | null;
   banned_until?: string | null;

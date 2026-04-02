@@ -41,6 +41,14 @@ interface IssueRow {
   category: string;
 }
 
+interface PublicPost {
+  id: string;
+  title: string | null;
+  body: string;
+  images: string[];
+  created_at: string;
+}
+
 const MPProfilePage = () => {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
@@ -49,6 +57,7 @@ const MPProfilePage = () => {
   const [stats, setStats] = useState<IssueStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [posts, setPosts] = useState<PublicPost[]>([]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -62,6 +71,22 @@ const MPProfilePage = () => {
       if (!profileData) { setNotFound(true); setLoading(false); return; }
       setProfile(profileData);
       const { data: issues } = await supabase.from("issues").select("status, issue_type, citizen_confirmed, category").eq("assigned_mp_id", id);
+      const { data: publicPosts } = await supabase
+        .from("mp_public_posts")
+        .select("id, title, body, images, created_at")
+        .eq("mp_user_id", id)
+        .eq("visibility", "public")
+        .order("created_at", { ascending: false });
+
+      setPosts(
+        (publicPosts ?? []).map((post) => ({
+          id: post.id,
+          title: post.title,
+          body: post.body,
+          images: Array.isArray(post.images) ? (post.images as string[]) : [],
+          created_at: post.created_at,
+        })),
+      );
       if (issues) {
         const categories: Record<string, number> = {};
         issues.forEach((i: IssueRow) => { categories[i.category] = (categories[i.category] || 0) + 1; });
@@ -230,6 +255,30 @@ const MPProfilePage = () => {
             )}
           </motion.div>
         </div>
+
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} className="civic-card">
+          <h3 className="font-semibold text-foreground mb-4">المنشورات العامة</h3>
+          {posts.length === 0 ? (
+            <p className="text-sm text-muted-foreground">لا توجد منشورات عامة بعد.</p>
+          ) : (
+            <div className="space-y-4">
+              {posts.map((post) => (
+                <div key={post.id} className="border border-border rounded-2xl p-4">
+                  {post.title && <h4 className="font-semibold text-foreground mb-2">{post.title}</h4>}
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{post.body}</p>
+                  {post.images.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {post.images.map((imageUrl) => (
+                        <img key={imageUrl} src={imageUrl} alt="post" className="w-24 h-24 rounded-lg object-cover" />
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2">{new Date(post.created_at).toLocaleString("ar-EG")}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
       </div>
     </div>
   );

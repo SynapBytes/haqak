@@ -30,6 +30,7 @@ import { PredictiveCrisisEngine } from "@/components/PredictiveCrisisEngine";
 import { SmartContractsAccountability } from "@/components/SmartContractsAccountability";
 import { UnifiedNationalIDIntegration } from "@/components/UnifiedNationalIDIntegration";
 import MPEngagementPanel from "@/components/MPEngagementPanel";
+import MPPublicPostsManager from "@/components/MPPublicPostsManager";
 import type { Issue } from "@/components/IssueCard";
 import type { IssueStatus } from "@/components/StatusBadge";
 
@@ -300,6 +301,10 @@ const MPDashboard = () => {
                 <Send className="w-4 h-4" />
                 تفاعل المركز
               </TabsTrigger>
+              <TabsTrigger value="public-posts" className="gap-2 data-[state=active]:bg-accent">
+                <FileText className="w-4 h-4" />
+                منشورات عامة
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -337,6 +342,10 @@ const MPDashboard = () => {
 
           <TabsContent value="engagement">
             <MPEngagementPanel />
+          </TabsContent>
+
+          <TabsContent value="public-posts">
+            <MPPublicPostsManager />
           </TabsContent>
 
           <TabsContent value="list" className="space-y-8">
