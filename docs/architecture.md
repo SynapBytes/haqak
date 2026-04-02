@@ -78,4 +78,22 @@ Citizen
 - **RLS:** مفعل على كل الجداول الحساسة (`profiles`, `user_roles`, `issues`, `issue_actions`, `issue_attachments`, `notifications`, `chat_*`, `submission_attempts`, `audit_logs`, `rate_limit_logs`, `captcha_verifications`, `otp_codes`, `storage.objects` for `issue-attachments`). السياسات مكتوبة بمبدأ أقل صلاحية.
 - **Helpers:** دوال `has_role`, `has_any_role`, `is_active_mp`, `is_admin` بتُستخدم داخل السياسات لتحديد السماح.
 - **Storage:** مرفقات المشاكل private، والقراءة مقصورة على صاحب الملف، النائب المعيّن، المشرف، أو admin.
+- **Identity storage:** bucket `id_verifications` خاص ومغلق بالكامل (not public) لصور البطاقة الأمامي/الخلفي، والقراءة لصاحب الطلب أو admin فقط عبر signed URLs. bucket `receipts` خاص برضه ومقفول للاستخدامات المالية اللاحقة.
 - **Service role only:** الكتابة لـ `audit_logs`, `submission_attempts`, `rate_limit_logs`, `captcha_verifications`, و`otp_codes` لازم تكون من backend مفعل بمفتاح الخدمة (edge functions أو server). 
+
+## Verification policy (Sprint 2)
+
+- المواطن/النائب يرفع صورة البطاقة الأمامي والخلفي من صفحة الإعدادات.
+- الطلب يُحفظ في `identity_verifications` بحالة `pending`.
+- Edge Function `verify-identity-ocr` تشغل OCR provider لو متاح، ولو مش متاح النظام يدخل Manual Review آمن بدون نشر بيانات OCR الحساسة في logs.
+- الإدارة تراجع الطلب من لوحة admin، وتعرض الصور عبر signed URLs قصيرة العمر، ثم تعتمد أو ترفض مع سبب رفض اختياري.
+- قرار الإدارة يحدّث حالة التحقق على الطلب وعلى ملف المستخدم (`verification_status`).
+
+## Unified notification channels (Sprint 2)
+
+- الإرسال الموحّد يتم عبر Edge Function `dispatch-notification`.
+- **In-app** دائمًا يتسجل في `notifications` + `notification_deliveries` (channel=inapp).
+- **SMS** يُرسل فقط إذا `phone_verified=true` + `sms_opt_in=true`.
+- **Email** يُرسل فقط إذا `email_verified=true` + `email_opt_in=true`.
+- المستهدفات تشمل: user_ids مباشرة، role، center_id، أو all users (للـ admin فقط).
+- كل عملية dispatch تُسجل في `audit_logs` مع actor + target scope + counts.

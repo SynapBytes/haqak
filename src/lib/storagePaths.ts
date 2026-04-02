@@ -66,3 +66,19 @@ export const buildModerationEvidencePath = (issueId: string, uploaderId: string,
   if (hasTraversal(path)) throw new Error("Invalid path");
   return path;
 };
+
+export const buildIdentityVerificationPath = (
+  userId: string,
+  verificationId: string,
+  side: "front" | "back",
+  originalName: string,
+) => {
+  assertSafeSegment(userId, "user id");
+  assertSafeSegment(verificationId, "verification id");
+  const safe = sanitizeFileName(originalName);
+  const ext = resolveExtension(safe, "jpg");
+  const base = safe.replace(FILE_EXTENSION_PATTERN, "") || `id-${side}`;
+  const path = `${userId}/${verificationId}/${side}-${uniqueKey()}-${base}.${ext}`;
+  if (hasTraversal(path)) throw new Error("Invalid path");
+  return path;
+};

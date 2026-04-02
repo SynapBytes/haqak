@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildAvatarPath,
+  buildIdentityVerificationPath,
   buildIssueAttachmentPath,
   buildModerationEvidencePath,
 } from "./storagePaths";
@@ -29,5 +30,11 @@ describe("storage path builders", () => {
 
   it("rejects traversal in moderation evidence path", () => {
     expect(() => buildModerationEvidencePath("issue", "admin", "../../secret.txt")).toThrow();
+  });
+
+  it("builds identity verification paths with side prefix", () => {
+    const path = buildIdentityVerificationPath("user-1", "verification-2", "front", "id-card.png");
+    expect(path.startsWith("user-1/verification-2/front-")).toBe(true);
+    expect(path.endsWith(".png")).toBe(true);
   });
 });

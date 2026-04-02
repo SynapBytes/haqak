@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { CSRF_HEADER, getOrCreateToken } from "@/lib/csrfToken";
 
 type NotificationEvent =
   | "issue_submitted"
@@ -7,8 +8,10 @@ type NotificationEvent =
   | "admin_decision"
   | "moderation_update";
 
+type NotificationRoleTarget = "citizen" | "mp" | "admin";
+
 interface DispatchOptions {
-  recipients: string[];
+  recipients?: string[];
   issueId?: string;
   event: NotificationEvent;
   status?: string;
@@ -16,13 +19,25 @@ interface DispatchOptions {
   message?: string;
   reason?: string;
   channels?: ("email" | "sms" | "push")[];
+  target?: {
+    roles?: NotificationRoleTarget[];
+    center_id?: string;
+    user_ids?: string[];
+    all_users?: boolean;
+  };
+  title?: string;
+  body?: string;
+  data_json?: Record<string, unknown>;
 }
 
 export async function dispatchNotification(options: DispatchOptions) {
-  const targets = options.recipients.join(",") || "no recipients";
+  const targets = options.recipients?.join(",") || options.target?.roles?.join(",") || "no recipients";
   try {
     const { error } = await supabase.functions.invoke("dispatch-notification", {
       body: options,
+      headers: {
+        [CSRF_HEADER]: getOrCreateToken(),
+      },
     });
     if (error) {
       console.error(

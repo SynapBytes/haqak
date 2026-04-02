@@ -277,31 +277,111 @@ export type Database = {
         }
         Relationships: []
       }
+      identity_verifications: {
+        Row: {
+          center_id_snapshot: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          extracted_fields_json: Json | null
+          id: string
+          id_back_path: string
+          id_front_path: string
+          ocr_provider: string | null
+          ocr_raw_json: Json | null
+          rejection_reason: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+          submitted_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          center_id_snapshot?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          extracted_fields_json?: Json | null
+          id?: string
+          id_back_path: string
+          id_front_path: string
+          ocr_provider?: string | null
+          ocr_raw_json?: Json | null
+          rejection_reason?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          center_id_snapshot?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          extracted_fields_json?: Json | null
+          id?: string
+          id_back_path?: string
+          id_front_path?: string
+          ocr_provider?: string | null
+          ocr_raw_json?: Json | null
+          rejection_reason?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_verifications_center_id_snapshot_fkey"
+            columns: ["center_id_snapshot"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
+          body: string | null
           created_at: string
+          data_json: Json | null
+          dedup_key: string | null
           id: string
           is_read: boolean
           issue_id: string | null
+          read_at: string | null
           message: string
+          target_user_id: string | null
           title: string
           user_id: string
         }
         Insert: {
+          body?: string | null
           created_at?: string
+          data_json?: Json | null
+          dedup_key?: string | null
           id?: string
           is_read?: boolean
           issue_id?: string | null
+          read_at?: string | null
           message: string
+          target_user_id?: string | null
           title: string
           user_id: string
         }
         Update: {
+          body?: string | null
           created_at?: string
+          data_json?: Json | null
+          dedup_key?: string | null
           id?: string
           is_read?: boolean
           issue_id?: string | null
+          read_at?: string | null
           message?: string
+          target_user_id?: string | null
           title?: string
           user_id?: string
         }
@@ -314,6 +394,71 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notification_deliveries: {
+        Row: {
+          channel: string
+          created_at: string
+          error: string | null
+          id: string
+          notification_id: string
+          provider_message_id: string | null
+          status: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          notification_id: string
+          provider_message_id?: string | null
+          status: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          notification_id?: string
+          provider_message_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_deliveries_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email_opt_in: boolean
+          inapp_opt_in: boolean
+          sms_opt_in: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_opt_in?: boolean
+          inapp_opt_in?: boolean
+          sms_opt_in?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_opt_in?: boolean
+          inapp_opt_in?: boolean
+          sms_opt_in?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       otp_codes: {
         Row: {
@@ -362,14 +507,22 @@ export type Database = {
           created_at: string
           district: string | null
           electoral_district: string | null
+          email: string | null
+          email_verified: boolean
           full_name: string
           governorate: string | null
           id: string
           is_approved: boolean
           membership_number: string | null
+          pending_email: string | null
           phone: string
+          phone_verified: boolean
           updated_at: string
           user_id: string
+          verification_decided_at: string | null
+          verification_decided_by: string | null
+          verification_status: string
+          verification_submitted_at: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -381,14 +534,22 @@ export type Database = {
           created_at?: string
           district?: string | null
           electoral_district?: string | null
+          email?: string | null
+          email_verified?: boolean
           full_name: string
           governorate?: string | null
           id?: string
           is_approved?: boolean
           membership_number?: string | null
+          pending_email?: string | null
           phone: string
+          phone_verified?: boolean
           updated_at?: string
           user_id: string
+          verification_decided_at?: string | null
+          verification_decided_by?: string | null
+          verification_status?: string
+          verification_submitted_at?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -400,14 +561,22 @@ export type Database = {
           created_at?: string
           district?: string | null
           electoral_district?: string | null
+          email?: string | null
+          email_verified?: boolean
           full_name?: string
           governorate?: string | null
           id?: string
           is_approved?: boolean
           membership_number?: string | null
+          pending_email?: string | null
           phone?: string
+          phone_verified?: boolean
           updated_at?: string
           user_id?: string
+          verification_decided_at?: string | null
+          verification_decided_by?: string | null
+          verification_status?: string
+          verification_submitted_at?: string | null
         }
         Relationships: []
       }

@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { stripExifFromFile } from "@/lib/stripExif";
 import { sanitizeText } from "@/lib/sanitize";
 import { buildAvatarPath, uploadAvatar } from "@/lib/storage";
+import { CSRF_HEADER, getOrCreateToken } from "@/lib/csrfToken";
 
 const CitizenProfile = () => {
   const { user, profile, role } = useAuth();
@@ -31,6 +32,17 @@ const CitizenProfile = () => {
   const [loading, setLoading] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
   const [issueStats, setIssueStats] = useState({ total: 0, resolved: 0, inProgress: 0, received: 0 });
+  const [profileEmail, setProfileEmail] = useState("");
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+  const [emailCode, setEmailCode] = useState("");
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<"unverified" | "pending" | "verified" | "rejected">("unverified");
+  const [notificationPrefs, setNotificationPrefs] = useState({ inapp_opt_in: true, sms_opt_in: true, email_opt_in: true });
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailVerifying, setEmailVerifying] = useState(false);
+  const [prefsSaving, setPrefsSaving] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -38,7 +50,7 @@ const CitizenProfile = () => {
       setLoading(true);
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("full_name, phone, avatar_url, is_approved")
+        .select("full_name, phone, avatar_url, is_approved, email, pending_email, email_verified, phone_verified, verification_status")
         .eq("user_id", user.id)
         .single();
 
@@ -47,6 +59,24 @@ const CitizenProfile = () => {
         setPhone(profileData.phone);
         setAvatarUrl(profileData.avatar_url);
         setIsVerified(profileData.is_approved || false);
+        setProfileEmail(profileData.email ?? "");
+        setPendingEmail(profileData.pending_email ?? "");
+        setEmailVerified(profileData.email_verified ?? false);
+        setPhoneVerified(profileData.phone_verified ?? false);
+        setVerificationStatus((profileData.verification_status ?? "unverified") as "unverified" | "pending" | "verified" | "rejected");
+      }
+
+      const { data: prefs } = await supabase
+        .from("notification_preferences")
+        .select("inapp_opt_in, sms_opt_in, email_opt_in")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (prefs) {
+        setNotificationPrefs({
+          inapp_opt_in: prefs.inapp_opt_in ?? true,
+          sms_opt_in: prefs.sms_opt_in ?? true,
+          email_opt_in: prefs.email_opt_in ?? true,
+        });
       }
 
       const { data: issues } = await supabase
@@ -114,7 +144,7 @@ const CitizenProfile = () => {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: sanitizeText(fullName), phone: sanitizeText(phone) })
+        .update({ full_name: sanitizeText(fullName), phone: sanitizeText(phone), phone_verified: false })
         .eq("user_id", user.id);
       if (error) throw error;
       toast.success(t("profile.saved"));
@@ -122,6 +152,65 @@ const CitizenProfile = () => {
       toast.error(err instanceof Error ? err.message : t("profile.save_error"));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleRequestEmailVerification = async () => {
+    if (!emailInput || !user) return;
+    setEmailSending(true);
+    try {
+      const { error } = await supabase.functions.invoke("request-email-verification", {
+        body: { email: sanitizeText(emailInput).toLowerCase() },
+        headers: { [CSRF_HEADER]: getOrCreateToken() },
+      });
+      if (error) throw error;
+      toast.success("تم إرسال رمز تأكيد البريد الإلكتروني");
+      setPendingEmail(emailInput.toLowerCase());
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذر إرسال رمز التأكيد");
+    } finally {
+      setEmailSending(false);
+    }
+  };
+
+  const handleVerifyEmailCode = async () => {
+    if (!emailCode || !pendingEmail || !user) return;
+    setEmailVerifying(true);
+    try {
+      const { error } = await supabase.functions.invoke("verify-email-code", {
+        body: { email: pendingEmail, code: emailCode },
+        headers: { [CSRF_HEADER]: getOrCreateToken() },
+      });
+      if (error) throw error;
+      toast.success("تم تأكيد البريد الإلكتروني");
+      setProfileEmail(pendingEmail);
+      setPendingEmail("");
+      setEmailVerified(true);
+      setEmailCode("");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "رمز التحقق غير صحيح");
+    } finally {
+      setEmailVerifying(false);
+    }
+  };
+
+  const saveNotificationPreferences = async (next: typeof notificationPrefs) => {
+    if (!user) return;
+    setPrefsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("notification_preferences")
+        .upsert({
+          user_id: user.id,
+          ...next,
+        });
+      if (error) throw error;
+      setNotificationPrefs(next);
+      toast.success("تم تحديث إعدادات الإشعارات");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذر تحديث الإعدادات");
+    } finally {
+      setPrefsSaving(false);
     }
   };
 
@@ -158,7 +247,7 @@ const CitizenProfile = () => {
           <p className="text-muted-foreground text-sm">{t("profile.subtitle")}</p>
         </motion.div>
 
-        {!isVerified && role === "citizen" && (
+        {role !== "admin" && role !== "moderator" && (
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-8">
             <IdentityVerification onVerified={() => setIsVerified(true)} />
           </motion.div>
@@ -201,12 +290,23 @@ const CitizenProfile = () => {
             <Shield className="w-3.5 h-3.5 text-accent" />
             <span className="text-sm text-muted-foreground">{role === "mp" ? t("profile.role_mp") : role === "admin" ? t("profile.role_admin") : t("profile.role_citizen")}</span>
           </div>
-          {user?.email && (
+          {(user?.email || profileEmail) && (
             <div className="flex items-center justify-center gap-2 mt-2 text-xs text-muted-foreground">
               <Mail className="w-3 h-3" />
-              <span dir="ltr">{user.email}</span>
+              <span dir="ltr">{profileEmail || user?.email}</span>
             </div>
           )}
+          <div className="mt-2 flex items-center justify-center gap-2 text-xs">
+            <span className={`px-2 py-1 rounded-full ${verificationStatus === "verified" ? "bg-success/10 text-success" : verificationStatus === "pending" ? "bg-warning/10 text-warning" : verificationStatus === "rejected" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
+              حالة التحقق: {verificationStatus}
+            </span>
+            <span className={`px-2 py-1 rounded-full ${emailVerified ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
+              البريد {emailVerified ? "موثق" : "غير موثق"}
+            </span>
+            <span className={`px-2 py-1 rounded-full ${phoneVerified ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
+              الهاتف {phoneVerified ? "موثق" : "غير موثق"}
+            </span>
+          </div>
         </motion.div>
 
         {/* Stats */}
@@ -272,7 +372,7 @@ const CitizenProfile = () => {
               <label className="text-sm font-semibold text-foreground block">{t("profile.email")}</label>
               <div className="relative">
                 <Input
-                  value={user?.email || ""}
+                  value={profileEmail || pendingEmail || user?.email || ""}
                   disabled
                   dir="ltr"
                   className="pl-11 text-left h-12 rounded-xl border-border/50 bg-muted/50 text-muted-foreground cursor-not-allowed"
@@ -280,6 +380,68 @@ const CitizenProfile = () => {
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
                   <Mail className="w-3.5 h-3.5 text-muted-foreground" />
                 </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground block">إضافة/تغيير البريد الإلكتروني</label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Input
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  dir="ltr"
+                  placeholder="name@example.com"
+                  className="text-left h-11 rounded-xl border-border/50 bg-background/50"
+                />
+                <Button onClick={handleRequestEmailVerification} disabled={emailSending || !emailInput} variant="outline" className="h-11">
+                  {emailSending ? <Loader2 className="w-4 h-4 animate-spin" /> : "إرسال كود"}
+                </Button>
+              </div>
+              {pendingEmail && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input
+                    value={emailCode}
+                    onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="رمز التحقق (6 أرقام)"
+                    dir="ltr"
+                    className="text-left h-11 rounded-xl border-border/50 bg-background/50"
+                  />
+                  <Button onClick={handleVerifyEmailCode} disabled={emailVerifying || emailCode.length !== 6} className="h-11">
+                    {emailVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : "تأكيد البريد"}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground block">إعدادات الإشعارات</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  variant={notificationPrefs.inapp_opt_in ? "default" : "outline"}
+                  onClick={() => saveNotificationPreferences({ ...notificationPrefs, inapp_opt_in: !notificationPrefs.inapp_opt_in })}
+                  disabled={prefsSaving}
+                  className="h-10"
+                >
+                  داخل التطبيق
+                </Button>
+                <Button
+                  type="button"
+                  variant={notificationPrefs.sms_opt_in ? "default" : "outline"}
+                  onClick={() => saveNotificationPreferences({ ...notificationPrefs, sms_opt_in: !notificationPrefs.sms_opt_in })}
+                  disabled={prefsSaving}
+                  className="h-10"
+                >
+                  SMS
+                </Button>
+                <Button
+                  type="button"
+                  variant={notificationPrefs.email_opt_in ? "default" : "outline"}
+                  onClick={() => saveNotificationPreferences({ ...notificationPrefs, email_opt_in: !notificationPrefs.email_opt_in })}
+                  disabled={prefsSaving}
+                  className="h-10"
+                >
+                  البريد الإلكتروني
+                </Button>
               </div>
             </div>
 

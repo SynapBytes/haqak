@@ -102,6 +102,16 @@ cp .env.example .env
 - **Issue assigned / status changed:** notifies the citizen with the latest status.
 - **Admin approval/rejection:** notifies the MP applicant about the decision.
 - **Moderation/chat updates:** reusable for targeted updates where `message` is provided.
+- **Unified delivery logs:** every channel attempt is tracked in `notification_deliveries` (`inapp`/`sms`/`email`) with provider IDs/errors.
+- **Targeting:** supports role-based, center-based, explicit users, and all-users (admin-only) dispatch.
+- **Channel gating:** SMS/email send only when user preferences are opt-in and contact verification is complete.
+
+### Identity verification (Sprint 2)
+- User uploads national ID front/back from settings.
+- Files are stored in private Supabase Storage bucket `id_verifications` (never public).
+- OCR processing happens through edge function `verify-identity-ocr`; if no provider is configured, it marks manual review required.
+- Admin reviews pending queue with signed URLs, then approves/rejects.
+- Verification records are stored in `identity_verifications` with OCR extraction metadata and decision audit fields.
 
 **DNS (Namecheap → Vercel)**
 - Apex (`haqak.org`): A record → `76.76.21.21` (Vercel)

@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { validateBeforeUpload } from "@/lib/fileValidation";
 import {
   buildAvatarPath,
+  buildIdentityVerificationPath,
   buildIssueAttachmentPath,
   buildModerationEvidencePath,
 } from "@/lib/storagePaths";
@@ -9,10 +10,13 @@ import {
 export const ATTACHMENTS_BUCKET = "issue-attachments";
 export const AVATARS_BUCKET = "avatars";
 export const MODERATION_BUCKET = "moderation-evidence";
+export const ID_VERIFICATIONS_BUCKET = "id_verifications";
+export const RECEIPTS_BUCKET = "receipts";
 const DEFAULT_SIGNED_URL_EXPIRY = 60; // seconds
 
 export {
   buildAvatarPath,
+  buildIdentityVerificationPath,
   buildIssueAttachmentPath,
   buildModerationEvidencePath,
 } from "@/lib/storagePaths";
@@ -61,6 +65,20 @@ export const uploadModerationEvidence = async (path: string, file: File) => {
   const { error } = await supabase.storage.from(MODERATION_BUCKET).upload(path, file);
   if (error) throw error;
   return { bucket: MODERATION_BUCKET, path };
+};
+
+export const uploadIdentityVerificationImage = async (path: string, file: File) => {
+  const allowedTypes = new Set(["image/jpeg", "image/png"]);
+  if (!allowedTypes.has(file.type)) {
+    throw new Error("Only JPG/PNG images are allowed for identity verification");
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    throw new Error("Identity image size must be 8MB or smaller");
+  }
+  await avScanFile(file);
+  const { error } = await supabase.storage.from(ID_VERIFICATIONS_BUCKET).upload(path, file, { upsert: false });
+  if (error) throw error;
+  return { bucket: ID_VERIFICATIONS_BUCKET, path };
 };
 
 export const saveModerationEvidence = async (issueId: string, file: File, uploadedBy: string) => {

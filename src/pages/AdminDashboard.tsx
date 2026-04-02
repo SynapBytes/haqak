@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
@@ -14,13 +14,14 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
   Users, ShieldCheck, BarChart3, Search, CheckCircle2, XCircle,
-  Loader2, AlertCircle, TrendingUp, Clock, FileText, MapPin, Trash2, UserCog
+  Loader2, AlertCircle, TrendingUp, Clock, FileText, MapPin, Trash2, UserCog, Eye
 } from "lucide-react";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import { AppRole, resolvePrimaryRole } from "@/constants/roles";
 import type { Database } from "@/integrations/supabase/types";
 import { dispatchNotification } from "@/lib/notifications";
 import { analytics } from "@/lib/analytics";
+import { getSignedDownloadUrl } from "@/lib/storage";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type IssueRow = Database["public"]["Tables"]["issues"]["Row"];
@@ -46,6 +47,19 @@ interface UserWithRole extends UserProfile {
   role: AppRole;
 }
 
+interface IdentityVerificationRow {
+  id: string;
+  user_id: string;
+  role: "citizen" | "mp" | "admin" | "moderator";
+  status: "pending" | "verified" | "rejected";
+  id_front_path: string;
+  id_back_path: string;
+  extracted_fields_json: Record<string, unknown> | null;
+  submitted_at: string;
+  decided_at: string | null;
+  rejection_reason: string | null;
+}
+
 const AdminDashboard = () => {
   const { t } = useTranslation();
   const [users, setUsers] = useState<UserWithRole[]>([]);
@@ -53,7 +67,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [issueSearchQuery, setIssueSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "issues" | "analytics">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "issues" | "analytics" | "verifications">("users");
   const [filterRole, setFilterRole] = useState<"all" | AppRole>("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "banned">("all");
   const [filterGov, setFilterGov] = useState<string>("all");
@@ -73,13 +87,22 @@ const AdminDashboard = () => {
     }>
   >([]);
   const [filterCenterId, setFilterCenterId] = useState<string>("all");
+  const [verifications, setVerifications] = useState<IdentityVerificationRow[]>([]);
+  const [selectedVerification, setSelectedVerification] = useState<IdentityVerificationRow | null>(null);
+  const [frontSignedUrl, setFrontSignedUrl] = useState<string | null>(null);
+  const [backSignedUrl, setBackSignedUrl] = useState<string | null>(null);
+  const [verificationDecisionLoading, setVerificationDecisionLoading] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
-    const [profilesRes, rolesRes, issuesRes] = await Promise.all([
+    const [profilesRes, rolesRes, issuesRes, verificationsRes] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("*"),
       supabase.from("issues").select("*").order("created_at", { ascending: false }),
+      supabase
+        .from("identity_verifications")
+        .select("id, user_id, role, status, id_front_path, id_back_path, extracted_fields_json, submitted_at, decided_at, rejection_reason")
+        .order("submitted_at", { ascending: false }),
     ]);
     if (profilesRes.data && rolesRes.data) {
       const rolesByUser = new Map<string, AppRole[]>();
@@ -125,6 +148,7 @@ const AdminDashboard = () => {
       );
     }
     if (issuesRes.data) setIssues(issuesRes.data);
+    if (verificationsRes.data) setVerifications(verificationsRes.data as unknown as IdentityVerificationRow[]);
     setLoading(false);
   };
 
@@ -227,6 +251,76 @@ const AdminDashboard = () => {
     return issue.title?.includes(issueSearchQuery) || issue.description?.includes(issueSearchQuery) || issue.location?.includes(issueSearchQuery);
   });
 
+  const pendingVerifications = useMemo(
+    () => verifications.filter((v) => v.status === "pending"),
+    [verifications],
+  );
+
+  const handleOpenVerification = async (verification: IdentityVerificationRow) => {
+    setSelectedVerification(verification);
+    setFrontSignedUrl(null);
+    setBackSignedUrl(null);
+    try {
+      const [front, back] = await Promise.all([
+        getSignedDownloadUrl("id_verifications", verification.id_front_path, 120),
+        getSignedDownloadUrl("id_verifications", verification.id_back_path, 120),
+      ]);
+      setFrontSignedUrl(front);
+      setBackSignedUrl(back);
+    } catch {
+      toast.error("تعذر إنشاء روابط عرض آمنة للصور");
+    }
+  };
+
+  const handleDecideVerification = async (verification: IdentityVerificationRow, status: "verified" | "rejected") => {
+    setVerificationDecisionLoading(true);
+    try {
+      const rejectionReason = status === "rejected"
+        ? (window.prompt("سبب الرفض (اكتب سببًا واضحًا للمستخدم):", "صور الهوية غير واضحة أو غير مكتملة") ?? "تم رفض الطلب بعد مراجعة الإدارة")
+        : null;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("identity_verifications")
+        .update({
+          status,
+          decided_at: new Date().toISOString(),
+          decided_by: user?.id ?? null,
+          rejection_reason: rejectionReason,
+        })
+        .eq("id", verification.id);
+      if (error) throw error;
+
+      await supabase
+        .from("profiles")
+        .update({
+          verification_status: status,
+          verification_decided_at: new Date().toISOString(),
+          verification_decided_by: user?.id ?? null,
+        })
+        .eq("user_id", verification.user_id);
+
+      await dispatchNotification({
+        recipients: [verification.user_id],
+        event: "moderation_update",
+        title: status === "verified" ? "تم اعتماد الهوية" : "تم رفض طلب التحقق",
+        body:
+          status === "verified"
+            ? "تمت مراجعة مستندات الهوية واعتماد الحساب."
+            : "تم رفض طلب التحقق من الهوية. يرجى إعادة رفع مستندات واضحة.",
+      });
+
+      toast.success(status === "verified" ? "تم اعتماد الهوية" : "تم رفض التحقق");
+      setSelectedVerification(null);
+      await fetchData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "فشل حفظ قرار التحقق");
+    } finally {
+      setVerificationDecisionLoading(false);
+    }
+  };
+
   const totalCitizens = users.filter((u) => u.role === "citizen").length;
   const totalMPs = users.filter((u) => u.role === "mp").length;
   const pendingMPs = users.filter((u) => u.role === "mp" && !u.is_approved).length;
@@ -244,6 +338,7 @@ const AdminDashboard = () => {
   const tabs = [
     { key: "users" as const, label: t("admin_dashboard.tab_users"), icon: Users },
     { key: "issues" as const, label: t("admin_dashboard.tab_issues"), icon: FileText },
+    { key: "verifications" as const, label: "التحقق من الهوية", icon: ShieldCheck },
     { key: "analytics" as const, label: t("admin_dashboard.tab_analytics"), icon: BarChart3 },
   ];
 
@@ -595,6 +690,85 @@ const AdminDashboard = () => {
               </div>
             </motion.div>
           </>
+        ) : activeTab === "verifications" ? (
+          <div className="space-y-3">
+            {pendingVerifications.length === 0 ? (
+              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl text-center py-16">
+                <p className="text-muted-foreground font-medium text-sm">لا توجد طلبات تحقق معلقة</p>
+              </div>
+            ) : (
+              pendingVerifications.map((verification) => (
+                <div
+                  key={verification.id}
+                  className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-4 md:p-5 flex flex-col gap-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-foreground font-semibold">
+                      مستخدم: {verification.user_id}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(verification.submitted_at).toLocaleString("ar-EG")}
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    الدور: {verification.role}
+                  </div>
+                  {verification.extracted_fields_json && (
+                    <pre className="bg-muted/40 rounded-lg p-2 text-[11px] overflow-auto">
+                      {JSON.stringify(verification.extracted_fields_json, null, 2)}
+                    </pre>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleOpenVerification(verification)}
+                      className="gap-1"
+                    >
+                      <Eye className="w-4 h-4" />
+                      عرض
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="bg-success text-white hover:bg-success/90"
+                      onClick={() => {
+                        setSelectedVerification(verification);
+                        void handleDecideVerification(verification, "verified");
+                      }}
+                      disabled={verificationDecisionLoading}
+                    >
+                      اعتماد
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => {
+                        setSelectedVerification(verification);
+                        void handleDecideVerification(verification, "rejected");
+                      }}
+                      disabled={verificationDecisionLoading}
+                    >
+                      رفض
+                    </Button>
+                  </div>
+                  {selectedVerification?.id === verification.id && (frontSignedUrl || backSignedUrl) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                      {frontSignedUrl && (
+                        <a href={frontSignedUrl} target="_blank" rel="noreferrer" className="text-accent underline">
+                          فتح الوجه الأمامي
+                        </a>
+                      )}
+                      {backSignedUrl && (
+                        <a href={backSignedUrl} target="_blank" rel="noreferrer" className="text-accent underline">
+                          فتح الوجه الخلفي
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         ) : activeTab === "issues" ? (
           <>
             {/* Issue Search */}

@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { buildParticipantSet } from "../shared/access-control.ts";
 import { buildCorsHeaders } from "../shared/cors.ts";
 import { requireCsrfToken } from "../shared/csrf.ts";
+import { RateLimitError, rateLimiter } from "../shared/rate-limiter.ts";
 
 type NotificationEvent =
   | "issue_submitted"
@@ -11,15 +12,28 @@ type NotificationEvent =
   | "admin_decision"
   | "moderation_update";
 
+type DeliveryChannel = "inapp" | "sms" | "email";
+type RoleTarget = "citizen" | "mp" | "admin";
+type LegacyChannel = "email" | "sms" | "push";
+
 interface DispatchRequest {
-  recipients: string[];
+  recipients?: string[];
   issueId?: string;
   event: NotificationEvent;
   status?: string;
   actorName?: string;
   message?: string;
   reason?: string;
-  channels?: ("email" | "sms" | "push")[];
+  channels?: LegacyChannel[];
+  target?: {
+    roles?: RoleTarget[];
+    center_id?: string;
+    user_ids?: string[];
+    all_users?: boolean;
+  };
+  title?: string;
+  body?: string;
+  data_json?: Record<string, unknown>;
 }
 
 interface NotificationContent {
@@ -27,15 +41,19 @@ interface NotificationContent {
   body: string;
 }
 
-type DeliveryResult = { success?: boolean; error?: string; skipped?: boolean; reason?: string };
-type ProfileContact = { user_id: string; phone?: string | null; contact_phone?: string | null; full_name?: string | null };
-interface ContentOptions {
-  event: NotificationEvent;
-  issueTitle?: string;
-  status?: string;
-  actorName?: string;
-  reason?: string;
-  message?: string;
+interface RecipientProfile {
+  user_id: string;
+  phone: string | null;
+  contact_phone: string | null;
+  center_id: string | null;
+  email: string | null;
+  email_verified: boolean;
+  phone_verified: boolean;
+}
+
+interface RecipientRoleRow {
+  user_id: string;
+  role: RoleTarget | "moderator";
 }
 
 const UUID_REGEX =
@@ -47,18 +65,22 @@ const ALLOWED_EVENTS = new Set<NotificationEvent>([
   "admin_decision",
   "moderation_update",
 ]);
-const ALLOWED_CHANNELS = new Set(["email", "sms", "push"]);
-const MAX_RECIPIENTS = 100;
+const ALLOWED_LEGACY_CHANNELS = new Set<LegacyChannel>(["email", "sms", "push"]);
+const MAX_RECIPIENTS = 300;
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "Haqak <no-reply@haqak.org>";
+const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "team@haqak.org";
 const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
 const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
 const TWILIO_PHONE_NUMBER = Deno.env.get("TWILIO_PHONE_NUMBER");
 const TWILIO_DEFAULT_COUNTRY_CODE = Deno.env.get("TWILIO_DEFAULT_COUNTRY_CODE") || "+20";
 
-function buildContent(options: ContentOptions): NotificationContent {
-  const { event, issueTitle, status, actorName, reason, message } = options;
+function buildContent(payload: DispatchRequest, issueTitle?: string): NotificationContent {
+  if (payload.title && payload.body) {
+    return { title: payload.title, body: payload.body };
+  }
+
+  const { event, status, actorName, reason, message } = payload;
   switch (event) {
     case "issue_submitted":
       return {
@@ -95,8 +117,17 @@ function buildContent(options: ContentOptions): NotificationContent {
   }
 }
 
-async function sendEmail(to: string, subject: string, body: string) {
-  if (!RESEND_API_KEY) return { skipped: true, reason: "RESEND_API_KEY missing" };
+function toE164(phone: string): string {
+  if (phone.startsWith("+")) return phone;
+  return `${TWILIO_DEFAULT_COUNTRY_CODE}${phone.replace(/^0/, "")}`;
+}
+
+async function sendEmail(to: string, subject: string, body: string): Promise<{
+  status: "sent" | "failed" | "skipped";
+  provider_message_id?: string;
+  error?: string;
+}> {
+  if (!RESEND_API_KEY) return { status: "skipped", error: "RESEND_API_KEY missing" };
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -112,24 +143,25 @@ async function sendEmail(to: string, subject: string, body: string) {
       }),
     });
     if (!res.ok) {
-      const error = await res.text();
-      console.error("Resend email error:", error);
-      return { success: false, error };
+      return { status: "failed", error: await res.text() };
     }
-    return { success: true };
+    const parsed = await res.json().catch(() => ({} as Record<string, unknown>));
+    const id = typeof parsed?.id === "string" ? parsed.id : undefined;
+    return { status: "sent", provider_message_id: id };
   } catch (error) {
-    console.error("Resend exception:", error);
-    return { success: false, error: String(error) };
+    return { status: "failed", error: String(error) };
   }
 }
 
-async function sendSms(to: string, body: string) {
+async function sendSms(to: string, body: string): Promise<{
+  status: "sent" | "failed" | "skipped";
+  provider_message_id?: string;
+  error?: string;
+}> {
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
-    return { skipped: true, reason: "Twilio not configured" };
+    return { status: "skipped", error: "Twilio not configured" };
   }
   try {
-    // Assumes local numbers start with a single leading 0 (Egypt-style). Adjust TWILIO_DEFAULT_COUNTRY_CODE if needed.
-    const formattedPhone = to.startsWith("+") ? to : `${TWILIO_DEFAULT_COUNTRY_CODE}${to.replace(/^0/, "")}`;
     const response = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
       {
@@ -140,281 +172,416 @@ async function sendSms(to: string, body: string) {
         },
         body: new URLSearchParams({
           From: TWILIO_PHONE_NUMBER,
-          To: formattedPhone,
+          To: toE164(to),
           Body: body,
         }).toString(),
       },
     );
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Twilio SMS error:", errorText);
-      return { success: false, error: errorText };
+      return { status: "failed", error: await response.text() };
     }
-    return { success: true };
+    const parsed = await response.json().catch(() => ({} as Record<string, unknown>));
+    const sid = typeof parsed?.sid === "string" ? parsed.sid : undefined;
+    return { status: "sent", provider_message_id: sid };
   } catch (error) {
-    console.error("Twilio exception:", error);
-    return { success: false, error: String(error) };
+    return { status: "failed", error: String(error) };
   }
 }
 
 serve(async (req) => {
   const cors = buildCorsHeaders(req.headers.get("Origin"));
-
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: cors });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
   try {
-    const { recipients, issueId, event, status, actorName, message, reason, channels }: DispatchRequest =
-      await req.json();
-
-    if (!recipients || recipients.length === 0 || !event) {
-      return new Response(
-        JSON.stringify({ error: "recipients and event are required" }),
-        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
-      );
-    }
-
-    if (!Array.isArray(recipients)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid recipients" }),
-        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
-      );
-    }
-    if (recipients.length > MAX_RECIPIENTS) {
-      return new Response(
-        JSON.stringify({ error: `Too many recipients (max ${MAX_RECIPIENTS})` }),
-        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
-      );
-    }
-    if (!recipients.every((id) => typeof id === "string" && UUID_REGEX.test(id))) {
-      return new Response(
-        JSON.stringify({ error: "Invalid recipients" }),
-        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
-      );
-    }
-
-    if (!ALLOWED_EVENTS.has(event)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid event" }),
-        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
-      );
-    }
-
-    if (issueId && !UUID_REGEX.test(issueId)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid issueId" }),
-        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
-      );
-    }
-
-    if (
-      channels &&
-      (!Array.isArray(channels) ||
-        channels.length === 0 ||
-        channels.some((channel) => !ALLOWED_CHANNELS.has(channel)))
-    ) {
-      return new Response(
-        JSON.stringify({ error: "Invalid channels" }),
-        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
-      );
-    }
-
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...cors, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
     }
 
-    // VULN-10: CSRF protection on notification dispatch
     const csrfError = requireCsrfToken(req, cors);
     if (csrfError) return csrfError;
 
+    const body = (await req.json()) as DispatchRequest;
+    if (!body.event || !ALLOWED_EVENTS.has(body.event)) {
+      return new Response(JSON.stringify({ error: "Invalid event" }), {
+        status: 400,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+    if (body.issueId && !UUID_REGEX.test(body.issueId)) {
+      return new Response(JSON.stringify({ error: "Invalid issueId" }), {
+        status: 400,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+    if (
+      body.channels &&
+      (!Array.isArray(body.channels) ||
+        body.channels.length === 0 ||
+        body.channels.some((ch) => !ALLOWED_LEGACY_CHANNELS.has(ch)))
+    ) {
+      return new Response(JSON.stringify({ error: "Invalid channels" }), {
+        status: 400,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return new Response(
-        JSON.stringify({ error: "Server configuration error" }),
-        { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
-      );
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceKey) {
+      return new Response(JSON.stringify({ error: "Server configuration error" }), {
+        status: 500,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
+    const supabase = createClient(supabaseUrl, serviceKey);
     const token = authHeader.slice("Bearer ".length);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser(token);
-
+    const { data: { user } } = await supabase.auth.getUser(token);
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...cors, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
     }
 
-    const { data: roleRows, error: roleError } = await supabase
+    const clientIp =
+      req.headers.get("CF-Connecting-IP") ??
+      req.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() ??
+      "0.0.0.0";
+
+    try {
+      await rateLimiter(supabase, user.id, "/dispatch-notification", clientIp, 200, {
+        maxRequests: 40,
+        windowMinutes: 10,
+      });
+    } catch (error) {
+      if (error instanceof RateLimitError) {
+        return new Response(JSON.stringify({ error: "Too many requests" }), {
+          status: 429,
+          headers: {
+            ...cors,
+            "Content-Type": "application/json",
+            "Retry-After": String(error.retryAfterSeconds),
+          },
+        });
+      }
+      throw error;
+    }
+
+    const { data: actorRoleRows } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
-      .in("role", ["admin", "moderator"]);
-    if (roleError) {
-      console.error("Failed to load roles", roleError);
-      return new Response(
-        JSON.stringify({ error: "Unable to verify permissions" }),
-        { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
-      );
-    }
-    const roles = new Set(roleRows?.map((r) => r.role) ?? []);
-    const isAdminOrModerator = roles.has("admin") || roles.has("moderator");
+      .in("role", ["admin", "moderator", "mp"]);
+    const actorRoles = new Set((actorRoleRows ?? []).map((r) => r.role));
+    const isAdmin = actorRoles.has("admin");
+    const isModerator = actorRoles.has("moderator");
+    const isMp = actorRoles.has("mp");
 
     let issueTitle: string | undefined;
-    if (issueId) {
+    let issueUserId: string | null = null;
+    let issueAssignedMpId: string | null = null;
+    if (body.issueId) {
       const { data: issueData, error: issueError } = await supabase
         .from("issues")
         .select("id, title, user_id, assigned_mp_id")
-        .eq("id", issueId)
+        .eq("id", body.issueId)
         .single();
-
       if (issueError || !issueData) {
-        return new Response(
-          JSON.stringify({ error: "Issue not found" }),
-          { status: 404, headers: { ...cors, "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({ error: "Issue not found" }), {
+          status: 404,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
       }
-
       issueTitle = issueData.title;
-      const allowedRecipients = buildParticipantSet(issueData.user_id, issueData.assigned_mp_id);
-      const isIssueParticipant = allowedRecipients.has(user.id);
-
-      if (!isAdminOrModerator && !isIssueParticipant) {
-        return new Response(
-          JSON.stringify({ error: "Forbidden" }),
-          { status: 403, headers: { ...cors, "Content-Type": "application/json" } },
-        );
+      issueUserId = issueData.user_id;
+      issueAssignedMpId = issueData.assigned_mp_id;
+      const issueParticipants = buildParticipantSet(issueData.user_id, issueData.assigned_mp_id);
+      if (!isAdmin && !isModerator && !issueParticipants.has(user.id)) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
       }
-
-      if (!isAdminOrModerator) {
-        const unauthorized = recipients.some((id) => !allowedRecipients.has(id));
-        if (unauthorized) {
-          return new Response(
-            JSON.stringify({ error: "Recipients not allowed" }),
-            { status: 403, headers: { ...cors, "Content-Type": "application/json" } },
-          );
-        }
-      }
-    } else if (!isAdminOrModerator) {
-      return new Response(
-        JSON.stringify({ error: "Forbidden" }),
-        { status: 403, headers: { ...cors, "Content-Type": "application/json" } },
-      );
+    } else if (!isAdmin && !isModerator) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
     }
 
-    const enabledChannels = new Set(channels ?? ["push", "email"]);
-    const content = buildContent({ event, issueTitle, status, actorName, reason, message });
-    const deliveryResults: Record<string, DeliveryResult> = {};
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("user_id, phone, contact_phone, full_name")
-      .in("user_id", recipients);
-    const profiles = (profileData ?? []) as ProfileContact[];
+    const recipientSet = new Set<string>();
+    (body.recipients ?? []).forEach((id) => {
+      if (typeof id === "string" && UUID_REGEX.test(id)) recipientSet.add(id);
+    });
+    (body.target?.user_ids ?? []).forEach((id) => {
+      if (typeof id === "string" && UUID_REGEX.test(id)) recipientSet.add(id);
+    });
 
-    const eventName = event;
-    // Idempotency: 1-hour window per (event, recipient, issue)
-    const hourSlot = Math.floor(Date.now() / 3_600_000);
+    if (body.target?.all_users) {
+      if (!isAdmin) {
+        return new Response(JSON.stringify({ error: "Only admins can target all users" }), {
+          status: 403,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      const { data: allProfiles } = await supabase.from("profiles").select("user_id");
+      (allProfiles ?? []).forEach((p) => recipientSet.add(p.user_id));
+    }
 
-    for (const recipient of recipients) {
-      const profile = profiles.find((p) => p.user_id === recipient);
-      const phone = profile?.phone || profile?.contact_phone || undefined;
-      let email: string | undefined;
-
-      try {
-        const userRes = await supabase.auth.admin.getUserById(recipient);
-        email = userRes.data.user?.email;
-      } catch (err) {
-        console.error("Failed to fetch user email", err);
+    if (body.target?.roles?.length || body.target?.center_id) {
+      if (!isAdmin && !isModerator) {
+        return new Response(JSON.stringify({ error: "Role/center targeting requires admin or moderator" }), {
+          status: 403,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
       }
 
-      const dedupKey = `${eventName}:${recipient}:${issueId ?? ""}:${hourSlot}`;
-      const { data: notifData, error: notifError } = await supabase
+      const targetRoles = (body.target?.roles ?? []).filter(
+        (role): role is RoleTarget => role === "citizen" || role === "mp" || role === "admin",
+      );
+      let roleUsers: string[] = [];
+      if (targetRoles.length > 0) {
+        const { data: roleRows } = await supabase
+          .from("user_roles")
+          .select("user_id, role")
+          .in("role", targetRoles);
+        roleUsers = ((roleRows ?? []) as RecipientRoleRow[]).map((r) => r.user_id);
+      }
+
+      if (targetRoles.length > 0 && body.target?.center_id) {
+        const { data: centerProfiles } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("center_id", body.target.center_id);
+        const centerSet = new Set((centerProfiles ?? []).map((p) => p.user_id));
+        roleUsers.forEach((id) => {
+          if (centerSet.has(id)) recipientSet.add(id);
+        });
+      } else if (targetRoles.length > 0) {
+        roleUsers.forEach((id) => recipientSet.add(id));
+      } else if (body.target?.center_id) {
+        const { data: centerProfiles } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("center_id", body.target.center_id);
+        (centerProfiles ?? []).forEach((p) => recipientSet.add(p.user_id));
+      }
+    }
+
+    const recipients = Array.from(recipientSet);
+    if (recipients.length === 0) {
+      return new Response(JSON.stringify({ error: "No recipients resolved" }), {
+        status: 400,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+    if (recipients.length > MAX_RECIPIENTS) {
+      return new Response(JSON.stringify({ error: `Too many recipients (max ${MAX_RECIPIENTS})` }), {
+        status: 400,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    if (isMp && !isAdmin && !isModerator) {
+      if (!body.issueId || !issueUserId || issueAssignedMpId !== user.id) {
+        return new Response(JSON.stringify({ error: "MP dispatch requires an issue assigned to the MP" }), {
+          status: 403,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      const disallowed = recipients.some((recipientId) => recipientId !== issueUserId);
+      if (disallowed) {
+        return new Response(JSON.stringify({ error: "MP can only notify assigned issue participants" }), {
+          status: 403,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    const content = buildContent(body, issueTitle);
+    const dataJson = {
+      ...(body.data_json ?? {}),
+      event: body.event,
+      issue_id: body.issueId ?? null,
+      actor_id: user.id,
+      actor_name: body.actorName ?? null,
+    };
+
+    const enabledLegacy = new Set(body.channels ?? ["email"]);
+    const allowSms = enabledLegacy.has("sms");
+    const allowEmail = enabledLegacy.has("email");
+
+    const { data: recipientProfilesRaw } = await supabase
+      .from("profiles")
+      .select("user_id, phone, contact_phone, center_id, email, email_verified, phone_verified")
+      .in("user_id", recipients);
+    const recipientProfiles = (recipientProfilesRaw ?? []) as RecipientProfile[];
+    const profileByUser = new Map(recipientProfiles.map((p) => [p.user_id, p]));
+
+    const { data: recipientPrefsRaw } = await supabase
+      .from("notification_preferences")
+      .select("user_id, sms_opt_in, email_opt_in, inapp_opt_in")
+      .in("user_id", recipients);
+    const prefsByUser = new Map(
+      (recipientPrefsRaw ?? []).map((p) => [
+        p.user_id,
+        {
+          sms_opt_in: p.sms_opt_in ?? true,
+          email_opt_in: p.email_opt_in ?? true,
+          inapp_opt_in: p.inapp_opt_in ?? true,
+        },
+      ]),
+    );
+
+    const hourSlot = Math.floor(Date.now() / 3_600_000);
+    const results: Record<string, unknown> = {};
+    let deliveredCount = 0;
+
+    for (const recipient of recipients) {
+      const pref = prefsByUser.get(recipient) ?? {
+        sms_opt_in: true,
+        email_opt_in: true,
+        inapp_opt_in: true,
+      };
+
+      if (!pref.inapp_opt_in) {
+        results[recipient] = { skipped: true, reason: "inapp_opt_out" };
+        continue;
+      }
+
+      const dedupKey = `${body.event}:${recipient}:${body.issueId ?? ""}:${hourSlot}`;
+      const { data: notif, error: notifError } = await supabase
         .from("notifications")
-        .insert({ user_id: recipient, title: content.title, message: content.body, issue_id: issueId, dedup_key: dedupKey })
+        .insert({
+          user_id: recipient,
+          target_user_id: recipient,
+          title: content.title,
+          message: content.body,
+          body: content.body,
+          issue_id: body.issueId,
+          data_json: dataJson,
+          dedup_key: dedupKey,
+        })
         .select("id")
         .maybeSingle();
 
       if (notifError) {
-        // 23505 = unique_violation: dedup_key already exists, skip this window
         if (notifError.code === "23505") {
-          // Unique constraint violation: already sent in this window — skip external delivery
-          deliveryResults[`${recipient}-dedup`] = { skipped: true, reason: "duplicate_in_window" };
+          results[recipient] = { skipped: true, reason: "duplicate_in_window" };
           continue;
         }
-        console.error(`Failed to insert notification for ${recipient} (${eventName})`, notifError);
+        results[recipient] = { sent: false, error: notifError.message };
+        continue;
       }
 
-      const notifId: string | undefined = notifData?.id;
-      const recipientResults: Record<string, DeliveryResult> = {};
-
-      if (enabledChannels.has("email") && email) {
-        recipientResults[`${recipient}-email`] = await sendEmail(email, content.title, content.body);
+      const notificationId = notif?.id;
+      if (!notificationId) {
+        results[recipient] = { sent: false, error: "notification_insert_failed" };
+        continue;
       }
 
-      if (enabledChannels.has("sms") && phone) {
-        recipientResults[`${recipient}-sms`] = await sendSms(phone, content.body);
-      }
+      deliveredCount += 1;
+      await supabase.from("notification_deliveries").insert({
+        notification_id: notificationId,
+        channel: "inapp",
+        status: "sent",
+      });
 
-      if (enabledChannels.has("push")) {
-        try {
-          const { error: pushError } = await supabase.functions.invoke("send-push-notification", {
-            body: { user_id: recipient, title: content.title, body: content.body, data: { issue_id: issueId } },
-          });
-          if (pushError) {
-            recipientResults[`${recipient}-push`] = { success: false, error: pushError.message };
-          } else {
-            recipientResults[`${recipient}-push`] = { success: true };
-          }
-        } catch (err) {
-          console.error("Push invocation error:", err);
-          recipientResults[`${recipient}-push`] = { success: false, error: String(err) };
-        }
-      }
-
-      // Audit: log each notification dispatch to the audit trail
-      // A result is considered a failure if success is explicitly false OR if the
-      // result has an error property (covers cases where success field is absent).
-      const anyFailure = Object.values(recipientResults).some(
-        (r) => r.success === false || (r.error !== undefined && !r.skipped),
-      );
-      const auditInsert = async () => {
-        try {
-          await supabase
-            .from("notifications")
-            .insert({
-              user_id: user.id,
-              title: `notification_dispatched: ${eventName}`,
-              message: JSON.stringify({ recipient, issue_id: issueId ?? null, channels: Array.from(enabledChannels), status: anyFailure ? "failure" : "success" }),
-            });
-        } catch (err: unknown) {
-          console.error("Audit log insert failed", err);
-        }
+      const recipientProfile = profileByUser.get(recipient);
+      const recipientOutcome: Record<DeliveryChannel, unknown> = {
+        inapp: { status: "sent" },
+        sms: { status: "skipped", reason: "not_requested" },
+        email: { status: "skipped", reason: "not_requested" },
       };
-      auditInsert();
 
-      Object.assign(deliveryResults, recipientResults);
+      if (allowSms) {
+        if (!pref.sms_opt_in) {
+          recipientOutcome.sms = { status: "skipped", reason: "sms_opt_out" };
+        } else if (!recipientProfile?.phone_verified) {
+          recipientOutcome.sms = { status: "skipped", reason: "phone_not_verified" };
+        } else {
+          const phone = recipientProfile.phone || recipientProfile.contact_phone;
+          if (!phone) {
+            recipientOutcome.sms = { status: "skipped", reason: "missing_phone" };
+          } else {
+            const smsResult = await sendSms(phone, content.body);
+            recipientOutcome.sms = smsResult;
+            await supabase.from("notification_deliveries").insert({
+              notification_id: notificationId,
+              channel: "sms",
+              status: smsResult.status,
+              provider_message_id: smsResult.provider_message_id ?? null,
+              error: smsResult.error ?? null,
+            });
+          }
+        }
+      }
+
+      if (allowEmail) {
+        if (!pref.email_opt_in) {
+          recipientOutcome.email = { status: "skipped", reason: "email_opt_out" };
+        } else if (!recipientProfile?.email_verified) {
+          recipientOutcome.email = { status: "skipped", reason: "email_not_verified" };
+        } else if (!recipientProfile.email) {
+          recipientOutcome.email = { status: "skipped", reason: "missing_email" };
+        } else {
+          const emailResult = await sendEmail(recipientProfile.email, content.title, content.body);
+          recipientOutcome.email = emailResult;
+          await supabase.from("notification_deliveries").insert({
+            notification_id: notificationId,
+            channel: "email",
+            status: emailResult.status,
+            provider_message_id: emailResult.provider_message_id ?? null,
+            error: emailResult.error ?? null,
+          });
+        }
+      }
+
+      results[recipient] = recipientOutcome;
     }
 
+    const actorCenterRow = await supabase
+      .from("profiles")
+      .select("center_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    await supabase.from("audit_logs").insert({
+      user_id: user.id,
+      action: "dispatch_notification",
+      entity_type: "notification",
+      status: "success",
+      context: {
+        event: body.event,
+        issue_id: body.issueId ?? null,
+        recipient_count: recipients.length,
+        delivered_count: deliveredCount,
+        target_center_id: body.target?.center_id ?? null,
+        actor_center_id: actorCenterRow.data?.center_id ?? null,
+        target_roles: body.target?.roles ?? null,
+        all_users: body.target?.all_users ?? false,
+      },
+    });
+
     return new Response(
-      JSON.stringify({ success: true, results: deliveryResults }),
+      JSON.stringify({
+        success: true,
+        recipients: recipients.length,
+        delivered_inapp: deliveredCount,
+        results,
+      }),
       { status: 200, headers: { ...cors, "Content-Type": "application/json" } },
     );
-  } catch (err) {
-    console.error("Dispatch error:", err);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
-    );
+  } catch (error) {
+    console.error("Dispatch error:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
   }
 });
