@@ -39,15 +39,15 @@ const Support = () => {
   useEffect(() => {
     const fetchContributors = async () => {
       try {
-        const { data } = await supabase
-          .from("contributions")
+        const { data } = await (supabase
+          .from("contributions" as any)
           .select("name")
           .eq("show_name", true)
           .eq("status", "succeeded")
           .order("created_at", { ascending: false })
-          .limit(20);
+          .limit(20) as any);
         
-        if (data) setContributors(data.filter(c => c.name) as { name: string }[]);
+        if (data) setContributors((data as any[]).filter((c: any) => c.name) as { name: string }[]);
       } catch (error) {
         console.error("Error fetching contributors:", error);
       } finally {
