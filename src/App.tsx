@@ -50,6 +50,8 @@ function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode;
   if (!session) return <Navigate to="/auth" replace />;
   if (requiredRole === "admin" && role !== "admin") return <Navigate to="/" replace />;
   if (requiredRole === "moderator" && role !== "moderator" && role !== "admin") return <Navigate to="/" replace />;
+  if (requiredRole === "mp" && role !== "mp" && role !== "admin") return <Navigate to="/" replace />;
+  if (requiredRole === "citizen" && role !== "citizen" && role !== "admin") return <Navigate to="/" replace />;
   if (requiredRole === "mp" && role === "mp" && !profile?.is_approved) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">

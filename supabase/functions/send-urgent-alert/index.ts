@@ -30,6 +30,7 @@ const MAX_DESCRIPTION_LENGTH = 4000;
 const CRITICAL_KEYWORDS = ["قتل", "اغتصاب", "عنف مسلح", "كارثة", "حريق"];
 const HIGH_KEYWORDS = ["عنف", "تهديد", "حادث", "طوارئ"];
 const MEDIUM_KEYWORDS = ["مشكلة خطيرة", "حالة حرجة", "عاجل"];
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function detectUrgency(title: string, description: string): { level: string; keywords: string[] } {
   const text = `${title} ${description}`.toLowerCase();
@@ -87,6 +88,12 @@ serve(async (req) => {
     if (!issueId || !title || !description) {
       return new Response(
         JSON.stringify({ success: false, error: "Missing required fields" }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+    if (!UUID_REGEX.test(issueId)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid issueId" }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }

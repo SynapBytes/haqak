@@ -94,6 +94,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const intervalId = window.setInterval(async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        await supabase.auth.signOut();
+        analytics.reset();
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setRole(null);
+      }
+    }, 300_000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
   const signOut = async () => {
     await supabase.auth.signOut();
     analytics.reset();
