@@ -3,7 +3,7 @@ import {
   buildAvatarPath,
   buildIssueAttachmentPath,
   buildModerationEvidencePath,
-} from "./storage";
+} from "./storagePaths";
 
 describe("storage path builders", () => {
   it("builds an issue attachment path with user and issue folders", () => {

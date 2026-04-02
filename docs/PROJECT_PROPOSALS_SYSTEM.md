@@ -225,25 +225,22 @@
 ### 5.2 المتطلبات
 
 ```env
-VITE_GEMINI_API_KEY=your_gemini_api_key
+# Server-side only
+OPENAI_API_KEY=your_openai_api_key
 ```
 
 ### 5.3 مثال على الاستدعاء
 
 ```typescript
-const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'x-goog-api-key': import.meta.env.VITE_GEMINI_API_KEY
+const { data, error } = await supabase.functions.invoke('refine-project-proposal', {
+  body: {
+    title,
+    description,
+    category,
+    location,
+    targetAmount
   },
-  body: JSON.stringify({
-    contents: [{
-      parts: [{
-        text: `أعد صياغة المشروع التالي بشكل احترافي...`
-      }]
-    }]
-  })
+  headers: { 'X-CSRF-Token': csrfToken }
 });
 ```
 

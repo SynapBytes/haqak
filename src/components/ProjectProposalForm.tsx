@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import LocationPicker from './LocationPicker';
+import { useCsrfToken } from '@/hooks/useCsrfToken';
 
 interface ProjectFormData {
   title: string;
@@ -54,6 +55,7 @@ const PROJECT_CATEGORIES = [
 
 export const ProjectProposalForm: React.FC = () => {
   const { user } = useAuth();
+  const { csrfHeader, csrfToken } = useCsrfToken();
   const [step, setStep] = useState<'form' | 'ai-review' | 'confirmation'>('form');
   const [formData, setFormData] = useState<ProjectFormData>({
     title: '',
@@ -92,57 +94,27 @@ export const ProjectProposalForm: React.FC = () => {
 
     setAiProcessing(true);
     try {
-      // Call Gemini API for AI refinement
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': import.meta.env.VITE_GEMINI_API_KEY || ''
+      const { data, error } = await supabase.functions.invoke('refine-project-proposal', {
+        body: {
+          title: formData.title,
+          description: formData.description,
+          category: formData.category,
+          location: formData.location,
+          targetAmount: formData.targetAmount,
         },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `أنت مساعد متخصص في تحسين مقترحات المشاريع المجتمعية. قم بالمهام التالية:
-
-1. أعد صياغة العنوان بطريقة احترافية وجذابة
-2. أعد صياغة الوصف بطريقة واضحة وموجزة وتركز على الفوائد
-3. قدر الميزانية المبدئية بناءً على نوع المشروع والموقع
-4. قدم تحليل الأثر المتوقع للمشروع
-
-العنوان الأصلي: ${formData.title}
-الوصف الأصلي: ${formData.description}
-الفئة: ${formData.category}
-الموقع: ${formData.location}
-الميزانية المقترحة: ${formData.targetAmount}
-
-الرجاء تقديم الرد بصيغة JSON بالهيكل التالي:
-{
-  "refinedTitle": "العنوان المحسّن",
-  "refinedDescription": "الوصف المحسّن",
-  "budgetEstimate": 50000,
-  "impactAnalysis": "تحليل الأثر"
-}`
-            }]
-          }]
-        })
+        headers: { [csrfHeader]: csrfToken },
       });
 
-      const data = await response.json();
-      const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      
-      // Parse JSON from response
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        setAiRefinement({
-          refinedTitle: parsed.refinedTitle || formData.title,
-          refinedDescription: parsed.refinedDescription || formData.description,
-          budgetEstimate: parsed.budgetEstimate || formData.targetAmount,
-          impactAnalysis: parsed.impactAnalysis || ''
-        });
-        setStep('ai-review');
-        toast.success('تم تحليل المشروع بنجاح بواسطة الذكاء الاصطناعي');
-      }
+      if (error) throw error;
+
+      setAiRefinement({
+        refinedTitle: data?.refinedTitle || formData.title,
+        refinedDescription: data?.refinedDescription || formData.description,
+        budgetEstimate: data?.budgetEstimate || formData.targetAmount,
+        impactAnalysis: data?.impactAnalysis || '',
+      });
+      setStep('ai-review');
+      toast.success('تم تحليل المشروع بنجاح بواسطة الذكاء الاصطناعي');
     } catch (error) {
       console.error('AI refinement error:', error);
       toast.error('حدث خطأ في معالجة المشروع بالذكاء الاصطناعي');

@@ -318,8 +318,8 @@ log_audit_event(
 
 ### متطلبات البيئة
 ```env
-TWILIO_ACCOUNT_SID=AC61642d5dbb54c2c2f7e4d411a258e4a0
-TWILIO_AUTH_TOKEN=2eff35da51006de6fdc911d7742b218a
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
 TWILIO_PHONE_NUMBER=+20xxxxxxxxx
 ```
 

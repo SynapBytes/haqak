@@ -17,6 +17,19 @@ dist-ssr
 .env
 .env.*
 !.env.example
+.envrc
+
+# Secret/cert artifacts
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# Secret scan reports
+gitleaks-report*.json
 
 # Editor directories and files
 .vscode/*
