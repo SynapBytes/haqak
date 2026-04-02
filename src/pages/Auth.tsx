@@ -295,9 +295,11 @@ const Auth = () => {
 
     setLoading(true);
     try {
-      const response = await fetch("/.netlify/functions/send-otp", {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-otp`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "apikey": supabaseKey },
         body: JSON.stringify({ phone, countryCode, mode: mode.replace("-otp", "") }),
       });
 
@@ -330,9 +332,11 @@ const Auth = () => {
     const signupRole = mode.includes("mp") ? "mp" : "citizen";
     setOtpLoading(true);
     try {
-      const response = await fetch("/.netlify/functions/verify-otp", {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const response = await fetch(`${supabaseUrl}/functions/v1/verify-otp`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "apikey": supabaseKey },
         body: JSON.stringify({ 
           phone, 
           countryCode,
