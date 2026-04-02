@@ -289,7 +289,7 @@ const verificationLayers = [
 
 ### 12. DroneAINeedsRadar.tsx
 **الحجم:** ~420 أسطر
-**الاعتماديات:** TensorFlow.js, Mapbox
+**الاعتماديات:** TensorFlow.js, Leaflet (OpenStreetMap tiles)
 **الخوارزمية:** Computer Vision + Object Detection
 
 ```typescript
@@ -473,7 +473,7 @@ const fetchData = async () => {};
 
 // Constants
 const MAX_RETRIES = 3;
-const API_ENDPOINT = 'https://api.haqak.app';
+const API_ENDPOINT = 'https://api.haqak.org';
 ```
 
 ---
@@ -491,7 +491,7 @@ const API_ENDPOINT = 'https://api.haqak.app';
 - Stripe / Fawry (Crowdfunding)
 
 // Mapping Services
-- Mapbox / Google Maps (GIS)
+- Leaflet + OpenStreetMap (GIS baseline without API keys)
 
 // Authentication
 - OAuth 2.0 (Google, Facebook)
@@ -628,9 +628,7 @@ Sentry.init({
 - **QA Engineer:** [Name]
 
 ### Support Channels
-- 📧 Email: `dev@haqak.app`
-- 💬 Slack: `#haqak-development`
-- 📱 WhatsApp: `+20 XXX XXX XXXX`
+- 📧 Support: `support@haqak.org`
 - 🐛 GitHub Issues: `SynapBytes/haqak/issues`
 
 ---

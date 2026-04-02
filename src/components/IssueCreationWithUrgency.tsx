@@ -127,18 +127,16 @@ const IssueCreationWithUrgency = ({ onSuccess, onError }: IssueCreationProps) =>
 
       if (issueError) throw issueError;
 
-      // If urgent, send alert
+      // If urgent, send alert (authenticated)
       if (isUrgent) {
         try {
-          await fetch("/.netlify/functions/send-urgent-alert", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+          await supabase.functions.invoke("send-urgent-alert", {
+            body: {
               issueId: issue.id,
               title,
               description,
               urgencyLevel,
-            }),
+            },
           });
         } catch (error) {
           console.error("Error sending urgent alert:", error);
@@ -155,8 +153,8 @@ const IssueCreationWithUrgency = ({ onSuccess, onError }: IssueCreationProps) =>
       setUrgencyKeywords([]);
 
       onSuccess?.();
-    } catch (error: any) {
-      const errorMsg = error.message || t("issues.creation_error");
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : t("issues.creation_error");
       toast.error(errorMsg);
       onError?.(errorMsg);
     } finally {

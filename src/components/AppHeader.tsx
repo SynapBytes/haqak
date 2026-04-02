@@ -7,6 +7,19 @@ import { useTranslation } from "react-i18next";
 import NotificationBell from "./NotificationBell";
 import { useState } from "react";
 
+type SignInCTAProps = { label: string; className?: string; fullWidth?: boolean; onClick?: () => void };
+
+const SignInCTAButton = ({ label, className, fullWidth = false, onClick }: SignInCTAProps) => (
+  <Link to="/auth" className={className} onClick={onClick}>
+    <Button
+      size="sm"
+      className={`gap-2 bg-accent text-accent-foreground hover:bg-accent/90 shadow-md ${fullWidth ? "w-full justify-start" : ""}`}
+    >
+      <LogIn className="w-4 h-4" /> {label}
+    </Button>
+  </Link>
+);
+
 const AppHeader = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -25,10 +38,8 @@ const AppHeader = () => {
   const toggleLang = () => {
     const newLang = i18n.language === "ar" ? "en" : "ar";
     i18n.changeLanguage(newLang);
-    localStorage.setItem("lang", newLang);
-    document.documentElement.dir = newLang === "ar" ? "rtl" : "ltr";
-    document.documentElement.lang = newLang;
   };
+  // Language change side-effects (dir/lang/localStorage) are handled globally in src/i18n/index.ts
 
   const getLangLabel = () => {
     return i18n.language === "ar" ? "Switch to English" : "التبديل للعربية";
@@ -37,9 +48,24 @@ const AppHeader = () => {
   return (
     <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50">
       <div className="container flex items-center justify-between h-14 md:h-16 px-4">
-        <Link to="/" className="flex items-center gap-2.5 group">
-          <img src="/logo-haqak.webp" alt={t("app_name")} className="w-9 h-9 rounded-xl shadow-sm group-hover:shadow-md transition-shadow object-contain" />
-          <span className="text-xl font-bold text-foreground tracking-tight">{t("app_name")}</span>
+        <Link to="/" className="flex items-center gap-3 group">
+          <picture className="flex items-center">
+            <source srcSet="/haqak-logo.webp" type="image/webp" />
+            <img
+              src="/haqak-logo.png"
+              alt="HAQAK logo"
+              className="h-8 md:h-9 w-8 md:w-9 drop-shadow-sm transition-transform duration-200 group-hover:scale-[1.04]"
+            />
+          </picture>
+          <picture className="h-8 md:h-9 flex items-center">
+            <source srcSet="/haqak-wordmark.webp" type="image/webp" />
+            <img
+              src="/haqak-wordmark.png"
+              alt={t("app_name")}
+              className="h-8 md:h-9 w-auto drop-shadow-sm transition-transform duration-200 group-hover:scale-[1.02]"
+            />
+          </picture>
+          <span className="sr-only">{t("app_name")}</span>
         </Link>
 
         {/* Desktop Nav */}
@@ -116,11 +142,7 @@ const AppHeader = () => {
               </Button>
             </div>
           ) : (
-            <Link to="/auth" className="hidden md:block">
-              <Button size="sm" className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
-                <LogIn className="w-4 h-4" /> {t("nav.login")}
-              </Button>
-            </Link>
+            <SignInCTAButton label={t("nav.login")} className="hidden md:block" />
           )}
 
           <button
@@ -183,11 +205,7 @@ const AppHeader = () => {
               </Button>
             </>
           ) : (
-            <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-              <Button size="sm" className="w-full justify-start gap-2 bg-accent text-accent-foreground">
-                <LogIn className="w-4 h-4" /> {t("nav.login")}
-              </Button>
-            </Link>
+            <SignInCTAButton label={t("nav.login")} className="block" fullWidth onClick={() => setMobileMenuOpen(false)} />
           )}
         </div>
       )}

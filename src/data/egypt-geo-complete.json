@@ -1,0 +1,550 @@
+{
+  "Cairo": {
+    "name_ar": "القاهرة",
+    "districts": [
+      {"en": "Nasr City", "ar": "مدينة نصر"},
+      {"en": "Heliopolis", "ar": "مصر الجديدة"},
+      {"en": "Nozha", "ar": "النزهة"},
+      {"en": "New Cairo", "ar": "القاهرة الجديدة"},
+      {"en": "El Shorouk", "ar": "الشروق"},
+      {"en": "Badr City", "ar": "بدر"},
+      {"en": "Fifth Settlement", "ar": "التجمع الخامس"},
+      {"en": "Third Settlement", "ar": "التجمع الثالث"},
+      {"en": "First Settlement", "ar": "التجمع الأول"},
+      {"en": "Maadi", "ar": "المعادي"},
+      {"en": "Helwan", "ar": "حلوان"},
+      {"en": "Fifteen May", "ar": "15 مايو"},
+      {"en": "Dar El Salam", "ar": "دار السلام"},
+      {"en": "Basatin", "ar": "البساتين"},
+      {"en": "Mokattam", "ar": "المقطم"},
+      {"en": "Old Cairo", "ar": "مصر القديمة"},
+      {"en": "El Sayeda Zeinab", "ar": "السيدة زينب"},
+      {"en": "Abdeen", "ar": "عابدين"},
+      {"en": "Qasr El Nil", "ar": "قصر النيل"},
+      {"en": "Down Town", "ar": "وسط القاهرة"},
+      {"en": "El Waily", "ar": "الوايلي"},
+      {"en": "El Daher", "ar": "الظاهر"},
+      {"en": "El Salam", "ar": "السلام"},
+      {"en": "El Marg", "ar": "المرج"},
+      {"en": "Ain Shams", "ar": "عين شمس"},
+      {"en": "Matariya", "ar": "المطرية"},
+      {"en": "Sheraton", "ar": "مساكن شيراتون"},
+      {"en": "Shubra", "ar": "شبرا"},
+      {"en": "El Sahel", "ar": "الساحل"},
+      {"en": "Rod El Farag", "ar": "روض الفرج"},
+      {"en": "Bulaq", "ar": "بولاق"},
+      {"en": "Hadaeq El Kobba", "ar": "حدائق القبة"},
+      {"en": "Zaytoun", "ar": "الزيتون"},
+      {"en": "El Zawya El Hamra", "ar": "الزاوية الحمراء"}
+    ],
+    "electoral_districts": [
+      {"en": "Cairo 1 - Nasr City, Heliopolis & Nozha", "ar": "القاهرة ١ - مدينة نصر ومصر الجديدة والنزهة", "covers": ["Nasr City", "Heliopolis", "Nozha"], "seats": 4},
+      {"en": "Cairo 2 - New Cairo, Shorouk, Badr", "ar": "القاهرة ٢ - القاهرة الجديدة والشروق وبدر", "covers": ["New Cairo", "El Shorouk", "Badr City", "First Settlement", "Third Settlement", "Fifth Settlement"], "seats": 3},
+      {"en": "Cairo 3 - Maadi to Mokattam", "ar": "القاهرة ٣ - المعادي والمقطم والبساتين", "covers": ["Maadi", "Mokattam", "Basatin", "Dar El Salam"], "seats": 3},
+      {"en": "Cairo 4 - Helwan & 15 May", "ar": "القاهرة ٤ - حلوان و15 مايو", "covers": ["Helwan", "Fifteen May"], "seats": 2},
+      {"en": "Cairo 5 - Eastern Belt", "ar": "القاهرة ٥ - السلام والمرج وعين شمس والمطرية", "covers": ["El Salam", "El Marg", "Ain Shams", "Matariya"], "seats": 3},
+      {"en": "Cairo 6 - Downtown & Historic Cairo", "ar": "القاهرة ٦ - وسط القاهرة والمناطق التاريخية", "covers": ["Qasr El Nil", "Abdeen", "El Sayeda Zeinab", "Old Cairo", "Down Town", "Bulaq"], "seats": 3}
+    ]
+  },
+  "Giza": {
+    "name_ar": "الجيزة",
+    "districts": [
+      {"en": "Dokki", "ar": "الدقي"},
+      {"en": "Agouza", "ar": "العجوزة"},
+      {"en": "Imbaba", "ar": "إمبابة"},
+      {"en": "Mohandessin", "ar": "المهندسين"},
+      {"en": "Bulaq El Dakrour", "ar": "بولاق الدكرور"},
+      {"en": "Haram", "ar": "الهرم"},
+      {"en": "Faisal", "ar": "فيصل"},
+      {"en": "Omraneya", "ar": "العمرانية"},
+      {"en": "Giza City", "ar": "قسم الجيزة"},
+      {"en": "Warraq", "ar": "الوراق"},
+      {"en": "Kerdasa", "ar": "كرداسة"},
+      {"en": "Sheikh Zayed", "ar": "الشيخ زايد"},
+      {"en": "Sixth of October", "ar": "السادس من أكتوبر"},
+      {"en": "Atfih", "ar": "أطفيح"},
+      {"en": "Al Saf", "ar": "الصف"},
+      {"en": "Badrashein", "ar": "البدرشين"},
+      {"en": "Awsim", "ar": "أوسيم"},
+      {"en": "Manshiyet El Bakry", "ar": "منشأة البكري"}
+    ],
+    "electoral_districts": [
+      {"en": "Giza 1 - Dokki, Agouza & Imbaba", "ar": "الجيزة ١ - الدقي والعجوزة وإمبابة", "covers": ["Dokki", "Agouza", "Imbaba", "Mohandessin"], "seats": 3},
+      {"en": "Giza 2 - Haram, Faisal & Omraneya", "ar": "الجيزة ٢ - الهرم وفيصل والعمرانية", "covers": ["Haram", "Faisal", "Omraneya"], "seats": 3},
+      {"en": "Giza 3 - Giza City & Bulaq", "ar": "الجيزة ٣ - قسم الجيزة وبولاق الدكرور", "covers": ["Giza City", "Bulaq El Dakrour"], "seats": 2},
+      {"en": "Giza 4 - North Giza", "ar": "الجيزة ٤ - الوراق وكرداسة وأوسيم", "covers": ["Warraq", "Kerdasa", "Awsim"], "seats": 2},
+      {"en": "Giza 5 - October & Sheikh Zayed", "ar": "الجيزة ٥ - السادس من أكتوبر والشيخ زايد", "covers": ["Sixth of October", "Sheikh Zayed"], "seats": 2},
+      {"en": "Giza 6 - Southern Giza", "ar": "الجيزة ٦ - أطفيح والصف والبدرشين", "covers": ["Atfih", "Al Saf", "Badrashein"], "seats": 2}
+    ]
+  },
+  "Alexandria": {
+    "name_ar": "الإسكندرية",
+    "districts": [
+      {"en": "Montaza", "ar": "المنتزه"},
+      {"en": "Sidi Gaber", "ar": "سيدي جابر"},
+      {"en": "Raml", "ar": "الرمل"},
+      {"en": "Bab Sharq", "ar": "باب شرقي"},
+      {"en": "Attarin", "ar": "العطارين"},
+      {"en": "Mansheya", "ar": "المنشية"},
+      {"en": "Labban", "ar": "اللبان"},
+      {"en": "Dekheila", "ar": "الدخيلة"},
+      {"en": "Amreya", "ar": "العامرية"},
+      {"en": "Borg El Arab", "ar": "برج العرب"},
+      {"en": "Agamy", "ar": "العجمي"}
+    ],
+    "electoral_districts": [
+      {"en": "Alexandria 1 - Eastern", "ar": "الإسكندرية ١ - شرق الإسكندرية", "covers": ["Montaza", "Sidi Gaber", "Raml"], "seats": 3},
+      {"en": "Alexandria 2 - Central", "ar": "الإسكندرية ٢ - وسط الإسكندرية", "covers": ["Bab Sharq", "Attarin", "Mansheya", "Labban"], "seats": 2},
+      {"en": "Alexandria 3 - Western & Borg El Arab", "ar": "الإسكندرية ٣ - غرب والعامرية وبرج العرب", "covers": ["Dekheila", "Amreya", "Borg El Arab", "Agamy"], "seats": 3}
+    ]
+  },
+  "Red Sea": {
+    "name_ar": "البحر الأحمر",
+    "districts": [
+      {"en": "Hurghada", "ar": "الغردقة"},
+      {"en": "Safaga", "ar": "سفاجا"},
+      {"en": "Quseir", "ar": "القصير"},
+      {"en": "Ras Gharib", "ar": "رأس غارب"},
+      {"en": "Marsa Alam", "ar": "مرسى علم"},
+      {"en": "Shalateen", "ar": "الشلاتين"},
+      {"en": "Halayeb", "ar": "حلايب"}
+    ],
+    "electoral_districts": [
+      {"en": "Red Sea 1 - Northern", "ar": "البحر الأحمر ١ - الشمال", "covers": ["Ras Gharib", "Hurghada"], "seats": 1},
+      {"en": "Red Sea 2 - Central", "ar": "البحر الأحمر ٢ - الوسط", "covers": ["Safaga", "Quseir", "Marsa Alam"], "seats": 1},
+      {"en": "Red Sea 3 - Southern", "ar": "البحر الأحمر ٣ - الجنوب", "covers": ["Shalateen", "Halayeb"], "seats": 1}
+    ]
+  },
+  "Beheira": {
+    "name_ar": "البحيرة",
+    "districts": [
+      {"en": "Damanhour", "ar": "دمنهور"},
+      {"en": "Kafr El Dawwar", "ar": "كفر الدوار"},
+      {"en": "Rashid", "ar": "رشيد"},
+      {"en": "Edku", "ar": "إدكو"},
+      {"en": "Abu Hummus", "ar": "أبو حمص"},
+      {"en": "Abu El Matamir", "ar": "أبو المطامير"},
+      {"en": "Mahmoudiya", "ar": "المحمودية"},
+      {"en": "Rahmaniya", "ar": "الرحمانية"},
+      {"en": "Shubrakhit", "ar": "شبراخيت"},
+      {"en": "Hosh Essa", "ar": "حوش عيسى"},
+      {"en": "Delengat", "ar": "الدلنجات"},
+      {"en": "Kom Hamada", "ar": "كوم حمادة"},
+      {"en": "Itay El Barud", "ar": "إيتاي البارود"},
+      {"en": "Wadi El Natrun", "ar": "وادي النطرون"}
+    ],
+    "electoral_districts": [
+      {"en": "Beheira 1 - Damanhour", "ar": "البحيرة ١ - دمنهور", "covers": ["Damanhour"], "seats": 2},
+      {"en": "Beheira 2 - Kafr El Dawwar", "ar": "البحيرة ٢ - كفر الدوار", "covers": ["Kafr El Dawwar"], "seats": 2},
+      {"en": "Beheira 3 - Northern Coast", "ar": "البحيرة ٣ - رشيد وإدكو", "covers": ["Rashid", "Edku"], "seats": 1},
+      {"en": "Beheira 4 - Central", "ar": "البحيرة ٤ - أبو حمص وأبو المطامير وإيتاي البارود", "covers": ["Abu Hummus", "Abu El Matamir", "Itay El Barud"], "seats": 3},
+      {"en": "Beheira 5 - Southern", "ar": "البحيرة ٥ - كوم حمادة والدلنجات والرحمانية", "covers": ["Kom Hamada", "Delengat", "Rahmaniya", "Shubrakhit", "Hosh Essa"], "seats": 3},
+      {"en": "Beheira 6 - Wadi El Natrun", "ar": "البحيرة ٦ - وادي النطرون", "covers": ["Wadi El Natrun"], "seats": 1}
+    ]
+  },
+  "Fayoum": {
+    "name_ar": "الفيوم",
+    "districts": [
+      {"en": "Fayoum City", "ar": "الفيوم"},
+      {"en": "New Fayoum", "ar": "الفيوم الجديدة"},
+      {"en": "Tamiya", "ar": "طامية"},
+      {"en": "Sinnuris", "ar": "سنورس"},
+      {"en": "Itsa", "ar": "إطسا"},
+      {"en": "Ebsheway", "ar": "إبشواي"},
+      {"en": "Yousef El Seddik", "ar": "يوسف الصديق"}
+    ],
+    "electoral_districts": [
+      {"en": "Fayoum 1 - Fayoum City", "ar": "الفيوم ١ - مدينة الفيوم", "covers": ["Fayoum City", "New Fayoum"], "seats": 2},
+      {"en": "Fayoum 2 - Tamiya & Sinnuris", "ar": "الفيوم ٢ - طامية وسنورس", "covers": ["Tamiya", "Sinnuris"], "seats": 2},
+      {"en": "Fayoum 3 - Itsa & Ebsheway", "ar": "الفيوم ٣ - إطسا وإبشواي", "covers": ["Itsa", "Ebsheway", "Yousef El Seddik"], "seats": 2}
+    ]
+  },
+  "Gharbia": {
+    "name_ar": "الغربية",
+    "districts": [
+      {"en": "Tanta", "ar": "طنطا"},
+      {"en": "El Mahalla", "ar": "المحلة الكبرى"},
+      {"en": "Zefta", "ar": "زفتى"},
+      {"en": "Kafr El Zayat", "ar": "كفر الزيات"},
+      {"en": "Basyoun", "ar": "بسيون"},
+      {"en": "Samanoud", "ar": "سمنود"},
+      {"en": "Qutour", "ar": "قطور"},
+      {"en": "Santa", "ar": "السنطة"}
+    ],
+    "electoral_districts": [
+      {"en": "Gharbia 1 - Tanta", "ar": "الغربية ١ - طنطا", "covers": ["Tanta"], "seats": 2},
+      {"en": "Gharbia 2 - El Mahalla", "ar": "الغربية ٢ - المحلة الكبرى", "covers": ["El Mahalla"], "seats": 3},
+      {"en": "Gharbia 3 - Zefta & Santa", "ar": "الغربية ٣ - زفتى والسنطة", "covers": ["Zefta", "Santa"], "seats": 2},
+      {"en": "Gharbia 4 - Northern", "ar": "الغربية ٤ - كفر الزيات وبسيون وقطور", "covers": ["Kafr El Zayat", "Basyoun", "Qutour", "Samanoud"], "seats": 3}
+    ]
+  },
+  "Ismailia": {
+    "name_ar": "الإسماعيلية",
+    "districts": [
+      {"en": "Ismailia", "ar": "الإسماعيلية"},
+      {"en": "Fayed", "ar": "فايد"},
+      {"en": "Tel El Kebir", "ar": "التل الكبير"},
+      {"en": "Qantara West", "ar": "القنطرة غرب"},
+      {"en": "Qantara East", "ar": "القنطرة شرق"},
+      {"en": "Abu Suwir", "ar": "أبو صوير"}
+    ],
+    "electoral_districts": [
+      {"en": "Ismailia 1 - Ismailia", "ar": "الإسماعيلية ١ - مدينة الإسماعيلية", "covers": ["Ismailia"], "seats": 2},
+      {"en": "Ismailia 2 - Canal Belt", "ar": "الإسماعيلية ٢ - فايد والتل الكبير", "covers": ["Fayed", "Tel El Kebir"], "seats": 1},
+      {"en": "Ismailia 3 - Qantara", "ar": "الإسماعيلية ٣ - القنطرة شرق وغرب", "covers": ["Qantara West", "Qantara East", "Abu Suwir"], "seats": 1}
+    ]
+  },
+  "Menoufia": {
+    "name_ar": "المنوفية",
+    "districts": [
+      {"en": "Shebin El Koum", "ar": "شبين الكوم"},
+      {"en": "Menouf", "ar": "منوف"},
+      {"en": "Ashmoun", "ar": "أشمون"},
+      {"en": "Tala", "ar": "تلا"},
+      {"en": "Quesna", "ar": "قويسنا"},
+      {"en": "Bagour", "ar": "الباجور"},
+      {"en": "Berket El Sabaa", "ar": "بركة السبع"},
+      {"en": "Sadat City", "ar": "السادات"}
+    ],
+    "electoral_districts": [
+      {"en": "Menoufia 1 - Shebin & Quesna", "ar": "المنوفية ١ - شبين الكوم وقويسنا", "covers": ["Shebin El Koum", "Quesna"], "seats": 2},
+      {"en": "Menoufia 2 - Menouf & Sadat", "ar": "المنوفية ٢ - منوف والسادات", "covers": ["Menouf", "Sadat City"], "seats": 1},
+      {"en": "Menoufia 3 - Tala & Berket", "ar": "المنوفية ٣ - تلا وبركة السبع", "covers": ["Tala", "Berket El Sabaa"], "seats": 1},
+      {"en": "Menoufia 4 - Ashmoun & Bagour", "ar": "المنوفية ٤ - أشمون والباجور", "covers": ["Ashmoun", "Bagour"], "seats": 2}
+    ]
+  },
+  "Minya": {
+    "name_ar": "المنيا",
+    "districts": [
+      {"en": "Minya", "ar": "المنيا"},
+      {"en": "New Minya", "ar": "المنيا الجديدة"},
+      {"en": "Samalout", "ar": "سمالوط"},
+      {"en": "Matay", "ar": "مطاي"},
+      {"en": "Maghagha", "ar": "مغاغة"},
+      {"en": "Beni Mazar", "ar": "بني مزار"},
+      {"en": "Malawi", "ar": "ملوي"},
+      {"en": "Deir Mawas", "ar": "دير مواس"},
+      {"en": "Abu Qurqas", "ar": "أبو قرقاص"},
+      {"en": "Al Adwa", "ar": "العدوة"}
+    ],
+    "electoral_districts": [
+      {"en": "Minya 1 - Minya & Abu Qurqas", "ar": "المنيا ١ - المنيا وأبو قرقاص", "covers": ["Minya", "New Minya", "Abu Qurqas"], "seats": 2},
+      {"en": "Minya 2 - Samalout & Matay", "ar": "المنيا ٢ - سمالوط ومطاي", "covers": ["Samalout", "Matay"], "seats": 2},
+      {"en": "Minya 3 - Maghagha & Beni Mazar", "ar": "المنيا ٣ - مغاغة وبني مزار", "covers": ["Maghagha", "Beni Mazar", "Al Adwa"], "seats": 2},
+      {"en": "Minya 4 - Malawi & Deir Mawas", "ar": "المنيا ٤ - ملوي ودير مواس", "covers": ["Malawi", "Deir Mawas"], "seats": 2}
+    ]
+  },
+  "Qalyubia": {
+    "name_ar": "القليوبية",
+    "districts": [
+      {"en": "Banha", "ar": "بنها"},
+      {"en": "Qalyub", "ar": "قليوب"},
+      {"en": "Shubra El Kheima", "ar": "شبرا الخيمة"},
+      {"en": "Shibin El Qanater", "ar": "شبين القناطر"},
+      {"en": "Qanater El Khayriya", "ar": "القناطر الخيرية"},
+      {"en": "Toukh", "ar": "طوخ"},
+      {"en": "Kafr Shukr", "ar": "كفر شكر"},
+      {"en": "El Khanka", "ar": "الخانكة"},
+      {"en": "El Obour", "ar": "العبور"},
+      {"en": "Qaha", "ar": "قها"}
+    ],
+    "electoral_districts": [
+      {"en": "Qalyubia 1 - Banha & Qalyub", "ar": "القليوبية ١ - بنها وقليوب", "covers": ["Banha", "Qalyub"], "seats": 2},
+      {"en": "Qalyubia 2 - Shubra", "ar": "القليوبية ٢ - شبرا الخيمة", "covers": ["Shubra El Kheima"], "seats": 2},
+      {"en": "Qalyubia 3 - Toukh & Kafr Shukr", "ar": "القليوبية ٣ - طوخ وكفر شكر", "covers": ["Toukh", "Kafr Shukr"], "seats": 2},
+      {"en": "Qalyubia 4 - Qanater & Shibin", "ar": "القليوبية ٤ - القناطر الخيرية وشبين القناطر", "covers": ["Qanater El Khayriya", "Shibin El Qanater"], "seats": 1},
+      {"en": "Qalyubia 5 - Khanka & Obour", "ar": "القليوبية ٥ - الخانكة والعبور", "covers": ["El Khanka", "El Obour", "Qaha"], "seats": 1}
+    ]
+  },
+  "New Valley": {
+    "name_ar": "الوادي الجديد",
+    "districts": [
+      {"en": "Kharga", "ar": "الخارجة"},
+      {"en": "Dakhla", "ar": "الداخلة"},
+      {"en": "Farafra", "ar": "الفرافرة"},
+      {"en": "Balat", "ar": "بلاط"},
+      {"en": "Baris", "ar": "باريس"}
+    ],
+    "electoral_districts": [
+      {"en": "New Valley - Single District", "ar": "الوادي الجديد - دائرة واحدة", "covers": ["Kharga", "Dakhla", "Farafra", "Balat", "Baris"], "seats": 2}
+    ]
+  },
+  "Suez": {
+    "name_ar": "السويس",
+    "districts": [
+      {"en": "Suez", "ar": "السويس"},
+      {"en": "Arbaeen", "ar": "الأربعين"},
+      {"en": "Ganayen", "ar": "الجناين"},
+      {"en": "Attaka", "ar": "عتاقة"},
+      {"en": "Faisal", "ar": "فيصل"}
+    ],
+    "electoral_districts": [
+      {"en": "Suez - Governorate District", "ar": "السويس - الدائرة العامة", "covers": ["Suez", "Arbaeen", "Ganayen", "Attaka", "Faisal"], "seats": 2}
+    ]
+  },
+  "Aswan": {
+    "name_ar": "أسوان",
+    "districts": [
+      {"en": "Aswan", "ar": "أسوان"},
+      {"en": "Edfu", "ar": "إدفو"},
+      {"en": "Kom Ombo", "ar": "كوم أمبو"},
+      {"en": "Nasr El Nuba", "ar": "نصر النوبة"},
+      {"en": "Daraw", "ar": "دراو"},
+      {"en": "Abu Simbel", "ar": "أبو سمبل"}
+    ],
+    "electoral_districts": [
+      {"en": "Aswan 1 - Aswan & Daraw", "ar": "أسوان ١ - أسوان ودراو", "covers": ["Aswan", "Daraw"], "seats": 2},
+      {"en": "Aswan 2 - Kom Ombo", "ar": "أسوان ٢ - كوم أمبو", "covers": ["Kom Ombo"], "seats": 1},
+      {"en": "Aswan 3 - Edfu & Nasr El Nuba", "ar": "أسوان ٣ - إدفو ونصر النوبة", "covers": ["Edfu", "Nasr El Nuba", "Abu Simbel"], "seats": 2}
+    ]
+  },
+  "Assiut": {
+    "name_ar": "أسيوط",
+    "districts": [
+      {"en": "Assiut", "ar": "أسيوط"},
+      {"en": "New Assiut", "ar": "أسيوط الجديدة"},
+      {"en": "Dairut", "ar": "ديروط"},
+      {"en": "Qusiya", "ar": "القوصية"},
+      {"en": "Manfalut", "ar": "منفلوط"},
+      {"en": "Abnoub", "ar": "أبنوب"},
+      {"en": "Abu Tig", "ar": "أبو تيج"},
+      {"en": "El Badari", "ar": "البداري"},
+      {"en": "Sahel Selim", "ar": "ساحل سليم"},
+      {"en": "El Fath", "ar": "الفتح"}
+    ],
+    "electoral_districts": [
+      {"en": "Assiut 1 - Assiut City", "ar": "أسيوط ١ - مدينة أسيوط", "covers": ["Assiut", "New Assiut", "El Fath"], "seats": 2},
+      {"en": "Assiut 2 - North", "ar": "أسيوط ٢ - ديروط والقوصية ومنفلوط", "covers": ["Dairut", "Qusiya", "Manfalut"], "seats": 3},
+      {"en": "Assiut 3 - South", "ar": "أسيوط ٣ - أبوتيج وأبنوب والبداري وساحل سليم", "covers": ["Abu Tig", "Abnoub", "El Badari", "Sahel Selim"], "seats": 3}
+    ]
+  },
+  "Beni Suef": {
+    "name_ar": "بني سويف",
+    "districts": [
+      {"en": "Beni Suef", "ar": "بني سويف"},
+      {"en": "New Beni Suef", "ar": "بني سويف الجديدة"},
+      {"en": "El Wasta", "ar": "الواسطى"},
+      {"en": "Nasser", "ar": "ناصر"},
+      {"en": "Beba", "ar": "ببا"},
+      {"en": "Fashn", "ar": "الفشن"},
+      {"en": "Somosta", "ar": "سمسطا"},
+      {"en": "Ehnasia", "ar": "إهناسيا"}
+    ],
+    "electoral_districts": [
+      {"en": "Beni Suef 1 - North", "ar": "بني سويف ١ - الواسطى وناصر", "covers": ["El Wasta", "Nasser"], "seats": 2},
+      {"en": "Beni Suef 2 - Center", "ar": "بني سويف ٢ - بني سويف وإهناسيا", "covers": ["Beni Suef", "New Beni Suef", "Ehnasia"], "seats": 2},
+      {"en": "Beni Suef 3 - South", "ar": "بني سويف ٣ - ببا وسمسطا والفشن", "covers": ["Beba", "Somosta", "Fashn"], "seats": 3}
+    ]
+  },
+  "Port Said": {
+    "name_ar": "بورسعيد",
+    "districts": [
+      {"en": "Port Said", "ar": "بورسعيد"},
+      {"en": "Port Fouad", "ar": "بور فؤاد"},
+      {"en": "Al Zohour", "ar": "الزهور"},
+      {"en": "Al Manakh", "ar": "المناخ"},
+      {"en": "Al Arab", "ar": "العرب"},
+      {"en": "Al Sharq", "ar": "الشرق"},
+      {"en": "Al Dawahy", "ar": "الضواحي"}
+    ],
+    "electoral_districts": [
+      {"en": "Port Said - Governorate District", "ar": "بورسعيد - الدائرة العامة", "covers": ["Port Said", "Port Fouad", "Al Zohour", "Al Manakh", "Al Arab", "Al Sharq", "Al Dawahy"], "seats": 2}
+    ]
+  },
+  "Damietta": {
+    "name_ar": "دمياط",
+    "districts": [
+      {"en": "Damietta", "ar": "دمياط"},
+      {"en": "New Damietta", "ar": "دمياط الجديدة"},
+      {"en": "Faraskur", "ar": "فارسكور"},
+      {"en": "Kafr Saad", "ar": "كفر سعد"},
+      {"en": "Kafr El Battikh", "ar": "كفر البطيخ"},
+      {"en": "Zarqa", "ar": "الزرقا"},
+      {"en": "Ras El Bar", "ar": "رأس البر"},
+      {"en": "Ezbet El Burg", "ar": "عزبة البرج"}
+    ],
+    "electoral_districts": [
+      {"en": "Damietta 1 - Damietta & New Damietta", "ar": "دمياط ١ - دمياط ودمياط الجديدة", "covers": ["Damietta", "New Damietta", "Ras El Bar", "Ezbet El Burg"], "seats": 2},
+      {"en": "Damietta 2 - Faraskur & Kafr Saad", "ar": "دمياط ٢ - فارسكور وكفر سعد", "covers": ["Faraskur", "Kafr Saad", "Kafr El Battikh", "Zarqa"], "seats": 2}
+    ]
+  },
+  "Dakahlia": {
+    "name_ar": "الدقهلية",
+    "districts": [
+      {"en": "Mansoura", "ar": "المنصورة"},
+      {"en": "Talkha", "ar": "طلخا"},
+      {"en": "Dekernes", "ar": "دكرنس"},
+      {"en": "Aga", "ar": "أجا"},
+      {"en": "Sherbin", "ar": "شربين"},
+      {"en": "Belqas", "ar": "بلقاس"},
+      {"en": "Meet Ghamr", "ar": "ميت غمر"},
+      {"en": "Senbellawein", "ar": "السنبلاوين"},
+      {"en": "Mit Salsil", "ar": "ميت سلسيل"},
+      {"en": "Manzala", "ar": "المنزلة"},
+      {"en": "Gamasa", "ar": "جمصة"},
+      {"en": "El Kurdi", "ar": "الكردي"},
+      {"en": "Nabaruh", "ar": "نبروه"}
+    ],
+    "electoral_districts": [
+      {"en": "Dakahlia 1 - Mansoura & Talkha", "ar": "الدقهلية ١ - المنصورة وطلخا", "covers": ["Mansoura", "Talkha", "Nabaruh"], "seats": 3},
+      {"en": "Dakahlia 2 - Meet Ghamr & Aga", "ar": "الدقهلية ٢ - ميت غمر وأجا", "covers": ["Meet Ghamr", "Aga"], "seats": 2},
+      {"en": "Dakahlia 3 - Sherbin & Belqas", "ar": "الدقهلية ٣ - شربين وبلقاس", "covers": ["Sherbin", "Belqas", "Gamasa", "El Kurdi"], "seats": 2},
+      {"en": "Dakahlia 4 - Dekernes & Senbellawein", "ar": "الدقهلية ٤ - دكرنس والسنبلاوين", "covers": ["Dekernes", "Senbellawein", "Mit Salsil"], "seats": 3},
+      {"en": "Dakahlia 5 - Manzala", "ar": "الدقهلية ٥ - المنزلة", "covers": ["Manzala"], "seats": 1}
+    ]
+  },
+  "Sharqia": {
+    "name_ar": "الشرقية",
+    "districts": [
+      {"en": "Zagazig", "ar": "الزقازيق"},
+      {"en": "10th of Ramadan", "ar": "العاشر من رمضان"},
+      {"en": "Belbeis", "ar": "بلبيس"},
+      {"en": "Abu Hammad", "ar": "أبو حماد"},
+      {"en": "Abu Kabir", "ar": "أبو كبير"},
+      {"en": "Hehia", "ar": "ههيا"},
+      {"en": "Fakous", "ar": "فاقوس"},
+      {"en": "Al Qenayat", "ar": "القنايات"},
+      {"en": "Awlad Saqr", "ar": "أولاد صقر"},
+      {"en": "Kafr Saqr", "ar": "كفر صقر"},
+      {"en": "Diyarb Negm", "ar": "ديرب نجم"},
+      {"en": "Al Husseiniya", "ar": "الحسينية"},
+      {"en": "Mashtoul El Souq", "ar": "مشتول السوق"},
+      {"en": "Minya Al Qamh", "ar": "منيا القمح"},
+      {"en": "El Salheya El Gedida", "ar": "الصالحية الجديدة"}
+    ],
+    "electoral_districts": [
+      {"en": "Sharqia 1 - Zagazig", "ar": "الشرقية ١ - الزقازيق", "covers": ["Zagazig", "Al Qenayat"], "seats": 3},
+      {"en": "Sharqia 2 - Belbeis & 10th Ramadan", "ar": "الشرقية ٢ - بلبيس والعاشر من رمضان", "covers": ["Belbeis", "10th of Ramadan"], "seats": 2},
+      {"en": "Sharqia 3 - Fakous & Abu Kabir", "ar": "الشرقية ٣ - فاقوس وأبو كبير", "covers": ["Fakous", "Abu Kabir", "Hehia"], "seats": 3},
+      {"en": "Sharqia 4 - Minya Al Qamh & Mashtoul", "ar": "الشرقية ٤ - منيا القمح ومشتول السوق", "covers": ["Minya Al Qamh", "Mashtoul El Souq"], "seats": 2},
+      {"en": "Sharqia 5 - Northern Belt", "ar": "الشرقية ٥ - الحسينية وأولاد صقر وكفر صقر", "covers": ["Al Husseiniya", "Awlad Saqr", "Kafr Saqr"], "seats": 2},
+      {"en": "Sharqia 6 - El Salheya", "ar": "الشرقية ٦ - الصالحية الجديدة", "covers": ["El Salheya El Gedida"], "seats": 1}
+    ]
+  },
+  "South Sinai": {
+    "name_ar": "جنوب سيناء",
+    "districts": [
+      {"en": "El Tor", "ar": "الطور"},
+      {"en": "Sharm El Sheikh", "ar": "شرم الشيخ"},
+      {"en": "Dahab", "ar": "دهب"},
+      {"en": "Nuweiba", "ar": "نويبع"},
+      {"en": "Taba", "ar": "طابا"},
+      {"en": "Saint Catherine", "ar": "سانت كاترين"},
+      {"en": "Ras Sidr", "ar": "رأس سدر"},
+      {"en": "Abu Rudeis", "ar": "أبو رديس"},
+      {"en": "Abu Zenima", "ar": "أبو زنيمة"}
+    ],
+    "electoral_districts": [
+      {"en": "South Sinai - Governorate District", "ar": "جنوب سيناء - دائرة واحدة", "covers": ["El Tor", "Sharm El Sheikh", "Dahab", "Nuweiba", "Taba", "Saint Catherine", "Ras Sidr", "Abu Rudeis", "Abu Zenima"], "seats": 2}
+    ]
+  },
+  "Kafr El Sheikh": {
+    "name_ar": "كفر الشيخ",
+    "districts": [
+      {"en": "Kafr El Sheikh", "ar": "كفر الشيخ"},
+      {"en": "Desouk", "ar": "دسوق"},
+      {"en": "Fuwwah", "ar": "فوه"},
+      {"en": "Biyala", "ar": "بيلا"},
+      {"en": "Baltim", "ar": "بلطيم"},
+      {"en": "Motobas", "ar": "مطوبس"},
+      {"en": "Sidi Salem", "ar": "سيدي سالم"},
+      {"en": "Qillin", "ar": "قلين"},
+      {"en": "El Reyad", "ar": "الرياض"},
+      {"en": "Hamoul", "ar": "الحامول"}
+    ],
+    "electoral_districts": [
+      {"en": "Kafr El Sheikh 1 - Capital & Qillin", "ar": "كفر الشيخ ١ - العاصمة وقلين", "covers": ["Kafr El Sheikh", "Qillin"], "seats": 2},
+      {"en": "Kafr El Sheikh 2 - Desouk & Fuwwah", "ar": "كفر الشيخ ٢ - دسوق وفوه", "covers": ["Desouk", "Fuwwah"], "seats": 2},
+      {"en": "Kafr El Sheikh 3 - Baltim & Motobas", "ar": "كفر الشيخ ٣ - بلطيم ومطوبس", "covers": ["Baltim", "Motobas"], "seats": 1},
+      {"en": "Kafr El Sheikh 4 - Biyala & Sidi Salem", "ar": "كفر الشيخ ٤ - بيلا وسيدي سالم", "covers": ["Biyala", "Sidi Salem", "Hamoul", "El Reyad"], "seats": 3}
+    ]
+  },
+  "Matrouh": {
+    "name_ar": "مطروح",
+    "districts": [
+      {"en": "Marsa Matrouh", "ar": "مرسى مطروح"},
+      {"en": "Siwa", "ar": "سيوة"},
+      {"en": "El Alamein", "ar": "العلمين"},
+      {"en": "El Dabaa", "ar": "الضبعة"},
+      {"en": "Negaila", "ar": "النجيلة"},
+      {"en": "Sidi Barrani", "ar": "سيدي براني"},
+      {"en": "Salloum", "ar": "السلوم"},
+      {"en": "Hammam", "ar": "الحمام"}
+    ],
+    "electoral_districts": [
+      {"en": "Matrouh - Western Border", "ar": "مطروح - الحدود الغربية", "covers": ["Marsa Matrouh", "Sidi Barrani", "Salloum", "Siwa"], "seats": 2},
+      {"en": "Matrouh - Coast Belt", "ar": "مطروح - الشريط الساحلي", "covers": ["Hammam", "El Alamein", "El Dabaa", "Negaila"], "seats": 2}
+    ]
+  },
+  "Luxor": {
+    "name_ar": "الأقصر",
+    "districts": [
+      {"en": "Luxor", "ar": "الأقصر"},
+      {"en": "New Luxor", "ar": "الأقصر الجديدة"},
+      {"en": "Qurna", "ar": "القرنة"},
+      {"en": "Esna", "ar": "إسنا"},
+      {"en": "Armant", "ar": "أرمنت"},
+      {"en": "Tiba", "ar": "طيبة"}
+    ],
+    "electoral_districts": [
+      {"en": "Luxor 1 - Luxor & Tiba", "ar": "الأقصر ١ - الأقصر وطيبة", "covers": ["Luxor", "New Luxor", "Tiba"], "seats": 2},
+      {"en": "Luxor 2 - Esna", "ar": "الأقصر ٢ - إسنا", "covers": ["Esna"], "seats": 1},
+      {"en": "Luxor 3 - Armant & Qurna", "ar": "الأقصر ٣ - أرمنت والقرنة", "covers": ["Armant", "Qurna"], "seats": 1}
+    ]
+  },
+  "Qena": {
+    "name_ar": "قنا",
+    "districts": [
+      {"en": "Qena", "ar": "قنا"},
+      {"en": "Qus", "ar": "قوص"},
+      {"en": "Qift", "ar": "قفط"},
+      {"en": "Nag Hammadi", "ar": "نجع حمادي"},
+      {"en": "Farshut", "ar": "فرشوط"},
+      {"en": "Dishna", "ar": "دشنا"},
+      {"en": "Abu Tesht", "ar": "أبوتشت"},
+      {"en": "Naqada", "ar": "نقادة"}
+    ],
+    "electoral_districts": [
+      {"en": "Qena 1 - Qena & Qus", "ar": "قنا ١ - قنا وقوص", "covers": ["Qena", "Qus", "Qift", "Naqada"], "seats": 3},
+      {"en": "Qena 2 - Nag Hammadi & Farshut", "ar": "قنا ٢ - نجع حمادي وفرشوط", "covers": ["Nag Hammadi", "Farshut", "Abu Tesht"], "seats": 2},
+      {"en": "Qena 3 - Dishna", "ar": "قنا ٣ - دشنا", "covers": ["Dishna"], "seats": 1}
+    ]
+  },
+  "Sohag": {
+    "name_ar": "سوهاج",
+    "districts": [
+      {"en": "Sohag", "ar": "سوهاج"},
+      {"en": "Akhmim", "ar": "أخميم"},
+      {"en": "Girga", "ar": "جرجا"},
+      {"en": "Tahta", "ar": "طهطا"},
+      {"en": "Tema", "ar": "طما"},
+      {"en": "Maragha", "ar": "المراغة"},
+      {"en": "Balyana", "ar": "البلينا"},
+      {"en": "Monsha'a", "ar": "المنشأة"},
+      {"en": "Juhayna", "ar": "جهينة"},
+      {"en": "Saqilatuh", "ar": "ساقلتة"},
+      {"en": "Dar El Salam", "ar": "دار السلام"}
+    ],
+    "electoral_districts": [
+      {"en": "Sohag 1 - Sohag & Akhmim", "ar": "سوهاج ١ - سوهاج وأخميم", "covers": ["Sohag", "Akhmim", "Saqilatuh"], "seats": 3},
+      {"en": "Sohag 2 - Tahta & Tama", "ar": "سوهاج ٢ - طهطا وطما", "covers": ["Tahta", "Tema", "Maragha"], "seats": 2},
+      {"en": "Sohag 3 - Girga & Dar El Salam", "ar": "سوهاج ٣ - جرجا ودار السلام", "covers": ["Girga", "Dar El Salam", "Monsha'a"], "seats": 2},
+      {"en": "Sohag 4 - Balyana", "ar": "سوهاج ٤ - البلينا", "covers": ["Balyana", "Juhayna"], "seats": 1}
+    ]
+  },
+  "North Sinai": {
+    "name_ar": "شمال سيناء",
+    "districts": [
+      {"en": "Arish", "ar": "العريش"},
+      {"en": "Bir El Abd", "ar": "بئر العبد"},
+      {"en": "Sheikh Zuweid", "ar": "الشيخ زويد"},
+      {"en": "Rafah", "ar": "رفح"},
+      {"en": "Nakhl", "ar": "نخل"},
+      {"en": "Hassana", "ar": "الحسنة"}
+    ],
+    "electoral_districts": [
+      {"en": "North Sinai 1 - Coastal", "ar": "شمال سيناء ١ - الساحل", "covers": ["Arish", "Bir El Abd", "Sheikh Zuweid", "Rafah"], "seats": 2},
+      {"en": "North Sinai 2 - Inland", "ar": "شمال سيناء ٢ - الوسط", "covers": ["Nakhl", "Hassana"], "seats": 1}
+    ]
+  }
+}

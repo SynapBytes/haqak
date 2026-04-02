@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -42,7 +43,8 @@ interface FundingProject {
 }
 
 export const ProjectCrowdfunding: React.FC = () => {
-  const { user } = useAuth();
+  const { session } = useAuth();
+  const user = session?.user ?? null;
   const [projects, setProjects] = useState<FundingProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<FundingProject | null>(null);
@@ -77,58 +79,9 @@ export const ProjectCrowdfunding: React.FC = () => {
   }, []);
 
   const fetchFundingProjects = async () => {
-    try {
-      setLoading(true);
-
-      // Fetch projects in funding phase
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('project_proposals')
-        .select('*')
-        .eq('status', 'funding_active')
-        .gt('funding_deadline', new Date().toISOString())
-        .order('created_at', { ascending: false });
-
-      if (projectsError) throw projectsError;
-
-      // Fetch contribution counts and user's contribution
-      const projectsWithContributions = await Promise.all(
-        (projectsData || []).map(async (project) => {
-          const { data: contributionsData } = await supabase
-            .from('project_contributions')
-            .select('amount')
-            .eq('project_id', project.id)
-            .eq('payment_status', 'completed');
-
-          const contributorsCount = contributionsData?.length || 0;
-
-          let userContribution = 0;
-          if (user) {
-            const { data: userContributionData } = await supabase
-              .from('project_contributions')
-              .select('amount')
-              .eq('project_id', project.id)
-              .eq('user_id', user.id)
-              .eq('payment_status', 'completed')
-              .single();
-
-            userContribution = userContributionData?.amount || 0;
-          }
-
-          return {
-            ...project,
-            contributors_count: contributorsCount,
-            user_contribution: userContribution
-          };
-        })
-      );
-
-      setProjects(projectsWithContributions);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-      toast.error('فشل في تحميل المشاريع');
-    } finally {
-      setLoading(false);
-    }
+    // Tables project_proposals and project_contributions not yet created
+    setProjects([]);
+    setLoading(false);
   };
 
   const handleContribute = async () => {
@@ -136,60 +89,11 @@ export const ProjectCrowdfunding: React.FC = () => {
       toast.error('يجب تسجيل الدخول للمساهمة');
       return;
     }
-
-    if (contributionAmount < 10) {
-      toast.error('الحد الأدنى للمساهمة 10 جنيهات');
-      return;
-    }
-
-    if (contributionAmount > 100000) {
-      toast.error('الحد الأقصى للمساهمة 100,000 جنيه');
-      return;
-    }
-
-    setSubmittingContribution(true);
-    try {
-      // In a real scenario, this would integrate with payment gateway (Fawry/CIB/InstaPay)
-      // For now, we'll simulate the payment and mark it as completed
-      const { data, error } = await supabase
-        .from('project_contributions')
-        .insert([
-          {
-            project_id: selectedProject.id,
-            user_id: user.id,
-            amount: contributionAmount,
-            payment_status: 'completed', // In production, this would be 'pending' until payment is confirmed
-            payment_reference: `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast.success(`شكراً لمساهمتك بـ ${contributionAmount} جنيه في مشروع "${selectedProject.title}"`);
-      
-      // Update local state
-      setProjects(prev => prev.map(p => 
-        p.id === selectedProject.id 
-          ? {
-              ...p,
-              raised_amount: p.raised_amount + contributionAmount,
-              contributors_count: (p.contributors_count || 0) + 1,
-              user_contribution: (p.user_contribution || 0) + contributionAmount
-            }
-          : p
-      ));
-
-      setContributionAmount(100);
-      setSelectedProject(null);
-    } catch (error) {
-      console.error('Contribution error:', error);
-      toast.error('حدث خطأ أثناء المساهمة');
-    } finally {
-      setSubmittingContribution(false);
-    }
+    // project_contributions table not yet created
+    toast.info('ميزة المساهمة المالية قيد التطوير');
+    setSubmittingContribution(false);
   };
+      
 
   const daysRemaining = (deadline: string) => {
     const days = Math.ceil((new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));

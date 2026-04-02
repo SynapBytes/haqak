@@ -1,10 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { buildParticipantSet } from "../shared/access-control.ts";
+import { buildCorsHeaders } from "../shared/cors.ts";
 
 interface CreateTrackingLinkRequest {
   issueId: string;
@@ -20,20 +17,22 @@ interface TrackingLinkResponse {
   error?: string;
 }
 
-// Generate unique short code
+// VULN-05 fix: use CSPRNG (crypto.getRandomValues) instead of Math.random()
+// which is a predictable PRNG unsuitable for security-sensitive tokens.
 function generateShortCode(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map((b) => chars[b % chars.length])
+    .join("");
 }
 
 serve(async (req) => {
+  const cors = buildCorsHeaders(req.headers.get("Origin"));
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   try {
@@ -44,7 +43,15 @@ serve(async (req) => {
     if (!issueId || !recipientType || !recipientId) {
       return new Response(
         JSON.stringify({ success: false, error: "Missing required fields" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized" }),
+        { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -54,11 +61,67 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(
         JSON.stringify({ success: false, error: "Server configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const token = authHeader.slice("Bearer ".length);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser(token);
+
+    if (!user) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized" }),
+        { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { data: roleRows, error: roleError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .in("role", ["admin", "moderator"]);
+    if (roleError) {
+      console.error("Failed to load roles", roleError);
+      return new Response(
+        JSON.stringify({ success: false, error: "Unable to verify permissions" }),
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+    const roles = new Set(roleRows?.map((r) => r.role) ?? []);
+    const isAdminOrModerator = roles.has("admin") || roles.has("moderator");
+
+    const { data: issueData, error: issueError } = await supabase
+      .from("issues")
+      .select("user_id, assigned_mp_id")
+      .eq("id", issueId)
+      .single();
+
+    if (issueError || !issueData) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Issue not found" }),
+        { status: 404, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    const allowedRecipients = buildParticipantSet(issueData.user_id, issueData.assigned_mp_id);
+    const isIssueParticipant = allowedRecipients.has(user.id);
+
+    if (!isAdminOrModerator && !isIssueParticipant) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Forbidden" }),
+        { status: 403, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!isAdminOrModerator && !allowedRecipients.has(recipientId)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Recipient not allowed for this issue" }),
+        { status: 403, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
 
     // Generate unique short code
     let shortCode = generateShortCode();
@@ -81,7 +144,7 @@ serve(async (req) => {
     if (attempts === maxAttempts) {
       return new Response(
         JSON.stringify({ success: false, error: "Failed to generate unique short code" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -105,7 +168,7 @@ serve(async (req) => {
       console.error("Link creation error:", linkError);
       return new Response(
         JSON.stringify({ success: false, error: "Failed to create tracking link" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -116,13 +179,13 @@ serve(async (req) => {
         trackingUrl,
         linkId: linkData.id,
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...cors, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Error:", error);
     return new Response(
       JSON.stringify({ success: false, error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
     );
   }
 });

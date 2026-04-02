@@ -84,7 +84,7 @@ export const SmartContractsAccountability: React.FC = () => {
             id: `contract-${idx}`,
             issueId: issue.id,
             contractHash: `0x${Math.random().toString(16).slice(2, 66)}`,
-            status: ['pending', 'active', 'completed'][Math.floor(Math.random() * 3)] as any,
+            status: ['pending', 'active', 'completed'][Math.floor(Math.random() * 3)] as SmartContract["status"],
             budgetAllocated: allocated,
             budgetSpent: spent,
             contractor: `شركة المقاول ${idx + 1}`,
@@ -135,7 +135,7 @@ export const SmartContractsAccountability: React.FC = () => {
           allocatedAmount: contract.budgetAllocated,
           spentAmount: contract.budgetSpent,
           remaining: contract.budgetAllocated - contract.budgetSpent,
-          status: ['pending', 'approved', 'locked', 'released'][Math.floor(Math.random() * 4)] as any,
+          status: ['pending', 'approved', 'locked', 'released'][Math.floor(Math.random() * 4)] as BudgetAllocation["status"],
         }));
 
         setBudgetAllocations(allocations);
@@ -321,9 +321,13 @@ export const SmartContractsAccountability: React.FC = () => {
                             <div className="w-full bg-gray-200 rounded-full h-2">
                               <div
                                 className={`h-2 rounded-full transition-all ${getBudgetStatus({
+                                  issueId: contract.issueId,
+                                  category: '',
                                   allocatedAmount: contract.budgetAllocated,
                                   spentAmount: contract.budgetSpent,
-                                } as any)}`}
+                                  remaining: contract.budgetAllocated - contract.budgetSpent,
+                                  status: 'pending',
+                                })}`}
                                 style={{
                                   width: `${(contract.budgetSpent / contract.budgetAllocated) * 100}%`,
                                 }}

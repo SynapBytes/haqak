@@ -52,7 +52,7 @@ export const DigitalTwinIntegration: React.FC = () => {
     sewage: true,
     telecom: true,
   });
-  const [selectedIssue, setSelectedIssue] = useState<any>(null);
+  const [selectedIssue, setSelectedIssue] = useState<StreetSection["issues"][number] | null>(null);
 
   useEffect(() => {
     const fetchStreetData = async () => {
@@ -191,7 +191,7 @@ export const DigitalTwinIntegration: React.FC = () => {
     Object.entries(layerColors).forEach(([layerType, color]) => {
       if (!visibleLayers[layerType as keyof typeof visibleLayers]) return;
 
-      const cable = streetData.cables.find(c => c.type === layerType as any);
+      const cable = streetData.cables.find(c => c.type === (layerType as CableLayer["type"]));
       if (!cable) return;
 
       // Draw cable line
@@ -376,7 +376,7 @@ export const DigitalTwinIntegration: React.FC = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => toggleLayerVisibility(key as any)}
+                            onClick={() => toggleLayerVisibility(key as keyof typeof visibleLayers)}
                           >
                             {visibleLayers[key as keyof typeof visibleLayers] ? (
                               <Eye className="w-4 h-4" />
@@ -387,7 +387,7 @@ export const DigitalTwinIntegration: React.FC = () => {
                           <span className="font-medium">{label}</span>
                         </div>
                         <div className="text-sm text-gray-600">
-                          {streetData.cables.find(c => c.type === key as any)?.depth || 0} سم
+                          {streetData.cables.find(c => c.type === (key as CableLayer["type"]))?.depth || 0} سم
                         </div>
                       </div>
                     ))}

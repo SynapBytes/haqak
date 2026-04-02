@@ -1,4 +1,4 @@
--- Official Correspondence & Document Tracking System for Sutak
+-- Official Correspondence & Document Tracking System for Haqak
 
 -- ============================================================================
 -- 1. MP Responses Table

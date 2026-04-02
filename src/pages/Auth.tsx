@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
@@ -8,18 +8,31 @@ import { InputOTP } from "@/components/ui/input-otp";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { User, ShieldCheck, LogIn, ArrowRight, Eye, EyeOff, Lock, Phone, IdCard, Fingerprint, KeyRound, MapPin, Building2, Landmark, AlertCircle, CheckCircle2, Clock, Globe } from "lucide-react";
-import egyptGeoData from "@/data/egypt-geo.json";
+import { 
+  getDistrictOptions, 
+  getElectoralDistrictOptions, 
+  getGovernorateOptions, 
+  isValidDistrictForGovernorate, 
+  isValidElectoralDistrictForGovernorate, 
+  isValidGovernorate 
+} from "@/utils/egyptianElectoralData";
 import countryCodes from "@/data/countryCodes.json";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { analytics } from "@/lib/analytics";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
 import ornament2 from "@/assets/egyptian-ornament-2.webp";
 import egyptianAnkh from "@/assets/egyptian-ankh.webp";
 import egyptianNefertiti from "@/assets/egyptian-nefertiti.webp";
 import ornament1 from "@/assets/egyptian-ornament-1.webp";
-import { validateEgyptianId, extractEgyptianIdInfo } from "@/lib/egyptianIdValidation";
+import { validateEgyptianId, validateEgyptianIdWithReason, extractEgyptianIdInfo } from "@/lib/egyptianIdValidation";
+import { cn } from "@/lib/utils";
 
 type AuthMode = "login" | "login-otp" | "signup-citizen" | "signup-citizen-otp" | "signup-mp" | "signup-mp-otp" | "forgot-password" | "forgot-password-otp";
+
+const PHONE_REGEX = /^01[0125][0-9]{8}$/;
+const MEMBERSHIP_NUMBER_REGEX = /^[0-9]+$/;
+const MAX_MEMBERSHIP_NUMBER = 568;
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -49,7 +62,11 @@ const Auth = () => {
   // Validation states
   const [phoneError, setPhoneError] = useState("");
   const [membershipNumberError, setMembershipNumberError] = useState("");
+  const [governorateError, setGovernorateError] = useState("");
+  const [districtError, setDistrictError] = useState("");
+  const [electoralError, setElectoralError] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
+  const [signupSuccessful, setSignupSuccessful] = useState(false);
 
   // Get user's location on component mount
   useEffect(() => {
@@ -72,9 +89,16 @@ const Auth = () => {
     detectLocation();
   }, []);
 
-  const phoneRegex = /^01[0125][0-9]{8}$/;
-  const membershipNumberRegex = /^[0-9]+$/;
-  const MAX_MEMBERSHIP_NUMBER = 568;
+  const phoneRegex = PHONE_REGEX;
+  const membershipNumberRegex = MEMBERSHIP_NUMBER_REGEX;
+  const passwordHasNumber = useMemo(() => /\d/.test(password), [password]);
+  const passwordHasLetter = useMemo(() => /[a-zA-Z\u0600-\u06FF]/.test(password), [password]);
+  const governorateOptions = useMemo(() => getGovernorateOptions(), []);
+  const districtOptions = useMemo(() => getDistrictOptions(governorate), [governorate]);
+  const electoralOptions = useMemo(
+    () => getElectoralDistrictOptions(governorate, district),
+    [governorate, district],
+  );
 
   // OTP Timer effect
   useEffect(() => {
@@ -92,12 +116,13 @@ const Auth = () => {
     } else {
       setPhoneError("");
     }
-  }, [phone, t]);
+  }, [phone, t, phoneRegex]);
 
   useEffect(() => {
     if (nationalId && mode.includes("signup-citizen")) {
-      if (!validateEgyptianId(nationalId)) {
-        setNationalIdError(t("auth.national_id_invalid"));
+      const validation = validateEgyptianIdWithReason(nationalId);
+      if (!validation.valid) {
+        setNationalIdError(validation.reason || t("auth.national_id_invalid"));
       } else {
         const idInfo = extractEgyptianIdInfo(nationalId);
         if (idInfo && !idInfo.isEgyptian) {
@@ -126,7 +151,7 @@ const Auth = () => {
     } else {
       setMembershipNumberError("");
     }
-  }, [registrationNumber, mode, t]);
+  }, [registrationNumber, mode, t, membershipNumberRegex]);
 
   useEffect(() => {
     const validateForm = () => {
@@ -137,11 +162,10 @@ const Auth = () => {
         return phoneRegex.test(phone);
       }
       if (mode === "signup-citizen" || mode === "signup-mp") {
-        const commonValid = phoneRegex.test(phone) && 
-                           password.length >= 8 && 
-                           /\d/.test(password) && 
-                           /[a-zA-Z\u0600-\u06FF]/.test(password) &&
-                           fullName.length > 0;
+        const phoneValid = phoneRegex.test(phone);
+        const passwordValid = password.length >= 8 && passwordHasNumber && passwordHasLetter;
+        const fullNameValid = fullName.trim().length > 0;
+        const commonValid = phoneValid && passwordValid && fullNameValid;
         
         if (mode === "signup-citizen") {
           const nationalIdValid = nationalId.length === 14 && 
@@ -156,14 +180,57 @@ const Auth = () => {
                                  parseInt(registrationNumber, 10) >= 1 &&
                                  parseInt(registrationNumber, 10) <= MAX_MEMBERSHIP_NUMBER &&
                                  membershipNumberError === "";
-          return commonValid && governorate.length > 0 && district.length > 0 && electoralDistrict.length > 0 && membershipValid;
+          const geoValid =
+            isValidGovernorate(governorate) &&
+            isValidDistrictForGovernorate(governorate, district) &&
+            isValidElectoralDistrictForGovernorate(governorate, electoralDistrict, district) &&
+            !governorateError &&
+            !districtError &&
+            !electoralError;
+          const displayNameValid = displayName.trim().length > 0;
+          return commonValid && geoValid && membershipValid && displayNameValid;
         }
         return commonValid;
       }
       return false;
     };
     setIsFormValid(validateForm());
-  }, [mode, phone, password, fullName, governorate, district, electoralDistrict, registrationNumber, membershipNumberError, nationalId, nationalIdError]);
+  }, [mode, phone, password, passwordHasNumber, passwordHasLetter, fullName, displayName, governorate, district, electoralDistrict, registrationNumber, membershipNumberError, nationalId, nationalIdError, governorateError, districtError, electoralError, phoneRegex, membershipNumberRegex]);
+
+  useEffect(() => {
+    if (!mode.includes("signup-mp")) {
+      setGovernorateError("");
+      setDistrictError("");
+      setElectoralError("");
+      return;
+    }
+
+    if (governorate && !isValidGovernorate(governorate)) {
+      setGovernorateError(t("auth.governorate_invalid"));
+    } else {
+      setGovernorateError("");
+    }
+
+    if (district) {
+      if (!isValidDistrictForGovernorate(governorate, district)) {
+        setDistrictError(t("auth.district_invalid"));
+      } else {
+        setDistrictError("");
+      }
+    } else {
+      setDistrictError("");
+    }
+
+    if (electoralDistrict) {
+      if (!isValidElectoralDistrictForGovernorate(governorate, electoralDistrict, district)) {
+        setElectoralError(t("auth.electoral_district_invalid"));
+      } else {
+        setElectoralError("");
+      }
+    } else {
+      setElectoralError("");
+    }
+  }, [governorate, district, electoralDistrict, mode, t]);
 
   const resetForm = () => {
     setPhone("");
@@ -178,6 +245,9 @@ const Auth = () => {
     setNationalId("");
     setPhoneError("");
     setNationalIdError("");
+    setGovernorateError("");
+    setDistrictError("");
+    setElectoralError("");
     setOtpCode("");
     setOtpTimer(0);
     setCanResendOtp(false);
@@ -192,6 +262,9 @@ const Auth = () => {
     if (msg.includes("OTP expired")) return t("auth.error_otp_expired");
     if (msg.includes("rate limit")) return t("auth.error_rate_limit");
     if (msg.includes("Too many requests")) return t("auth.error_too_many");
+    if (msg.includes("did not match the expected pattern")) return t("auth.error_pattern_mismatch");
+    if (msg.includes("Email not confirmed")) return t("auth.error_email_not_confirmed");
+    if (msg.includes("already registered") || msg.includes("already been registered")) return t("auth.error_already_registered");
     return msg;
   };
 
@@ -211,6 +284,10 @@ const Auth = () => {
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if ((mode === "signup-citizen" || mode === "signup-mp") && !isFormValid) {
+      toast.error(t("auth.form_invalid"));
+      return;
+    }
     if (!phoneRegex.test(phone)) {
       setPhoneError(t("auth.phone_invalid"));
       return;
@@ -218,9 +295,11 @@ const Auth = () => {
 
     setLoading(true);
     try {
-      const response = await fetch("/.netlify/functions/send-otp", {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-otp`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "apikey": supabaseKey },
         body: JSON.stringify({ phone, countryCode, mode: mode.replace("-otp", "") }),
       });
 
@@ -236,8 +315,8 @@ const Auth = () => {
       else if (mode === "signup-citizen") setMode("signup-citizen-otp");
       else if (mode === "signup-mp") setMode("signup-mp-otp");
       else if (mode === "forgot-password") setMode("forgot-password-otp");
-    } catch (err: any) {
-      toast.error(translateError(err.message || t("auth.otp_send_error")));
+    } catch (err: unknown) {
+      toast.error(translateError((err instanceof Error ? err.message : String(err)) || t("auth.otp_send_error")));
     } finally {
       setLoading(false);
     }
@@ -250,11 +329,14 @@ const Auth = () => {
       return;
     }
 
+    const signupRole = mode.includes("mp") ? "mp" : "citizen";
     setOtpLoading(true);
     try {
-      const response = await fetch("/.netlify/functions/verify-otp", {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const response = await fetch(`${supabaseUrl}/functions/v1/verify-otp`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "apikey": supabaseKey },
         body: JSON.stringify({ 
           phone, 
           countryCode,
@@ -268,7 +350,7 @@ const Auth = () => {
       if (!response.ok) throw new Error(data.error || "Failed to verify OTP");
 
       toast.success(t("auth.otp_verified"));
-      
+
       if (mode === "login-otp") {
         // Perform login
         const { error } = await supabase.auth.signInWithPassword({
@@ -276,6 +358,7 @@ const Auth = () => {
           password: password,
         });
         if (error) throw error;
+        analytics.track("login_success");
         const redirect = await getRoleRedirect(data.userId);
         navigate(redirect);
       } else if (mode.includes("signup")) {
@@ -288,7 +371,7 @@ const Auth = () => {
               full_name: fullName,
               phone,
               countryCode,
-              role: mode.includes("mp") ? "mp" : "citizen",
+              role: signupRole,
               ...(mode.includes("citizen") && {
                 national_id: nationalId,
               }),
@@ -304,9 +387,13 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        toast.success(t("auth.signup_success"));
+        analytics.track("signup_success", { role: signupRole });
+        setSignupSuccessful(true);
         resetForm();
-        setMode("login");
+        setTimeout(() => {
+          setSignupSuccessful(false);
+          setMode("login");
+        }, 3000);
       } else if (mode === "forgot-password-otp") {
         // Reset password
         const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
@@ -317,8 +404,15 @@ const Auth = () => {
         resetForm();
         setMode("login");
       }
-    } catch (err: any) {
-      toast.error(translateError(err.message || t("auth.otp_verify_error")));
+    } catch (err: unknown) {
+      // Track auth failures without exposing the raw error message (which may
+      // contain phone numbers or other PII).
+      if (mode === "login-otp") {
+        analytics.track("login_failure");
+      } else if (mode.includes("signup")) {
+        analytics.track("signup_failure", { role: signupRole });
+      }
+      toast.error(translateError((err instanceof Error ? err.message : String(err)) || t("auth.otp_verify_error")));
     } finally {
       setOtpLoading(false);
     }
@@ -353,6 +447,46 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <AppHeader />
+
+      {/* Signup success overlay */}
+      <AnimatePresence>
+        {signupSuccessful && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 flex items-center justify-center bg-black/60 z-50"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 200, damping: 18 }}
+              className="bg-card rounded-3xl p-8 text-center shadow-2xl max-w-sm mx-4"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 260, damping: 20 }}
+                className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4"
+              >
+                <CheckCircle2 className="w-12 h-12 text-green-600" />
+              </motion.div>
+              <h2 className="text-2xl font-bold text-foreground mb-2">{t("auth.signup_success_title")}</h2>
+              <p className="text-muted-foreground mb-4">{t("auth.signup_success_body")}</p>
+              <p className="text-sm text-muted-foreground">{t("auth.signup_success_redirect")}</p>
+              <div className="mt-4 h-1 bg-muted rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 3 }}
+                  className="h-full bg-green-600 rounded-full"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Egyptian decorations */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
@@ -399,7 +533,11 @@ const Auth = () => {
                   >
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">{t("auth.otp_code")}</label>
-                      <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode} disabled={otpLoading} />
+                      <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode} disabled={otpLoading}>
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <input key={i} className="w-10 h-12 text-center border rounded-md" />
+                        ))}
+                      </InputOTP>
                       <p className="text-xs text-muted-foreground">{t("auth.otp_sent_to")} {phone}</p>
                     </div>
 
@@ -460,9 +598,9 @@ const Auth = () => {
                         <Phone className="w-4 h-4" />
                         {t("auth.phone")}
                       </label>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-center">
                         <Select value={countryCode} onValueChange={setCountryCode} disabled={loading}>
-                          <SelectTrigger className="w-24">
+                          <SelectTrigger className="w-full sm:w-28">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -477,11 +615,17 @@ const Auth = () => {
                         </Select>
                         <Input
                           type="tel"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           placeholder="01012345678"
                           value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
+                          onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
                           disabled={loading}
-                          className={`flex-1 ${phoneError ? "border-destructive" : ""}`}
+                          className={cn(
+                            "flex-1 text-center sm:text-left",
+                            "min-w-[200px] sm:min-w-[240px]",
+                            phoneError && "border-destructive"
+                          )}
                         />
                       </div>
                       {phoneError && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {phoneError}</p>}
@@ -512,7 +656,7 @@ const Auth = () => {
                         </div>
                         {mode.includes("signup") && password && (
                           <p className="text-xs text-muted-foreground">
-                            {password.length >= 8 && /\d/.test(password) && /[a-zA-Z\u0600-\u06FF]/.test(password) ? (
+                            {password.length >= 8 && passwordHasNumber && passwordHasLetter ? (
                               <span className="text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {t("auth.password_strong")}</span>
                             ) : (
                               <span className="text-amber-600">{t("auth.password_requirements")}</span>
@@ -529,13 +673,13 @@ const Auth = () => {
                           <User className="w-4 h-4" />
                           {t("auth.full_name")}
                         </label>
-                        <Input
-                          type="text"
-                          placeholder={t("auth.full_name_placeholder")}
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                          disabled={loading}
-                        />
+                          <Input
+                            type="text"
+                            placeholder={t("auth.full_name_placeholder")}
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value.replace(/^\s+/, ""))}
+                            disabled={loading}
+                          />
                       </div>
                     )}
 
@@ -548,7 +692,7 @@ const Auth = () => {
                         </label>
                         <Input
                           type="text"
-                          placeholder="14 رقم من الرقم القومي"
+                          placeholder={t("auth.national_id_placeholder")}
                           value={nationalId}
                           onChange={(e) => setNationalId(e.target.value.replace(/\D/g, "").slice(0, 14))}
                           disabled={loading}
@@ -582,7 +726,7 @@ const Auth = () => {
                             type="text"
                             placeholder={t("auth.display_name_placeholder")}
                             value={displayName}
-                            onChange={(e) => setDisplayName(e.target.value)}
+                            onChange={(e) => setDisplayName(e.target.value.replace(/^\s+/, ""))}
                             disabled={loading}
                           />
                         </div>
@@ -592,16 +736,30 @@ const Auth = () => {
                             <MapPin className="w-4 h-4" />
                             {t("auth.governorate")}
                           </label>
-                          <Select value={governorate} onValueChange={setGovernorate} disabled={loading}>
+                          <Select
+                            value={governorate}
+                            onValueChange={(value) => {
+                              setGovernorate(value);
+                              setDistrict("");
+                              setElectoralDistrict("");
+                            }}
+                            disabled={loading}
+                          >
                             <SelectTrigger>
                               <SelectValue placeholder={t("auth.select_governorate")} />
                             </SelectTrigger>
                             <SelectContent>
-                              {Object.keys(egyptGeoData).map((gov) => (
-                                <SelectItem key={gov} value={gov}>{gov}</SelectItem>
+                              {governorateOptions.map((gov) => (
+                                <SelectItem key={gov.value} value={gov.value}>{gov.label}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
+                          {governorateError && (
+                            <p className="text-sm text-destructive flex items-center gap-1">
+                              <AlertCircle className="w-4 h-4" />
+                              {governorateError}
+                            </p>
+                          )}
                         </div>
 
                         {governorate && (
@@ -610,16 +768,29 @@ const Auth = () => {
                               <Building2 className="w-4 h-4" />
                               {t("auth.district")}
                             </label>
-                            <Select value={district} onValueChange={setDistrict} disabled={loading}>
+                            <Select
+                              value={district}
+                              onValueChange={(value) => {
+                                setDistrict(value);
+                                setElectoralDistrict("");
+                              }}
+                              disabled={loading || districtOptions.length === 0}
+                            >
                               <SelectTrigger>
                                 <SelectValue placeholder={t("auth.select_district")} />
                               </SelectTrigger>
                               <SelectContent>
-                                {(egyptGeoData[governorate as keyof typeof egyptGeoData] || []).map((dist) => (
-                                  <SelectItem key={dist} value={dist}>{dist}</SelectItem>
+                                {districtOptions.map((dist) => (
+                                  <SelectItem key={dist.value} value={dist.value}>{dist.label}</SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
+                            {districtError && (
+                              <p className="text-sm text-destructive flex items-center gap-1">
+                                <AlertCircle className="w-4 h-4" />
+                                {districtError}
+                              </p>
+                            )}
                           </div>
                         )}
 
@@ -628,13 +799,28 @@ const Auth = () => {
                             <Landmark className="w-4 h-4" />
                             {t("auth.electoral_district")}
                           </label>
-                          <Input
-                            type="text"
-                            placeholder={t("auth.electoral_district_placeholder")}
+                          <Select
                             value={electoralDistrict}
-                            onChange={(e) => setElectoralDistrict(e.target.value)}
-                            disabled={loading}
-                          />
+                            onValueChange={setElectoralDistrict}
+                            disabled={loading || !governorate}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("auth.select_electoral_district")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {electoralOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {electoralError && (
+                            <p className="text-sm text-destructive flex items-center gap-1">
+                              <AlertCircle className="w-4 h-4" />
+                              {electoralError}
+                            </p>
+                          )}
                         </div>
 
                         <div className="space-y-2">
@@ -646,7 +832,7 @@ const Auth = () => {
                             type="text"
                             placeholder={t("auth.registration_number_placeholder")}
                             value={registrationNumber}
-                            onChange={(e) => setRegistrationNumber(e.target.value)}
+                            onChange={(e) => setRegistrationNumber(e.target.value.replace(/\D/g, "").slice(0, 4))}
                             disabled={loading}
                             className={membershipNumberError ? "border-destructive" : ""}
                           />

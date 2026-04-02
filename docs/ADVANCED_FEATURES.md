@@ -45,7 +45,7 @@
 {
   "success": true,
   "shortCode": "AbCd1234",
-  "trackingUrl": "https://haqak.app/track?code=AbCd1234",
+  "trackingUrl": "https://haqak.org/track?code=AbCd1234",
   "linkId": "uuid"
 }
 ```
@@ -223,7 +223,7 @@ log_audit_event(
 ```
 تم استقبال شكوتك برقم #12345
 الموضوع: [العنوان]
-تابع: https://haqak.app/t/AbCd1234
+تابع: https://haqak.org/t/AbCd1234
 ```
 
 **2. تحديث الحالة (status_update)**
@@ -238,7 +238,7 @@ log_audit_event(
 🚨 تنبيه عاجل من حقك
 الموضوع: [العنوان]
 الأولوية: حرجة
-تابع: https://haqak.app/t/AbCd1234
+تابع: https://haqak.org/t/AbCd1234
 ```
 
 **4. إشعار الحل (resolution_notice)**

@@ -33,7 +33,7 @@ const ResolutionRating = ({ issueId, onRated }: ResolutionRatingProps) => {
         .update({
           citizen_confirmed: true,
           mp_notes: `Rating: ${rating}/5. ${feedback}`,
-        } as any)
+        })
         .eq("id", issueId);
 
       if (error) throw error;

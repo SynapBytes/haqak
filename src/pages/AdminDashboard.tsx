@@ -17,6 +17,14 @@ import {
   Loader2, AlertCircle, TrendingUp, Clock, FileText, MapPin, Trash2, UserCog
 } from "lucide-react";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
+import { AppRole, resolvePrimaryRole } from "@/constants/roles";
+import type { Database } from "@/integrations/supabase/types";
+import { dispatchNotification } from "@/lib/notifications";
+import { analytics } from "@/lib/analytics";
+
+type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+type IssueRow = Database["public"]["Tables"]["issues"]["Row"];
+type UserRoleRow = Database["public"]["Tables"]["user_roles"]["Row"];
 
 interface UserProfile {
   id: string;
@@ -32,23 +40,24 @@ interface UserProfile {
 }
 
 interface UserWithRole extends UserProfile {
-  role: "citizen" | "mp" | "admin";
+  role: AppRole;
 }
 
 const AdminDashboard = () => {
   const { t } = useTranslation();
   const [users, setUsers] = useState<UserWithRole[]>([]);
-  const [issues, setIssues] = useState<any[]>([]);
+  const [issues, setIssues] = useState<IssueRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [issueSearchQuery, setIssueSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"users" | "issues" | "analytics">("users");
-  const [filterRole, setFilterRole] = useState<"all" | "citizen" | "mp">("all");
+  const [filterRole, setFilterRole] = useState<"all" | AppRole>("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "banned">("all");
   const [filterGov, setFilterGov] = useState<string>("all");
   const [approving, setApproving] = useState<string | null>(null);
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
+  const [banningUser, setBanningUser] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -58,8 +67,17 @@ const AdminDashboard = () => {
       supabase.from("issues").select("*").order("created_at", { ascending: false }),
     ]);
     if (profilesRes.data && rolesRes.data) {
-      const roleMap = new Map(rolesRes.data.map((r: any) => [r.user_id, r.role]));
-      setUsers(profilesRes.data.map((p: any) => ({ ...p, role: roleMap.get(p.user_id) || "citizen" })));
+      const rolesByUser = new Map<string, AppRole[]>();
+      rolesRes.data.forEach((r: UserRoleRow) => {
+        const existing = rolesByUser.get(r.user_id) ?? [];
+        rolesByUser.set(r.user_id, [...existing, r.role as AppRole]);
+      });
+      setUsers(
+        profilesRes.data.map((p) => {
+          const roles = rolesByUser.get(p.user_id) ?? [];
+          return { ...p, role: resolvePrimaryRole(roles) };
+        }),
+      );
     }
     if (issuesRes.data) setIssues(issuesRes.data);
     setLoading(false);
@@ -74,17 +92,23 @@ const AdminDashboard = () => {
       toast.error(t("admin_dashboard.error"));
     } else {
       toast.success(approve ? t("admin_dashboard.mp_approved") : t("admin_dashboard.mp_revoked"));
+      analytics.track(approve ? "admin_approved_mp" : "admin_rejected_mp");
+      await dispatchNotification({
+        recipients: [userId],
+        event: "admin_decision",
+        reason: approve ? "approved" : "rejected",
+      });
       fetchData();
     }
     setApproving(null);
   };
 
-  const handleRoleChange = async (userId: string, newRole: "citizen" | "mp" | "admin") => {
+  const handleRoleChange = async (userId: string, newRole: AppRole) => {
     setUpdatingRole(userId);
     try {
       const { error } = await supabase
         .from("user_roles")
-        .update({ role: newRole })
+        .update({ role: newRole as "admin" | "citizen" | "mp" })
         .eq("user_id", userId);
       if (error) throw error;
 
@@ -111,10 +135,31 @@ const AdminDashboard = () => {
       if (data?.error) throw new Error(data.error);
       toast.success(t("admin_dashboard.account_deleted"));
       fetchData();
-    } catch (err: any) {
-      toast.error(err.message || t("admin_dashboard.delete_error"));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("admin_dashboard.delete_error"));
     }
     setDeletingUser(null);
+  };
+
+  const BAN_DURATION_DAYS = 7;
+
+  const handleBanUser = async (userId: string, ban: boolean) => {
+    setBanningUser(userId);
+    const bannedUntil = ban
+      ? new Date(Date.now() + BAN_DURATION_DAYS * 24 * 60 * 60 * 1000).toISOString()
+      : null;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ banned_until: bannedUntil })
+      .eq("user_id", userId);
+    if (error) {
+      toast.error(t("admin_dashboard.error"));
+    } else {
+      toast.success(ban ? t("admin_dashboard.user_banned") : t("admin_dashboard.user_unbanned"));
+      analytics.track(ban ? "admin_banned_user" : "admin_unbanned_user");
+      fetchData();
+    }
+    setBanningUser(null);
   };
 
   // Gather unique governorates for filter
@@ -147,6 +192,7 @@ const AdminDashboard = () => {
     citizen: t("admin_dashboard.role_citizen"),
     mp: t("admin_dashboard.role_mp"),
     admin: t("admin_dashboard.role_admin"),
+    moderator: t("admin_dashboard.role_moderator"),
   };
 
   const tabs = [
@@ -237,7 +283,7 @@ const AdminDashboard = () => {
                     <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t("admin_dashboard.search_users")} className="pr-11 text-right h-11 rounded-xl border-border/50 bg-background/50" />
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    {(["all", "citizen", "mp"] as const).map((r) => (
+                    {(["all", "citizen", "mp", "moderator", "admin"] as const).map((r) => (
                       <Button key={r} variant={filterRole === r ? "secondary" : "ghost"} size="sm" onClick={() => setFilterRole(r)} className="text-xs rounded-lg">
                         {r === "all" ? t("admin_dashboard.filter_all") : roleLabels[r]}
                       </Button>
@@ -317,7 +363,7 @@ const AdminDashboard = () => {
                     {/* Role Dropdown */}
                     <Select
                       value={user.role}
-                      onValueChange={(val) => handleRoleChange(user.user_id, val as "citizen" | "mp" | "admin")}
+                      onValueChange={(val) => handleRoleChange(user.user_id, val as AppRole)}
                       disabled={updatingRole === user.user_id}
                     >
                       <SelectTrigger className="w-[110px] h-9 rounded-lg text-xs border-border/50">
@@ -330,6 +376,7 @@ const AdminDashboard = () => {
                       <SelectContent>
                         <SelectItem value="citizen">{t("admin_dashboard.role_citizen")}</SelectItem>
                         <SelectItem value="mp">{t("admin_dashboard.role_mp")}</SelectItem>
+                        <SelectItem value="moderator">{t("admin_dashboard.role_moderator")}</SelectItem>
                         <SelectItem value="admin">{t("admin_dashboard.role_admin")}</SelectItem>
                       </SelectContent>
                     </Select>
@@ -352,6 +399,48 @@ const AdminDashboard = () => {
                         </Button>
                       </>
                     )}
+
+                    {/* Ban / Unban */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="ghost"
+                          className={`h-9 px-3 text-xs rounded-xl ${isBanned(user) ? "text-success hover:bg-success/10" : "text-warning hover:bg-warning/10"}`}
+                          disabled={banningUser === user.user_id}>
+                          {banningUser === user.user_id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : isBanned(user) ? (
+                            t("admin_dashboard.unban")
+                          ) : (
+                            t("admin_dashboard.ban")
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            {isBanned(user) ? t("admin_dashboard.unban_confirm_title") : t("admin_dashboard.ban_confirm_title")}
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {isBanned(user)
+                              ? t("admin_dashboard.unban_confirm_message")
+                              : t("admin_dashboard.ban_confirm_message")}
+                            <br />
+                            <strong>{user.full_name}</strong> — {user.phone}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleBanUser(user.user_id, !isBanned(user))}
+                            className={isBanned(user)
+                              ? "bg-success text-white hover:bg-success/90"
+                              : "bg-warning text-white hover:bg-warning/90"}
+                          >
+                            {isBanned(user) ? t("admin_dashboard.unban") : t("admin_dashboard.ban")}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
 
                     {/* Delete Account */}
                     <AlertDialog>

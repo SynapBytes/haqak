@@ -104,7 +104,7 @@ export const ConstituencyDigitalTwin: React.FC = () => {
         {/* Main Visualization Card */}
         <Card className="lg:col-span-2 overflow-hidden border-indigo-100 shadow-sm">
           <CardHeader className="bg-indigo-50/50 pb-3">
-            <Tabs defaultValue="population" onValueChange={(v) => setActiveLayer(v as any)}>
+            <Tabs defaultValue="population" onValueChange={(v) => setActiveLayer(v as 'population' | 'services' | 'infrastructure')}>
               <div className="flex justify-between items-center">
                 <TabsList>
                   <TabsTrigger value="population">السكان</TabsTrigger>
@@ -225,14 +225,14 @@ export const ConstituencyDigitalTwin: React.FC = () => {
                   <GraduationCap className="w-4 h-4 text-amber-500" />
                   <span className="text-sm">التعليم</span>
                 </div>
-                <Badge variant="warning" className="bg-amber-100 text-amber-700 border-amber-200 text-[10px] h-5">-25%</Badge>
+                <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-200 text-[10px] h-5">-25%</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-blue-500" />
                   <span className="text-sm">الكهرباء</span>
                 </div>
-                <Badge variant="success" className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] h-5">-7%</Badge>
+                <Badge variant="outline" className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] h-5">-7%</Badge>
               </div>
               <Button variant="ghost" className="w-full text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 p-0 h-8 mt-2">
                 عرض التقرير التفصيلي

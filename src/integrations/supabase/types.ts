@@ -279,6 +279,42 @@ export type Database = {
           },
         ]
       }
+      otp_codes: {
+        Row: {
+          attempts: number
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          mode: string
+          phone: string
+          used: boolean
+          used_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          mode: string
+          phone: string
+          used?: boolean
+          used_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          mode?: string
+          phone?: string
+          used?: boolean
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -360,6 +396,33 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_logs: {
+        Row: {
+          id: string
+          ip_address: string
+          request_path: string
+          request_timestamp: string
+          response_status: number | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          ip_address: string
+          request_path: string
+          request_timestamp?: string
+          response_status?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          ip_address?: string
+          request_path?: string
+          request_timestamp?: string
+          response_status?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -380,7 +443,39 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      mp_public_profiles: {
+        Row: {
+          avatar_url: string | null
+          center: string | null
+          constituency: string | null
+          contact_phone: string | null
+          full_name: string | null
+          governorate: string | null
+          is_approved: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          center?: string | null
+          constituency?: string | null
+          contact_phone?: string | null
+          full_name?: string | null
+          governorate?: string | null
+          is_approved?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          center?: string | null
+          constituency?: string | null
+          contact_phone?: string | null
+          full_name?: string | null
+          governorate?: string | null
+          is_approved?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_public_issue_stats: { Args: never; Returns: Json }

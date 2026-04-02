@@ -30,6 +30,11 @@ export interface PushSubscriptionData {
 
 export async function subscribeToPush(): Promise<PushSubscriptionData | null> {
   try {
+    if (!APP_CONFIG.VAPID_PUBLIC_KEY) {
+      console.error("VAPID public key is not configured; skipping push registration");
+      return null;
+    }
+
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
       console.warn("Push notifications not supported");
       return null;

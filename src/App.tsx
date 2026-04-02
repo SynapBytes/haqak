@@ -1,4 +1,4 @@
-import { useState, useCallback, lazy, Suspense } from "react";
+import { useState, useCallback, lazy, Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -6,9 +6,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import SplashScreen from "@/components/SplashScreen";
 import PushNotificationProvider from "@/components/PushNotificationProvider";
 import { useTranslation } from "react-i18next";
+import { AppRole } from "@/constants/roles";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 // Lazy-loaded pages
 const Landing = lazy(() => import("./pages/Landing"));
@@ -24,8 +25,17 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const GeniusEnhancements = lazy(() => import("./pages/GeniusEnhancements"));
+const Careers = lazy(() => import("./pages/Careers"));
+const Support = lazy(() => import("./pages/Support"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -33,12 +43,13 @@ const PageLoader = () => (
   </div>
 );
 
-function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode; requiredRole?: "citizen" | "mp" | "admin" }) {
+function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode; requiredRole?: AppRole }) {
   const { session, role, loading, profile } = useAuth();
   const { t } = useTranslation();
   if (loading) return <PageLoader />;
   if (!session) return <Navigate to="/auth" replace />;
   if (requiredRole === "admin" && role !== "admin") return <Navigate to="/" replace />;
+  if (requiredRole === "moderator" && role !== "moderator" && role !== "admin") return <Navigate to="/" replace />;
   if (requiredRole === "mp" && role === "mp" && !profile?.is_approved) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -53,16 +64,12 @@ function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode;
 }
 
 function App() {
-  const [showSplash, setShowSplash] = useState(true);
-  const handleSplashFinish = useCallback(() => setShowSplash(false), []);
-
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
           <BrowserRouter>
             <AuthProvider>
               <PushNotificationProvider />
@@ -80,11 +87,14 @@ function App() {
                   <Route path="/mp-profile/:id" element={<MPProfilePage />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/terms" element={<TermsOfService />} />
+                  <Route path="/careers" element={<Careers />} />
+                  <Route path="/support" element={<Support />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
             </AuthProvider>
           </BrowserRouter>
+          <SpeedInsights />
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>

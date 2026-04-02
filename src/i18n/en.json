@@ -13,8 +13,8 @@
   },
   "hero": {
     "badge": "Egypt's First Civic Communication Platform",
-    "title_1": "Your Voice Reaches.",
-    "title_2": "Your Rights Realized.",
+    "title_1": "Your Right,",
+    "title_2": "Your Issue Gets Solved.",
     "subtitle": "Haqak connects citizens directly with members of parliament — submit your issue, track its resolution, and confirm the outcome. Everything is digital, transparent, and secure.",
     "cta_citizen": "Submit Your Issue Now",
     "cta_mp": "MP Login",
@@ -109,8 +109,96 @@
     "support": "Support",
     "privacy": "Privacy",
     "terms": "Terms",
+    "careers": "Careers",
+    "support_haqak": "Support Haqak's Independence",
+    "support_haqak_desc": "Your contribution helps us continue and develop the platform to serve the community.",
+    "support_haqak_btn": "Contribute Now",
     "rights": "© 2026 Haqak — All rights reserved",
     "status": "All services running normally"
+  },
+  "contribute": {
+    "title": "Contribute to Haqak's Development",
+    "subtitle": "Haqak is an independent platform serving the community. Your contribution helps us improve performance, build the mobile app, and develop communication and tracking tools.",
+    "how_it_used": "How is the contribution used?",
+    "use_1": "Developing user experience and security",
+    "use_2": "Building the mobile application",
+    "use_3": "Improving support and tracking tools",
+    "amount_label": "Choose contribution amount",
+    "other_amount": "Other amount",
+    "currency": "Egyptian Pound",
+    "egp": "EGP",
+    "name_label": "Name (optional)",
+    "name_placeholder": "As you'd like it to appear",
+    "email_label": "Email (optional)",
+    "email_helper": "We only use it to send a receipt/confirmation—if you wish.",
+    "show_name_label": "I want my name to appear in the contributors list",
+    "privacy_note": "You can contribute without registering and without entering a name or email. We respect privacy.",
+    "payment_methods": "Available Payment Methods",
+    "submit_btn": "Complete Contribution",
+    "processing": "Processing...",
+    "success_title": "Contribution successful. Thank you.",
+    "success_msg": "Your contribution translates into real improvements—and returns as a good impact in the place you love.",
+    "back_home": "Back to Home",
+    "view_roadmap": "Follow what we're developing now",
+    "feedback_title": "Do you have an idea or a message you'd like to deliver?",
+    "feedback_placeholder": "Write your message here...",
+    "feedback_send": "Send",
+    "feedback_success": "We received your message, thank you.",
+    "contributors_list": "Contributors List",
+    "transparency": "Transparency",
+    "transparency_desc": "Displaying names is completely optional, and we are committed to the highest standards of transparency in managing contributions.",
+    "no_contributors": "No names to display currently.",
+    "min_amount_error": "Minimum contribution is 10 EGP",
+    "max_amount_error": "Maximum contribution is 100,000 EGP",
+    "invalid_amount": "Please enter a valid amount"
+  },
+  "careers": {
+    "title": "Join the Haqak Team",
+    "subtitle": "Help build the future of civic communication in Egypt",
+    "hero_title": "We Build Bridges Between Citizens and Decisions",
+    "hero_desc": "At Haqak, we believe technology can change the lives of millions. Join us to innovate technical solutions that enhance transparency and accountability.",
+    "why_title": "Why Work at Haqak?",
+    "why_remote": "Remote-First",
+    "why_remote_desc": "We believe in flexibility and productivity from anywhere.",
+    "why_growth": "Continuous Learning & Growth",
+    "why_growth_desc": "An environment that supports innovation and skill development.",
+    "why_inclusion": "Inclusion & Diversity",
+    "why_inclusion_desc": "We welcome everyone and value differences.",
+    "why_security": "Security & Privacy",
+    "why_security_desc": "We are committed to the highest data protection standards.",
+    "roles_title": "Open Roles",
+    "roles_not_found": "Not seeing your role?",
+    "roles_apply_anyway": "If you are passionate about what we do, send a proactive application and we'll be in touch.",
+    "apply_title": "How to Apply",
+    "apply_desc": "The process is simple and clear; we are waiting for your creativity.",
+    "apply_button": "Apply Now!",
+    "apply_email": "Or send your CV to team@haqak.org",
+    "apply_requirements": "Please attach: CV, Portfolio, and why you are interested.",
+    "values_title": "Our Core Values",
+    "values_impact": "Impact",
+    "values_impact_desc": "We strive to make a real and tangible difference.",
+    "values_openness": "Openness",
+    "values_openness_desc": "Transparency is the foundation of our communication.",
+    "values_security": "Security",
+    "values_security_desc": "We protect everyone's privacy without exception.",
+    "values_growth": "Growth",
+    "values_growth_desc": "We evolve constantly to keep up with challenges.",
+    "engineering": "Engineering",
+    "product_design": "Product & Design",
+    "commercial": "Commercial & Marketing",
+    "legal_admin": "Legal & Admin",
+    "role_fullstack": "Full-Stack TypeScript Engineer",
+    "role_mobile": "Mobile Developer (iOS & Android)",
+    "role_cyber": "Cybersecurity Specialist",
+    "role_devops": "DevOps Engineer",
+    "role_ai": "AI/ML Specialist",
+    "role_qa": "QA/Test Automation",
+    "role_pm": "Product Manager",
+    "role_uiux": "UX/UI Designer",
+    "role_content": "Content Writer",
+    "role_sales": "Business Development / Sales Manager",
+    "role_marketing": "Marketing Specialist",
+    "role_legal": "Legal Advisor"
   },
   "dashboard": {
     "my_issues": "My Issues",
@@ -156,7 +244,8 @@
     "loading": "Loading...",
     "error_submit": "Error submitting issue",
     "rejected": "Issue rejected",
-    "issue_type_label": "Issue Type"
+    "issue_type_label": "Issue Type",
+    "file_integrity_failed": "File integrity check failed"
   },
   "mp_dashboard": {
     "title": "MP Dashboard",
@@ -226,6 +315,7 @@
     "role_citizen": "Citizen",
     "role_mp": "MP",
     "role_admin": "Admin",
+    "role_moderator": "Moderator",
     "pending_count": "Pending Approval",
     "error": "An error occurred",
     "issues_by_gov": "Issues by Governorate",
@@ -243,7 +333,15 @@
     "filter_banned": "Banned",
     "filter_governorate": "Governorate",
     "all_governorates": "All Governorates",
-    "search_issues": "Search issues..."
+    "search_issues": "Search issues...",
+    "ban": "Temp Ban",
+    "unban": "Unban",
+    "ban_confirm_title": "Confirm Temporary Ban",
+    "ban_confirm_message": "This user will be banned for 7 days and prevented from submitting issues:",
+    "unban_confirm_title": "Confirm Unban",
+    "unban_confirm_message": "This user will be immediately unbanned:",
+    "user_banned": "User temporarily banned",
+    "user_unbanned": "User ban removed"
   },
   "profile": {
     "title": "Profile",
@@ -297,7 +395,7 @@
     "phone": "Phone Number",
     "phone_placeholder": "01xxxxxxxxx",
     "registration_number": "Membership Number",
-    "registration_number_placeholder": "Enter membership number (1-568)",
+    "registration_number_placeholder": "Enter membership number",
     "email": "Email",
     "email_placeholder": "example@email.com",
     "password": "Password",
@@ -322,6 +420,9 @@
     "password_mix_error": "Password must contain both letters and numbers",
     "membership_number_invalid": "Membership number must be a valid number",
     "membership_number_out_of_range": "Membership number must be between 1 and 568",
+    "governorate_invalid": "Select a valid governorate",
+    "district_invalid": "Select a district within the governorate",
+    "electoral_district_invalid": "Select a valid electoral district for this district",
     "enter_email": "Enter your email address",
     "timeout_error": "Connection is slow. Check your internet connection and try again",
     "network_error": "Internet connection issue. Check your connection and try again",
@@ -336,6 +437,7 @@
     "error_rate_limit": "Too many emails sent. Try again later",
     "error_security_wait": "For security purposes, please wait before trying again",
     "error_too_many": "Too many attempts. Please wait and try again",
+    "form_invalid": "Please complete all required fields correctly before requesting the code",
     "verify_otp": "Verify Code",
     "verify_otp_subtitle": "Enter the verification code sent to your phone",
     "otp_code": "Verification Code",
@@ -359,15 +461,26 @@
     "password_requirements": "Must contain 8 characters, letters and numbers",
     "select_governorate": "Select Governorate",
     "select_district": "Select District",
-    "display_name": "Display Name (Optional)",
+    "display_name": "Display Name (required for MPs)",
     "display_name_placeholder": "e.g., Abu Hamza",
+    "national_id": "National ID",
+    "national_id_placeholder": "14-digit Egyptian National ID",
+    "national_id_incomplete": "National ID must be 14 digits",
+    "national_id_invalid": "Invalid National ID. Please enter a correct 14-digit Egyptian ID.",
+    "national_id_valid": "National ID looks valid",
+    "not_egyptian_citizen": "This National ID does not belong to an Egyptian citizen",
     "electoral_district": "Electoral District",
     "electoral_district_placeholder": "Enter electoral district name",
+    "select_electoral_district": "Select Electoral District",
     "governorate": "Governorate",
     "governorate_placeholder": "Select governorate",
     "district": "District / Section",
     "district_placeholder": "Select district or section",
-    "terms_agreement": "By signing up, you agree to our Terms of Service and Privacy Policy"
+    "terms_agreement": "By signing up, you agree to our Terms of Service and Privacy Policy",
+    "error_pattern_mismatch": "Account data error. Please verify all fields and try again",
+    "signup_success_title": "Congratulations! 🎉",
+    "signup_success_body": "Your account has been created successfully",
+    "signup_success_redirect": "Redirecting you to login..."
   },
   "mp_pending": {
     "pending_title": "Your Account is Under Review",
@@ -393,7 +506,7 @@
     "approved_success": "Your account has been approved!",
     "redirecting": "Redirecting to dashboard...",
     "auto_check_info": "Your account status will be checked automatically every 10 seconds",
-    "contact_support": "If you have any questions, please contact our support team",
+    "contact_support": "If you have any questions, please reach our support team at support@haqak.org",
     "logout": "Sign Out"
   },
   "mps_directory": {
@@ -428,18 +541,97 @@
     "no_data": "No data yet"
   },
   "privacy_policy": {
-    "title": "Privacy Policy",
+    "title": "Privacy Policy for Civic Communication",
     "subtitle": "This page explains how we handle your data when using Haqak, and what your rights and data protection mechanisms are.",
     "badge": "Privacy Policy",
     "see_also": "You can also view",
-    "terms_link": "Terms of Service"
+    "terms_link": "Terms of Service",
+    "sections": [
+      {
+        "icon": "alert",
+        "title": "Important Notice",
+        "content": "The application is not an official government entity. It is a civic communication platform between citizens and representatives. Its purpose is to organize and clarify follow-up, not to replace official government channels."
+      },
+      {
+        "icon": "data",
+        "title": "Data We Collect",
+        "content": "We may collect your name, phone number, email, account details, complaint information, attachments you upload, and limited technical data needed to improve performance and user experience."
+      },
+      {
+        "icon": "eye",
+        "title": "How We Use Data",
+        "content": "Data is used to manage accounts, improve the service, route issues to relevant members of parliament, send notifications, and streamline follow-up for clarity and efficiency."
+      },
+      {
+        "icon": "lock",
+        "title": "Data Protection",
+        "content": "We commit to protecting user data and not sharing it with third parties without explicit consent unless legally required. We apply appropriate technical and organizational measures to secure stored and processed data."
+      },
+      {
+        "icon": "user",
+        "title": "Citizen Phone Privacy",
+        "content": "Citizen phone numbers are not publicly displayed in the platform. They are shared only with the relevant member of parliament when direct contact is needed for the submitted issue."
+      },
+      {
+        "icon": "bell",
+        "title": "Notifications & Communication",
+        "content": "We may use contact details to send critical updates about your case status or account and policy changes, keeping you informed about your request."
+      },
+      {
+        "icon": "trash",
+        "title": "User Rights",
+        "content": "You can request to edit or delete your data and can request account closure in line with platform policies. For any privacy or data protection inquiries, contact: admin@haqak.org"
+      }
+    ]
   },
   "terms_of_service": {
-    "title": "Terms of Service",
+    "title": "Civic Communication Terms of Service",
     "subtitle": "Please read these terms carefully before using Haqak, as they govern how you use the app and its limitations.",
     "badge": "Terms of Service",
     "see_also": "You can also view",
-    "privacy_link": "Privacy Policy"
+    "privacy_link": "Privacy Policy",
+    "sections": [
+      {
+        "icon": "alert",
+        "title": "Important Notice",
+        "content": "The app is not an official government channel. It is a digital civic platform connecting citizens and representatives. Using the app means you accept these terms and conditions."
+      },
+      {
+        "icon": "scale",
+        "title": "Service Nature",
+        "content": "The app acts as a digital intermediary between citizens and members of parliament to facilitate issue submission and follow-up. It does not guarantee specific outcomes or obligate MPs to take certain actions."
+      },
+      {
+        "icon": "shield",
+        "title": "Lawful Use",
+        "content": "You must use the app legally and honestly, providing accurate information and avoiding misleading, unlawful, or harmful activity to others or public entities."
+      },
+      {
+        "icon": "ban",
+        "title": "Prohibited Content",
+        "content": "It is prohibited to submit abusive, defamatory, threatening, hateful, deliberately false, or inappropriate content, or anything that violates law or public morals."
+      },
+      {
+        "icon": "users",
+        "title": "MP Responsibility",
+        "content": "Members of parliament are not obligated to solve every issue submitted. Decisions and handling approaches remain within their own authority and discretion."
+      },
+      {
+        "icon": "gavel",
+        "title": "Platform Rights",
+        "content": "The platform may review, hide, or remove violating content and may suspend or deactivate accounts that breach these terms or harm users or service integrity."
+      },
+      {
+        "icon": "file",
+        "title": "Disclaimer",
+        "content": "The app is provided as-is without explicit or implied warranties. The platform is not liable for non-responses from MPs or for actions taken outside the platform."
+      },
+      {
+        "icon": "contact",
+        "title": "Official Contact",
+        "content": "For any inquiries about terms, usage, or partnerships, reach the project team at: team@haqak.org"
+      }
+    ]
   },
   "not_found": {
     "title": "Page Not Found",
