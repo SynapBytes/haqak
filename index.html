@@ -22,12 +22,8 @@
     <meta property="og:description" content="منصة حقك للتواصل المدني تربط المواطنين بأعضاء مجلس النواب المصري لتقديم المشكلات ومتابعة الحلول بأمان وشفافية.">
     <meta name="twitter:description" content="منصة حقك للتواصل المدني تربط المواطنين بأعضاء مجلس النواب المصري لتقديم المشكلات ومتابعة الحلول بأمان وشفافية.">
   
-    <!-- Security Headers -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
-    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
-    
+
     <style>
       #haqak-splash {
         position: fixed;
@@ -88,48 +84,7 @@
       </div>
     </div>
 
-    <script>
-      (function() {
-        const logo = document.getElementById('splash-logo');
-        const brand = document.getElementById('splash-brand');
-        const splash = document.getElementById('haqak-splash');
-
-        // Stage 1: Show Logo
-        setTimeout(() => {
-          logo.classList.add('active');
-        }, 100);
-
-        // Stage 2: Transition to Brand
-        setTimeout(() => {
-          logo.classList.remove('active');
-          logo.classList.add('fade-out');
-          setTimeout(() => {
-            brand.classList.add('active');
-          }, 400);
-        }, 2000);
-
-        // Stage 3: Exit Splash
-        setTimeout(() => {
-          brand.classList.remove('active');
-          brand.classList.add('fade-out');
-          setTimeout(() => {
-            splash.style.opacity = '0';
-            setTimeout(() => {
-              splash.remove();
-              document.body.style.backgroundColor = '';
-            }, 800);
-          }, 400);
-        }, 4200);
-
-        // Safety: Ensure splash is removed even if something fails
-        setTimeout(() => {
-          if (document.getElementById('haqak-splash')) {
-            document.getElementById('haqak-splash').remove();
-            document.body.style.backgroundColor = '';
-          }
-        }, 6000);
-      })();
-    </script>
+    <script src="/splash.js" defer></script>
 
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
