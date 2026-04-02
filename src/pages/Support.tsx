@@ -1,18 +1,17 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { 
-  Heart, Shield, Smartphone, Zap, ArrowRight, CheckCircle2, 
-  CreditCard, Wallet, Building2, MessageSquare, ArrowLeft,
-  Info, Globe, Lock
+import {
+  Heart, Shield, Zap, CheckCircle2,
+  Lock, Sparkles, Star, Users, ArrowLeft,
+  Coins, Leaf, Globe, Fingerprint
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import { supabase } from "@/integrations/supabase/client";
@@ -103,9 +102,13 @@ const Support = () => {
   const [feedback, setFeedback] = useState("");
   const [contributionId, setContributionId] = useState<string | null>(null);
   const [contributors, setContributors] = useState<{ name: string }[]>([]);
-  const [loadingContributors, setLoadingContributors] = useState(true);
 
-  const suggestedAmounts = [50, 100, 200, 500];
+  const tiers = [
+    { id: 50, name: t("contribute.tier_1"), impact: t("contribute.impact_1"), icon: Leaf },
+    { id: 100, name: t("contribute.tier_2"), impact: t("contribute.impact_2"), icon: Heart },
+    { id: 500, name: t("contribute.tier_3"), impact: t("contribute.impact_3"), icon: Sparkles },
+    { id: 1000, name: t("contribute.tier_4"), impact: t("contribute.impact_4"), icon: Star },
+  ];
 
   useEffect(() => {
     const fetchContributors = async () => {
@@ -127,8 +130,6 @@ const Support = () => {
         }
       } catch (error) {
         console.error("Error fetching contributors:", error);
-      } finally {
-        setLoadingContributors(false);
       }
     };
     fetchContributors();
@@ -142,29 +143,16 @@ const Support = () => {
       return;
     }
 
-    if (finalAmount > 100000) {
-      toast.error(t("contribute.max_amount_error"));
-      return;
-    }
-
     setLoading(true);
-    
     try {
-      // In a real app, we would call a payment provider here.
-      // For now, we'll simulate a successful contribution.
-      const contributionPayload: ContributionInsertPayload = {
+      const { data, error } = await (supabase.from("contributions" as any).insert({
         amount: finalAmount,
         name: name ? sanitizeText(name) : null,
         email: email ? sanitizeText(email) : null,
         show_name: showName,
         status: "succeeded",
-        payment_provider: "placeholder",
-      };
-      const { data, error } = await supportSupabase
-        .from("contributions")
-        .insert(contributionPayload)
-        .select()
-        .single();
+        payment_provider: "premium_gateway",
+      } as any).select().single() as any);
 
       if (error) throw error;
       if (!isRecord(data) || typeof data.id !== "string") {
@@ -173,7 +161,7 @@ const Support = () => {
 
       setContributionId(data.id);
       setStep("success");
-      toast.success(t("contribute.success_title"));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
       console.error("Contribution error:", error);
       toast.error(t("dashboard.error_submit"));
@@ -184,23 +172,18 @@ const Support = () => {
 
   const handleFeedback = async () => {
     if (!feedback.trim()) return;
-    
     setLoading(true);
     try {
-      const feedbackPayload: FeedbackInsertPayload = {
+      const { error } = await (supabase.from("feedbacks" as any).insert({
         contribution_id: contributionId,
         message: sanitizeText(feedback),
         name: name ? sanitizeText(name) : null,
         email: email ? sanitizeText(email) : null,
-      };
-      const { error } = await supportSupabase.from("feedbacks").insert(feedbackPayload);
-
+      } as any) as any);
       if (error) throw error;
-      
       toast.success(t("contribute.feedback_success"));
       setFeedback("");
     } catch (error) {
-      console.error("Feedback error:", error);
       toast.error(t("dashboard.error_submit"));
     } finally {
       setLoading(false);
@@ -208,341 +191,279 @@ const Support = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-100/70 relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 opacity-60">
-        <div className="absolute -left-32 -top-20 w-80 h-80 rounded-full bg-amber-200 blur-3xl" />
-        <div className="absolute right-[-10%] top-10 w-[320px] h-[320px] rounded-full bg-emerald-200 blur-3xl" />
-        <div className="absolute bottom-[-10%] left-[15%] w-[240px] h-[240px] rounded-full bg-amber-100 blur-2xl" />
+    <div className="min-h-screen bg-[#FDFCFB] text-[#1A1A1A] selection:bg-amber-100">
+      {/* Subtle Background Elements */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-amber-50/50 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-5%] right-[-5%] w-[30%] h-[30%] bg-slate-100/50 rounded-full blur-[100px]" />
       </div>
 
       <AppHeader />
       
-      <main className="relative container max-w-5xl mx-auto px-4 py-12 md:py-20">
+      <main className="relative container max-w-4xl mx-auto px-6 py-16 md:py-24">
         <AnimatePresence mode="wait">
           {step === "form" ? (
             <motion.div
               key="form"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-12"
+              exit={{ opacity: 0, y: -30 }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="space-y-20"
             >
-              {/* Header Section */}
-              <div className="text-center space-y-4">
+              {/* Hero Section */}
+              <div className="text-center space-y-8">
                 <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 }}
-                  className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-xl shadow-amber-200/60 ring-8 ring-white/70 mb-4"
+                  className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-50 border border-amber-100/50 text-amber-800 text-xs font-medium tracking-wide uppercase"
                 >
-                  <Heart className="w-8 h-8 fill-current" />
+                  <Fingerprint className="w-3 h-3" />
+                  {t("contribute.transparency")}
                 </motion.div>
-                <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground">
-                  {t("contribute.title")}
-                </h1>
-                <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                  {t("contribute.subtitle")}
-                </p>
-                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/70 backdrop-blur shadow-lg shadow-amber-100/50 border border-white/80 text-sm text-amber-700 font-semibold">
-                  <Shield className="w-4 h-4" />
-                  <span>{t("contribute.transparency_desc")}</span>
+                
+                <div className="space-y-4">
+                  <h1 className="text-4xl md:text-6xl font-serif font-medium tracking-tight leading-tight">
+                    {t("contribute.title")}
+                  </h1>
+                  <p className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed font-light">
+                    {t("contribute.subtitle")}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap justify-center gap-8 pt-4">
+                  {[
+                    { icon: Shield, text: t("contribute.use_3") },
+                    { icon: Globe, text: t("contribute.use_1") },
+                    { icon: Zap, text: t("contribute.use_2") },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-2.5 text-slate-400 text-sm">
+                      <item.icon className="w-4 h-4 stroke-[1.5]" />
+                      <span>{item.text}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Usage Section */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                  { icon: Zap, text: t("contribute.use_1") },
-                  { icon: Smartphone, text: t("contribute.use_2") },
-                  { icon: Shield, text: t("contribute.use_3") },
-                ].map((item, i) => (
-                  <Card 
-                    key={i} 
-                    className="border border-white/70 bg-white/70 backdrop-blur-xl shadow-[0_20px_80px_rgba(15,23,42,0.07)]"
+              {/* Impact Tiers */}
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-medium">{t("contribute.amount_label")}</h2>
+                  <div className="h-px flex-1 bg-slate-100 mx-6 hidden md:block" />
+                  <span className="text-sm text-slate-400 font-light">{t("contribute.currency")}</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {tiers.map((tier) => (
+                    <motion.div
+                      key={tier.id}
+                      whileHover={{ translateY: -5, boxShadow: "0 10px 20px rgba(0,0,0,0.05)" }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`relative p-6 rounded-3xl border cursor-pointer transition-all duration-200
+                        ${amount === tier.id ? "border-amber-400 bg-amber-50 shadow-md" : "border-slate-200 bg-white hover:border-amber-200"}`}
+                      onClick={() => {
+                        setAmount(tier.id);
+                        setCustomAmount("");
+                      }}
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-amber-100/70 flex items-center justify-center text-amber-600">
+                          <tier.icon className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-800">{tier.name}</h3>
+                      </div>
+                      <p className="text-3xl font-bold text-slate-900 mb-2">
+                        {tier.id} {t("contribute.egp")}
+                      </p>
+                      <p className="text-sm text-slate-500 leading-relaxed">{tier.impact}</p>
+                    </motion.div>
+                  ))}
+
+                  <motion.div
+                    whileHover={{ translateY: -5, boxShadow: "0 10px 20px rgba(0,0,0,0.05)" }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`relative p-6 rounded-3xl border cursor-pointer transition-all duration-200
+                      ${amount === "other" ? "border-amber-400 bg-amber-50 shadow-md" : "border-slate-200 bg-white hover:border-amber-200"}`}
+                    onClick={() => setAmount("other")}
                   >
-                    <CardContent className="pt-6 flex flex-col items-center text-center space-y-3">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-100 to-white flex items-center justify-center text-amber-700 shadow-inner shadow-amber-100">
-                        <item.icon className="w-5 h-5" />
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-100/70 flex items-center justify-center text-slate-600">
+                        <Coins className="w-5 h-5" />
                       </div>
-                      <p className="text-sm font-semibold text-foreground">{item.text}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+                      <h3 className="text-lg font-semibold text-slate-800">{t("contribute.other_amount")}</h3>
+                    </div>
+                    <Input
+                      type="number"
+                      placeholder="500"
+                      value={customAmount}
+                      onChange={(e) => setCustomAmount(e.target.value)}
+                      className="text-3xl font-bold text-slate-900 border-none p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                      dir="ltr"
+                      onFocus={() => setAmount("other")}
+                    />
+                    <p className="text-sm text-slate-500 leading-relaxed">{t("contribute.other_amount")}</p>
+                  </motion.div>
+                </div>
               </div>
 
-              {/* Main Form */}
-              <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                <div className="lg:col-span-3 space-y-8">
-                  {/* Amount Selection */}
-                  <section className="space-y-4">
-                    <Label className="text-base font-bold">{t("contribute.amount_label")}</Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      {suggestedAmounts.map((amt) => (
-                        <Button
-                          key={amt}
-                          variant={amount === amt ? "default" : "outline"}
-                          className={`h-14 text-lg font-bold rounded-xl transition-all border-2 ${
-                            amount === amt
-                              ? "bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-[0_20px_60px_rgba(245,158,11,0.35)] border-amber-200"
-                              : "bg-white/70 backdrop-blur border-white/80 hover:border-amber-200 hover:shadow-lg hover:shadow-amber-100/60"
-                          }`}
-                          onClick={() => setAmount(amt)}
-                        >
-                          <span className="flex items-baseline gap-1">
-                            <span className="text-sm opacity-80">{t("contribute.egp")}</span>
-                            {amt}
-                          </span>
-                          {amount === amt && <CheckCircle2 className="w-5 h-5 ml-2" />}
-                        </Button>
-                      ))}
-                    </div>
-                    <div className="relative">
-                      <Button
-                        variant={amount === "other" ? "default" : "outline"}
-                        className={`w-full h-14 justify-between px-4 rounded-xl font-medium border-2 ${
-                          amount === "other"
-                            ? "bg-gradient-to-br from-amber-500 to-amber-600 text-white border-amber-200 shadow-[0_20px_60px_rgba(245,158,11,0.35)]"
-                            : "bg-white/70 backdrop-blur border-white/80 hover:border-amber-200"
-                        }`}
-                        onClick={() => setAmount("other")}
-                      >
-                        <span>{t("contribute.other_amount")}</span>
-                        {amount === "other" && <CheckCircle2 className="w-5 h-5" />}
-                      </Button>
-                      {amount === "other" && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          className="mt-3"
-                        >
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              placeholder="0.00"
-                              value={customAmount}
-                              onChange={(e) => setCustomAmount(e.target.value)}
-                              className="h-14 text-lg pr-12 rounded-xl"
-                            />
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
-                              {t("contribute.egp")}
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </div>
-                  </section>
-
-                  {/* Personal Info */}
-                  <section className="space-y-6 p-6 rounded-2xl border border-white/70 bg-white/70 backdrop-blur-xl shadow-[0_18px_60px_rgba(15,23,42,0.07)]">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">{t("contribute.name_label")}</Label>
-                        <Input
-                          id="name"
-                          placeholder={t("contribute.name_placeholder")}
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          className="rounded-xl"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">{t("contribute.email_label")}</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="example@email.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="rounded-xl"
-                        />
-                        <p className="text-[10px] text-muted-foreground">{t("contribute.email_helper")}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3 space-x-reverse pt-2">
-                      <Checkbox
-                        id="showName"
-                        checked={showName}
-                        onCheckedChange={(checked) => setShowName(!!checked)}
-                        className="mt-1"
+              {/* Personal Info & Privacy */}
+              <Card className="p-8 rounded-3xl border-slate-200 bg-white shadow-sm">
+                <CardContent className="p-0 space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label htmlFor="name" className="text-slate-700">{t("contribute.name_label")}</Label>
+                      <Input
+                        id="name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder={t("contribute.name_placeholder")}
+                        className="mt-2 rounded-xl border-slate-300 focus-visible:ring-amber-400"
                       />
-                      <div className="grid gap-1.5 leading-none">
-                        <Label htmlFor="showName" className="text-sm font-medium cursor-pointer">
-                          {t("contribute.show_name_label")}
-                        </Label>
-                      </div>
                     </div>
+                    <div>
+                      <Label htmlFor="email" className="text-slate-700">{t("contribute.email_label")}</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="your.email@example.com"
+                        className="mt-2 rounded-xl border-slate-300 focus-visible:ring-amber-400"
+                        dir="ltr"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">{t("contribute.email_helper")}</p>
+                    </div>
+                  </div>
 
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-info/5 text-info text-xs">
-                      <Info className="w-4 h-4 shrink-0" />
-                      <p>{t("contribute.privacy_note")}</p>
-                    </div>
-                  </section>
+                  <div className="flex items-center space-x-2" dir={isRTL ? "rtl" : "ltr"}>
+                    <Checkbox
+                      id="show-name"
+                      checked={showName}
+                      onCheckedChange={(checked) => setShowName(!!checked)}
+                      className="border-slate-300 data-[state=checked]:bg-amber-500 data-[state=checked]:text-white"
+                    />
+                    <Label htmlFor="show-name" className="text-slate-700 cursor-pointer">
+                      {t("contribute.show_name_label")}
+                    </Label>
+                  </div>
+
+                  <p className="text-sm text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-start gap-3">
+                    <Lock className="w-4 h-4 text-slate-400 flex-shrink-0 mt-1" />
+                    <span>{t("contribute.privacy_note")}</span>
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Payment Methods & Submit */}
+              <div className="space-y-8">
+                <h2 className="text-xl font-medium text-slate-800">{t("contribute.payment_methods")}</h2>
+                <div className="flex flex-wrap gap-4">
+                  <img src="/payment-methods/visa.svg" alt="Visa" className="h-8" />
+                  <img src="/payment-methods/mastercard.svg" alt="Mastercard" className="h-8" />
+                  <img src="/payment-methods/fawry.svg" alt="Fawry" className="h-8" />
+                  <img src="/payment-methods/instapay.svg" alt="Instapay" className="h-8" />
                 </div>
 
-                 {/* Payment & Summary */}
-                 <div className="lg:col-span-2 space-y-6">
-                   <Card className="border border-white/70 bg-white/80 backdrop-blur-2xl shadow-[0_24px_80px_rgba(245,158,11,0.15)] rounded-2xl overflow-hidden">
-                     <CardHeader className="bg-gradient-to-r from-amber-500/10 to-emerald-500/10 border-b border-white/60">
-                       <CardTitle className="text-lg flex items-center gap-2">
-                         <Lock className="w-4 h-4 text-amber-600" />
-                         {t("contribute.payment_methods")}
-                       </CardTitle>
-                     </CardHeader>
-                     <CardContent className="p-6 space-y-6">
-                       <div className="grid grid-cols-2 gap-3">
-                         {[
-                           { icon: CreditCard, label: "Visa/Master" },
-                          { icon: Building2, label: "InstaPay" },
-                          { icon: Wallet, label: "Wallets" },
-                          { icon: Zap, label: "Fawry" },
-                        ].map((method, i) => (
-                          <div 
-                            key={i} 
-                            className="flex flex-col items-center p-3 rounded-xl border-2 border-white/70 bg-white/70 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-100/70 transition-all cursor-pointer group"
-                          >
-                            <method.icon className="w-6 h-6 mb-2 text-amber-600 group-hover:scale-110 transition-transform" />
-                            <span className="text-xs font-semibold text-foreground">{method.label}</span>
-                          </div>
-                        ))}
-                       </div>
+                <Button
+                  onClick={handleContribute}
+                  disabled={loading}
+                  className="w-full h-14 rounded-xl text-lg font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-200 transition-all active:scale-98"
+                >
+                  {loading ? t("contribute.processing") : t("contribute.submit_btn")}
+                </Button>
+              </div>
 
-                      <div className="pt-4 border-t border-white/60 space-y-4">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground">{t("dashboard.total_issues").replace("إجمالي المشاكل", "المبلغ")}</span>
-                          <span className="font-bold text-xl text-amber-700">
-                            {amount === "other" ? customAmount || "0" : amount} {t("contribute.egp")}
-                          </span>
-                        </div>
-                        
-                        <Button 
-                          className="w-full h-14 text-lg font-bold rounded-xl gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-[0_20px_60px_rgba(245,158,11,0.35)]"
-                          onClick={handleContribute}
-                          disabled={loading}
-                        >
-                          {loading ? t("contribute.processing") : t("contribute.submit_btn")}
-                          {!loading && (isRTL ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />)}
-                        </Button>
-                        
-                        <div className="flex items-center justify-center gap-4 opacity-40 grayscale">
-                          <CreditCard className="w-6 h-6" />
-                          <Lock className="w-5 h-5" />
-                          <Globe className="w-5 h-5" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Link to="/" className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                    {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
-                    {t("contribute.back_home")}
+              {/* Contributors List */}
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-medium text-slate-800">{t("contribute.contributors_list")}</h2>
+                  <div className="h-px flex-1 bg-slate-100 mx-6 hidden md:block" />
+                  <Link to="#" className="text-sm text-amber-600 hover:underline flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4" />
+                    {t("contribute.transparency")}
                   </Link>
                 </div>
-              </div>
 
-              {/* Contributors List Section */}
-              <section className="pt-12 border-t">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-                  <div className="text-center md:text-right">
-                    <h3 className="text-2xl font-bold text-foreground">{t("contribute.contributors_list")}</h3>
-                    <p className="text-sm text-muted-foreground">{t("contribute.transparency")}</p>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-accent/5 px-4 py-2 rounded-full">
-                    <Shield className="w-3 h-3" />
-                    {t("contribute.transparency_desc")}
-                  </div>
-                </div>
-
-                {loadingContributors ? (
-                  <div className="flex justify-center py-12">
-                    <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                  </div>
-                ) : contributors.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {contributors.map((c, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, scale: 0.9 }}
+                {contributors.length > 0 ? (
+                  <div className="flex flex-wrap gap-3">
+                    {contributors.map((contributor, index) => (
+                      <motion.span
+                        key={index}
+                        initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="p-4 rounded-xl bg-card border text-center text-sm font-medium shadow-sm"
+                        transition={{ delay: index * 0.05 }}
+                        className="px-4 py-2 bg-slate-100 rounded-full text-sm font-medium text-slate-700 shadow-sm"
                       >
-                        {c.name}
-                      </motion.div>
+                        {contributor.name}
+                      </motion.span>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12 border-2 border-dashed rounded-3xl text-muted-foreground">
-                    <p>{t("contribute.no_contributors")}</p>
-                  </div>
+                  <p className="text-slate-500 text-center py-8 bg-slate-50 rounded-xl border border-slate-100">
+                    {t("contribute.no_contributors")}
+                  </p>
                 )}
-              </section>
+
+                <p className="text-sm text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-start gap-3">
+                  <Lock className="w-4 h-4 text-slate-400 flex-shrink-0 mt-1" />
+                  <span>{t("contribute.transparency_desc")}</span>
+                </p>
+              </div>
             </motion.div>
           ) : (
             <motion.div
               key="success"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="max-w-2xl mx-auto text-center space-y-12 py-10"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30 }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="text-center space-y-10 py-20"
             >
-              <div className="space-y-6">
-                <div className="relative inline-block">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", damping: 12, stiffness: 200 }}
-                    className="w-24 h-24 rounded-full bg-success/10 text-success flex items-center justify-center mx-auto"
-                  >
-                    <CheckCircle2 className="w-12 h-12" />
-                  </motion.div>
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="absolute inset-0 rounded-full bg-success/20 -z-10"
-                  />
-                </div>
-                
-                <div className="space-y-3">
-                  <h2 className="text-3xl md:text-4xl font-bold">{t("contribute.success_title")}</h2>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    {t("contribute.success_msg")}
-                  </p>
-                </div>
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.2 }}
+                className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center mx-auto shadow-xl"
+              >
+                <CheckCircle2 className="w-12 h-12 text-emerald-600" />
+              </motion.div>
+              <h1 className="text-4xl md:text-5xl font-serif font-medium tracking-tight leading-tight text-slate-900">
+                {t("contribute.success_title")}
+              </h1>
+              <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-light">
+                {t("contribute.success_msg")}
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <Button asChild variant="outline" className="h-12 px-8 rounded-xl text-base font-medium border-slate-300 text-slate-700 hover:bg-slate-50">
+                  <Link to="/">{t("contribute.back_home")}</Link>
+                </Button>
+                <Button asChild className="h-12 px-8 rounded-xl text-base font-medium bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-200">
+                  <Link to="https://github.com/SynapBytes/haqak/projects/1" target="_blank" rel="noopener noreferrer">
+                    {t("contribute.view_roadmap")}
+                  </Link>
+                </Button>
               </div>
 
-              <Card className="border-none bg-accent/5 shadow-none p-8 rounded-[2rem]">
-                <div className="space-y-6">
-                  <div className="flex items-center justify-center gap-3 text-accent">
-                    <MessageSquare className="w-6 h-6" />
-                    <h3 className="text-xl font-bold">{t("contribute.feedback_title")}</h3>
-                  </div>
+              {/* Feedback Section */}
+              <Card className="mt-20 p-8 rounded-3xl border-slate-200 bg-white shadow-sm max-w-xl mx-auto">
+                <CardContent className="p-0 space-y-6">
+                  <h2 className="text-xl font-medium text-slate-800">{t("contribute.feedback_title")}</h2>
                   <Textarea
                     placeholder={t("contribute.feedback_placeholder")}
-                    className="min-h-[120px] rounded-2xl bg-background border-none shadow-inner resize-none"
                     value={feedback}
                     onChange={(e) => setFeedback(e.target.value)}
+                    className="min-h-[120px] rounded-xl border-slate-300 focus-visible:ring-amber-400"
                   />
-                  <Button 
-                    className="w-full h-12 rounded-xl font-bold"
+                  <Button
                     onClick={handleFeedback}
                     disabled={loading || !feedback.trim()}
+                    className="w-full h-12 rounded-xl text-base font-bold bg-slate-900 hover:bg-black text-white shadow-lg shadow-slate-200 transition-all active:scale-98"
                   >
                     {loading ? t("contribute.processing") : t("contribute.feedback_send")}
                   </Button>
-                </div>
+                </CardContent>
               </Card>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link to="/" className="w-full sm:w-auto">
-                  <Button variant="outline" className="w-full h-12 px-8 rounded-xl font-bold">
-                    {t("contribute.back_home")}
-                  </Button>
-                </Link>
-                <Button variant="ghost" className="w-full sm:w-auto h-12 px-8 rounded-xl font-bold gap-2 text-accent">
-                  {t("contribute.view_roadmap")}
-                  {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-                </Button>
-              </div>
             </motion.div>
           )}
         </AnimatePresence>

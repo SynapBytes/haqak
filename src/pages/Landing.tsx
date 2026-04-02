@@ -1121,13 +1121,13 @@ const Landing = () => {
               <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-accent/10 transition-colors" />
               <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                 <div className="text-center md:text-right space-y-2">
-                  <h4 className="text-xl font-bold text-foreground">{t("footer.support_haqak")}</h4>
-                  <p className="text-sm text-muted-foreground max-w-md">{t("footer.support_haqak_desc")}</p>
+                  <h4 className="text-xl font-serif font-medium text-slate-900">{t("footer.support_haqak")}</h4>
+                  <p className="text-sm text-slate-500 max-w-md font-light leading-relaxed">{t("footer.support_haqak_desc")}</p>
                 </div>
                 <Link to="/support">
-                  <Button className="h-12 px-8 rounded-xl font-bold gap-2 shadow-lg shadow-accent/20 hover:shadow-accent/30 transition-all">
+                  <Button className="h-12 px-8 rounded-2xl font-medium gap-2.5 bg-slate-900 hover:bg-black text-white shadow-xl shadow-slate-200 transition-all active:scale-95">
                     {t("footer.support_haqak_btn")}
-                    <Heart className="w-4 h-4 fill-current" />
+                    <Sparkles className="w-4 h-4" />
                   </Button>
                 </Link>
               </div>

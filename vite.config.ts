@@ -6,9 +6,12 @@ import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
+    host: "0.0.0.0",
     port: 8080,
     hmr: {
+      protocol: "ws",
+      host: "8080-i8a1lm6pwyyjjist72jta-c2a2b1bd.sg1.manus.computer",
+      clientPort: 443,
       overlay: false,
     },
   },
