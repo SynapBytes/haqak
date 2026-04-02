@@ -24,14 +24,8 @@ const getSavedLang = () => {
     /* ignore storage read failures */
   }
 
-  let navigatorLang: string | null = null;
-  try {
-    navigatorLang = navigator.language || null;
-  } catch {
-    /* ignore navigator access failures */
-  }
-
-  return resolveLang(stored || navigatorLang);
+  // Only use saved preference; default to Arabic for first-time visitors
+  return resolveLang(stored || DEFAULT_LANG);
 };
 
 const updateDocumentLanguage = (lang: string) => {

@@ -11,11 +11,16 @@ const ThemeContext = createContext<ThemeContextType>({ theme: "light", toggleThe
 
 export const useTheme = () => useContext(ThemeContext);
 
+const getTimeBasedTheme = (): Theme => {
+  const hour = new Date().getHours();
+  return hour >= 6 && hour < 18 ? "light" : "dark";
+};
+
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem("haqak-theme") as Theme;
     if (saved) return saved;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    return getTimeBasedTheme();
   });
 
   useEffect(() => {
