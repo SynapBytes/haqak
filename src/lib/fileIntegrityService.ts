@@ -21,7 +21,7 @@ export async function sha256Hex(data: ArrayBuffer | Uint8Array): Promise<string>
       ? new Uint8Array(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength))
       : new Uint8Array(data);
 
-  const hashBuf = await subtle.digest("SHA-256", bytes as ArrayBuffer);
+  const hashBuf = await subtle.digest("SHA-256", bytes as unknown as ArrayBuffer);
   return Array.from(new Uint8Array(hashBuf))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
