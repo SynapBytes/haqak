@@ -87,6 +87,42 @@ export type Database = {
           },
         ]
       }
+      centers: {
+        Row: {
+          created_at: string
+          district_ar: string
+          district_en: string
+          electoral_district_ar: string | null
+          electoral_district_en: string | null
+          electoral_seats: number | null
+          governorate_ar: string
+          governorate_en: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          district_ar: string
+          district_en: string
+          electoral_district_ar?: string | null
+          electoral_district_en?: string | null
+          electoral_seats?: number | null
+          governorate_ar: string
+          governorate_en: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          district_ar?: string
+          district_en?: string
+          electoral_district_ar?: string | null
+          electoral_district_en?: string | null
+          electoral_seats?: number | null
+          governorate_ar?: string
+          governorate_en?: string
+          id?: string
+        }
+        Relationships: []
+      }
       fcm_tokens: {
         Row: {
           created_at: string
@@ -320,15 +356,18 @@ export type Database = {
           avatar_url: string | null
           banned_until: string | null
           center: string | null
+          center_id: string | null
           constituency: string | null
           contact_phone: string | null
           created_at: string
+          district: string | null
+          electoral_district: string | null
           full_name: string
           governorate: string | null
           id: string
           is_approved: boolean
+          membership_number: string | null
           phone: string
-          registration_number: string | null
           updated_at: string
           user_id: string
         }
@@ -336,15 +375,18 @@ export type Database = {
           avatar_url?: string | null
           banned_until?: string | null
           center?: string | null
+          center_id?: string | null
           constituency?: string | null
           contact_phone?: string | null
           created_at?: string
+          district?: string | null
+          electoral_district?: string | null
           full_name: string
           governorate?: string | null
           id?: string
           is_approved?: boolean
+          membership_number?: string | null
           phone: string
-          registration_number?: string | null
           updated_at?: string
           user_id: string
         }
@@ -352,15 +394,18 @@ export type Database = {
           avatar_url?: string | null
           banned_until?: string | null
           center?: string | null
+          center_id?: string | null
           constituency?: string | null
           contact_phone?: string | null
           created_at?: string
+          district?: string | null
+          electoral_district?: string | null
           full_name?: string
           governorate?: string | null
           id?: string
           is_approved?: boolean
+          membership_number?: string | null
           phone?: string
-          registration_number?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -447,8 +492,11 @@ export type Database = {
         Row: {
           avatar_url: string | null
           center: string | null
+          center_id: string | null
           constituency: string | null
           contact_phone: string | null
+          district: string | null
+          electoral_district: string | null
           full_name: string | null
           governorate: string | null
           is_approved: boolean | null
@@ -457,8 +505,11 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           center?: string | null
+          center_id?: string | null
           constituency?: string | null
           contact_phone?: string | null
+          district?: string | null
+          electoral_district?: string | null
           full_name?: string | null
           governorate?: string | null
           is_approved?: boolean | null
@@ -467,8 +518,11 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           center?: string | null
+          center_id?: string | null
           constituency?: string | null
           contact_phone?: string | null
+          district?: string | null
+          electoral_district?: string | null
           full_name?: string | null
           governorate?: string | null
           is_approved?: boolean | null
@@ -487,9 +541,13 @@ export type Database = {
         Returns: boolean
       }
       is_active_mp: { Args: { _user_id: string }; Returns: boolean }
+      resolve_center_id: {
+        Args: { _district: string; _governorate: string }
+        Returns: string
+      }
     }
     Enums: {
-      app_role: "citizen" | "mp" | "admin"
+      app_role: "citizen" | "mp" | "admin" | "moderator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -617,7 +675,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["citizen", "mp", "admin"],
+      app_role: ["citizen", "mp", "admin", "moderator"],
     },
   },
 } as const

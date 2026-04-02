@@ -166,12 +166,17 @@ const Auth = () => {
         const passwordValid = password.length >= 8 && passwordHasNumber && passwordHasLetter;
         const fullNameValid = fullName.trim().length > 0;
         const commonValid = phoneValid && passwordValid && fullNameValid;
+        const geoValid =
+          isValidGovernorate(governorate) &&
+          isValidDistrictForGovernorate(governorate, district) &&
+          !governorateError &&
+          !districtError;
         
         if (mode === "signup-citizen") {
           const nationalIdValid = nationalId.length === 14 && 
                                  validateEgyptianId(nationalId) && 
                                  nationalIdError === "";
-          return commonValid && nationalIdValid;
+          return commonValid && nationalIdValid && geoValid;
         }
         
         if (mode === "signup-mp") {
@@ -198,7 +203,7 @@ const Auth = () => {
   }, [mode, phone, password, passwordHasNumber, passwordHasLetter, fullName, displayName, governorate, district, electoralDistrict, registrationNumber, membershipNumberError, nationalId, nationalIdError, governorateError, districtError, electoralError, phoneRegex, membershipNumberRegex]);
 
   useEffect(() => {
-    if (!mode.includes("signup-mp")) {
+    if (!mode.includes("signup")) {
       setGovernorateError("");
       setDistrictError("");
       setElectoralError("");
@@ -374,6 +379,10 @@ const Auth = () => {
               role: signupRole,
               ...(mode.includes("citizen") && {
                 national_id: nationalId,
+                governorate,
+                district,
+                center: district,
+                electoral_district: null,
               }),
               ...(mode.includes("mp") && {
                 display_name: displayName,
@@ -381,6 +390,8 @@ const Auth = () => {
                 district,
                 electoral_district: electoralDistrict,
                 registration_number: registrationNumber,
+                membership_number: registrationNumber,
+                center: district,
               }),
             },
             emailRedirectTo: window.location.origin,
@@ -714,23 +725,9 @@ const Auth = () => {
                       </div>
                     )}
 
-                    {/* MP-specific fields */}
-                    {mode.includes("signup-mp") && (
+                    {/* Location fields for all signup roles */}
+                    {isSignup && (
                       <>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                            <User className="w-4 h-4" />
-                            {t("auth.display_name")}
-                          </label>
-                          <Input
-                            type="text"
-                            placeholder={t("auth.display_name_placeholder")}
-                            value={displayName}
-                            onChange={(e) => setDisplayName(e.target.value.replace(/^\s+/, ""))}
-                            disabled={loading}
-                          />
-                        </div>
-
                         <div className="space-y-2">
                           <label className="text-sm font-medium text-foreground flex items-center gap-2">
                             <MapPin className="w-4 h-4" />
@@ -793,6 +790,25 @@ const Auth = () => {
                             )}
                           </div>
                         )}
+                      </>
+                    )}
+
+                    {/* MP-specific fields */}
+                    {mode.includes("signup-mp") && (
+                      <>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                            <User className="w-4 h-4" />
+                            {t("auth.display_name")}
+                          </label>
+                          <Input
+                            type="text"
+                            placeholder={t("auth.display_name_placeholder")}
+                            value={displayName}
+                            onChange={(e) => setDisplayName(e.target.value.replace(/^\s+/, ""))}
+                            disabled={loading}
+                          />
+                        </div>
 
                         <div className="space-y-2">
                           <label className="text-sm font-medium text-foreground flex items-center gap-2">

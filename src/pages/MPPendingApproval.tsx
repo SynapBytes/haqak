@@ -182,10 +182,10 @@ const MPPendingApproval = () => {
                       <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("mp_pending.phone")}</p>
                       <p className="font-medium text-foreground">{profile?.phone}</p>
                     </div>
-                    {profile?.registration_number && (
+                    {profile?.membership_number && (
                       <div>
                         <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("mp_pending.registration_number")}</p>
-                        <p className="font-medium text-foreground">{profile.registration_number}</p>
+                        <p className="font-medium text-foreground">{profile.membership_number}</p>
                       </div>
                     )}
                   </div>

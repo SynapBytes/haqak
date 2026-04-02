@@ -54,7 +54,11 @@ const MPProfilePage = () => {
     const fetchProfile = async () => {
       if (!id) return;
       setLoading(true);
-      const { data: profileData } = await supabase.from("profiles").select("user_id, full_name, avatar_url, constituency, governorate, center").eq("user_id", id).single();
+      const { data: profileData } = await supabase
+        .from("mp_public_profiles")
+        .select("user_id, full_name, avatar_url, constituency, governorate, center")
+        .eq("user_id", id)
+        .single();
       if (!profileData) { setNotFound(true); setLoading(false); return; }
       setProfile(profileData);
       const { data: issues } = await supabase.from("issues").select("status, issue_type, citizen_confirmed, category").eq("assigned_mp_id", id);

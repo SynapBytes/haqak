@@ -10,12 +10,15 @@ interface Profile {
   full_name: string;
   phone: string;
   governorate?: string | null;
+  district?: string | null;
+  electoral_district?: string | null;
   constituency?: string | null;
   center?: string | null;
+  center_id?: string | null;
   avatar_url?: string | null;
   is_approved: boolean;
   contact_phone?: string | null;
-  registration_number?: string | null;
+  membership_number?: string | null;
   banned_until?: string | null;
   created_at: string;
   updated_at: string;

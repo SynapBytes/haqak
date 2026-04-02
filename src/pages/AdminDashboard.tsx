@@ -31,11 +31,13 @@ interface UserProfile {
   user_id: string;
   full_name: string;
   phone: string;
-  registration_number: string | null;
+  membership_number: string | null;
   is_approved: boolean;
   created_at: string;
   constituency: string | null;
   governorate: string | null;
+  district: string | null;
+  center_id: string | null;
   banned_until: string | null;
 }
 
@@ -58,6 +60,15 @@ const AdminDashboard = () => {
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [banningUser, setBanningUser] = useState<string | null>(null);
+  const [centerCounts, setCenterCounts] = useState<
+    Array<{
+      center_id: string | null;
+      governorate: string | null;
+      district: string | null;
+      citizens: number;
+      mps: number;
+    }>
+  >([]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -72,10 +83,36 @@ const AdminDashboard = () => {
         const existing = rolesByUser.get(r.user_id) ?? [];
         rolesByUser.set(r.user_id, [...existing, r.role as AppRole]);
       });
-      setUsers(
-        profilesRes.data.map((p) => {
+      const usersWithRole = profilesRes.data.map((p) => {
           const roles = rolesByUser.get(p.user_id) ?? [];
           return { ...p, role: resolvePrimaryRole(roles) };
+        });
+      setUsers(usersWithRole);
+
+      const grouped = new Map<
+        string,
+        { center_id: string | null; governorate: string | null; district: string | null; citizens: number; mps: number }
+      >();
+      usersWithRole.forEach((u) => {
+        if (!u.governorate || !u.district) return;
+        const key = `${u.governorate}\u001F${u.district}\u001F${u.center_id ?? "none"}`;
+        const row = grouped.get(key) ?? {
+          center_id: u.center_id,
+          governorate: u.governorate,
+          district: u.district,
+          citizens: 0,
+          mps: 0,
+        };
+        if (u.role === "mp") row.mps += 1;
+        if (u.role === "citizen") row.citizens += 1;
+        grouped.set(key, row);
+      });
+      setCenterCounts(
+        Array.from(grouped.values()).sort((a, b) => {
+          if ((a.governorate ?? "") !== (b.governorate ?? "")) {
+            return (a.governorate ?? "").localeCompare(b.governorate ?? "", "en");
+          }
+          return (a.district ?? "").localeCompare(b.district ?? "", "en");
         }),
       );
     }
@@ -346,11 +383,14 @@ const AdminDashboard = () => {
                       </div>
                       <div className="flex items-center gap-3 mt-1 flex-wrap">
                         <span className="text-xs text-muted-foreground">{user.phone}</span>
-                        {user.registration_number && (
-                          <span className="text-xs text-muted-foreground">{user.registration_number}</span>
+                        {user.membership_number && (
+                          <span className="text-xs text-muted-foreground">{user.membership_number}</span>
                         )}
                         {user.governorate && (
                           <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" />{user.governorate}</span>
+                        )}
+                        {user.district && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" />{user.district}</span>
                         )}
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                           <Clock className="w-3 h-3" />
@@ -482,6 +522,35 @@ const AdminDashboard = () => {
                 </div>
               )}
             </div>
+
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-5 mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <MapPin className="w-4 h-4 text-accent" />
+                <h3 className="font-semibold text-sm text-foreground">{t("admin_dashboard.center_counts_title")}</h3>
+              </div>
+              {centerCounts.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{t("admin_dashboard.center_counts_empty")}</p>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-auto pr-1">
+                  {centerCounts.map((center) => (
+                    <div
+                      key={`${center.center_id ?? "none"}-${center.governorate}-${center.district}`}
+                      className="flex items-center justify-between rounded-xl border border-border/40 px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">
+                          {center.governorate} / {center.district}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-[11px] text-muted-foreground">{t("admin_dashboard.center_citizens_count", { count: center.citizens })}</span>
+                        <span className="text-[11px] text-muted-foreground">{t("admin_dashboard.center_mps_count", { count: center.mps })}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
           </>
         ) : activeTab === "issues" ? (
           <>
