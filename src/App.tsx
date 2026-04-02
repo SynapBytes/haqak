@@ -1,5 +1,5 @@
 import { useState, useCallback, lazy, Suspense, useEffect } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,6 +10,7 @@ import PushNotificationProvider from "@/components/PushNotificationProvider";
 import { useTranslation } from "react-i18next";
 import { AppRole } from "@/constants/roles";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { queryClient } from "@/lib/queryClient";
 
 // Lazy-loaded pages
 const Landing = lazy(() => import("./pages/Landing"));
@@ -29,15 +30,6 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const GeniusEnhancements = lazy(() => import("./pages/GeniusEnhancements"));
 const Careers = lazy(() => import("./pages/Careers"));
 const Support = lazy(() => import("./pages/Support"));
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">

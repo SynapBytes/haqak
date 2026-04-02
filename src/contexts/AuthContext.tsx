@@ -5,6 +5,8 @@ import { AppRole, resolvePrimaryRole } from "@/constants/roles";
 import { analytics } from "@/lib/analytics";
 import { AuthProfileSchema } from "@/lib/schemas/boundary";
 import { handleClientError } from "@/lib/errors";
+import { clearCsrfToken } from "@/lib/csrfToken";
+import { queryClient } from "@/lib/queryClient";
 
 interface Profile {
   id: string;
@@ -146,6 +148,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     await supabase.auth.signOut();
     analytics.reset();
+    clearCsrfToken();
+    queryClient.clear();
     // Purge all service-worker caches on sign-out so auth-sensitive content
     // is not served from cache to the next user of the same browser profile.
     if (typeof caches !== "undefined") {

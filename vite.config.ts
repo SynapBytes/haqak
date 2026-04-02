@@ -43,6 +43,12 @@ export default defineConfig(({ mode }) => ({
           /^\/signup/,
           /^\/reset-password/,
           /^\/verify/,
+          /^\/citizen/,
+          /^\/profile/,
+          /^\/mps/,
+          /^\/mp/,
+          /^\/admin/,
+          /^\/onboarding/,
         ],
         runtimeCaching: [
           {
