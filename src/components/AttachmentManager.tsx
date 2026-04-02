@@ -4,6 +4,8 @@ import { Download, FileText, Image as ImageIcon, ExternalLink, Loader2, ShieldCh
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getSignedDownloadUrl } from "@/lib/storage";
+import { safeParseAttachmentRows } from "@/lib/boundaryAdapters";
+import { handleClientError } from "@/lib/errors";
 
 interface Attachment {
   id: string;
@@ -25,9 +27,32 @@ const AttachmentManager = ({ issueId }: { issueId: string }) => {
         .eq("issue_id", issueId);
       
       if (error) {
-        console.error("Error fetching attachments:", error);
+        handleClientError(
+          {
+            code: "attachments.fetch.failed",
+            message: "تعذر تحميل المرفقات حالياً",
+            retryable: true,
+          },
+          error,
+          { showToast: false, extras: { boundary: "issue_attachments.select", issue_id: issueId } },
+        );
+        setAttachments([]);
       } else {
-        setAttachments(data || []);
+        const parsed = safeParseAttachmentRows(data ?? []);
+        if (parsed.success) {
+          setAttachments(parsed.data);
+        } else {
+          setAttachments([]);
+          handleClientError(
+            {
+              code: "attachments.fetch.invalid_shape",
+              message: "تعذر تحميل المرفقات حالياً",
+              retryable: true,
+            },
+            parsed.error,
+            { showToast: false, extras: { boundary: "issue_attachments.parse", issue_id: issueId } },
+          );
+        }
       }
       setLoading(false);
     };

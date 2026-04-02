@@ -26,6 +26,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { APP_CONFIG } from "@/lib/config";
+import { parseCaptchaResponse } from "@/lib/boundaryAdapters";
+import { handleClientError } from "@/lib/errors";
 
 /* ─── Floating Particle Component ─── */
 const FloatingParticle = ({ delay, x, y, size, color }: { delay: number; x: string; y: string; size: number; color: string }) => (
@@ -453,7 +455,31 @@ const SupportForm = () => {
         body: JSON.stringify({ token: captchaToken }),
       });
 
-      if (captchaError || !captchaData || !captchaData.success) {
+      if (captchaError) {
+        handleClientError(
+          { code: "support.captcha.invoke_failed", message: t("support.captcha_failed"), retryable: true },
+          captchaError,
+          { showToast: false, extras: { boundary: "landing.support.verify-captcha" } },
+        );
+        toast.error(t("support.captcha_failed"));
+        setSending(false);
+        return;
+      }
+
+      let parsedCaptcha: { valid: boolean; error?: string; score?: number };
+      try {
+        parsedCaptcha = parseCaptchaResponse(captchaData);
+      } catch (parseError) {
+        handleClientError(
+          { code: "support.captcha.invalid_response", message: t("support.captcha_failed"), retryable: true },
+          parseError,
+          { showToast: false, extras: { boundary: "landing.support.verify-captcha.parse" } },
+        );
+        toast.error(t("support.captcha_failed"));
+        setSending(false);
+        return;
+      }
+      if (!parsedCaptcha.valid) {
         toast.error(t("support.captcha_failed"));
         setSending(false);
         return;

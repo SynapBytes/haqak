@@ -24,6 +24,8 @@ import { analytics } from "@/lib/analytics";
 import { getSignedDownloadUrl } from "@/lib/storage";
 import AdminRenominationPanel from "@/components/AdminRenominationPanel";
 import AdminBankVerificationPanel from "@/components/AdminBankVerificationPanel";
+import { safeParseIdentityVerificationRows } from "@/lib/boundaryAdapters";
+import { handleClientError } from "@/lib/errors";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type IssueRow = Database["public"]["Tables"]["issues"]["Row"];
@@ -150,7 +152,23 @@ const AdminDashboard = () => {
       );
     }
     if (issuesRes.data) setIssues(issuesRes.data);
-    if (verificationsRes.data) setVerifications(verificationsRes.data as unknown as IdentityVerificationRow[]);
+    if (verificationsRes.data) {
+      const parsedVerifications = safeParseIdentityVerificationRows(verificationsRes.data);
+      if (parsedVerifications.success) {
+        setVerifications(parsedVerifications.data as unknown as IdentityVerificationRow[]);
+      } else {
+        setVerifications([]);
+        handleClientError(
+          {
+            code: "admin.verifications.invalid_shape",
+            message: "تعذر تحميل بيانات التحقق حالياً",
+            retryable: true,
+          },
+          parsedVerifications.error,
+          { showToast: false, extras: { boundary: "identity_verifications.select" } },
+        );
+      }
+    }
     setLoading(false);
   };
 
@@ -317,7 +335,12 @@ const AdminDashboard = () => {
       setSelectedVerification(null);
       await fetchData();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "فشل حفظ قرار التحقق");
+      handleClientError(
+        { code: "admin.verifications.decision_failed", message: "فشل حفظ قرار التحقق", retryable: true },
+        error,
+        { showToast: false, extras: { boundary: "identity_verifications.update" } },
+      );
+      toast.error("فشل حفظ قرار التحقق");
     } finally {
       setVerificationDecisionLoading(false);
     }

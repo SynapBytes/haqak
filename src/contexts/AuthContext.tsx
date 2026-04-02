@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 import { AppRole, resolvePrimaryRole } from "@/constants/roles";
 import { analytics } from "@/lib/analytics";
+import { AuthProfileSchema } from "@/lib/schemas/boundary";
+import { handleClientError } from "@/lib/errors";
 
 interface Profile {
   id: string;
@@ -56,15 +58,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", userId),
       ]);
-      setProfile((profileRes.data as Profile) ?? null);
+      if (profileRes.data) {
+        const parsed = AuthProfileSchema.safeParse(profileRes.data);
+        if (parsed.success) {
+          setProfile(parsed.data as Profile);
+        } else {
+          setProfile(null);
+          handleClientError(
+            {
+              code: "auth.profile.invalid_shape",
+              message: "تعذر تحميل بيانات الحساب حالياً",
+              retryable: true,
+            },
+            parsed.error,
+            { showToast: false, extras: { boundary: "profiles.select", user_id: userId } },
+          );
+        }
+      } else {
+        setProfile(null);
+      }
       const roles = (roleRes.data ?? []).map((r) => r.role as AppRole);
       const primary = resolvePrimaryRole(roles);
       setRole(primary);
       // Identify the user in analytics with their hashed ID and role only.
       analytics.identify(userId, primary ?? "citizen");
-    } catch {
+    } catch (error) {
       setProfile(null);
       setRole("citizen");
+      handleClientError(
+        {
+          code: "auth.profile.fetch_failed",
+          message: "تعذر تحميل بيانات الحساب حالياً",
+          retryable: true,
+        },
+        error,
+        { showToast: false, extras: { boundary: "auth.fetchProfileAndRole", user_id: userId } },
+      );
     }
   };
 

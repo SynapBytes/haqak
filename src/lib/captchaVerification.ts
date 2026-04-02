@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { parseCaptchaResponse } from "@/lib/boundaryAdapters";
+import { handleClientError } from "@/lib/errors";
 
 /**
  * Verify CAPTCHA token with the server
@@ -18,17 +20,22 @@ export async function verifyCaptchaToken(token: string): Promise<{
     });
 
     if (error) {
-      console.error("CAPTCHA verification error:", error);
+      handleClientError(
+        { code: "captcha.verify.invoke_failed", message: "Failed to verify CAPTCHA", retryable: true },
+        error,
+        { showToast: false, extras: { boundary: "verify-captcha.invoke" } },
+      );
       return { valid: false, error: "Failed to verify CAPTCHA" };
     }
 
-    return {
-      valid: data?.valid || false,
-      error: data?.error,
-      score: data?.score,
-    };
+    const parsed = parseCaptchaResponse(data);
+    return parsed;
   } catch (err) {
-    console.error("CAPTCHA verification exception:", err);
+    handleClientError(
+      { code: "captcha.verify.exception", message: "CAPTCHA verification failed", retryable: true },
+      err,
+      { showToast: false, extras: { boundary: "verify-captcha.catch" } },
+    );
     return { valid: false, error: "CAPTCHA verification failed" };
   }
 }

@@ -36,6 +36,12 @@ import { hashFile } from "@/lib/fileIntegrityService";
 import { dispatchNotification } from "@/lib/notifications";
 import { ATTACHMENTS_BUCKET, buildIssueAttachmentPath, uploadIssueAttachment } from "@/lib/storage";
 import { analytics } from "@/lib/analytics";
+import {
+  isUuidString,
+  normalizeClassifyIssueResponse,
+  parseVerifyUploadIntegrityResponse,
+} from "@/lib/boundaryAdapters";
+import { handleClientError } from "@/lib/errors";
 
 const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitation", "education", "electricity", "other"] as const;
 
@@ -66,6 +72,7 @@ const CitizenDashboard = () => {
   const [longitude, setLongitude] = useState<number | null>(null);
   const [reputation, setReputation] = useState({ points: 0, rank: "مواطن جديد" });
   const [mpResponses, setMpResponses] = useState<{ id: string; response_text: string; created_at: string; [key: string]: unknown }[]>([]);
+  const INTEGRITY_INVOKE_FAILED = "invoke_failed";
 
   const isFormValid = title.trim() !== "" && 
                       description.trim() !== "" && 
@@ -118,8 +125,22 @@ const CitizenDashboard = () => {
 
   useEffect(() => {
     if (mpIdParam && mpNameParam) {
-      setAssignedMpId(mpIdParam);
-      setAssignedMpName(decodeURIComponent(mpNameParam));
+      if (isUuidString(mpIdParam)) {
+        setAssignedMpId(mpIdParam);
+        setAssignedMpName(decodeURIComponent(mpNameParam));
+      } else {
+        handleClientError(
+          {
+            code: "issue.assignment.invalid_mp_id",
+            message: "معرف النائب غير صالح",
+            retryable: false,
+          },
+          undefined,
+          { showToast: true, extras: { boundary: "citizen.mp_id_param" } },
+        );
+        setAssignedMpId(null);
+        setAssignedMpName(null);
+      }
       setShowForm(true);
       setSearchParams({}, { replace: true });
       setCaptchaToken(null);
@@ -165,8 +186,32 @@ const CitizenDashboard = () => {
         "verify-upload-integrity",
         { body: { storagePath: path, expectedHash: preHash } },
       );
-      if (integrityError || !integrityData?.valid) {
-        console.error("Integrity check failed for", file.name, integrityError ?? integrityData?.error);
+      let parsedIntegrity: { valid: boolean; error?: string } = { valid: false, error: INTEGRITY_INVOKE_FAILED };
+      if (!integrityError) {
+        try {
+          parsedIntegrity = parseVerifyUploadIntegrityResponse(integrityData);
+        } catch (parseError) {
+          handleClientError(
+            {
+              code: "issue.upload.integrity_invalid_response",
+              message: t("dashboard.file_integrity_failed"),
+              retryable: true,
+            },
+            parseError,
+            { showToast: false, extras: { file_name: file.name, boundary: "verify-upload-integrity.parse" } },
+          );
+        }
+      }
+      if (integrityError || !parsedIntegrity.valid) {
+        handleClientError(
+          {
+            code: "issue.upload.integrity_failed",
+            message: t("dashboard.file_integrity_failed"),
+            retryable: true,
+          },
+          integrityError ?? parsedIntegrity.error,
+          { showToast: false, extras: { file_name: file.name, boundary: "verify-upload-integrity" } },
+        );
         // Remove the corrupted upload
         await supabase.storage.from("issue-attachments").remove([path]);
         toast.error(`${t("dashboard.file_integrity_failed")}: ${file.name}`);
@@ -241,27 +286,65 @@ const CitizenDashboard = () => {
         });
 
         if (!classifyError && classifyData) {
-          if (classifyData.status === "rejected") {
+          const normalizedClassify = normalizeClassifyIssueResponse(classifyData, {
+            title,
+            description,
+            category,
+            issueType,
+            aiSummary: null,
+            priority: "normal",
+          });
+
+          if (normalizedClassify.rejected) {
             // Check if rejection is due to location being outside Egypt
-            if (classifyData.rejectionReason && classifyData.rejectionReason.includes("location")) {
+            if (normalizedClassify.rejectionReason && normalizedClassify.rejectionReason.includes("location")) {
               toast.error("البلاغ يجب أن يكون عن مشكلة داخل حدود مصر فقط");
             } else {
-              toast.error(classifyData.rejectionReason || t("dashboard.rejected"));
+              toast.error(normalizedClassify.rejectionReason || t("dashboard.rejected"));
             }
             setSubmitting(false);
             return;
           }
 
-          finalTitle = classifyData.refined_title || title;
-          finalDescription = classifyData.refined_description || description;
-          finalCategory = classifyData.issueCategory || category;
-          finalIssueType = classifyData.category === "collective" ? "collective" : "individual";
-          aiSummary = classifyData.ai_summary || null;
-          priority = classifyData.priority || "normal";
+          if (normalizedClassify.usedFallback) {
+            handleClientError(
+              {
+                code: "issue.classify.invalid_response",
+                message: "تعذر تحليل البلاغ حالياً",
+                retryable: true,
+              },
+              undefined,
+              { showToast: false, extras: { boundary: "classify-issue.normalize" } },
+            );
+          }
+
+          finalTitle = normalizedClassify.title;
+          finalDescription = normalizedClassify.description;
+          finalCategory = normalizedClassify.category;
+          finalIssueType = normalizedClassify.issueType;
+          aiSummary = normalizedClassify.aiSummary;
+          priority = normalizedClassify.priority;
+        } else if (classifyError) {
+          handleClientError(
+            {
+              code: "issue.classify.invoke_failed",
+              message: "تعذر تحليل البلاغ حالياً",
+              retryable: true,
+            },
+            classifyError,
+            { showToast: false, extras: { boundary: "classify-issue.invoke" } },
+          );
         }
       } catch (err) {
-        console.error("AI classification failed:", err);
-        toast.error("حدث خطأ في خوادم الفحص، يرجى المحاولة لاحقاً.");
+        handleClientError(
+          {
+            code: "issue.classify.invalid_response",
+            message: "تعذر تحليل البلاغ حالياً",
+            retryable: true,
+          },
+          err,
+          { showToast: false, extras: { boundary: "classify-issue.parse" } },
+        );
         setSubmitting(false);
         return;
       }
@@ -325,7 +408,12 @@ const CitizenDashboard = () => {
       fetchIssues();
     } catch (err: unknown) {
       analytics.track("issue_submission_failed");
-      toast.error((err instanceof Error ? err.message : String(err)) || t("dashboard.error_submitting"));
+      handleClientError(
+        { code: "issue.submit.failed", message: t("dashboard.error_submitting"), retryable: true },
+        err,
+        { showToast: false, extras: { boundary: "issues.insert" } },
+      );
+      toast.error(t("dashboard.error_submitting"));
     } finally {
       setSubmitting(false);
     }
