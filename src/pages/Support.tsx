@@ -102,12 +102,12 @@ const Support = () => {
     
     setLoading(true);
     try {
-      const { error } = await supabase.from("feedbacks").insert({
+      const { error } = await (supabase.from("feedbacks" as any).insert({
         contribution_id: contributionId,
         message: sanitizeText(feedback),
         name: name ? sanitizeText(name) : null,
         email: email ? sanitizeText(email) : null,
-      });
+      } as any) as any);
 
       if (error) throw error;
       

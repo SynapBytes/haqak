@@ -64,7 +64,7 @@ const CitizenDashboard = () => {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [reputation, setReputation] = useState({ points: 0, rank: "مواطن جديد" });
-  const [mpResponses, setMpResponses] = useState<Record<string, unknown>[]>([]);
+  const [mpResponses, setMpResponses] = useState<{ id: string; response_text: string; created_at: string; [key: string]: unknown }[]>([]);
 
   const isFormValid = title.trim() !== "" && 
                       description.trim() !== "" && 
