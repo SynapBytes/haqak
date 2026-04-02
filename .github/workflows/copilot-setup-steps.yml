@@ -25,4 +25,8 @@ jobs:
         # Ensure the local 'main' ref exists so that `git diff main ...` works
         # when the agent runs on a non-main branch (e.g. copilot/* branches).
         # This fetch is idempotent and safe to run even when already on main.
-        run: git fetch origin main:main
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          git fetch origin main --force-with-lease || \
+          git branch -f main origin/main || \
+          echo "Warning: Could not update local main ref, continuing anyway"
