@@ -5,35 +5,34 @@ on:
     branches: ["main", "copilot/**"]
   pull_request:
     branches: ["main"]
+  schedule:
+    - cron: "0 3 * * 1"
 
 jobs:
-  test:
-    name: Install, lint & test
+  build-test:
+    name: Build, lint, test
+    if: ${{ github.event_name != 'schedule' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write
-      issues: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
+          node-version-file: package.json
           cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
-      # Lint currently fails on pre-existing issues; allow pipeline to proceed.
-      - name: Lint (non-blocking)
+      - name: Lint
         run: npm run lint
-        continue-on-error: true
 
       - name: Run unit tests
         run: npm test
@@ -41,11 +40,80 @@ jobs:
       - name: Build
         run: npm run build
 
+  dependency-audit-high:
+    name: Dependency audit (high/critical)
+    if: ${{ github.event_name != 'schedule' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Audit production deps (fail on high+)
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Secret scan (gitleaks)
-        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+  dependency-audit-weekly-report:
+    name: Dependency audit report (weekly, medium/low)
+    if: ${{ github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit production deps (report medium/low, non-blocking)
+        run: npm audit --omit=dev --audit-level=low
+        continue-on-error: true
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fail if any tracked .env file exists
+        run: |
+          if git ls-files | grep -E '(^|/)\.env(\..+)?$' | grep -vE '(^|/)\.env\.example$'; then
+            echo "Tracked .env* file detected. Remove it from the repository."
+            exit 1
+          fi
+
+      - name: Gitleaks scan (working tree)
+        if: ${{ github.event_name != 'schedule' }}
         uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Gitleaks scan (full history)
+        if: ${{ github.event_name == 'schedule' }}
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: --source . --redact --log-opts="--all"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
