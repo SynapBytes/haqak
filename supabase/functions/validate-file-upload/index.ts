@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
 import { buildCorsHeaders } from "../shared/cors.ts";
+import { RateLimitError, rateLimiter } from "../shared/rate-limiter.ts";
 
 /** Allowed MIME types and their magic-byte signatures. */
 const MAGIC_RULES: Record<string, Array<{ offset: number; bytes: number[] }>> = {
@@ -47,6 +48,50 @@ serve(async (req) => {
         status: 401,
         headers: { ...cors, "Content-Type": "application/json" },
       });
+    }
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      return new Response(JSON.stringify({ error: "Service unavailable", valid: false }), {
+        status: 503,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized", valid: false }), {
+        status: 401,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    const ipAddress =
+      req.headers.get("cf-connecting-ip") ||
+      req.headers.get("x-real-ip") ||
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      "0.0.0.0";
+
+    try {
+      await rateLimiter(supabase, user.id, "/validate-file-upload", ipAddress, 200, {
+        maxRequests: 30,
+        windowMinutes: 5,
+      });
+    } catch (rateError) {
+      if (rateError instanceof RateLimitError) {
+        return new Response(JSON.stringify({ error: "Too many requests", valid: false }), {
+          status: 429,
+          headers: {
+            ...cors,
+            "Content-Type": "application/json",
+            "Retry-After": String(rateError.retryAfterSeconds),
+          },
+        });
+      }
+      throw rateError;
     }
 
     // Parse multipart form data
@@ -96,24 +141,17 @@ serve(async (req) => {
     const isValid = rejectionReason === null;
 
     // Audit log (best-effort)
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
-      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-      const token = authHeader.replace("Bearer ", "");
-      const { data: { user } } = await supabase.auth.getUser(token);
-      await supabase.from("file_validation_log").insert({
-        file_name: file.name,
-        file_size: file.size,
-        declared_mime: declaredMime,
-        magic_bytes_ok: magicBytesOk,
-        is_valid: isValid,
-        rejection_reason: rejectionReason,
-        user_id: user?.id ?? null,
-      }).then(({ error }) => {
-        if (error) console.warn("file_validation_log insert error:", error.message);
-      });
-    }
+    await supabase.from("file_validation_log").insert({
+      file_name: file.name,
+      file_size: file.size,
+      declared_mime: declaredMime,
+      magic_bytes_ok: magicBytesOk,
+      is_valid: isValid,
+      rejection_reason: rejectionReason,
+      user_id: user.id,
+    }).then(({ error }) => {
+      if (error) console.warn("file_validation_log insert error:", error.message);
+    });
 
     if (!isValid) {
       return new Response(

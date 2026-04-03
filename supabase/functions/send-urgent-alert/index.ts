@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { buildParticipantSet } from "../shared/access-control.ts";
 import { buildCorsHeaders } from "../shared/cors.ts";
 import { requireCsrfToken } from "../shared/csrf.ts";
+import { RateLimitError, rateLimiter } from "../shared/rate-limiter.ts";
 
 interface SendUrgentAlertRequest {
   issueId: string;
@@ -155,6 +156,31 @@ serve(async (req) => {
         JSON.stringify({ success: false, error: "Unauthorized" }),
         { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
       );
+    }
+
+    const clientIp =
+      req.headers.get("cf-connecting-ip") ||
+      req.headers.get("x-real-ip") ||
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      "0.0.0.0";
+
+    try {
+      await rateLimiter(supabase, user.id, "/send-urgent-alert", clientIp, 200, {
+        maxRequests: 10,
+        windowMinutes: 10,
+      });
+    } catch (rateError) {
+      if (rateError instanceof RateLimitError) {
+        return new Response(JSON.stringify({ success: false, error: "Too many requests" }), {
+          status: 429,
+          headers: {
+            ...cors,
+            "Content-Type": "application/json",
+            "Retry-After": String(rateError.retryAfterSeconds),
+          },
+        });
+      }
+      throw rateError;
     }
 
     const { data: roleRows, error: roleError } = await supabase

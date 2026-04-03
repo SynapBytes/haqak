@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
 import { buildCorsHeaders } from "../shared/cors.ts";
+import { RateLimitError, rateLimiter } from "../shared/rate-limiter.ts";
 
 const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
 const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") || "mailto:admin@haqak.org";
@@ -96,6 +97,31 @@ Deno.serve(async (req) => {
 
     // --- ROLE CHECK: only MPs and admins can send push to other users ---
     const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    const clientIp =
+      req.headers.get("cf-connecting-ip") ||
+      req.headers.get("x-real-ip") ||
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      "0.0.0.0";
+
+    try {
+      await rateLimiter(serviceSupabase, callerId, "/send-push-notification", clientIp, 200, {
+        maxRequests: 20,
+        windowMinutes: 10,
+      });
+    } catch (rateError) {
+      if (rateError instanceof RateLimitError) {
+        return new Response(JSON.stringify({ error: "Too many requests" }), {
+          status: 429,
+          headers: {
+            ...cors,
+            "Content-Type": "application/json",
+            "Retry-After": String(rateError.retryAfterSeconds),
+          },
+        });
+      }
+      throw rateError;
+    }
 
     const { user_id, title, body, data } = await req.json();
 
