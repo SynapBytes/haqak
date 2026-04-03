@@ -1,0 +1,73 @@
+name: Security - Semgrep
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: read-all
+
+env:
+  SEMGREP_FAIL_SEVERITY: ERROR
+
+jobs:
+  semgrep:
+    name: Semgrep (TypeScript/React)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Semgrep
+        run: python -m pip install --upgrade pip semgrep
+
+      - name: Run Semgrep SARIF scan
+        id: semgrep_scan
+        shell: bash
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          COMMON_ARGS=(
+            --config p/javascript
+            --config p/typescript
+            --config p/react
+            --exclude node_modules
+            --exclude dist
+          )
+          semgrep scan "${COMMON_ARGS[@]}" \
+            --sarif \
+            --output semgrep.sarif \
+            .
+          semgrep scan "${COMMON_ARGS[@]}" \
+            --error \
+            --severity "$SEMGREP_FAIL_SEVERITY" \
+            .
+
+      - name: Upload SARIF to GitHub Code Scanning
+        id: upload_sarif
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+        continue-on-error: true
+
+      - name: Upload Semgrep SARIF artifact (fallback/retention)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-sarif
+          path: semgrep.sarif
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Fail if Semgrep high-severity gate failed
+        if: steps.semgrep_scan.outcome == 'failure'
+        run: exit 1

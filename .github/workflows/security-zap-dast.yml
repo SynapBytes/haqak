@@ -1,0 +1,87 @@
+name: Security - ZAP DAST
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: read-all
+
+env:
+  ZAP_FAIL_RISKS: High
+  ZAP_PRODUCTION_URL: https://haqak.vercel.app
+  # Optional; when empty the workflow falls back to GITHUB_REPOSITORY_OWNER.
+  VERCEL_TEAM_SLUG: ""
+
+jobs:
+  zap-dast:
+    name: OWASP ZAP baseline DAST
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve DAST target URL
+        id: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            BRANCH="${GITHUB_HEAD_REF//\//-}"
+            TEAM="${VERCEL_TEAM_SLUG:-${GITHUB_REPOSITORY_OWNER}}"
+            TARGET_URL="https://${REPO_NAME}-git-${BRANCH}-${TEAM}.vercel.app"
+          else
+            TARGET_URL="${ZAP_PRODUCTION_URL}"
+          fi
+          echo "target_url=${TARGET_URL}" >> "${GITHUB_OUTPUT}"
+
+      - name: Run ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: ${{ steps.target.outputs.target_url }}
+          cmd_options: >-
+            -m 5
+            -a
+            -j
+            -I
+          allow_issue_writing: false
+
+      - name: Enforce ZAP risk threshold
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f report_json.json ]]; then
+            echo "ZAP JSON report not found."
+            exit 1
+          fi
+          mapfile -t FAIL_RISKS < <(echo "${ZAP_FAIL_RISKS}" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed '/^$/d')
+          MATCHES=0
+          while IFS= read -r RISK; do
+            LEVEL="${RISK%% *}"
+            for FAIL_RISK in "${FAIL_RISKS[@]}"; do
+              if [[ "${LEVEL,,}" == "${FAIL_RISK,,}" ]]; then
+                MATCHES=$((MATCHES + 1))
+                break
+              fi
+            done
+          done < <(jq -r '.site[]?.alerts[]?.riskdesc // empty' report_json.json)
+          echo "Matched ZAP findings at configured fail risks (${ZAP_FAIL_RISKS}): ${MATCHES}"
+          if [[ "${MATCHES}" -gt 0 ]]; then
+            exit 1
+          fi
+
+      - name: Upload ZAP report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-report
+          path: |
+            report_html.html
+            report_json.json
+            report_md.md
+          if-no-files-found: warn
+          retention-days: 14

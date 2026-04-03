@@ -1,0 +1,7 @@
+title = "haqak gitleaks config"
+
+[allowlist]
+description = "Repository-level allowlist for known false positives only"
+paths = []
+regexes = []
+commits = []

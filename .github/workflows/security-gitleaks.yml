@@ -1,0 +1,39 @@
+name: Security - Gitleaks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: read-all
+
+jobs:
+  gitleaks:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build gitleaks args
+        id: gitleaks_args
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARGS="--source . --redact --config=.gitleaks.toml"
+          if [[ -f ".gitleaks.baseline.json" ]]; then
+            ARGS="$ARGS --baseline-path=.gitleaks.baseline.json"
+          fi
+          echo "args=$ARGS" >> "$GITHUB_OUTPUT"
+
+      - name: Run gitleaks (fail on findings)
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: ${{ steps.gitleaks_args.outputs.args }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -9,3 +9,24 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-*"
+          - "@types/react*"
+      supabase:
+        patterns:
+          - "@supabase/*"
+      build-and-tooling:
+        patterns:
+          - "dompurify"
+          - "vite"
+          - "vitest"
+          - "eslint*"
+          - "typescript*"
+          - "@types/node"
+          - "postcss"
+          - "tailwindcss*"
+          - "rollup"
+          - "esbuild"

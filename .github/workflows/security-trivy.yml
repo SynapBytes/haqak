@@ -1,0 +1,63 @@
+name: Security - Trivy
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: read-all
+
+env:
+  TRIVY_FAIL_SEVERITY: HIGH,CRITICAL
+
+jobs:
+  trivy:
+    name: Trivy fs (vuln + misconfig)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Trivy SARIF scan
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy.sarif
+          vuln-type: os,library
+          scanners: vuln,misconfig
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          hide-progress: true
+
+      - name: Upload SARIF to GitHub Code Scanning
+        id: upload_sarif
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy.sarif
+          category: trivy-fs
+        continue-on-error: true
+
+      - name: Upload Trivy SARIF artifact (fallback/retention)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-sarif
+          path: trivy.sarif
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Enforce fail threshold
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          vuln-type: os,library
+          scanners: vuln,misconfig
+          severity: ${{ env.TRIVY_FAIL_SEVERITY }}
+          exit-code: "1"
+          format: table
+          hide-progress: true
