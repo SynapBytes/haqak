@@ -33,6 +33,44 @@ type AuthMode = "login" | "login-otp" | "signup-citizen" | "signup-citizen-otp" 
 const PHONE_REGEX = /^01[0125][0-9]{8}$/;
 const MEMBERSHIP_NUMBER_REGEX = /^[0-9]+$/;
 const MAX_MEMBERSHIP_NUMBER = 568;
+const OTP_REQUEST_TIMEOUT_MS = 12_000;
+const OTP_MAX_RETRIES = 2;
+const OTP_RETRY_BASE_DELAY_MS = 300;
+
+function sanitizeOtpErrorMessage(message: string): string {
+  const lowered = message.toLowerCase();
+  if (lowered.includes("too many") || lowered.includes("rate limit")) return "Too many requests";
+  if (lowered.includes("captcha")) return "CAPTCHA verification failed";
+  if (lowered.includes("invalid otp") || lowered.includes("invalid verification code")) return "OTP invalid";
+  if (lowered.includes("expired")) return "OTP expired";
+  return "Unable to process OTP request";
+}
+
+async function fetchJsonWithRetry(
+  url: string,
+  init: RequestInit,
+  retries = OTP_MAX_RETRIES,
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), OTP_REQUEST_TIMEOUT_MS);
+    try {
+      const response = await fetch(url, { ...init, signal: controller.signal });
+      if (response.ok) return response;
+      if (response.status < 500) return response;
+      if (attempt === retries) return response;
+      lastError = new Error(`OTP request failed with status ${response.status}`);
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries) throw lastError;
+    } finally {
+      clearTimeout(timeout);
+    }
+    await new Promise((resolve) => setTimeout(resolve, OTP_RETRY_BASE_DELAY_MS * (attempt + 1)));
+  }
+  throw lastError ?? new Error("Unable to process OTP request");
+}
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -302,14 +340,14 @@ const Auth = () => {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const response = await fetch(`${supabaseUrl}/functions/v1/send-otp`, {
+      const response = await fetchJsonWithRetry(`${supabaseUrl}/functions/v1/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": supabaseKey },
         body: JSON.stringify({ phone, countryCode, mode: mode.replace("-otp", "") }),
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to send OTP");
+      if (!response.ok) throw new Error(sanitizeOtpErrorMessage(String(data.error || "")));
 
       toast.success(t("auth.otp_sent"));
       setOtpTimer(300); // 5 minutes
@@ -339,7 +377,7 @@ const Auth = () => {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const response = await fetch(`${supabaseUrl}/functions/v1/verify-otp`, {
+      const response = await fetchJsonWithRetry(`${supabaseUrl}/functions/v1/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": supabaseKey },
         body: JSON.stringify({ 
@@ -352,7 +390,7 @@ const Auth = () => {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to verify OTP");
+      if (!response.ok) throw new Error(sanitizeOtpErrorMessage(String(data.error || "")));
 
       toast.success(t("auth.otp_verified"));
 
