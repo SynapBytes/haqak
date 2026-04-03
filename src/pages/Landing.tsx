@@ -28,6 +28,50 @@ import { useTranslation } from "react-i18next";
 import { APP_CONFIG } from "@/lib/config";
 import { parseCaptchaResponse } from "@/lib/boundaryAdapters";
 import { handleClientError } from "@/lib/errors";
+import { analytics } from "@/lib/analytics";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+type SocialLink = {
+  id: string;
+  name: string;
+  href: string;
+  color: string;
+  iconPath: string;
+  iconViewBox: string;
+};
+
+const SOCIAL_LINKS: readonly SocialLink[] = [
+  {
+    id: "x",
+    name: "X (Twitter)",
+    href: "https://x.com/HaqakOfficial",
+    color: "#000000",
+    iconPath:
+      "M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8l164.9-188.5L26.2 48H172.8l100.5 132.9L389.2 48Zm-24.8 373.8h39.1L151.6 88h-42l254.8 333.8Z",
+    iconViewBox: "0 0 512 512",
+  },
+  {
+    id: "facebook",
+    name: "Facebook",
+    href: "https://www.facebook.com/HaqakOfficial",
+    color: "#1877F2",
+    iconPath:
+      "M504 256C504 119 393 8 256 8S8 119 8 256c0 123.8 90.7 226.4 209.3 245V327.7h-63V256h63v-54.6c0-62.2 37-96.6 93.7-96.6 27.1 0 55.4 4.8 55.4 4.8v61h-31.2c-30.8 0-40.4 19.1-40.4 38.7V256h68.8l-11 71.7h-57.8V501C413.3 482.4 504 379.8 504 256z",
+    iconViewBox: "0 0 512 512",
+  },
+  {
+    id: "linkedin",
+    name: "LinkedIn",
+    href: "https://www.linkedin.com/company/haqakofficial",
+    color: "#0A66C2",
+    iconPath:
+      "M416 32H96C60.7 32 32 60.7 32 96v320c0 35.3 28.7 64 64 64h320c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64zM181.8 416h-62.3V215.4h62.3V416zm-31.1-228c-20 0-36.1-16.1-36.1-36.1s16.1-36.1 36.1-36.1 36.1 16.1 36.1 36.1-16.2 36.1-36.1 36.1zM416 416h-62.2V318c0-23.4-.5-53.5-32.6-53.5-32.7 0-37.7 25.5-37.7 51.8V416h-62.2V215.4h59.7v27.4h.8c8.3-15.7 28.7-32.3 59.1-32.3 63.2 0 74.9 41.6 74.9 95.7V416z",
+    iconViewBox: "0 0 448 512",
+  },
+] as const;
+
+const socialIconClassName =
+  "group relative inline-flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-background/85 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40";
 
 /* ─── Floating Particle Component ─── */
 const FloatingParticle = ({ delay, x, y, size, color }: { delay: number; x: string; y: string; size: number; color: string }) => (
@@ -650,6 +694,14 @@ const Landing = () => {
     { name: t("partners.citizens"), icon: Heart },
   ];
 
+  const trackSocialClick = (platform: string, url: string) => {
+    try {
+      analytics.track("footer_social_click", { platform, url, section: "landing_footer" });
+    } catch {
+      // no-op: analytics failures must never affect navigation
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background overflow-hidden">
       <DecorativeBackground />
@@ -1110,6 +1162,44 @@ const Landing = () => {
                 <Link to="/careers" className="hover:text-foreground transition-colors font-medium text-accent">{t("footer.careers")}</Link>
               </div>
             </div>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
+              className="mb-8 rounded-2xl border border-border/60 bg-gradient-to-l from-muted/30 via-card/90 to-muted/30 px-4 py-5"
+            >
+              <div className="flex items-center justify-center md:justify-end gap-3 sm:gap-4">
+                {SOCIAL_LINKS.map((social) => (
+                  <Tooltip key={social.id}>
+                    <TooltipTrigger asChild>
+                      <a
+                        href={social.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={t("footer.follow_on", { platform: social.name })}
+                        onClick={() => trackSocialClick(social.id, social.href)}
+                        className={socialIconClassName}
+                      >
+                        <svg
+                          viewBox={social.iconViewBox}
+                          aria-hidden="true"
+                          className="h-5 w-5 transition-all duration-300 group-hover:scale-110"
+                          style={{ fill: social.color }}
+                        >
+                          <path d={social.iconPath} />
+                        </svg>
+                        <span
+                          className="pointer-events-none absolute inset-0 rounded-xl opacity-0 blur transition-opacity duration-300 group-hover:opacity-20 motion-reduce:opacity-0 motion-reduce:group-hover:opacity-0 motion-reduce:transition-none"
+                          style={{ backgroundColor: social.color }}
+                        />
+                      </a>
+                    </TooltipTrigger>
+                    <TooltipContent>{social.name}</TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </motion.div>
             <div className="pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">{t("footer.rights")}</p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
