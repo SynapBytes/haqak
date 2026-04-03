@@ -66,6 +66,10 @@ jobs:
       - name: Audit production deps (fail on high+)
         run: npm audit --omit=dev --audit-level=high
 
+      - name: Verify npm package signatures/provenance (non-blocking)
+        run: npm audit signatures
+        continue-on-error: true
+
   dependency-audit-weekly-report:
     name: Dependency audit report (weekly, medium/low)
     if: ${{ github.event_name == 'schedule' }}
@@ -87,6 +91,10 @@ jobs:
 
       - name: Audit production deps (report medium/low, non-blocking)
         run: npm audit --omit=dev --audit-level=low
+        continue-on-error: true
+
+      - name: Verify npm package signatures/provenance (non-blocking)
+        run: npm audit signatures
         continue-on-error: true
 
   secret-scan:

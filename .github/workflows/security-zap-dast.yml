@@ -10,8 +10,10 @@ permissions: read-all
 env:
   ZAP_FAIL_RISKS: High
   ZAP_PRODUCTION_URL: https://haqak.vercel.app
-  # Optional; when empty the workflow falls back to GITHUB_REPOSITORY_OWNER.
-  VERCEL_TEAM_SLUG: ""
+  # Optional explicit target override for DAST scans.
+  DAST_TARGET_URL: ""
+  # Optional PR preview URL from deployment workflow/integration.
+  VERCEL_PREVIEW_URL: ""
 
 jobs:
   zap-dast:
@@ -28,14 +30,24 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          REPO_NAME="${GITHUB_REPOSITORY#*/}"
-          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-            BRANCH="${GITHUB_HEAD_REF//\//-}"
-            TEAM="${VERCEL_TEAM_SLUG:-${GITHUB_REPOSITORY_OWNER}}"
-            TARGET_URL="https://${REPO_NAME}-git-${BRANCH}-${TEAM}.vercel.app"
+
+          normalize_url() {
+            local url="$1"
+            if [[ "${url}" =~ ^https?:// ]]; then
+              printf '%s\n' "${url}"
+            else
+              printf 'https://%s\n' "${url}"
+            fi
+          }
+
+          if [[ -n "${DAST_TARGET_URL:-}" ]]; then
+            TARGET_URL="$(normalize_url "${DAST_TARGET_URL}")"
+          elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" && -n "${VERCEL_PREVIEW_URL:-}" ]]; then
+            TARGET_URL="$(normalize_url "${VERCEL_PREVIEW_URL}")"
           else
-            TARGET_URL="${ZAP_PRODUCTION_URL}"
+            TARGET_URL="$(normalize_url "${ZAP_PRODUCTION_URL}")"
           fi
+
           echo "target_url=${TARGET_URL}" >> "${GITHUB_OUTPUT}"
 
       - name: Run ZAP baseline scan
