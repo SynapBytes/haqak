@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { buildCorsHeaders } from "../shared/cors.ts";
+import { RateLimitError, rateLimiter } from "../shared/rate-limiter.ts";
 
 interface TrackingResponse {
   success: boolean;
@@ -8,6 +9,19 @@ interface TrackingResponse {
   recipientType?: string;
   redirectUrl?: string;
   error?: string;
+}
+
+const SHORT_CODE_REGEX = /^[A-Za-z0-9]{8}$/;
+const RATE_LIMIT_LOG_STATUS = 200;
+
+async function shortCodeToPseudoUuid(shortCode: string): Promise<string> {
+  const input = new TextEncoder().encode(shortCode.toLowerCase());
+  const digest = await crypto.subtle.digest("SHA-256", input);
+  const hex = Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 32);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 
 serve(async (req) => {
@@ -23,9 +37,9 @@ serve(async (req) => {
     const url = new URL(req.url);
     const shortCode = url.searchParams.get("code");
 
-    if (!shortCode) {
+    if (!shortCode || !SHORT_CODE_REGEX.test(shortCode)) {
       return new Response(
-        JSON.stringify({ success: false, error: "Missing tracking code" }),
+        JSON.stringify({ success: false, error: "Invalid tracking code" }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
@@ -41,6 +55,39 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const ipAddressRaw =
+      req.headers.get("cf-connecting-ip") ??
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      req.headers.get("x-real-ip") ??
+      "0.0.0.0";
+
+    const trackingLinkRateLimitKey = await shortCodeToPseudoUuid(shortCode);
+
+    try {
+      await rateLimiter(
+        supabase,
+        trackingLinkRateLimitKey,
+        "/track-sms-click",
+        ipAddressRaw,
+        RATE_LIMIT_LOG_STATUS,
+        { maxRequests: 30, windowMinutes: 5 },
+      );
+    } catch (rateError) {
+      if (rateError instanceof RateLimitError) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Too many requests" }),
+          {
+            status: 429,
+            headers: {
+              ...cors,
+              "Content-Type": "application/json",
+              "Retry-After": String(rateError.retryAfterSeconds),
+            },
+          }
+        );
+      }
+      throw rateError;
+    }
 
     // Find tracking link
     const { data: trackingLink, error: linkError } = await supabase
@@ -53,6 +100,13 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: "Tracking link not found" }),
         { status: 404, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (trackingLink.expires_at && new Date(trackingLink.expires_at).getTime() < Date.now()) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Tracking link expired" }),
+        { status: 410, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -73,10 +127,7 @@ serve(async (req) => {
       return withoutControlChars.slice(0, maxLen);
     }
     const userAgent = sanitizeHeader(req.headers.get("user-agent"), MAX_UA_LEN);
-    const ipAddress = sanitizeHeader(
-      req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip"),
-      MAX_IP_LEN,
-    );
+    const ipAddress = sanitizeHeader(ipAddressRaw, MAX_IP_LEN);
 
     // Update click tracking
     const now = new Date().toISOString();

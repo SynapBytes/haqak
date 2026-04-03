@@ -23,6 +23,11 @@ interface TwilioResponse {
   message?: string;
 }
 
+function isDevelopmentEnvironment(): boolean {
+  const env = (Deno.env.get("ENVIRONMENT") ?? Deno.env.get("NODE_ENV") ?? "").toLowerCase();
+  return env === "development" || env === "dev" || env === "local";
+}
+
 /** Generate a cryptographically secure 6-digit OTP */
 function generateOTP(): string {
   const arr = new Uint32Array(1);
@@ -56,10 +61,8 @@ function formatPhoneNumber(phone: string): string {
   return `+${cleaned}`;
 }
 
-/** Verify a Cloudflare Turnstile token. Returns true when verification succeeds or is disabled. */
-async function verifyTurnstile(token: string | undefined, ip: string): Promise<boolean> {
-  const secret = Deno.env.get("TURNSTILE_SECRET_KEY");
-  if (!secret) return true; // Turnstile not configured — allow (operator choice)
+/** Verify a Cloudflare Turnstile token. */
+async function verifyTurnstile(secret: string, token: string | undefined, ip: string): Promise<boolean> {
   if (!token) return false;
   try {
     const form = new FormData();
@@ -125,8 +128,18 @@ serve(async (req) => {
       );
     }
 
-    // Verify Turnstile CAPTCHA (required when TURNSTILE_SECRET_KEY is set)
-    const turnstileOk = await verifyTurnstile(turnstileToken, clientIp);
+    const turnstileSecret = Deno.env.get("TURNSTILE_SECRET_KEY");
+    if (!turnstileSecret && !isDevelopmentEnvironment()) {
+      return new Response(
+        JSON.stringify({ error: "CAPTCHA verification failed" }),
+        { status: 403, headers: { ...cors, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Verify Turnstile CAPTCHA (mandatory outside development when configured)
+    const turnstileOk = turnstileSecret
+      ? await verifyTurnstile(turnstileSecret, turnstileToken, clientIp)
+      : isDevelopmentEnvironment();
     if (!turnstileOk) {
       return new Response(
         JSON.stringify({ error: "CAPTCHA verification failed" }),

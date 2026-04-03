@@ -14,12 +14,14 @@ interface TrackingLinkResponse {
   shortCode?: string;
   trackingUrl?: string;
   linkId?: string;
+  expiresAt?: string;
   error?: string;
 }
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ALLOWED_RECIPIENT_TYPES = new Set(["citizen", "mp", "admin"]);
+const TRACKING_LINK_TTL_DAYS = 14;
 
 // VULN-05 fix: use CSPRNG (crypto.getRandomValues) instead of Math.random()
 // which is a predictable PRNG unsuitable for security-sensitive tokens.
@@ -166,6 +168,8 @@ serve(async (req) => {
     // Create full tracking URL
     const trackingUrl = `${supabaseUrl.replace(/\/$/, "")}/functions/v1/track-sms-click?code=${shortCode}`;
 
+    const expiresAt = new Date(Date.now() + TRACKING_LINK_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
     // Store tracking link in database
     const { data: linkData, error: linkError } = await supabase
       .from("sms_tracking_links")
@@ -175,6 +179,7 @@ serve(async (req) => {
         full_url: trackingUrl,
         recipient_type: recipientType,
         recipient_id: recipientId,
+        expires_at: expiresAt,
       })
       .select()
       .single();
@@ -193,6 +198,7 @@ serve(async (req) => {
         shortCode,
         trackingUrl,
         linkId: linkData.id,
+        expiresAt,
       }),
       { status: 200, headers: { ...cors, "Content-Type": "application/json" } }
     );
