@@ -23,6 +23,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const MPProfilePage = lazy(() => import("./pages/MPProfilePage"));
 const MPSettingsPage = lazy(() => import("./pages/MPSettingsPage"));
 const CenterOnboarding = lazy(() => import("./pages/CenterOnboarding"));
+const MPPendingApproval = lazy(() => import("./pages/MPPendingApproval"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
@@ -90,6 +91,7 @@ function App() {
                   <Route path="/profile" element={<ProtectedRoute><CitizenProfile /></ProtectedRoute>} />
                   <Route path="/mps" element={<ProtectedRoute><MPsDirectory /></ProtectedRoute>} />
                   <Route path="/mp" element={<ProtectedRoute requiredRole="mp"><MPDashboard /></ProtectedRoute>} />
+                  <Route path="/mp-pending" element={<ProtectedRoute requiredRole="mp" allowMissingCenter><MPPendingApproval /></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
                   <Route path="/onboarding/center" element={<ProtectedRoute allowMissingCenter><CenterOnboarding /></ProtectedRoute>} />
                   <Route path="/mp-profile/:id" element={<MPProfilePage />} />
