@@ -14,9 +14,9 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
  */
 export const supabaseConfigError: string | null =
   !SUPABASE_URL
-    ? "VITE_SUPABASE_URL is not defined. Set it in your deployment environment (e.g., Vercel project settings)."
+    ? "VITE_SUPABASE_URL is not defined. Set it as an environment variable in your deployment environment."
     : !SUPABASE_PUBLISHABLE_KEY
-      ? "VITE_SUPABASE_PUBLISHABLE_KEY is not defined. Set it in your deployment environment (e.g., Vercel project settings)."
+      ? "VITE_SUPABASE_PUBLISHABLE_KEY is not defined. Set it as an environment variable in your deployment environment."
       : null;
 
 // Use placeholder values when env vars are missing so that the module loads

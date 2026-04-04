@@ -113,7 +113,7 @@ createRoot(document.getElementById("root")!).render(
               <code style={{ background: "#f1f5f9", padding: "0.1rem 0.3rem", borderRadius: 4 }}>
                 VITE_SUPABASE_PUBLISHABLE_KEY
               </code>{" "}
-              في إعدادات المشروع على Vercel.
+              في إعدادات متغيرات البيئة الخاصة بمنصة النشر.
             </p>
           </div>
         </div>

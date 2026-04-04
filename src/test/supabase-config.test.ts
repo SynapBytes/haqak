@@ -49,13 +49,13 @@ describe("supabase config validation logic (pure helper)", () => {
    * can test it without relying on import.meta.env manipulation.
    */
   function validateSupabaseConfig(
-    url: string | undefined | null,
-    key: string | undefined | null,
+    url: string | undefined,
+    key: string | undefined,
   ): string | null {
     if (!url)
-      return "VITE_SUPABASE_URL is not defined. Set it in your deployment environment (e.g., Vercel project settings).";
+      return "VITE_SUPABASE_URL is not defined. Set it as an environment variable in your deployment environment.";
     if (!key)
-      return "VITE_SUPABASE_PUBLISHABLE_KEY is not defined. Set it in your deployment environment (e.g., Vercel project settings).";
+      return "VITE_SUPABASE_PUBLISHABLE_KEY is not defined. Set it as an environment variable in your deployment environment.";
     return null;
   }
 
