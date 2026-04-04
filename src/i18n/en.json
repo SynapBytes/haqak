@@ -322,6 +322,7 @@
     "error_otp_expired": "Verification code has expired. Please request a new one",
     "error_rate_limit": "Too many attempts. Please wait a minute before trying again",
     "error_too_many": "Too many requests. Please wait and try again",
+    "error_network": "Connection failed. Please check your internet and try again",
     "error_pattern_mismatch": "Entered data format is incorrect",
     "signup_success_title": "Registration Successful! 🎉",
     "signup_success_body": "Your account has been created successfully. You can now sign in",

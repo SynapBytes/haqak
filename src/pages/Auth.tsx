@@ -27,6 +27,7 @@ import egyptianNefertiti from "@/assets/egyptian-nefertiti.webp";
 import ornament1 from "@/assets/egyptian-ornament-1.webp";
 import { validateEgyptianId, validateEgyptianIdWithReason, extractEgyptianIdInfo } from "@/lib/egyptianIdValidation";
 import { cn } from "@/lib/utils";
+import { isNetworkFailureMessage } from "@/lib/authError";
 
 type AuthMode = "login" | "login-otp" | "signup-citizen" | "signup-citizen-otp" | "signup-mp" | "signup-mp-otp" | "forgot-password" | "forgot-password-otp";
 
@@ -297,6 +298,7 @@ const Auth = () => {
   };
 
   const translateError = (msg: string): string => {
+    if (isNetworkFailureMessage(msg)) return t("auth.error_network");
     if (msg.includes("Invalid login credentials")) return t("auth.error_credentials");
     if (msg.includes("Phone not confirmed")) return t("auth.error_phone_not_confirmed");
     if (msg.includes("User already registered")) return t("auth.error_already_registered");
