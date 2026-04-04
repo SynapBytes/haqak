@@ -5,6 +5,8 @@ import "./index.css";
 import "./i18n";
 import { analytics } from "@/lib/analytics";
 import { initSentry } from "@/lib/sentry";
+import { supabaseConfigError } from "@/integrations/supabase/client";
+import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 
 // Initialise observability before the React tree renders.
 initSentry();
@@ -51,8 +53,44 @@ window.addEventListener("load", () => {
   window.setTimeout(clearRecoveryFlag, RECOVERY_FLAG_CLEAR_DELAY_MS);
 });
 
-createRoot(document.getElementById("root")!).render(
+if (supabaseConfigError) {
+  console.error("[bootstrap] Supabase configuration missing:", supabaseConfigError);
+}
+
+const rootElement = document.getElementById("root")!;
+
+createRoot(rootElement).render(
   <React.StrictMode>
-    <App />
+    <AppErrorBoundary>
+      {supabaseConfigError ? (
+        <div
+          dir="rtl"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "100vh",
+            padding: "2rem",
+            fontFamily: "sans-serif",
+            background: "#fafafa",
+            color: "#333",
+            textAlign: "center",
+          }}
+        >
+          <h1 style={{ fontSize: "1.5rem", marginBottom: "0.75rem" }}>
+            خطأ في إعدادات التطبيق
+          </h1>
+          <p style={{ marginBottom: "0.5rem", color: "#666", maxWidth: "480px" }}>
+            لا يمكن تشغيل التطبيق بسبب نقص في إعدادات الاتصال بقاعدة البيانات.
+          </p>
+          <p style={{ color: "#999", fontSize: "0.85rem", maxWidth: "480px" }}>
+            يرجى التواصل مع مسؤول النظام للتحقق من إعدادات البيئة.
+          </p>
+        </div>
+      ) : (
+        <App />
+      )}
+    </AppErrorBoundary>
   </React.StrictMode>
 );

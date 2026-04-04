@@ -1,5 +1,6 @@
 import {
   corsHeaders,
+  getFirstHeaderValue,
   isOriginAllowed,
   sendJson,
 } from "./_shared";
@@ -16,7 +17,7 @@ type Res = {
 };
 
 function applyCors(req: Req, res: Res): string | undefined {
-  const origin = req.headers.origin;
+  const origin = getFirstHeaderValue(req.headers.origin);
   const headers = corsHeaders(origin);
   Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
   return origin;
@@ -54,8 +55,8 @@ export default async function handler(req: Req, res: Res): Promise<void> {
     return;
   }
 
-  const supabaseUrl = requireEnv("VITE_SUPABASE_URL");
-  const supabaseAnonKey = requireEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
+  const supabaseUrl = requireEnv("SUPABASE_URL");
+  const supabaseAnonKey = requireEnv("SUPABASE_ANON_KEY");
 
   if (!supabaseUrl || !supabaseAnonKey) {
     sendJson(res, 500, { error: "Server misconfiguration" });

@@ -124,3 +124,9 @@ export function sendJson(
 ): void {
   res.status(code).json(body);
 }
+
+/** Normalise an HTTP header value that may be a single string or an array. */
+export function getFirstHeaderValue(val: string | string[] | undefined): string | undefined {
+  if (Array.isArray(val)) return val[0];
+  return val;
+}
