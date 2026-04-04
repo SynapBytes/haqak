@@ -139,18 +139,28 @@ jobs:
           set -euo pipefail
           PROJECT_URL="https://${SUPABASE_PROJECT_ID}.supabase.co"
           echo "Checking send-otp endpoint at ${PROJECT_URL}/functions/v1/send-otp ..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          OPTIONS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -X OPTIONS \
             -H "Origin: https://haqak.app" \
             -H "Access-Control-Request-Method: POST" \
             "${PROJECT_URL}/functions/v1/send-otp")
-          echo "  → HTTP status: $HTTP_STATUS"
+          POST_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            "${PROJECT_URL}/functions/v1/send-otp")
+          echo "  → OPTIONS HTTP status: $OPTIONS_STATUS"
+          echo "  → POST HTTP status: $POST_STATUS"
           # CORS preflight returns 200 when function exists; 404 means not deployed
-          if [ "$HTTP_STATUS" = "404" ]; then
-            echo "::error::send-otp returned 404 — function may not have deployed correctly."
+          if [ "$OPTIONS_STATUS" = "404" ] || [ "$POST_STATUS" = "404" ]; then
+            echo "::error::send-otp returned 404 (OPTIONS=$OPTIONS_STATUS, POST=$POST_STATUS) — function may not have deployed correctly."
             exit 1
           fi
-          echo "✅ send-otp is reachable (status $HTTP_STATUS)"
+          if [ "$OPTIONS_STATUS" != "200" ]; then
+            echo "::error::send-otp OPTIONS returned $OPTIONS_STATUS (expected 200)."
+            exit 1
+          fi
+          echo "✅ send-otp is reachable (OPTIONS=$OPTIONS_STATUS, POST=$POST_STATUS)"
         env:
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
 
@@ -161,17 +171,27 @@ jobs:
           set -euo pipefail
           PROJECT_URL="https://${SUPABASE_PROJECT_ID}.supabase.co"
           echo "Checking verify-otp endpoint at ${PROJECT_URL}/functions/v1/verify-otp ..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          OPTIONS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -X OPTIONS \
             -H "Origin: https://haqak.app" \
             -H "Access-Control-Request-Method: POST" \
             "${PROJECT_URL}/functions/v1/verify-otp")
-          echo "  → HTTP status: $HTTP_STATUS"
-          if [ "$HTTP_STATUS" = "404" ]; then
-            echo "::error::verify-otp returned 404 — function may not have deployed correctly."
+          POST_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            "${PROJECT_URL}/functions/v1/verify-otp")
+          echo "  → OPTIONS HTTP status: $OPTIONS_STATUS"
+          echo "  → POST HTTP status: $POST_STATUS"
+          if [ "$OPTIONS_STATUS" = "404" ] || [ "$POST_STATUS" = "404" ]; then
+            echo "::error::verify-otp returned 404 (OPTIONS=$OPTIONS_STATUS, POST=$POST_STATUS) — function may not have deployed correctly."
             exit 1
           fi
-          echo "✅ verify-otp is reachable (status $HTTP_STATUS)"
+          if [ "$OPTIONS_STATUS" != "200" ]; then
+            echo "::error::verify-otp OPTIONS returned $OPTIONS_STATUS (expected 200)."
+            exit 1
+          fi
+          echo "✅ verify-otp is reachable (OPTIONS=$OPTIONS_STATUS, POST=$POST_STATUS)"
         env:
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
 

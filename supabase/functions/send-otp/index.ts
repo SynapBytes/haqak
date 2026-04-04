@@ -1,356 +1,92 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { buildCorsHeaders } from "../shared/cors.ts";
-
-// Limits for OTP/auth sensitive paths
-const OTP_RATE_LIMIT_PER_PHONE = 5;   // max sends per phone per window
-const OTP_RATE_LIMIT_PER_IP = 10;     // max sends per IP per window
-const OTP_WINDOW_MINUTES = 10;
-const OTP_MAX_VERIFY_ATTEMPTS = 5;    // max failed verify attempts before lock
-const OTP_LOCK_MINUTES = 15;          // lock duration after too many failures
-const OTP_TTL_MINUTES = 5;            // OTP validity window
+import { OTP_CORS_HEADERS, jsonResponse } from "../_shared/cors.ts";
 
 interface SendOtpRequest {
   phone: string;
-  mode: "login" | "signup-citizen" | "signup-mp" | "forgot-password";
-  turnstileToken?: string;
-  /** E.164 dial prefix (e.g. "+966") for the selected country.
-   * When omitted the TWILIO_DEFAULT_COUNTRY_CODE env var is used (default "+20"). */
-  countryCode?: string;
 }
 
-interface TwilioResponse {
+interface TwilioVerificationResponse {
   sid?: string;
   status?: string;
-  error_code?: string;
   message?: string;
+  code?: number;
 }
 
-function isDevelopmentEnvironment(): boolean {
-  const env = (Deno.env.get("ENVIRONMENT") ?? Deno.env.get("NODE_ENV") ?? "").toLowerCase();
-  return env === "development" || env === "dev" || env === "local";
-}
+const E164_REGEX = /^\+[1-9]\d{1,14}$/;
 
-/** Generate a cryptographically secure 6-digit OTP */
-function generateOTP(): string {
-  const arr = new Uint32Array(1);
-  crypto.getRandomValues(arr);
-  return String(100000 + (arr[0] % 900000));
-}
-
-/** Compute HMAC-SHA256 of `message` with `key`, return hex string */
-async function hmacSha256Hex(key: string, message: string): Promise<string> {
-  const enc = new TextEncoder();
-  const cryptoKey = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(key),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign("HMAC", cryptoKey, enc.encode(message));
-  return Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-/** Format a raw phone string to E.164.
- * @param phone      Raw phone input from the user.
- * @param countryCode  Optional E.164 dial prefix (e.g. "+966").  When omitted,
- *                   falls back to the TWILIO_DEFAULT_COUNTRY_CODE env var, then "+20".
- */
-function formatPhoneNumber(phone: string, countryCode?: string): string {
-  const cc = countryCode ?? Deno.env.get("TWILIO_DEFAULT_COUNTRY_CODE") ?? "+20";
-  const numeric = cc.replace(/\D/g, "");
-  const cleaned = phone.replace(/\D/g, "");
-  if (cleaned.startsWith("0")) return `+${numeric}${cleaned.slice(1)}`;
-  if (!cleaned.startsWith(numeric)) return `+${numeric}${cleaned}`;
-  return `+${cleaned}`;
-}
-
-/** Verify a Cloudflare Turnstile token. */
-async function verifyTurnstile(secret: string, token: string | undefined, ip: string): Promise<boolean> {
-  if (!token) return false;
-  try {
-    const form = new FormData();
-    form.append("secret", secret);
-    form.append("response", token);
-    form.append("remoteip", ip);
-    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-      method: "POST",
-      body: form,
-    });
-    const data = await res.json() as { success: boolean };
-    return data.success === true;
-  } catch {
-    return false;
+function getRequiredSecret(name: "TWILIO_ACCOUNT_SID" | "TWILIO_AUTH_TOKEN" | "TWILIO_VERIFY_SERVICE_SID"): string {
+  const value = Deno.env.get(name)?.trim();
+  if (!value) {
+    throw new Error(`Missing required secret: ${name}`);
   }
-}
-
-/**
- * Retrieves the Supabase service-role key, with optional Supabase Vault fallback.
- *
- * Resolution order:
- *  1. SUPABASE_SERVICE_ROLE_KEY environment variable (auto-injected by Supabase runtime,
- *     or manually set via: `supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<value>`)
- *  2. Supabase Vault (see docs/DEPLOYMENT.md) — uncomment the block below to enable.
- *
- * The service-role key is never logged.  A boolean flag is logged on failure only.
- */
-async function getServiceRoleKey(): Promise<string | null> {
-  // Primary path: environment variable injected by Supabase Edge Functions runtime.
-  const envKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (envKey) return envKey;
-
-  // Optional Vault fallback — enable when using Supabase Vault for secret rotation.
-  // Prerequisites:
-  //   1. Store the key in Vault:  supabase vault add --name SERVICE_ROLE_KEY
-  //   2. Grant SELECT on vault.decrypted_secrets to the `service_role`:
-  //        GRANT SELECT ON vault.decrypted_secrets TO service_role;
-  //   3. Set SUPABASE_ANON_KEY and SUPABASE_URL as edge-function secrets.
-  //
-  // try {
-  //   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  //   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  //   if (anonKey && supabaseUrl) {
-  //     const vaultClient = createClient(supabaseUrl, anonKey);
-  //     const { data, error } = await vaultClient
-  //       .from("vault.decrypted_secrets")
-  //       .select("decrypted_secret")
-  //       .eq("name", "SERVICE_ROLE_KEY")
-  //       .maybeSingle();
-  //     if (!error && data?.decrypted_secret) return data.decrypted_secret;
-  //   }
-  // } catch {
-  //   console.error("Vault lookup failed — falling back gracefully");
-  // }
-
-  console.error("SUPABASE_SERVICE_ROLE_KEY is not configured");
-  return null;
+  return value;
 }
 
 serve(async (req) => {
-  const cors = buildCorsHeaders(req.headers.get("Origin"));
-
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: cors });
+    return new Response("ok", { status: 200, headers: OTP_CORS_HEADERS });
+  }
+
+  if (req.method !== "POST") {
+    return jsonResponse({ error: "Method not allowed" }, 405);
   }
 
   try {
-    // Extract client IP from standard Cloudflare/Vercel headers
-    const clientIp =
-      req.headers.get("CF-Connecting-IP") ??
-      req.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() ??
-      "0.0.0.0";
+    const { phone } = (await req.json()) as SendOtpRequest;
 
-    const { phone, mode, turnstileToken, countryCode } = (await req.json()) as SendOtpRequest;
-
-    // Validate required fields
-    if (!phone || !mode) {
-      return new Response(
-        JSON.stringify({ error: "Missing required fields: phone and mode" }),
-        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
-      );
+    if (!phone || !E164_REGEX.test(phone)) {
+      return jsonResponse({ error: "Invalid phone. Use E.164 format, e.g. +201012345678" }, 400);
     }
 
-    // Validate phone number — configurable via env, defaults to Egyptian format.
-    // VULN-09 fix: guard against ReDoS by validating the pattern before use.
-    const DEFAULT_PHONE_REGEX = "^01[0125][0-9]{8}$";
-    const phoneRegexSrc = Deno.env.get("PHONE_REGEX") ?? DEFAULT_PHONE_REGEX;
-    let phoneRegex: RegExp;
-    try {
-      phoneRegex = new RegExp(phoneRegexSrc);
-      // Reject patterns that are suspiciously long or contain nested quantifiers
-      // which are the primary source of catastrophic ReDoS backtracking.
-      if (phoneRegexSrc.length > 200 || /(\+|\*|\?)\s*(\+|\*|\?)/.test(phoneRegexSrc) || /\([^)]*(\+|\*|\?)\)\s*(\+|\*|\?)/.test(phoneRegexSrc)) {
-        throw new Error("Unsafe regex pattern");
-      }
-    } catch {
-      console.error("Invalid or unsafe PHONE_REGEX env var, falling back to default");
-      phoneRegex = new RegExp(DEFAULT_PHONE_REGEX);
-    }
-    if (!phoneRegex.test(phone)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid phone number format" }),
-        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
-      );
-    }
+    const accountSid = getRequiredSecret("TWILIO_ACCOUNT_SID");
+    const authToken = getRequiredSecret("TWILIO_AUTH_TOKEN");
+    const verifyServiceSid = getRequiredSecret("TWILIO_VERIFY_SERVICE_SID");
 
-    const turnstileSecret = Deno.env.get("TURNSTILE_SECRET_KEY");
-    if (!turnstileSecret && !isDevelopmentEnvironment()) {
-      return new Response(
-        JSON.stringify({ error: "CAPTCHA verification failed" }),
-        { status: 403, headers: { ...cors, "Content-Type": "application/json" } },
-      );
-    }
-
-    // Verify Turnstile CAPTCHA (mandatory outside development when configured)
-    const turnstileOk = turnstileSecret
-      ? await verifyTurnstile(turnstileSecret, turnstileToken, clientIp)
-      : isDevelopmentEnvironment();
-    if (!turnstileOk) {
-      return new Response(
-        JSON.stringify({ error: "CAPTCHA verification failed" }),
-        { status: 403, headers: { ...cors, "Content-Type": "application/json" } },
-      );
-    }
-
-    // Load required env vars
-    const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    // SECURITY: SERVICE_ROLE_KEY is a bootstrap secret.  In Supabase Edge Functions it
-    // is automatically injected as a managed environment variable (set in the Supabase
-    // dashboard under Project Settings → Edge Functions → Secrets, or via the CLI:
-    //   supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<value>
-    // For production deployments that require secret rotation without redeployment,
-    // store the key in Supabase Vault (Settings → Vault) and use the helper below.
-    // See docs/DEPLOYMENT.md for the full setup guide.
-    const supabaseServiceKey = await getServiceRoleKey();
-    // HMAC key for signing OTP tokens — must be set in production
-    const otpHmacSecret = Deno.env.get("OTP_HMAC_SECRET");
-    if (!otpHmacSecret) {
-      // OTP_HMAC_SECRET is required in production; refuse to proceed without it
-      // to avoid storing OTP tokens that offer no HMAC protection.
-      console.error("OTP_HMAC_SECRET is not configured");
-      return new Response(
-        JSON.stringify({ error: "Server configuration error" }),
-        { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
-      );
-    }
-
-    if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-      return new Response(
-        JSON.stringify({ error: "Server configuration error" }),
-        { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
-      );
-    }
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return new Response(
-        JSON.stringify({ error: "Server configuration error" }),
-        { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
-      );
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const formattedPhone = formatPhoneNumber(phone, countryCode);
-    const windowStart = new Date(Date.now() - OTP_WINDOW_MINUTES * 60 * 1000).toISOString();
-
-    // ── Per-phone rate limit ──────────────────────────────────────────────────
-    const { count: phoneCount } = await supabase
-      .from("otp_codes")
-      .select("*", { count: "exact", head: true })
-      .eq("phone", formattedPhone)
-      .gte("created_at", windowStart);
-
-    if ((phoneCount ?? 0) >= OTP_RATE_LIMIT_PER_PHONE) {
-      return new Response(
-        JSON.stringify({ error: "Too many OTP requests for this phone. Please try again later." }),
-        { status: 429, headers: { ...cors, "Content-Type": "application/json", "Retry-After": String(OTP_WINDOW_MINUTES * 60) } },
-      );
-    }
-
-    // ── Per-IP rate limit ─────────────────────────────────────────────────────
-    const { count: ipCount } = await supabase
-      .from("rate_limit_logs")
-      .select("*", { count: "exact", head: true })
-      .eq("ip_address", clientIp)
-      .eq("request_path", "/send-otp")
-      .gte("request_timestamp", windowStart);
-
-    if ((ipCount ?? 0) >= OTP_RATE_LIMIT_PER_IP) {
-      return new Response(
-        JSON.stringify({ error: "Too many requests from your network. Please try again later." }),
-        { status: 429, headers: { ...cors, "Content-Type": "application/json", "Retry-After": String(OTP_WINDOW_MINUTES * 60) } },
-      );
-    }
-
-    // ── Check for a locked phone (too many failed verification attempts) ──────
-    const lockWindow = new Date(Date.now() - OTP_LOCK_MINUTES * 60 * 1000).toISOString();
-    const { data: lockedRows } = await supabase
-      .from("otp_codes")
-      .select("attempts")
-      .eq("phone", formattedPhone)
-      .gte("created_at", lockWindow)
-      .order("created_at", { ascending: false })
-      .limit(1);
-
-    if (lockedRows && lockedRows.length > 0 && lockedRows[0].attempts >= OTP_MAX_VERIFY_ATTEMPTS) {
-      return new Response(
-        JSON.stringify({ error: "Account temporarily locked due to too many failed attempts. Please try again later." }),
-        { status: 429, headers: { ...cors, "Content-Type": "application/json", "Retry-After": String(OTP_LOCK_MINUTES * 60) } },
-      );
-    }
-
-    // ── Generate OTP and compute HMAC token (raw OTP is never stored) ─────────
-    const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000).toISOString();
-
-    // The stored token is HMAC(secret, phone + ":" + otp + ":" + expiresAt)
-    const tokenInput = `${formattedPhone}:${otp}:${expiresAt}`;
-    const hashedToken = await hmacSha256Hex(otpHmacSecret, tokenInput);
-
-    // ── Send SMS via Twilio ───────────────────────────────────────────────────
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
-
-    const twilioResponse = await fetch(twilioUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+    const response = await fetch(
+      `https://verify.twilio.com/v2/Services/${verifyServiceSid}/Verifications`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          To: phone,
+          Channel: "sms",
+        }).toString(),
       },
-      body: new URLSearchParams({
-        From: twilioPhoneNumber,
-        To: formattedPhone,
-        Body: `رمز التحقق الخاص بك في حقك: ${otp}\nلا تشارك هذا الرمز مع أحد\nصلاحية الرمز ${OTP_TTL_MINUTES} دقائق`,
-      }).toString(),
-    });
+    );
 
-    const twilioData = (await twilioResponse.json()) as TwilioResponse;
+    const data = (await response.json().catch((parseError) => {
+      console.error("Failed to parse Twilio Verify send response JSON:", parseError);
+      return {};
+    })) as TwilioVerificationResponse;
 
-    if (!twilioResponse.ok) {
-      return new Response(
-        JSON.stringify({ error: "Failed to send OTP" }),
-        { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
+    if (!response.ok) {
+      const status = response.status >= 400 && response.status < 500 ? response.status : 502;
+      return jsonResponse(
+        {
+          error: data.message ?? "Twilio Verify send failed",
+          twilio_code: data.code ?? null,
+        },
+        status,
       );
     }
 
-    // ── Persist HMAC token (not raw OTP) with expiry and zero attempts ────────
-    const { error: dbError } = await supabase
-      .from("otp_codes")
-      .insert({
-        phone: formattedPhone,
-        code: hashedToken, // HMAC token, not raw OTP
-        mode,
-        expires_at: expiresAt,
-        attempts: 0,
-        created_at: new Date().toISOString(),
-      });
-
-    if (dbError) {
-      // Log only the error code, not any sensitive data
-      console.error("OTP DB insert failed:", dbError.code);
+    return jsonResponse(
+      {
+        success: true,
+        sid: data.sid ?? null,
+        status: data.status ?? "pending",
+        channel: "sms",
+      },
+      200,
+    );
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith("Missing required secret:")) {
+      return jsonResponse({ error: error.message }, 500);
     }
 
-    // ── Log IP-based request for rate limiting ────────────────────────────────
-    await supabase.from("rate_limit_logs").insert({
-      user_id: "00000000-0000-0000-0000-000000000000", // anonymous placeholder
-      request_path: "/send-otp",
-      response_status: 200,
-      ip_address: clientIp,
-    });
-
-    return new Response(
-      JSON.stringify({ success: true, message: "OTP sent successfully" }),
-      { status: 200, headers: { ...cors, "Content-Type": "application/json" } },
-    );
-  } catch {
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
-    );
+    return jsonResponse({ error: "Internal server error" }, 500);
   }
 });

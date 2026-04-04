@@ -1,11 +1,8 @@
 project_id = "ujbiyzabdonykzfofsiz"
 
-[auth.security]
-# Enable protection against leaked passwords using HaveIBeenPwned API
-password_hibp_enabled = true
-# Enforce a minimum password length
-password_min_length = 8
-# Require at least one digit, one lowercase, one uppercase, and one special character
-password_required_characters = "abcdefghijklmnopqrstuvwxyz:ABCDEFGHIJKLMNOPQRSTUVWXYZ:0123456789"
-# Prevent users from reusing their old passwords
-password_history_size = 5
+# Note:
+# The previous [auth.security] block was removed because Supabase CLI v2.84.2
+# fails to parse it during Edge Functions deploy with:
+# "'auth' has invalid keys: security".
+# Keep auth password/security policies configured in the Supabase Dashboard
+# (Authentication settings) until this key is supported by the CLI schema.
