@@ -43,6 +43,15 @@ export function isOriginAllowed(origin: string | undefined): boolean {
   return allowed.has(origin);
 }
 
+/**
+ * Vercel request headers may come as a single string or an array.
+ * This normalizes both forms to a single string for downstream checks.
+ */
+export function normalizeHeaderValue(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value.length > 0 ? value[0] : undefined;
+  return value;
+}
+
 function consumeFromBucket(bucket: RateBucket, key: string, limit: number, windowMs: number): boolean {
   if (limit <= 0) return false;
   const now = Date.now();

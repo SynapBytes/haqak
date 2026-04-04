@@ -1,14 +1,10 @@
 import {
   corsHeaders,
   isOriginAllowed,
+  normalizeHeaderValue,
   sendJson,
 } from "./_shared.js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-
-function normalizeHeaderValue(value: string | string[] | undefined): string | undefined {
-  if (Array.isArray(value)) return value[0];
-  return value;
-}
 
 function applyCors(req: VercelRequest, res: VercelResponse): string | undefined {
   const origin = normalizeHeaderValue(req.headers.origin);
