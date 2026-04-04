@@ -80,6 +80,7 @@ jobs:
           version: 2.84.2
 
       - name: Deploy Edge Function(s)
+        id: deploy
         run: |
           FUNCTION="${{ github.event.inputs.function_name }}"
           if [ -n "$FUNCTION" ]; then
@@ -96,6 +97,7 @@ jobs:
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
 
       - name: Smoke test — send-otp reachable
+        id: smoke_send_otp
         run: |
           PROJECT_URL="https://${SUPABASE_PROJECT_ID}.supabase.co"
           echo "Checking send-otp endpoint at ${PROJECT_URL}/functions/v1/send-otp ..."
@@ -115,6 +117,7 @@ jobs:
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
 
       - name: Smoke test — verify-otp reachable
+        id: smoke_verify_otp
         run: |
           PROJECT_URL="https://${SUPABASE_PROJECT_ID}.supabase.co"
           echo "Checking verify-otp endpoint at ${PROJECT_URL}/functions/v1/verify-otp ..."
@@ -129,5 +132,46 @@ jobs:
             exit 1
           fi
           echo "✅ verify-otp is reachable (status $HTTP_STATUS)"
+        env:
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+
+      - name: Report deployment status
+        if: always()
+        run: |
+          PROJECT_URL="https://${SUPABASE_PROJECT_ID}.supabase.co"
+          FUNCTION="${{ github.event.inputs.function_name }}"
+          DEPLOYED="${FUNCTION:-all functions}"
+          DEPLOY_OUTCOME="${{ steps.deploy.outcome }}"
+          SMOKE_SEND_OUTCOME="${{ steps.smoke_send_otp.outcome }}"
+          SMOKE_VERIFY_OUTCOME="${{ steps.smoke_verify_otp.outcome }}"
+          {
+            echo "## 🚀 Edge Functions Deployment"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| **Trigger** | \`${{ github.event_name }}\` |"
+            echo "| **Branch** | \`${{ github.ref_name }}\` |"
+            echo "| **Deployed** | \`${DEPLOYED}\` |"
+            echo "| **Project URL** | ${PROJECT_URL} |"
+            echo "| **Commit** | \`${{ github.sha }}\` |"
+            echo ""
+            echo "| Step | Result |"
+            echo "|---|---|"
+            echo "| Deploy | ${DEPLOY_OUTCOME} |"
+            echo "| Smoke test: send-otp | ${SMOKE_SEND_OUTCOME} |"
+            echo "| Smoke test: verify-otp | ${SMOKE_VERIFY_OUTCOME} |"
+            echo ""
+            if [ "${DEPLOY_OUTCOME}" = "success" ] && \
+               [ "${SMOKE_SEND_OUTCOME}" = "success" ] && \
+               [ "${SMOKE_VERIFY_OUTCOME}" = "success" ]; then
+              echo "✅ **All steps passed** — functions are deployed and smoke tests passed."
+            else
+              echo "❌ **One or more steps failed** — check the logs above for details."
+              echo ""
+              echo "**Common fixes:**"
+              echo "- Ensure \`SUPABASE_ACCESS_TOKEN\` and \`SUPABASE_PROJECT_ID\` secrets are set."
+              echo "- See [DEPLOYMENT.md — Troubleshooting](docs/DEPLOYMENT.md#7-troubleshooting) for more help."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
         env:
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}

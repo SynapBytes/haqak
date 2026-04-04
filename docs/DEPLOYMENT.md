@@ -188,3 +188,114 @@ repository secrets and are mapped to Supabase secrets on deployment.
 See `.github/workflows/deploy-edge-functions.yml` for the full pipeline
 definition, and **§0** above for the one-time secrets setup required to
 enable automated deployments.
+
+---
+
+## 7. Troubleshooting
+
+### 7.1 `send-otp` / `verify-otp` return 404
+
+**Cause:** The Edge Functions have not been deployed yet, or the last
+deployment failed.
+
+**Fix:**
+
+```bash
+# Deploy manually from your workstation
+supabase link --project-ref <your-project-ref>
+supabase functions deploy send-otp
+supabase functions deploy verify-otp
+```
+
+Or trigger the GitHub Actions workflow manually:
+**Actions → Deploy Supabase Edge Functions → Run workflow**
+
+---
+
+### 7.2 CORS preflight fails (status 400 / 403)
+
+**Cause:** The `Origin` header sent by the browser is not in the allowlist
+defined in `supabase/functions/shared/cors.ts`.
+
+**Fix:** Add your frontend origin to the `ALLOWED_ORIGINS` environment
+variable:
+
+```bash
+supabase secrets set ALLOWED_ORIGINS=https://your-domain.com
+```
+
+Alternatively, update the allowlist directly in
+`supabase/functions/shared/cors.ts` and redeploy.
+
+---
+
+### 7.3 Workflow fails with "Missing required GitHub secret(s)"
+
+**Cause:** `SUPABASE_ACCESS_TOKEN` or `SUPABASE_PROJECT_ID` (or both) are
+not set as GitHub repository secrets.
+
+**Fix:** Follow the one-time setup steps in **§0** above.
+
+---
+
+### 7.4 OTP is never received by the user
+
+Check the following in order:
+
+1. **Twilio credentials** — ensure `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`,
+   and `TWILIO_PHONE_NUMBER` are set as Supabase Edge Function secrets:
+   ```bash
+   supabase secrets set TWILIO_ACCOUNT_SID=<value>
+   supabase secrets set TWILIO_AUTH_TOKEN=<value>
+   supabase secrets set TWILIO_PHONE_NUMBER=<value>
+   ```
+2. **Phone format** — confirm the frontend is passing `countryCode` so the
+   number is converted to E.164 correctly (see §5).
+3. **Rate limits** — the same phone can only receive 5 OTPs per 10-minute
+   window. Wait for the window to expire and try again.
+4. **Twilio dashboard** — check the Twilio console for delivery errors.
+
+---
+
+### 7.5 `getServiceRoleKey()` returns `null` and requests fail with 500
+
+**Cause:** `SUPABASE_SERVICE_ROLE_KEY` is not available in the Edge Function
+runtime.
+
+**Fix:**
+
+```bash
+# Set the secret via the Supabase CLI
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
+```
+
+The key is available in your project under
+**Settings → API → Project API keys → service_role (secret)**.
+
+---
+
+### 7.6 How to verify a successful deployment
+
+After the GitHub Actions workflow completes, confirm the functions are live:
+
+```bash
+# Replace PROJECT_REF with your Supabase project reference
+PROJECT_URL="https://<PROJECT_REF>.supabase.co"
+
+# send-otp smoke test (expect 200 or 405, never 404)
+curl -s -o /dev/null -w "%{http_code}" \
+  -X OPTIONS \
+  -H "Origin: https://haqak.app" \
+  -H "Access-Control-Request-Method: POST" \
+  "${PROJECT_URL}/functions/v1/send-otp"
+
+# verify-otp smoke test
+curl -s -o /dev/null -w "%{http_code}" \
+  -X OPTIONS \
+  -H "Origin: https://haqak.app" \
+  -H "Access-Control-Request-Method: POST" \
+  "${PROJECT_URL}/functions/v1/verify-otp"
+```
+
+A `200` response confirms the function is deployed and responding to CORS
+preflight requests.
