@@ -10,10 +10,10 @@ const SITE_KEY = APP_CONFIG.TURNSTILE_SITE_KEY;
 
 /* ── Error Boundary ── */
 class TurnstileErrorBoundary extends React.Component<
-  { children: React.ReactNode; onFallback?: () => void },
+  { children: React.ReactNode },
   { hasError: boolean }
 > {
-  constructor(props: { children: React.ReactNode; onFallback?: () => void }) {
+  constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
@@ -33,15 +33,15 @@ class TurnstileErrorBoundary extends React.Component<
 const LazyTurnstile = React.lazy(() => import("react-turnstile"));
 
 const TurnstileCaptcha = ({ onVerify, onExpire }: TurnstileCaptchaProps) => {
-  // Don't render Turnstile if no sitekey is configured
-  if (!SITE_KEY) {
-    // Auto-verify in development when no key is set
-    if (import.meta.env.DEV) {
-      // Schedule to avoid calling setState during render
-      React.useEffect(() => { onVerify("dev-bypass-token"); }, []);
+  const skip = !SITE_KEY;
+
+  React.useEffect(() => {
+    if (skip && import.meta.env.DEV) {
+      onVerify("dev-bypass-token");
     }
-    return null;
-  }
+  }, [skip]);
+
+  if (skip) return null;
 
   return (
     <TurnstileErrorBoundary>
