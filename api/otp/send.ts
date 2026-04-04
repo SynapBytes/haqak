@@ -2,21 +2,16 @@ import {
   corsHeaders,
   isOriginAllowed,
   sendJson,
-} from "./_shared";
+} from "./_shared.js";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-type Req = {
-  method?: string;
-  headers: Record<string, string | string[] | undefined>;
-  body?: unknown;
-};
+function normalizeHeaderValue(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value;
+}
 
-type Res = {
-  setHeader: (key: string, value: string) => void;
-  status: (code: number) => { json: (body: unknown) => void; end: () => void };
-};
-
-function applyCors(req: Req, res: Res): string | undefined {
-  const origin = req.headers.origin;
+function applyCors(req: VercelRequest, res: VercelResponse): string | undefined {
+  const origin = normalizeHeaderValue(req.headers.origin);
   const headers = corsHeaders(origin);
   Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
   return origin;
@@ -36,7 +31,7 @@ async function parseJsonSafe(response: Response): Promise<Record<string, unknown
   }
 }
 
-export default async function handler(req: Req, res: Res): Promise<void> {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const origin = applyCors(req, res);
 
   if (req.method === "OPTIONS") {
@@ -54,8 +49,8 @@ export default async function handler(req: Req, res: Res): Promise<void> {
     return;
   }
 
-  const supabaseUrl = requireEnv("VITE_SUPABASE_URL");
-  const supabaseAnonKey = requireEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
+  const supabaseUrl = requireEnv("SUPABASE_URL");
+  const supabaseAnonKey = requireEnv("SUPABASE_ANON_KEY");
 
   if (!supabaseUrl || !supabaseAnonKey) {
     sendJson(res, 500, { error: "Server misconfiguration" });

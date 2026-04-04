@@ -5,6 +5,7 @@ import "./index.css";
 import "./i18n";
 import { analytics } from "@/lib/analytics";
 import { initSentry } from "@/lib/sentry";
+import { supabaseConfigError } from "@/integrations/supabase/client";
 
 // Initialise observability before the React tree renders.
 initSentry();
@@ -51,8 +52,60 @@ window.addEventListener("load", () => {
   window.setTimeout(clearRecoveryFlag, RECOVERY_FLAG_CLEAR_DELAY_MS);
 });
 
+type AppErrorBoundaryProps = {
+  children: React.ReactNode;
+};
+
+type AppErrorBoundaryState = {
+  hasError: boolean;
+};
+
+class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, AppErrorBoundaryState> {
+  constructor(props: AppErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): AppErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error("Unhandled app error boundary crash:", error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background px-6 text-center">
+          <div>
+            <h1 className="text-2xl font-semibold mb-3">حدث خطأ غير متوقع</h1>
+            <p className="text-muted-foreground">يرجى إعادة تحميل الصفحة أو المحاولة لاحقًا.</p>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+if (supabaseConfigError) {
+  createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      <div className="min-h-screen flex items-center justify-center bg-background px-6 text-center">
+        <div>
+          <h1 className="text-2xl font-semibold mb-3">إعدادات التطبيق غير مكتملة</h1>
+          <p className="text-muted-foreground">{supabaseConfigError}</p>
+        </div>
+      </div>
+    </React.StrictMode>
+  );
+} else {
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <AppErrorBoundary>
+      <App />
+    </AppErrorBoundary>
   </React.StrictMode>
 );
+}
