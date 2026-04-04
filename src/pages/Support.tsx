@@ -137,23 +137,29 @@ const Support = () => {
   }, []);
 
   const handleContribute = async () => {
-    const finalAmount = amount === "other" ? parseFloat(customAmount) : amount;
-    
-    if (isNaN(finalAmount) || finalAmount < 10) {
+    const finalAmount: number = amount === "other" ? parseFloat(customAmount) : amount;
+
+    if (Number.isNaN(finalAmount) || finalAmount < 10) {
       toast.error(t("contribute.min_amount_error"));
       return;
     }
 
     setLoading(true);
     try {
-      const { data, error } = await (supabase.from("contributions" as any).insert({
+      const payload: ContributionInsertPayload = {
         amount: finalAmount,
         name: name ? sanitizeText(name) : null,
         email: email ? sanitizeText(email) : null,
         show_name: showName,
         status: "succeeded",
         payment_provider: "premium_gateway",
-      } as any).select().single() as any);
+      };
+
+      const { data, error } = await supportSupabase
+        .from("contributions")
+        .insert(payload)
+        .select()
+        .single();
 
       if (error) throw error;
       if (!isRecord(data) || typeof data.id !== "string") {
@@ -175,16 +181,22 @@ const Support = () => {
     if (!feedback.trim()) return;
     setLoading(true);
     try {
-      const { error } = await (supabase.from("feedbacks" as any).insert({
+      const payload: FeedbackInsertPayload = {
         contribution_id: contributionId,
         message: sanitizeText(feedback),
         name: name ? sanitizeText(name) : null,
         email: email ? sanitizeText(email) : null,
-      } as any) as any);
+      };
+
+      const { error } = await supportSupabase
+        .from("feedbacks")
+        .insert(payload);
+
       if (error) throw error;
       toast.success(t("contribute.feedback_success"));
       setFeedback("");
     } catch (error) {
+      console.error("Feedback error:", error);
       toast.error(t("dashboard.error_submit"));
     } finally {
       setLoading(false);
