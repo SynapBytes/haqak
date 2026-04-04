@@ -8,6 +8,13 @@ if (!globalThis.crypto?.subtle) {
   globalThis.crypto = webcrypto as Crypto;
 }
 
+// Framer-motion's whileInView requires IntersectionObserver which jsdom doesn't provide
+globalThis.IntersectionObserver = class IntersectionObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof IntersectionObserver;
+
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: (query: string) => ({
