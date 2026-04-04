@@ -198,7 +198,8 @@ const Auth = () => {
         return phoneRegex.test(phone) && password.length > 0;
       }
       if (mode === "forgot-password") {
-        return phoneRegex.test(phone);
+        const passwordValid = password.length >= 8 && passwordHasNumber && passwordHasLetter;
+        return phoneRegex.test(phone) && passwordValid;
       }
       if (mode === "signup-citizen" || mode === "signup-mp") {
         const phoneValid = phoneRegex.test(phone);
@@ -387,7 +388,8 @@ const Auth = () => {
           countryCode,
           otp: otpCode, 
           mode: mode.replace("-otp", ""),
-          ...(mode.includes("signup") && { fullName, password, governorate, district, electoralDistrict, registrationNumber, displayName, nationalId })
+          ...(mode.includes("signup") && { fullName, password, governorate, district, electoralDistrict, registrationNumber, displayName, nationalId }),
+          ...(mode === "forgot-password-otp" && { newPassword: password }),
         }),
       });
 
@@ -407,37 +409,8 @@ const Auth = () => {
         const redirect = await getRoleRedirect(data.userId);
         navigate(redirect);
       } else if (mode.includes("signup")) {
-        // Perform signup
-        const { error } = await supabase.auth.signUp({
-          email: data.email,
-          password: password,
-          options: {
-            data: {
-              full_name: fullName,
-              phone,
-              countryCode,
-              role: signupRole,
-              ...(mode.includes("citizen") && {
-                national_id: nationalId,
-                governorate,
-                district,
-                center: district,
-                electoral_district: null,
-              }),
-              ...(mode.includes("mp") && {
-                display_name: displayName,
-                governorate,
-                district,
-                electoral_district: electoralDistrict,
-                registration_number: registrationNumber,
-                membership_number: registrationNumber,
-                center: district,
-              }),
-            },
-            emailRedirectTo: window.location.origin,
-          },
-        });
-        if (error) throw error;
+        // Account was created server-side during OTP verification — no client
+        // signUp() call is needed.  Just report success and redirect to login.
         analytics.track("signup_success", { role: signupRole });
         setSignupSuccessful(true);
         resetForm();
@@ -446,11 +419,7 @@ const Auth = () => {
           setMode("login");
         }, 3000);
       } else if (mode === "forgot-password-otp") {
-        // Reset password
-        const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-          redirectTo: `${window.location.origin}/reset-password`,
-        });
-        if (error) throw error;
+        // Password was reset server-side during OTP verification.
         toast.success(t("auth.forgot_success"));
         resetForm();
         setMode("login");
@@ -682,12 +651,14 @@ const Auth = () => {
                       {phoneError && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {phoneError}</p>}
                     </div>
 
-                    {/* Password Field (for login and signup) */}
-                    {!isForgot && (
+                    {/* Password Field — shown for login, signup, and forgot-password (new password).
+                        In forgot-password-otp the entire form switches to the OTP branch, so
+                        that mode never appears here; the condition guards future-proofing only. */}
+                    {mode !== "forgot-password-otp" && (
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-foreground flex items-center gap-2">
                           <Lock className="w-4 h-4" />
-                          {t("auth.password")}
+                          {mode === "forgot-password" ? t("auth.new_password") : t("auth.password")}
                         </label>
                         <div className="relative">
                           <Input
@@ -705,7 +676,7 @@ const Auth = () => {
                             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
                         </div>
-                        {mode.includes("signup") && password && (
+                        {(mode.includes("signup") || mode === "forgot-password") && password && (
                           <p className="text-xs text-muted-foreground">
                             {password.length >= 8 && passwordHasNumber && passwordHasLetter ? (
                               <span className="text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {t("auth.password_strong")}</span>

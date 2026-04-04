@@ -24,11 +24,13 @@ interface VerifyOtpRequest {
   mode: "login" | "signup-citizen" | "signup-mp" | "forgot-password";
   fullName?: string;
   password?: string;
+  newPassword?: string;
   governorate?: string;
   district?: string;
   electoralDistrict?: string;
   registrationNumber?: string;
   displayName?: string;
+  nationalId?: string;
 }
 
 // Format phone number to E.164 format
@@ -59,7 +61,7 @@ serve(async (req) => {
 
   try {
     const body = (await req.json()) as VerifyOtpRequest;
-    const { phone, otp, mode, fullName, password, governorate, district, electoralDistrict, registrationNumber, displayName } = body;
+    const { phone, otp, mode, fullName, password, newPassword, governorate, district, electoralDistrict, registrationNumber, displayName, nationalId } = body;
 
     // Validate input
     if (!phone || !otp || !mode) {
@@ -208,9 +210,6 @@ serve(async (req) => {
         );
       }
 
-      // Generate unique email
-      const email = generateEmailFromPhone(phone);
-
       // Validate signup data
       if (!fullName || !password) {
         return new Response(
@@ -228,12 +227,48 @@ serve(async (req) => {
         }
       }
 
+      // Generate unique email (internal identifier — never shown to user)
+      const email = generateEmailFromPhone(phone);
+
+      // Create the Supabase Auth user via admin API.
+      // email_confirm: true and phone_confirm: true bypass any confirmation
+      // requirements so the user can sign in immediately after registration.
+      const { data: authData, error: createError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        phone: formattedPhone,
+        phone_confirm: true,
+        user_metadata: {
+          full_name: fullName,
+          phone: formattedPhone,
+          role: mode === "signup-mp" ? "mp" : "citizen",
+          governorate: governorate ?? null,
+          district: district ?? null,
+          electoral_district: electoralDistrict ?? null,
+          membership_number: registrationNumber ?? null,
+          registration_number: registrationNumber ?? null,
+          display_name: displayName ?? null,
+          national_id: nationalId ?? null,
+          center: district ?? null,
+        },
+      });
+
+      if (createError || !authData?.user) {
+        console.error("Admin createUser failed:", createError?.message);
+        return new Response(
+          JSON.stringify({ error: createError?.message ?? "Failed to create account" }),
+          { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
           email,
+          userId: authData.user.id,
           phone: formattedPhone,
-          message: "OTP verified. Ready for signup.",
+          message: "Account created successfully.",
         }),
         { status: 200, headers: { ...cors, "Content-Type": "application/json" } }
       );
@@ -252,21 +287,32 @@ serve(async (req) => {
         );
       }
 
-      // VULN-12 fix: use getUserById instead of listUsers()
-      const { data: { user } } = await supabase.auth.admin.getUserById(profile.user_id);
-
-      if (!user?.email) {
+      // Validate new password
+      if (!newPassword || newPassword.length < 8) {
         return new Response(
-          JSON.stringify({ error: "User email not found" }),
-          { status: 404, headers: { ...cors, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "New password is required and must be at least 8 characters" }),
+          { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Update the user's password directly via admin API — no email link required
+      const { error: updateError } = await supabase.auth.admin.updateUserById(
+        profile.user_id,
+        { password: newPassword }
+      );
+
+      if (updateError) {
+        console.error("Password update failed:", updateError.message);
+        return new Response(
+          JSON.stringify({ error: "Failed to update password" }),
+          { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
         );
       }
 
       return new Response(
         JSON.stringify({
           success: true,
-          email: user.email,
-          message: "OTP verified. Ready for password reset.",
+          message: "Password updated successfully.",
         }),
         { status: 200, headers: { ...cors, "Content-Type": "application/json" } }
       );
