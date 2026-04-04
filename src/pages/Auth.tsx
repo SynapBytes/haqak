@@ -44,6 +44,11 @@ function sanitizeOtpErrorMessage(message: string): string {
   if (lowered.includes("captcha")) return "CAPTCHA verification failed";
   if (lowered.includes("invalid otp") || lowered.includes("invalid verification code")) return "OTP invalid";
   if (lowered.includes("expired")) return "OTP expired";
+  // Safe, user-actionable account creation errors
+  if (lowered.includes("already registered") || lowered.includes("phone number already")) return "Phone number already registered";
+  if (lowered.includes("password") && (lowered.includes("weak") || lowered.includes("short") || lowered.includes("characters"))) return "Password should be at least 8 characters";
+  if (lowered.includes("missing signup") || lowered.includes("missing mp-specific")) return "Missing required signup data";
+  if (lowered.includes("failed to create") || lowered.includes("failed to create account")) return "Failed to create account";
   return "Unable to process OTP request";
 }
 
@@ -105,7 +110,6 @@ const Auth = () => {
   const [districtError, setDistrictError] = useState("");
   const [electoralError, setElectoralError] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
-  const [signupSuccessful, setSignupSuccessful] = useState(false);
 
   // Get user's location on component mount
   useEffect(() => {
@@ -310,6 +314,8 @@ const Auth = () => {
     if (msg.includes("did not match the expected pattern")) return t("auth.error_pattern_mismatch");
     if (msg.includes("Email not confirmed")) return t("auth.error_email_not_confirmed");
     if (msg.includes("already registered") || msg.includes("already been registered")) return t("auth.error_already_registered");
+    if (msg.includes("Phone number already")) return t("auth.error_already_registered");
+    if (msg.includes("Failed to create account")) return t("auth.error_account_creation");
     return msg;
   };
 
@@ -407,44 +413,18 @@ const Auth = () => {
         const redirect = await getRoleRedirect(data.userId);
         navigate(redirect);
       } else if (mode.includes("signup")) {
-        // Perform signup
-        const { error } = await supabase.auth.signUp({
+        // The account was already created server-side in verify-otp (using
+        // auth.admin.createUser with email_confirm:true).  We just need to
+        // sign in now so the session is established.
+        const { error } = await supabase.auth.signInWithPassword({
           email: data.email,
           password: password,
-          options: {
-            data: {
-              full_name: fullName,
-              phone,
-              countryCode,
-              role: signupRole,
-              ...(mode.includes("citizen") && {
-                national_id: nationalId,
-                governorate,
-                district,
-                center: district,
-                electoral_district: null,
-              }),
-              ...(mode.includes("mp") && {
-                display_name: displayName,
-                governorate,
-                district,
-                electoral_district: electoralDistrict,
-                registration_number: registrationNumber,
-                membership_number: registrationNumber,
-                center: district,
-              }),
-            },
-            emailRedirectTo: window.location.origin,
-          },
         });
         if (error) throw error;
         analytics.track("signup_success", { role: signupRole });
-        setSignupSuccessful(true);
+        const redirect = await getRoleRedirect(data.userId);
         resetForm();
-        setTimeout(() => {
-          setSignupSuccessful(false);
-          setMode("login");
-        }, 3000);
+        navigate(redirect);
       } else if (mode === "forgot-password-otp") {
         // Reset password
         const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
@@ -498,46 +478,6 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <AppHeader />
-
-      {/* Signup success overlay */}
-      <AnimatePresence>
-        {signupSuccessful && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center bg-black/60 z-50"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 200, damping: 18 }}
-              className="bg-card rounded-3xl p-8 text-center shadow-2xl max-w-sm mx-4"
-            >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 260, damping: 20 }}
-                className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4"
-              >
-                <CheckCircle2 className="w-12 h-12 text-green-600" />
-              </motion.div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">{t("auth.signup_success_title")}</h2>
-              <p className="text-muted-foreground mb-4">{t("auth.signup_success_body")}</p>
-              <p className="text-sm text-muted-foreground">{t("auth.signup_success_redirect")}</p>
-              <div className="mt-4 h-1 bg-muted rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: "100%" }}
-                  transition={{ duration: 3 }}
-                  className="h-full bg-green-600 rounded-full"
-                />
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Egyptian decorations */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">

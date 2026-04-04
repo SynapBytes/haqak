@@ -20,6 +20,7 @@ async function hmacSha256Hex(key: string, message: string): Promise<string> {
 
 interface VerifyOtpRequest {
   phone: string;
+  countryCode?: string;
   otp: string;
   mode: "login" | "signup-citizen" | "signup-mp" | "forgot-password";
   fullName?: string;
@@ -29,6 +30,7 @@ interface VerifyOtpRequest {
   electoralDistrict?: string;
   registrationNumber?: string;
   displayName?: string;
+  nationalId?: string;
 }
 
 // Format phone number to E.164 format
@@ -59,7 +61,7 @@ serve(async (req) => {
 
   try {
     const body = (await req.json()) as VerifyOtpRequest;
-    const { phone, otp, mode, fullName, password, governorate, district, electoralDistrict, registrationNumber, displayName } = body;
+    const { phone, countryCode, otp, mode, fullName, password, governorate, district, electoralDistrict, registrationNumber, displayName, nationalId } = body;
 
     // Validate input
     if (!phone || !otp || !mode) {
@@ -228,12 +230,56 @@ serve(async (req) => {
         }
       }
 
+      // Build user metadata to pass to the DB trigger (handle_new_user) which
+      // auto-creates a profile row and a user_roles row.
+      const role = mode === "signup-mp" ? "mp" : "citizen";
+      const userMetadata: Record<string, string | null | undefined> = {
+        full_name: fullName,
+        phone: formattedPhone,
+        countryCode: countryCode ?? "EG",
+        role,
+        governorate,
+        center: district,
+        ...(mode === "signup-citizen" && {
+          national_id: nationalId,
+          district,
+          electoral_district: null,
+        }),
+        ...(mode === "signup-mp" && {
+          display_name: displayName,
+          district,
+          electoral_district: electoralDistrict,
+          registration_number: registrationNumber,
+          membership_number: registrationNumber,
+        }),
+      };
+
+      // Create the user server-side using the admin API.
+      // Setting email_confirm:true skips email confirmation — the user has
+      // already proved ownership of their phone number via OTP, which is
+      // at least as strong as an email link.
+      const { data: createdUser, error: createError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: userMetadata,
+      });
+
+      if (createError || !createdUser?.user) {
+        console.error("admin.createUser error:", createError);
+        return new Response(
+          JSON.stringify({ error: createError?.message ?? "Failed to create account" }),
+          { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
           email,
+          userId: createdUser.user.id,
           phone: formattedPhone,
-          message: "OTP verified. Ready for signup.",
+          message: "Account created successfully.",
         }),
         { status: 200, headers: { ...cors, "Content-Type": "application/json" } }
       );
