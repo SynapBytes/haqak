@@ -1,5 +1,5 @@
-import { beforeAll, describe, expect, it } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import {
@@ -17,6 +17,12 @@ beforeAll(() => {
     unobserve() {}
     disconnect() {}
   };
+});
+
+// Ensure DOM is cleared between each test to prevent element accumulation
+// when multiple render() calls share the same jsdom environment.
+afterEach(() => {
+  cleanup();
 });
 
 describe("BusinessCategorySelector helpers", () => {
