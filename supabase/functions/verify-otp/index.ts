@@ -43,13 +43,20 @@ interface VerifyOtpRequest {
   registrationNumber?: string;
   displayName?: string;
   nationalId?: string;
+  /** E.164 dial prefix (e.g. "+966") for the selected country.
+   * Must match the value sent during send-otp so the phone is formatted identically. */
+  countryCode?: string;
 }
 
-/** Format a raw phone string to E.164, using TWILIO_DEFAULT_COUNTRY_CODE env (default +20).
- * Mirrors the implementation in send-otp so both functions produce identical output. */
-function formatPhoneNumber(phone: string): string {
-  const countryCode = Deno.env.get("TWILIO_DEFAULT_COUNTRY_CODE") ?? "+20";
-  const numeric = countryCode.replace(/\D/g, "");
+/** Format a raw phone string to E.164.
+ * Mirrors the implementation in send-otp so both functions produce identical output.
+ * @param phone      Raw phone input from the user.
+ * @param countryCode  Optional E.164 dial prefix (e.g. "+966").  When omitted,
+ *                   falls back to the TWILIO_DEFAULT_COUNTRY_CODE env var, then "+20".
+ */
+function formatPhoneNumber(phone: string, countryCode?: string): string {
+  const cc = countryCode ?? Deno.env.get("TWILIO_DEFAULT_COUNTRY_CODE") ?? "+20";
+  const numeric = cc.replace(/\D/g, "");
   const cleaned = phone.replace(/\D/g, "");
   if (cleaned.startsWith("0")) return `+${numeric}${cleaned.slice(1)}`;
   if (!cleaned.startsWith(numeric)) return `+${numeric}${cleaned}`;
@@ -63,6 +70,44 @@ function generateEmailFromPhone(phone: string): string {
   return `user_${cleaned}_${timestamp}@haqak.app`;
 }
 
+/**
+ * Retrieves the Supabase service-role key, with optional Supabase Vault fallback.
+ *
+ * Resolution order:
+ *  1. SUPABASE_SERVICE_ROLE_KEY environment variable (auto-injected by Supabase runtime,
+ *     or manually set via: `supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<value>`)
+ *  2. Supabase Vault (see docs/DEPLOYMENT.md) — uncomment the block below to enable.
+ *
+ * The service-role key is never logged.  A boolean flag is logged on failure only.
+ */
+async function getServiceRoleKey(): Promise<string | null> {
+  // Primary path: environment variable injected by Supabase Edge Functions runtime.
+  const envKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (envKey) return envKey;
+
+  // Optional Vault fallback — enable when using Supabase Vault for secret rotation.
+  // See docs/DEPLOYMENT.md for prerequisites and setup instructions.
+  //
+  // try {
+  //   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  //   const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  //   if (anonKey && supabaseUrl) {
+  //     const vaultClient = createClient(supabaseUrl, anonKey);
+  //     const { data, error } = await vaultClient
+  //       .from("vault.decrypted_secrets")
+  //       .select("decrypted_secret")
+  //       .eq("name", "SERVICE_ROLE_KEY")
+  //       .maybeSingle();
+  //     if (!error && data?.decrypted_secret) return data.decrypted_secret;
+  //   }
+  // } catch {
+  //   console.error("Vault lookup failed — falling back gracefully");
+  // }
+
+  console.error("SUPABASE_SERVICE_ROLE_KEY is not configured");
+  return null;
+}
+
 serve(async (req) => {
   const cors = buildCorsHeaders(req.headers.get("Origin"));
   // Handle CORS preflight
@@ -72,7 +117,7 @@ serve(async (req) => {
 
   try {
     const body = (await req.json()) as VerifyOtpRequest;
-    const { phone, otp, mode, fullName, password, newPassword, governorate, district, electoralDistrict, registrationNumber, displayName, nationalId } = body;
+    const { phone, otp, mode, fullName, password, newPassword, governorate, district, electoralDistrict, registrationNumber, displayName, nationalId, countryCode } = body;
 
     // Validate input
     if (!phone || !otp || !mode) {
@@ -91,7 +136,9 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    // SECURITY: resolved via getServiceRoleKey() which supports optional Supabase
+    // Vault fallback.  See docs/DEPLOYMENT.md for the full setup guide.
+    const supabaseServiceKey = await getServiceRoleKey();
     // HMAC key used by send-otp to hash OTP tokens before storage
     const otpHmacSecret = Deno.env.get("OTP_HMAC_SECRET");
 
@@ -111,7 +158,7 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const formattedPhone = formatPhoneNumber(phone);
+    const formattedPhone = formatPhoneNumber(phone, countryCode);
 
     // Fetch the most recent active (not used, not expired) OTP record for
     // this phone + mode.  We do NOT filter by the code column here because

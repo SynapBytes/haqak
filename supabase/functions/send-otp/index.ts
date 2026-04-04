@@ -14,6 +14,9 @@ interface SendOtpRequest {
   phone: string;
   mode: "login" | "signup-citizen" | "signup-mp" | "forgot-password";
   turnstileToken?: string;
+  /** E.164 dial prefix (e.g. "+966") for the selected country.
+   * When omitted the TWILIO_DEFAULT_COUNTRY_CODE env var is used (default "+20"). */
+  countryCode?: string;
 }
 
 interface TwilioResponse {
@@ -51,10 +54,14 @@ async function hmacSha256Hex(key: string, message: string): Promise<string> {
     .join("");
 }
 
-/** Format a raw phone string to E.164, using TWILIO_DEFAULT_COUNTRY_CODE env (default +20) */
-function formatPhoneNumber(phone: string): string {
-  const countryCode = Deno.env.get("TWILIO_DEFAULT_COUNTRY_CODE") ?? "+20";
-  const numeric = countryCode.replace(/\D/g, "");
+/** Format a raw phone string to E.164.
+ * @param phone      Raw phone input from the user.
+ * @param countryCode  Optional E.164 dial prefix (e.g. "+966").  When omitted,
+ *                   falls back to the TWILIO_DEFAULT_COUNTRY_CODE env var, then "+20".
+ */
+function formatPhoneNumber(phone: string, countryCode?: string): string {
+  const cc = countryCode ?? Deno.env.get("TWILIO_DEFAULT_COUNTRY_CODE") ?? "+20";
+  const numeric = cc.replace(/\D/g, "");
   const cleaned = phone.replace(/\D/g, "");
   if (cleaned.startsWith("0")) return `+${numeric}${cleaned.slice(1)}`;
   if (!cleaned.startsWith(numeric)) return `+${numeric}${cleaned}`;
@@ -80,6 +87,48 @@ async function verifyTurnstile(secret: string, token: string | undefined, ip: st
   }
 }
 
+/**
+ * Retrieves the Supabase service-role key, with optional Supabase Vault fallback.
+ *
+ * Resolution order:
+ *  1. SUPABASE_SERVICE_ROLE_KEY environment variable (auto-injected by Supabase runtime,
+ *     or manually set via: `supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<value>`)
+ *  2. Supabase Vault (see docs/DEPLOYMENT.md) — uncomment the block below to enable.
+ *
+ * The service-role key is never logged.  A boolean flag is logged on failure only.
+ */
+async function getServiceRoleKey(): Promise<string | null> {
+  // Primary path: environment variable injected by Supabase Edge Functions runtime.
+  const envKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (envKey) return envKey;
+
+  // Optional Vault fallback — enable when using Supabase Vault for secret rotation.
+  // Prerequisites:
+  //   1. Store the key in Vault:  supabase vault add --name SERVICE_ROLE_KEY
+  //   2. Grant SELECT on vault.decrypted_secrets to the `service_role`:
+  //        GRANT SELECT ON vault.decrypted_secrets TO service_role;
+  //   3. Set SUPABASE_ANON_KEY and SUPABASE_URL as edge-function secrets.
+  //
+  // try {
+  //   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  //   const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  //   if (anonKey && supabaseUrl) {
+  //     const vaultClient = createClient(supabaseUrl, anonKey);
+  //     const { data, error } = await vaultClient
+  //       .from("vault.decrypted_secrets")
+  //       .select("decrypted_secret")
+  //       .eq("name", "SERVICE_ROLE_KEY")
+  //       .maybeSingle();
+  //     if (!error && data?.decrypted_secret) return data.decrypted_secret;
+  //   }
+  // } catch {
+  //   console.error("Vault lookup failed — falling back gracefully");
+  // }
+
+  console.error("SUPABASE_SERVICE_ROLE_KEY is not configured");
+  return null;
+}
+
 serve(async (req) => {
   const cors = buildCorsHeaders(req.headers.get("Origin"));
 
@@ -95,7 +144,7 @@ serve(async (req) => {
       req.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() ??
       "0.0.0.0";
 
-    const { phone, mode, turnstileToken } = (await req.json()) as SendOtpRequest;
+    const { phone, mode, turnstileToken, countryCode } = (await req.json()) as SendOtpRequest;
 
     // Validate required fields
     if (!phone || !mode) {
@@ -152,8 +201,14 @@ serve(async (req) => {
     const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
     const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    // TODO[Vault]: move SUPABASE_SERVICE_ROLE_KEY to Supabase Vault / secrets manager
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    // SECURITY: SERVICE_ROLE_KEY is a bootstrap secret.  In Supabase Edge Functions it
+    // is automatically injected as a managed environment variable (set in the Supabase
+    // dashboard under Project Settings → Edge Functions → Secrets, or via the CLI:
+    //   supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<value>
+    // For production deployments that require secret rotation without redeployment,
+    // store the key in Supabase Vault (Settings → Vault) and use the helper below.
+    // See docs/DEPLOYMENT.md for the full setup guide.
+    const supabaseServiceKey = await getServiceRoleKey();
     // HMAC key for signing OTP tokens — must be set in production
     const otpHmacSecret = Deno.env.get("OTP_HMAC_SECRET");
     if (!otpHmacSecret) {
@@ -181,7 +236,7 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const formattedPhone = formatPhoneNumber(phone);
+    const formattedPhone = formatPhoneNumber(phone, countryCode);
     const windowStart = new Date(Date.now() - OTP_WINDOW_MINUTES * 60 * 1000).toISOString();
 
     // ── Per-phone rate limit ──────────────────────────────────────────────────

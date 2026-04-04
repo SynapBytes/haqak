@@ -347,10 +347,12 @@ const Auth = () => {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      // Resolve the E.164 dial prefix (e.g. "+20") for the selected country code ("EG")
+      const dialCode = countryCodes.countries.find((c) => c.code === countryCode)?.dialCode;
       const response = await fetchJsonWithRetry(`${supabaseUrl}/functions/v1/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": supabaseKey },
-        body: JSON.stringify({ phone, mode: mode.replace("-otp", ""), turnstileToken: turnstileToken ?? undefined }),
+        body: JSON.stringify({ phone, mode: mode.replace("-otp", ""), turnstileToken: turnstileToken ?? undefined, countryCode: dialCode }),
       });
 
       const data = await response.json();
@@ -385,6 +387,8 @@ const Auth = () => {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      // Resolve the E.164 dial prefix so verify-otp formats the phone identically to send-otp
+      const dialCode = countryCodes.countries.find((c) => c.code === countryCode)?.dialCode;
       const response = await fetchJsonWithRetry(`${supabaseUrl}/functions/v1/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": supabaseKey },
@@ -392,6 +396,7 @@ const Auth = () => {
           phone, 
           otp: otpCode, 
           mode: mode.replace("-otp", ""),
+          countryCode: dialCode,
           ...(mode.includes("signup") && { fullName, password, governorate, district, electoralDistrict, registrationNumber, displayName, nationalId }),
           ...(mode === "forgot-password-otp" && { newPassword: password }),
         }),
