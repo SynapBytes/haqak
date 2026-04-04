@@ -1,4 +1,5 @@
 import React from "react";
+import * as Sentry from "@sentry/react";
 
 interface State {
   hasError: boolean;
@@ -28,12 +29,9 @@ class GlobalErrorBoundary extends React.Component<Props, State> {
     // Always log to console for developer visibility.
     console.error("[GlobalErrorBoundary] Uncaught error:", error, info.componentStack);
 
-    // Forward to Sentry when available (optional integration).
+    // Forward to Sentry when it has been initialised (DSN configured).
     try {
-      // Dynamic import avoids hard dependency on Sentry being configured.
-      import("@sentry/react").then(({ captureException }) => {
-        captureException(error, { extra: { componentStack: info.componentStack } });
-      }).catch(() => {/* ignore if Sentry is not configured */});
+      Sentry.captureException(error, { extra: { componentStack: info.componentStack } });
     } catch {
       // Ignore any errors in the error reporter itself.
     }
