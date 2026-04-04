@@ -11,7 +11,7 @@
  * untrusted origins on authenticated/admin endpoints.
  */
 const ALLOWED_ORIGINS = new Set(
-  (Deno.env.get("ALLOWED_ORIGINS") ?? "https://haqak.org")
+  (Deno.env.get("ALLOWED_ORIGINS") ?? "https://haqak.app,https://www.haqak.app")
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean),

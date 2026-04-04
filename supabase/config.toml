@@ -6,6 +6,6 @@ password_hibp_enabled = true
 # Enforce a minimum password length
 password_min_length = 8
 # Require at least one digit, one lowercase, one uppercase, and one special character
-password_required_characters = "abcd"
+password_required_characters = "abcdefghijklmnopqrstuvwxyz:ABCDEFGHIJKLMNOPQRSTUVWXYZ:0123456789"
 # Prevent users from reusing their old passwords
 password_history_size = 5

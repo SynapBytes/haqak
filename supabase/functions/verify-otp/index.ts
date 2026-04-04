@@ -2,21 +2,33 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { buildCorsHeaders } from "../shared/cors.ts";
 
-/** Compute HMAC-SHA256 of `message` with `key`, return lower-case hex string */
-async function hmacSha256Hex(key: string, message: string): Promise<string> {
-  const enc = new TextEncoder();
-  const cryptoKey = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(key),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign("HMAC", cryptoKey, enc.encode(message));
-  return Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+/**
+ * Verify an HMAC-SHA256 signature using the Web Crypto API.
+ * crypto.subtle.verify performs a constant-time comparison internally,
+ * protecting against timing attacks.
+ */
+async function verifyHmac(key: string, message: string, expectedHex: string): Promise<boolean> {
+  try {
+    const enc = new TextEncoder();
+    const cryptoKey = await crypto.subtle.importKey(
+      "raw",
+      enc.encode(key),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"],
+    );
+    // Convert the stored hex string back to bytes for comparison
+    const expectedBytes = new Uint8Array(
+      (expectedHex.match(/.{2}/g) ?? []).map((b) => parseInt(b, 16)),
+    );
+    return await crypto.subtle.verify("HMAC", cryptoKey, expectedBytes, enc.encode(message));
+  } catch {
+    return false;
+  }
 }
+
+// Max failed verify attempts before locking — must match send-otp configuration
+const OTP_MAX_VERIFY_ATTEMPTS = 5;
 
 interface VerifyOtpRequest {
   phone: string;
@@ -33,15 +45,14 @@ interface VerifyOtpRequest {
   nationalId?: string;
 }
 
-// Format phone number to E.164 format
+/** Format a raw phone string to E.164, using TWILIO_DEFAULT_COUNTRY_CODE env (default +20).
+ * Mirrors the implementation in send-otp so both functions produce identical output. */
 function formatPhoneNumber(phone: string): string {
+  const countryCode = Deno.env.get("TWILIO_DEFAULT_COUNTRY_CODE") ?? "+20";
+  const numeric = countryCode.replace(/\D/g, "");
   const cleaned = phone.replace(/\D/g, "");
-  if (cleaned.startsWith("0")) {
-    return `+20${cleaned.slice(1)}`;
-  }
-  if (!cleaned.startsWith("20")) {
-    return `+20${cleaned}`;
-  }
+  if (cleaned.startsWith("0")) return `+${numeric}${cleaned.slice(1)}`;
+  if (!cleaned.startsWith(numeric)) return `+${numeric}${cleaned}`;
   return `+${cleaned}`;
 }
 
@@ -125,22 +136,22 @@ serve(async (req) => {
     }
 
     // Check attempt limit before doing any further work (prevents oracle)
-    if ((otpRecord.attempts ?? 0) >= 3) {
+    if ((otpRecord.attempts ?? 0) >= OTP_MAX_VERIFY_ATTEMPTS) {
       return new Response(
         JSON.stringify({ error: "Too many attempts" }),
         { status: 429, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
-    // Recompute the HMAC using the same inputs as send-otp and compare.
-    // This is the correct fix for VULN-01: comparing the raw OTP against the
-    // stored HMAC hash always failed because "123456" !== "a3f7b2...".
-    const expectedHmac = await hmacSha256Hex(
+    // Verify HMAC using constant-time comparison via crypto.subtle.verify
+    // (prevents theoretical timing attacks on the HMAC comparison).
+    const hmacValid = await verifyHmac(
       otpHmacSecret,
       `${formattedPhone}:${otp}:${otpRecord.expires_at}`,
+      otpRecord.code,
     );
 
-    if (expectedHmac !== otpRecord.code) {
+    if (!hmacValid) {
       // VULN-08 fix: increment attempts on every failure so the 3-attempt
       // limit is actually enforced.
       await supabase
@@ -257,7 +268,7 @@ serve(async (req) => {
       if (createError || !authData?.user) {
         console.error("Admin createUser failed:", createError?.message);
         return new Response(
-          JSON.stringify({ error: createError?.message ?? "Failed to create account" }),
+          JSON.stringify({ error: "Failed to create account" }),
           { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
         );
       }

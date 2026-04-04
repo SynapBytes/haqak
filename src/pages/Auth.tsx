@@ -28,6 +28,8 @@ import ornament1 from "@/assets/egyptian-ornament-1.webp";
 import { validateEgyptianId, validateEgyptianIdWithReason, extractEgyptianIdInfo } from "@/lib/egyptianIdValidation";
 import { cn } from "@/lib/utils";
 import { isNetworkFailureMessage } from "@/lib/authError";
+import TurnstileCaptcha from "@/components/TurnstileCaptcha";
+import { APP_CONFIG } from "@/lib/config";
 
 type AuthMode = "login" | "login-otp" | "signup-citizen" | "signup-citizen-otp" | "signup-mp" | "signup-mp-otp" | "forgot-password" | "forgot-password-otp";
 
@@ -106,6 +108,7 @@ const Auth = () => {
   const [electoralError, setElectoralError] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
   const [signupSuccessful, setSignupSuccessful] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   // Get user's location on component mount
   useEffect(() => {
@@ -296,6 +299,7 @@ const Auth = () => {
     setOtpCode("");
     setOtpTimer(0);
     setCanResendOtp(false);
+    setTurnstileToken(null);
   };
 
   const translateError = (msg: string): string => {
@@ -346,13 +350,14 @@ const Auth = () => {
       const response = await fetchJsonWithRetry(`${supabaseUrl}/functions/v1/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": supabaseKey },
-        body: JSON.stringify({ phone, countryCode, mode: mode.replace("-otp", "") }),
+        body: JSON.stringify({ phone, mode: mode.replace("-otp", ""), turnstileToken: turnstileToken ?? undefined }),
       });
 
       const data = await response.json();
       if (!response.ok) throw new Error(sanitizeOtpErrorMessage(String(data.error || "")));
 
       toast.success(t("auth.otp_sent"));
+      setTurnstileToken(null); // Reset token after use
       setOtpTimer(300); // 5 minutes
       setCanResendOtp(false);
       
@@ -385,7 +390,6 @@ const Auth = () => {
         headers: { "Content-Type": "application/json", "apikey": supabaseKey },
         body: JSON.stringify({ 
           phone, 
-          countryCode,
           otp: otpCode, 
           mode: mode.replace("-otp", ""),
           ...(mode.includes("signup") && { fullName, password, governorate, district, electoralDistrict, registrationNumber, displayName, nationalId }),
@@ -873,10 +877,16 @@ const Auth = () => {
                       </>
                     )}
 
+                    {/* Turnstile CAPTCHA */}
+                    <TurnstileCaptcha
+                      onVerify={setTurnstileToken}
+                      onExpire={() => setTurnstileToken(null)}
+                    />
+
                     {/* Submit Button */}
                     <Button
                       type="submit"
-                      disabled={!isFormValid || loading}
+                      disabled={!isFormValid || loading || (!!APP_CONFIG.TURNSTILE_SITE_KEY && !turnstileToken)}
                       className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
                       size="lg"
                     >
