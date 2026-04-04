@@ -41,7 +41,23 @@ jobs:
       - name: Run unit tests
         run: npm test
 
+      - name: Validate required env vars are referenced in .env.example
+        run: |
+          for var in VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY; do
+            if ! grep -q "^${var}=" .env.example; then
+              echo "ERROR: ${var} is missing from .env.example" >&2
+              exit 1
+            fi
+          done
+          echo "All required env var keys are documented in .env.example"
+
       - name: Build
+        # Inject stub values so the Vite build succeeds in CI.
+        # Production deployments must set real values in the hosting environment
+        # (e.g., Vercel project settings).  These stubs are never deployed.
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: placeholder-anon-key
         run: npm run build
 
   dependency-audit-high:

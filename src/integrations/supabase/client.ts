@@ -8,10 +8,29 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
+/**
+ * Non-null when required env vars are absent.  Checked at startup in main.tsx
+ * to render a clear configuration error page instead of a blank screen.
+ */
+export const supabaseConfigError: string | null =
+  !SUPABASE_URL
+    ? "VITE_SUPABASE_URL is not defined. Set it in your deployment environment (e.g., Vercel project settings)."
+    : !SUPABASE_PUBLISHABLE_KEY
+      ? "VITE_SUPABASE_PUBLISHABLE_KEY is not defined. Set it in your deployment environment (e.g., Vercel project settings)."
+      : null;
+
+// Use placeholder values when env vars are missing so that the module loads
+// without throwing.  Any real API calls will fail with network errors, but the
+// startup check in main.tsx will show a clear config-error page before the
+// rest of the app even renders.
+export const supabase = createClient<Database>(
+  SUPABASE_URL ?? "https://placeholder.supabase.co",
+  SUPABASE_PUBLISHABLE_KEY ?? "placeholder-anon-key",
+  {
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+    },
   }
-});
+);

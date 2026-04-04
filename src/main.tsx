@@ -5,6 +5,8 @@ import "./index.css";
 import "./i18n";
 import { analytics } from "@/lib/analytics";
 import { initSentry } from "@/lib/sentry";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { supabaseConfigError } from "@/integrations/supabase/client";
 
 // Initialise observability before the React tree renders.
 initSentry();
@@ -53,6 +55,71 @@ window.addEventListener("load", () => {
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      {supabaseConfigError ? (
+        <div
+          dir="rtl"
+          style={{
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#f8fafc",
+            fontFamily: "system-ui, sans-serif",
+            padding: "1rem",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 520,
+              width: "100%",
+              background: "#fff",
+              borderRadius: 12,
+              boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+              padding: "2rem",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>🔧</div>
+            <h1 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#0f172a", marginBottom: "0.5rem" }}>
+              خطأ في إعدادات التطبيق
+            </h1>
+            <p style={{ color: "#64748b", fontSize: "0.9rem", marginBottom: "1rem" }}>
+              لم يتم تكوين متغيرات البيئة المطلوبة للتطبيق. يرجى التحقق من إعدادات النشر.
+            </p>
+            <pre
+              style={{
+                background: "#fef2f2",
+                borderRadius: 8,
+                padding: "0.75rem",
+                fontSize: "0.75rem",
+                color: "#b91c1c",
+                textAlign: "left",
+                direction: "ltr",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                marginBottom: "1.5rem",
+                border: "1px solid #fecaca",
+              }}
+            >
+              {supabaseConfigError}
+            </pre>
+            <p style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
+              إذا كنت مشرفًا، تأكد من ضبط{" "}
+              <code style={{ background: "#f1f5f9", padding: "0.1rem 0.3rem", borderRadius: 4 }}>
+                VITE_SUPABASE_URL
+              </code>{" "}
+              و{" "}
+              <code style={{ background: "#f1f5f9", padding: "0.1rem 0.3rem", borderRadius: 4 }}>
+                VITE_SUPABASE_PUBLISHABLE_KEY
+              </code>{" "}
+              في إعدادات المشروع على Vercel.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <App />
+      )}
+    </ErrorBoundary>
   </React.StrictMode>
 );
