@@ -252,5 +252,204 @@
     "first_issue_btn": "Submit your first issue",
     "error_submit": "Error submitting issue",
     "loading": "Loading..."
+  },
+  "auth": {
+    "login_title": "Welcome Back",
+    "login_subtitle": "Sign in to continue",
+    "signup_citizen": "Create Citizen Account",
+    "signup_citizen_title": "Join Haqak",
+    "signup_citizen_subtitle": "Create your free citizen account and start submitting your issues",
+    "signup_mp": "MP Registration",
+    "signup_mp_title": "Member of Parliament Registration",
+    "signup_mp_subtitle": "Register your account as an MP to connect with your constituency citizens",
+    "phone": "Phone Number",
+    "password": "Password",
+    "password_placeholder": "Enter a strong password",
+    "password_requirements": "Password must contain both letters and numbers",
+    "password_strong": "Strong password ✓",
+    "password_weak": "Weak password — add letters and numbers",
+    "full_name": "Full Name",
+    "full_name_placeholder": "Enter your full name",
+    "display_name": "Display Name",
+    "display_name_placeholder": "Name others will see",
+    "national_id": "National ID Number",
+    "national_id_placeholder": "Enter your National ID (14 digits)",
+    "national_id_valid": "National ID is valid ✓",
+    "national_id_invalid": "Invalid National ID number",
+    "not_egyptian_citizen": "This ID does not belong to an Egyptian citizen",
+    "governorate": "Governorate",
+    "select_governorate": "Select governorate",
+    "governorate_invalid": "Please select a valid governorate",
+    "district": "District / Area",
+    "select_district": "Select district or area",
+    "district_invalid": "Please select a valid district",
+    "electoral_district": "Electoral District",
+    "select_electoral_district": "Select electoral district",
+    "electoral_district_invalid": "Please select a valid electoral district",
+    "registration_number": "Parliamentary Registration Number",
+    "registration_number_placeholder": "Your parliamentary registration number",
+    "membership_number_invalid": "Registration number must contain digits only",
+    "membership_number_out_of_range": "Registration number is out of valid range (1 - 568)",
+    "otp_code": "Verification Code",
+    "send_otp": "Send Verification Code",
+    "verify_otp": "Verify Code",
+    "verify_otp_subtitle": "Enter the code sent to your phone",
+    "otp_sent": "Verification code sent successfully",
+    "otp_sent_to": "Verification code sent to {{phone}}",
+    "otp_verified": "Verification successful",
+    "otp_expires_in": "Code expires in {{seconds}} seconds",
+    "otp_invalid_length": "Verification code must be 6 digits",
+    "otp_send_error": "Failed to send verification code. Please try again",
+    "otp_verify_error": "Failed to verify code. Please try again",
+    "resend_otp": "Resend Code",
+    "resend_otp_wait": "Resend in {{seconds}} seconds",
+    "verifying": "Verifying...",
+    "loading": "Processing...",
+    "forgot_password": "Forgot password?",
+    "forgot_title": "Reset Password",
+    "forgot_subtitle": "Enter your phone number and we will send you a verification code",
+    "forgot_success": "Verified successfully. You can now sign in with a new password",
+    "terms_agreement": "I agree to the Terms of Service and Privacy Policy",
+    "back": "Back",
+    "back_to_login": "Back to Sign In",
+    "phone_invalid": "Invalid phone number. Must start with 01 and contain 11 digits",
+    "form_invalid": "Please verify all entered information is correct",
+    "error_credentials": "Phone number or password is incorrect",
+    "error_already_registered": "This number is already registered. Please sign in",
+    "error_email_not_confirmed": "Please confirm your email address first",
+    "error_phone_not_confirmed": "Please confirm your phone number first",
+    "error_otp_invalid": "Verification code is incorrect. Please try again",
+    "error_otp_expired": "Verification code has expired. Please request a new one",
+    "error_rate_limit": "Too many attempts. Please wait a minute before trying again",
+    "error_too_many": "Too many requests. Please wait and try again",
+    "error_pattern_mismatch": "Entered data format is incorrect",
+    "signup_success_title": "Registration Successful! 🎉",
+    "signup_success_body": "Your account has been created successfully. You can now sign in",
+    "signup_success_redirect": "You will be redirected automatically...",
+    "logout": "Sign Out",
+    "logout_error": "An error occurred while signing out"
+  },
+  "mp_pending": {
+    "pending_title": "Your Request is Under Review",
+    "pending_subtitle": "Thank you for registering. We will verify your information shortly",
+    "pending_message_title": "Account Under Review",
+    "pending_message_body": "Our team is reviewing your application to verify your parliamentary status. You will be notified as soon as your account is approved.",
+    "approved_title": "Approved! 🎉",
+    "approved_subtitle": "Your account has been approved as a Member of Parliament",
+    "approved_success": "Your account has been approved successfully",
+    "process_timeline": "Review Process Steps",
+    "step1_title": "Application Submitted",
+    "step1_desc": "Your application was received successfully and registered in the system",
+    "step2_title": "Review & Verification",
+    "step2_desc": "The admin team is reviewing your information and verifying your parliamentary status",
+    "step3_title": "Approval & Activation",
+    "step3_desc": "You will be notified as soon as your application is accepted and your account is activated",
+    "full_name": "Full Name",
+    "phone": "Phone Number",
+    "registration_number": "Parliamentary Registration Number",
+    "check_status": "Check Application Status",
+    "checking": "Checking...",
+    "still_pending": "Your application is still under review. Please wait",
+    "check_error": "An error occurred while checking. Please try again later",
+    "auto_check_info": "The system automatically checks your application status every 10 seconds",
+    "contact_support": "For inquiries or assistance, contact support at support@haqak.org",
+    "redirecting": "Redirecting you to the dashboard..."
+  },
+  "account_review": {
+    "title": "Account Under Review",
+    "subtitle": "Your account is under review by the admin team. Please wait until it is approved."
+  },
+  "privacy_policy": {
+    "badge": "Privacy & Security",
+    "title": "Privacy Policy",
+    "subtitle": "We are committed to protecting your privacy and personal data according to the highest international standards. Learn how your data is collected, used, and protected.",
+    "see_also": "See also:",
+    "terms_link": "Terms of Service",
+    "sections": [
+      {
+        "icon": "data",
+        "title": "Data We Collect",
+        "content": "We collect only the data necessary to operate the platform: your full name, phone number, National ID (for verification), and your governorate and electoral district. We do not collect browsing data or unnecessary information. All data is encrypted in transit and at rest."
+      },
+      {
+        "icon": "eye",
+        "title": "How We Use Your Data",
+        "content": "Your data is used exclusively to operate the platform: connecting you with your relevant MP, sending notifications about your issues, and verifying your identity as an Egyptian citizen. We do not sell your data to any third party and do not share it except with the MP concerned with your issue and with your consent."
+      },
+      {
+        "icon": "lock",
+        "title": "Data Protection & Security",
+        "content": "We apply the highest data security standards: TLS encryption for all communications, encrypted databases at rest, two-factor authentication, and CSRF/XSS protection. We conduct regular security audits and comply with GDPR standards for data protection."
+      },
+      {
+        "icon": "user",
+        "title": "Your Rights Over Your Data",
+        "content": "You have full rights to: access your stored data, correct any inaccurate information, request deletion of your account and all data, and export a copy of your data. To exercise these rights, contact us at privacy@haqak.org."
+      },
+      {
+        "icon": "bell",
+        "title": "Notifications & Communication",
+        "content": "We only send notifications related to your submitted issues and their updates. We do not send unsolicited marketing messages. You can unsubscribe at any time from your account settings."
+      },
+      {
+        "icon": "trash",
+        "title": "Data Retention & Deletion",
+        "content": "We retain your data as long as your account is active. Upon account deletion request, all personal data is deleted within 30 days. We may retain some anonymized data for statistical purposes in accordance with Egyptian law."
+      },
+      {
+        "icon": "alert",
+        "title": "Privacy Policy Changes",
+        "content": "Any material changes to this policy will be communicated to you via a clear notice on the platform before taking effect. Your continued use of the platform after notification implies your acceptance of the changes. Last updated: January 2026."
+      }
+    ]
+  },
+  "terms_of_service": {
+    "badge": "Terms & Conditions",
+    "title": "Terms of Service",
+    "subtitle": "Please read these terms carefully before using the Haqak platform. Your use of the platform means you fully agree to these terms.",
+    "see_also": "See also:",
+    "privacy_link": "Privacy Policy",
+    "sections": [
+      {
+        "icon": "gavel",
+        "title": "Acceptance & Agreement",
+        "content": "By using the Haqak platform, you agree to be bound by these Terms and Conditions and the Privacy Policy. If you do not agree to any of these terms, please do not use the platform. These terms govern the relationship between you and the Haqak team."
+      },
+      {
+        "icon": "users",
+        "title": "Eligibility",
+        "content": "The platform is intended for adult Egyptian citizens (18 years and above) and members of the Egyptian Parliament. Information provided during registration must be true, accurate, and complete. We reserve the right to refuse or terminate any account found to have submitted false information."
+      },
+      {
+        "icon": "scale",
+        "title": "Acceptable Use",
+        "content": "Users are required to use the platform in a lawful and appropriate manner. Prohibited: submitting malicious or misleading reports, using offensive language or content contrary to public morals, attempting to breach the system or manipulate data, violating any other user's privacy."
+      },
+      {
+        "icon": "shield",
+        "title": "Confidentiality & Information Protection",
+        "content": "All submitted issues are treated with strict confidentiality and shared only with the relevant MP. All parties are obligated to maintain the confidentiality of citizens' personal information. We apply strict security standards to protect data from unauthorized access."
+      },
+      {
+        "icon": "ban",
+        "title": "Account Suspension & Penalties",
+        "content": "We reserve the right to suspend or terminate any account that violates the terms of use. Violations may result in a warning, temporary suspension, or permanent deletion. You may appeal any decision by contacting our support team."
+      },
+      {
+        "icon": "file",
+        "title": "Intellectual Property & Content",
+        "content": "All intellectual property rights of the Haqak platform (logo, design, code) are reserved for the platform team. Content you submit (reports, images, files) remains your property, and you grant us a limited license to use it to operate the service only."
+      },
+      {
+        "icon": "alert",
+        "title": "Disclaimer",
+        "content": "Haqak is an independent civic communication tool and not an official government entity. We do not guarantee the resolution of all submitted issues, as this depends on the response of MPs and concerned authorities. We always strive to improve service quality and communication."
+      },
+      {
+        "icon": "contact",
+        "title": "Contact & Support",
+        "content": "For inquiries about the terms or to report a violation, contact us: admin@haqak.org. For technical support: support@haqak.org. For partnerships: team@haqak.org. We commit to responding within 48 business hours."
+      }
+    ]
   }
 }

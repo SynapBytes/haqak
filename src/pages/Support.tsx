@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -145,14 +146,19 @@ const Support = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await (supabase.from("contributions" as any).insert({
+      const payload: ContributionInsertPayload = {
         amount: finalAmount,
         name: name ? sanitizeText(name) : null,
         email: email ? sanitizeText(email) : null,
         show_name: showName,
         status: "succeeded",
         payment_provider: "premium_gateway",
-      } as any).select().single() as any);
+      };
+      const { data, error } = await supportSupabase
+        .from("contributions")
+        .insert(payload)
+        .select()
+        .single();
 
       if (error) throw error;
       if (!isRecord(data) || typeof data.id !== "string") {
@@ -174,12 +180,15 @@ const Support = () => {
     if (!feedback.trim()) return;
     setLoading(true);
     try {
-      const { error } = await (supabase.from("feedbacks" as any).insert({
+      const feedbackPayload: FeedbackInsertPayload = {
         contribution_id: contributionId,
         message: sanitizeText(feedback),
         name: name ? sanitizeText(name) : null,
         email: email ? sanitizeText(email) : null,
-      } as any) as any);
+      };
+      const { error } = await supportSupabase
+        .from("feedbacks")
+        .insert(feedbackPayload);
       if (error) throw error;
       toast.success(t("contribute.feedback_success"));
       setFeedback("");
