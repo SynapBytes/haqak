@@ -5,6 +5,36 @@ Supabase Vault integration for zero-downtime secret rotation.
 
 ---
 
+## 0. First-Time CI/CD Setup (GitHub Actions)
+
+The repository deploys Edge Functions automatically via
+`.github/workflows/deploy-edge-functions.yml`.  The workflow runs on every
+push to `main` and on manual dispatch.
+
+**Required GitHub repository secrets** (one-time setup):
+
+| Secret name | Where to get it |
+|---|---|
+| `SUPABASE_ACCESS_TOKEN` | https://app.supabase.com/account/tokens - select "Generate new token" |
+| `SUPABASE_PROJECT_ID` | The reference ID in your project URL, e.g. `https://app.supabase.com/project/<ref>` |
+
+**Steps:**
+1. Open **https://app.supabase.com/account/tokens** and click **Generate new
+   token**.  Copy the token value immediately (it is shown only once).
+2. In GitHub, open **Settings → Secrets and variables → Actions →
+   New repository secret**.
+   - Name: `SUPABASE_ACCESS_TOKEN`  |  Value: `<token from step 1>`
+3. Add a second secret:
+   - Name: `SUPABASE_PROJECT_ID`  |  Value: `<your-project-ref>`
+4. Once both secrets are saved, trigger the workflow manually:
+   **Actions → Deploy Supabase Edge Functions → Run workflow → Run workflow**
+
+After that, every push to `main` deploys all functions automatically.  The
+workflow also verifies both `send-otp` and `verify-otp` are reachable with
+HTTP smoke tests.
+
+---
+
 ## 1. Quick Start
 
 ### Prerequisites
@@ -155,4 +185,6 @@ both requests.
 The repository uses GitHub Actions for CI.  Secrets are stored in GitHub
 repository secrets and are mapped to Supabase secrets on deployment.
 
-See `.github/workflows/` for the full pipeline definition.
+See `.github/workflows/deploy-edge-functions.yml` for the full pipeline
+definition, and **§0** above for the one-time secrets setup required to
+enable automated deployments.
