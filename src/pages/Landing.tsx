@@ -176,23 +176,42 @@ const HeroStatsCard = () => {
   );
 };
 
+/* ─── Hero Info Window — static particle data (defined outside to avoid re-creation) ─── */
+const PAPYRUS_PARTICLES = [
+  { id: 0,  x: "8%",  y: "14%", size: 3, color: "rgba(90,165,180,0.55)",   duration: 2.8, delay: 0.0 },
+  { id: 1,  x: "18%", y: "36%", size: 2, color: "rgba(212,175,55,0.45)",   duration: 3.4, delay: 0.5 },
+  { id: 2,  x: "32%", y: "60%", size: 2, color: "rgba(176,212,208,0.50)",  duration: 4.0, delay: 1.0 },
+  { id: 3,  x: "48%", y: "22%", size: 4, color: "rgba(90,165,180,0.40)",   duration: 3.1, delay: 1.5 },
+  { id: 4,  x: "63%", y: "76%", size: 2, color: "rgba(212,175,55,0.45)",   duration: 3.6, delay: 0.8 },
+  { id: 5,  x: "78%", y: "44%", size: 3, color: "rgba(176,212,208,0.55)",  duration: 2.5, delay: 1.3 },
+  { id: 6,  x: "88%", y: "18%", size: 2, color: "rgba(90,165,180,0.45)",   duration: 4.2, delay: 0.3 },
+  { id: 7,  x: "12%", y: "66%", size: 3, color: "rgba(212,175,55,0.40)",   duration: 3.0, delay: 1.8 },
+  { id: 8,  x: "27%", y: "82%", size: 2, color: "rgba(176,212,208,0.50)",  duration: 2.7, delay: 0.7 },
+  { id: 9,  x: "55%", y: "10%", size: 4, color: "rgba(90,165,180,0.35)",   duration: 3.8, delay: 1.1 },
+  { id: 10, x: "70%", y: "52%", size: 2, color: "rgba(212,175,55,0.50)",   duration: 2.3, delay: 0.4 },
+  { id: 11, x: "85%", y: "30%", size: 3, color: "rgba(176,212,208,0.45)",  duration: 4.4, delay: 1.6 },
+  { id: 12, x: "40%", y: "90%", size: 2, color: "rgba(90,165,180,0.40)",   duration: 3.2, delay: 0.9 },
+  { id: 13, x: "60%", y: "44%", size: 3, color: "rgba(212,175,55,0.35)",   duration: 2.6, delay: 0.2 },
+] as const;
+
 /* ─── Hero Info Window ─── */
 const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped: boolean }) => {
   const { t } = useTranslation();
 
   const papyrusTexture = {
-    backgroundColor: "#F5DEB3",
+    backgroundColor: "#E6F0F5",
     backgroundImage: `
-      linear-gradient(120deg, rgba(212, 175, 55, 0.12), transparent 35%),
-      linear-gradient(300deg, rgba(227, 197, 142, 0.35), transparent 45%),
-      repeating-linear-gradient(90deg, rgba(179, 137, 68, 0.08), rgba(179, 137, 68, 0.08) 1px, transparent 3px, transparent 12px),
-      repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05) 1px, transparent 6px, transparent 14px)
+      linear-gradient(135deg, rgba(90,165,180,0.20) 0%, rgba(176,212,208,0.28) 30%, transparent 55%),
+      linear-gradient(315deg, rgba(212,175,55,0.22) 0%, rgba(235,215,160,0.32) 35%, transparent 60%),
+      linear-gradient(225deg, rgba(242,234,214,0.50) 0%, transparent 50%),
+      repeating-linear-gradient(90deg, rgba(75,150,170,0.07), rgba(75,150,170,0.07) 1px, transparent 3px, transparent 16px),
+      repeating-linear-gradient(0deg,  rgba(212,175,55,0.07),  rgba(212,175,55,0.07)  1px, transparent 6px, transparent 20px)
     `,
-    backgroundSize: "100% 100%, 100% 100%, 240px 100%, 100% 220px",
+    backgroundSize: "100% 100%, 100% 100%, 100% 100%, 240px 100%, 100% 200px",
   };
 
   const ReedPenIcon = () => (
-    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#7a4c1c]" fill="none" stroke="currentColor" strokeWidth="3">
+    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#2E7A8A]" fill="none" stroke="currentColor" strokeWidth="3">
       <path d="M10 52c10-6 24-28 30-42l6 6C32 34 16 48 10 52Z" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M33 27 19 41" strokeLinecap="round" />
       <circle cx="45" cy="19" r="3" fill="currentColor" />
@@ -200,7 +219,7 @@ const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped:
   );
 
   const ShieldEyeIcon = () => (
-    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#6d5123]" fill="none" stroke="currentColor" strokeWidth="3">
+    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#2A6E7E]" fill="none" stroke="currentColor" strokeWidth="3">
       <path d="M32 58s20-8 20-26V12L32 6 12 12v20c0 18 20 26 20 26Z" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M20 32s5-8 12-8 12 8 12 8-5 8-12 8-12-8-12-8Z" />
       <circle cx="32" cy="32" r="4" fill="currentColor" />
@@ -208,7 +227,7 @@ const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped:
   );
 
   const SunEyeIcon = () => (
-    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#8a5a24]" fill="none" stroke="currentColor" strokeWidth="3">
+    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#9E7B2F]" fill="none" stroke="currentColor" strokeWidth="3">
       <circle cx="32" cy="32" r="10" />
       <circle cx="32" cy="32" r="5" fill="currentColor" />
       <path d="M32 8v8M32 48v8M56 32h-8M16 32H8M48.5 15.5 43 21M21 43l-5.5 5.5M48.5 48.5 43 43M21 21l-5.5-5.5" strokeLinecap="round" />
@@ -216,7 +235,7 @@ const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped:
   );
 
   const BridgeIcon = () => (
-    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#7c5625]" fill="none" stroke="currentColor" strokeWidth="3">
+    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#35698A]" fill="none" stroke="currentColor" strokeWidth="3">
       <path d="M10 38h44" strokeLinecap="round" />
       <path d="M14 38v10M50 38v10" strokeLinecap="round" />
       <path d="M18 26c6-4 12-4 18 0s12 4 18 0" strokeLinecap="round" />
@@ -227,7 +246,7 @@ const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped:
   );
 
   const CornerMotif = ({ className }: { className: string }) => (
-    <svg viewBox="0 0 64 64" className={`w-10 h-10 text-[#d4af37] opacity-70 drop-shadow-sm ${className}`} fill="none" stroke="currentColor" strokeWidth="3">
+    <svg viewBox="0 0 64 64" className={`w-10 h-10 drop-shadow-sm ${className}`} fill="none" stroke="currentColor" strokeWidth="3">
       <path d="M10 10c18 0 18 18 36 18" strokeLinecap="round" />
       <path d="M22 10c0 10 12 12 12 24" strokeLinecap="round" />
       <circle cx="48" cy="28" r="4" fill="currentColor" />
@@ -235,10 +254,10 @@ const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped:
   );
 
   const infoSteps = [
-    { icon: ReedPenIcon, text: t("hero.step1"), accent: "#C08A3C" },
-    { icon: ShieldEyeIcon, text: t("hero.step2"), accent: "#AF8B43" },
-    { icon: SunEyeIcon, text: t("hero.step3"), accent: "#9E7B2F" },
-    { icon: BridgeIcon, text: t("hero.from_citizen"), accent: "#7F6230" },
+    { icon: ReedPenIcon,   text: t("hero.step1"),        accent: "#5BA3B0", border: "rgba(91,163,176,0.45)",  glow: "rgba(91,163,176,0.18)"  },
+    { icon: ShieldEyeIcon, text: t("hero.step2"),        accent: "#4A9A8E", border: "rgba(74,154,142,0.45)",  glow: "rgba(74,154,142,0.15)"  },
+    { icon: SunEyeIcon,    text: t("hero.step3"),        accent: "#C08A3C", border: "rgba(192,138,60,0.45)",  glow: "rgba(192,138,60,0.18)"  },
+    { icon: BridgeIcon,    text: t("hero.from_citizen"), accent: "#4A7EA8", border: "rgba(74,126,168,0.40)",  glow: "rgba(74,126,168,0.15)"  },
   ];
 
   return (
@@ -249,13 +268,19 @@ const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped:
       whileHover={{ scale: 1.005 }}
       className="relative group perspective-1000"
     >
-      {/* Ambient glow behind card */}
+      {/* Multi-colour ambient glow */}
       <div
-        className="absolute -inset-10 rounded-[3rem] opacity-60 group-hover:opacity-80 transition-opacity duration-1000 blur-3xl pointer-events-none"
-        style={{ background: "radial-gradient(ellipse at 50% 40%, rgba(212,175,55,0.35), rgba(158,123,47,0.12), transparent 70%)" }}
+        className="absolute -inset-12 rounded-[3rem] opacity-50 group-hover:opacity-75 transition-opacity duration-1000 blur-3xl pointer-events-none"
+        style={{
+          background: [
+            "radial-gradient(ellipse at 30% 35%, rgba(90,165,180,0.38), transparent 48%)",
+            "radial-gradient(ellipse at 75% 65%, rgba(212,175,55,0.30), transparent 48%)",
+            "radial-gradient(ellipse at 55% 50%, rgba(155,210,200,0.22), transparent 55%)",
+          ].join(", "),
+        }}
       />
 
-      {/* Main card reimagined as premium papyrus scroll */}
+      {/* Main card wrapper */}
       <motion.div
         initial={{ scaleX: 0.86, originX: 0.5 }}
         animate={{ scaleX: 1 }}
@@ -263,78 +288,132 @@ const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped:
         className="relative overflow-visible"
         style={{ fontFamily: "'Cairo', 'Amiri', 'IBM Plex Sans Arabic', sans-serif" }}
       >
-        <div className="absolute -inset-8 rounded-[32px] bg-gradient-to-br from-amber-200/12 via-amber-500/8 to-yellow-900/5 blur-3xl pointer-events-none" />
-
         {/* Hanging rope + seal */}
         <motion.div
           initial={{ y: -90, opacity: 0, scaleY: 0.6 }}
           animate={{ y: ropeDropped ? 0 : -90, opacity: 1, scaleY: ropeDropped ? 1 : 0.6 }}
-          transition={{ type: "spring", stiffness: 120, damping: 10, delay: 0.2 }}
+          transition={{ type: "spring", stiffness: 110, damping: 9, delay: 0.2 }}
           className="absolute left-1/2 -translate-x-1/2 -top-24 flex flex-col items-center z-10 select-none"
         >
-          <div className="w-px h-16 bg-gradient-to-b from-amber-900/50 via-amber-600/60 to-amber-400/70" />
+          {/* Rope */}
+          <div
+            className="w-px h-16"
+            style={{ background: "linear-gradient(to bottom, rgba(75,148,165,0.55), rgba(192,138,60,0.75), rgba(212,175,55,0.85))" }}
+          />
+          {/* Seal */}
           <motion.div
-            initial={{ rotate: -8, scale: 0.85 }}
-            animate={{ rotate: ropeDropped ? 0 : -8, scale: 1 }}
-            transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.35 }}
-            className="relative w-12 h-12 rounded-full bg-gradient-to-br from-[#f4d9a4] via-[#d8b36b] to-[#a57934] shadow-xl border border-white/30 flex items-center justify-center"
+            initial={{ rotate: -10, scale: 0.8 }}
+            animate={{ rotate: ropeDropped ? 0 : -10, scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 11, delay: 0.35 }}
+            className="relative w-12 h-12 rounded-full flex items-center justify-center"
+            style={{
+              background: "linear-gradient(135deg, #A8D4DA 0%, #6BAAB8 40%, #4A8A98 70%, #C08A3C 100%)",
+              boxShadow: "0 8px 24px rgba(75,160,175,0.45), 0 2px 8px rgba(0,0,0,0.18)",
+              border: "1.5px solid rgba(255,255,255,0.35)",
+            }}
           >
-            <Sparkles className="w-6 h-6 text-[#6b4719]" />
-            <div className="absolute inset-0 rounded-full border border-amber-500/30 animate-ping opacity-60" />
+            <Sparkles className="w-5 h-5 text-white/90" />
+            {/* Ping ring */}
+            <div
+              className="absolute inset-0 rounded-full animate-ping opacity-45"
+              style={{ border: "1.5px solid rgba(107,170,184,0.6)" }}
+            />
+            {/* Shine */}
+            <div className="absolute top-1 left-1.5 w-3 h-3 rounded-full bg-white/30 blur-[3px]" />
           </motion.div>
         </motion.div>
 
-        {/* Papyrus scroll */}
+        {/* ── Papyrus scroll ── */}
         <motion.div
           initial={{ height: 120, scaleY: 0.5, opacity: 0, y: -30 }}
           animate={{
-            height: opened ? 420 : 120,
+            height: opened ? 430 : 120,
             scaleY: opened ? 1 : 0.5,
             opacity: 1,
             y: 0,
           }}
-          transition={{ duration: 1.1, delay: 0.55, ease: [0.2, 0.9, 0.3, 1] }}
-          className="relative overflow-hidden rounded-[26px] shadow-[0_35px_90px_-35px_rgba(63,38,9,0.45)] backdrop-blur-xl border border-[rgba(128,88,28,0.22)]"
+          transition={{ duration: 1.15, delay: 0.55, ease: [0.2, 0.9, 0.3, 1] }}
+          className="relative overflow-hidden rounded-[26px]"
           style={{
             ...papyrusTexture,
             clipPath: "polygon(3% 0%, 97% 1%, 100% 8%, 98% 95%, 95% 100%, 5% 99%, 0 90%, 2% 6%)",
+            boxShadow: [
+              "0 35px 90px -35px rgba(40,80,90,0.38)",
+              "0 20px 60px -20px rgba(75,160,175,0.22)",
+              "inset 0 1px 0 rgba(255,255,255,0.55)",
+            ].join(", "),
+            border: "1px solid rgba(90,160,175,0.22)",
           }}
         >
-          {/* Rods */}
-          <div className="absolute -top-10 inset-x-3 h-10 rounded-full bg-gradient-to-b from-[#c99d5a] via-[#b07b34] to-[#8d5e20] shadow-[0_12px_20px_rgba(0,0,0,0.18)]" />
-          <div className="absolute -bottom-10 inset-x-3 h-10 rounded-full bg-gradient-to-t from-[#c99d5a] via-[#b07b34] to-[#8d5e20] shadow-[0_-12px_20px_rgba(0,0,0,0.14)]" />
-          <div className="absolute -top-11 left-3 w-4 h-12 rounded-full bg-gradient-to-b from-amber-200 to-amber-600 shadow-md" />
-          <div className="absolute -top-11 right-3 w-4 h-12 rounded-full bg-gradient-to-b from-amber-200 to-amber-600 shadow-md" />
-          <div className="absolute -bottom-11 left-3 w-4 h-12 rounded-full bg-gradient-to-b from-amber-200 to-amber-600 shadow-inner" />
-          <div className="absolute -bottom-11 right-3 w-4 h-12 rounded-full bg-gradient-to-b from-amber-200 to-amber-600 shadow-inner" />
-
-          {/* Grain */}
+          {/* ── Rods (teal-blue ↔ gold gradient) ── */}
           <div
-            className="absolute inset-0 opacity-40 mix-blend-multiply pointer-events-none"
+            className="absolute -top-10 inset-x-3 h-10 rounded-full"
             style={{
-              backgroundImage:
-                "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.25), transparent 38%), radial-gradient(circle at 80% 12%, rgba(255,255,255,0.18), transparent 30%), linear-gradient(90deg, rgba(116,78,37,0.16) 1px, transparent 2px), linear-gradient(0deg, rgba(116,78,37,0.12) 1px, transparent 3px)",
-              backgroundSize: "100% 100%, 100% 100%, 140px 100%, 100% 180px",
+              background: "linear-gradient(to bottom, #B8D8E0, #6BAAB8, #4A8A98, #C08A3C)",
+              boxShadow: "0 12px 20px rgba(0,0,0,0.14)",
+            }}
+          />
+          <div
+            className="absolute -bottom-10 inset-x-3 h-10 rounded-full"
+            style={{
+              background: "linear-gradient(to top, #B8D8E0, #6BAAB8, #4A8A98, #C08A3C)",
+              boxShadow: "0 -12px 20px rgba(0,0,0,0.11)",
+            }}
+          />
+          {/* Rod end-caps */}
+          {["-top-11 left-3", "-top-11 right-3", "-bottom-11 left-3", "-bottom-11 right-3"].map((pos, i) => (
+            <div
+              key={pos}
+              className={`absolute ${pos} w-4 h-12 rounded-full`}
+              style={{ background: i < 2 ? "linear-gradient(to bottom, #C8E4E8, #6BAAB8)" : "linear-gradient(to bottom, #6BAAB8, #C8E4E8)" }}
+            />
+          ))}
+
+          {/* ── Particle field ── */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+            {PAPYRUS_PARTICLES.map(p => (
+              <motion.div
+                key={p.id}
+                className="absolute rounded-full"
+                style={{ left: p.x, top: p.y, width: p.size, height: p.size, background: p.color }}
+                animate={{ y: [-6, 7, -6], opacity: [0.15, 0.75, 0.15], scale: [1, 1.6, 1] }}
+                transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: "easeInOut" }}
+              />
+            ))}
+          </div>
+
+          {/* ── Subtle grain/texture overlay ── */}
+          <div
+            className="absolute inset-0 opacity-25 mix-blend-multiply pointer-events-none z-[1]"
+            style={{
+              backgroundImage: [
+                "radial-gradient(circle at 18% 18%, rgba(255,255,255,0.35), transparent 40%)",
+                "radial-gradient(circle at 82% 10%, rgba(255,255,255,0.25), transparent 32%)",
+                "linear-gradient(90deg, rgba(70,140,160,0.12) 1px, transparent 2px)",
+                "linear-gradient(0deg, rgba(70,140,160,0.08) 1px, transparent 3px)",
+              ].join(", "),
+              backgroundSize: "100% 100%, 100% 100%, 150px 100%, 100% 190px",
             }}
           />
 
-          {/* Inner frame */}
+          {/* ── Inner gradient-border frame ── */}
           <div
-            className="absolute inset-[12px] rounded-[22px] pointer-events-none"
+            className="absolute inset-[12px] rounded-[20px] pointer-events-none z-[2]"
             style={{
-              border: "1.5px solid rgba(212, 175, 55, 0.45)",
-              boxShadow: "inset 0 0 0 1px rgba(124, 88, 36, 0.22)",
-              background: "linear-gradient(135deg, rgba(212,175,55,0.05), rgba(124,88,36,0.06))",
+              background: "linear-gradient(#E6F0F5, #E6F0F5) padding-box, linear-gradient(135deg, rgba(90,165,180,0.65), rgba(212,175,55,0.55), rgba(74,154,142,0.45)) border-box",
+              border: "1.5px solid transparent",
             }}
           />
 
-          {/* Corner motifs */}
-          <CornerMotif className="absolute -left-1 -top-1" />
-          <CornerMotif className="absolute -right-1 -top-1 rotate-90" />
-          <CornerMotif className="absolute -right-1 -bottom-1 rotate-180" />
-          <CornerMotif className="absolute -left-1 -bottom-1 -rotate-90" />
+          {/* ── Corner motifs – alternating teal / gold ── */}
+          <CornerMotif className="absolute -left-1 -top-1    text-[#5BA3B0] opacity-70" />
+          <CornerMotif className="absolute -right-1 -top-1   rotate-90  text-[#d4af37] opacity-70" />
+          <CornerMotif className="absolute -right-1 -bottom-1 rotate-180 text-[#5BA3B0] opacity-70" />
+          <CornerMotif className="absolute -left-1  -bottom-1 -rotate-90 text-[#d4af37] opacity-70" />
 
-          <div className="relative h-full flex flex-col">
+          {/* ── Content ── */}
+          <div className="relative h-full flex flex-col z-[3]">
+
             {/* Header */}
             <motion.div
               initial={{ opacity: 0, y: 30, filter: "blur(6px)" }}
@@ -344,21 +423,34 @@ const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped:
             >
               <div className="flex items-center gap-4">
                 <motion.div
-                  initial={{ scale: 0.85, rotate: -8 }}
-                  animate={{ scale: opened ? 1 : 0.85, rotate: opened ? 0 : -8 }}
+                  initial={{ scale: 0.82, rotate: -10 }}
+                  animate={{ scale: opened ? 1 : 0.82, rotate: opened ? 0 : -10 }}
                   transition={{ type: "spring", stiffness: 180, damping: 14, delay: 1.05 }}
                   className="relative flex-shrink-0"
                 >
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#E3C58E]/60 via-[#F5DEB3]/70 to-[#D2B48C]/40 flex items-center justify-center border border-[rgba(212,175,55,0.35)] shadow-inner shadow-[rgba(124,88,36,0.15)]">
-                    <Shield className="w-7 h-7 text-[#8b5b20]" />
+                  <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(90,165,180,0.32), rgba(176,212,208,0.50), rgba(212,175,55,0.18))",
+                      border: "1.5px solid rgba(90,165,180,0.42)",
+                      boxShadow: "0 8px 22px rgba(90,165,180,0.22), inset 0 1px 0 rgba(255,255,255,0.45)",
+                    }}
+                  >
+                    <Shield className="w-7 h-7 text-[#2E7A8A]" />
                   </div>
+                  {/* Subtle ring glow */}
+                  <div
+                    className="absolute -inset-1 rounded-[18px] pointer-events-none"
+                    style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(90,165,180,0.22), transparent 70%)", filter: "blur(4px)" }}
+                  />
                 </motion.div>
+
                 <div className="flex-1 min-w-0">
                   <motion.h3
                     initial={{ opacity: 0, x: 20, filter: "blur(6px)" }}
                     animate={{ opacity: opened ? 1 : 0, x: opened ? 0 : 20, filter: opened ? "blur(0px)" : "blur(6px)" }}
                     transition={{ delay: 1.1, duration: 0.6 }}
-                    className="text-xl font-bold tracking-tight text-[#5a3b18]"
+                    className="text-xl font-bold tracking-tight text-[#1D5264]"
                   >
                     {t("hero.welcome_title")}
                   </motion.h3>
@@ -366,7 +458,7 @@ const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped:
                     initial={{ opacity: 0, x: 15 }}
                     animate={{ opacity: opened ? 1 : 0, x: opened ? 0 : 15 }}
                     transition={{ delay: 1.2, duration: 0.5 }}
-                    className="text-sm mt-1 text-[#5f4626]"
+                    className="text-sm mt-1 text-[#3A6E7E]"
                   >
                     {t("hero.welcome_sub")}
                   </motion.p>
@@ -374,11 +466,11 @@ const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped:
               </div>
             </motion.div>
 
-            {/* Divider */}
+            {/* Teal→Gold divider */}
             <div className="mx-7 relative h-px">
               <motion.div
                 className="absolute inset-0"
-                style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.75), transparent)" }}
+                style={{ background: "linear-gradient(90deg, transparent, rgba(90,165,180,0.75), rgba(212,175,55,0.70), transparent)" }}
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: opened ? 1 : 0 }}
                 transition={{ delay: 1.1, duration: 0.7 }}
@@ -390,27 +482,35 @@ const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped:
               {infoSteps.map((step, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, x: 35, filter: "blur(3px)" }}
-                  animate={{ opacity: opened ? 1 : 0, x: opened ? 0 : 35, filter: opened ? "blur(0px)" : "blur(3px)" }}
-                  transition={{ delay: 1.2 + i * 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                  initial={{ opacity: 0, x: 38, filter: "blur(3px)" }}
+                  animate={{ opacity: opened ? 1 : 0, x: opened ? 0 : 38, filter: opened ? "blur(0px)" : "blur(3px)" }}
+                  transition={{ delay: 1.22 + i * 0.13, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
                   whileHover={{
-                    x: -6,
-                    boxShadow: "0 12px 30px -18px rgba(124,88,36,0.55)",
+                    x: -5,
+                    boxShadow: `0 14px 32px -14px ${step.glow}`,
+                    transition: { duration: 0.25 },
                   }}
-                  className="flex items-center gap-3.5 rounded-2xl px-4 py-3 transition-all duration-500 cursor-default bg-[rgba(255,255,255,0.28)] backdrop-blur-[2px] border border-[rgba(124,88,36,0.12)]"
+                  className="flex items-center gap-3.5 rounded-2xl px-4 py-3 cursor-default"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(255,255,255,0.60), rgba(220,238,244,0.50))",
+                    backdropFilter: "blur(10px)",
+                    border: `1px solid ${step.border}`,
+                    boxShadow: `0 2px 14px ${step.glow}, inset 0 1px 0 rgba(255,255,255,0.55)`,
+                  }}
                 >
                   <motion.div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner"
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
                     style={{
-                      background: `linear-gradient(135deg, ${step.accent}1a, rgba(245,222,179,0.8))`,
-                      border: `1.5px solid ${step.accent}80`,
-                      boxShadow: "0 6px 14px -10px rgba(68,45,12,0.6)",
+                      background: `linear-gradient(135deg, ${step.accent}22, ${step.accent}3a)`,
+                      border: `1.5px solid ${step.border}`,
+                      boxShadow: `0 4px 14px ${step.glow}`,
                     }}
-                    whileHover={{ scale: 1.05, rotate: -4 }}
+                    whileHover={{ scale: 1.10, rotate: -5 }}
+                    transition={{ type: "spring", stiffness: 320, damping: 16 }}
                   >
                     <step.icon />
                   </motion.div>
-                  <span className="text-sm font-semibold text-[#4a3217] leading-relaxed">
+                  <span className="text-sm font-semibold text-[#1D4E5E] leading-relaxed">
                     {step.text}
                   </span>
                 </motion.div>
@@ -419,47 +519,73 @@ const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped:
 
             {/* Footer tagline */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: opened ? 1 : 0, y: opened ? 0 : 10 }}
-              transition={{ delay: 1.6, duration: 0.5 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: opened ? 1 : 0, y: opened ? 0 : 12 }}
+              transition={{ delay: 1.62, duration: 0.5 }}
               className="mx-7 mb-6"
             >
-              <div className="relative overflow-hidden rounded-2xl px-5 py-3.5 text-center border border-[rgba(212,175,55,0.35)] bg-[rgba(227,197,142,0.35)] shadow-[inset_0_8px_30px_rgba(255,255,255,0.18)]">
+              <div
+                className="relative overflow-hidden rounded-2xl px-5 py-3.5 text-center"
+                style={{
+                  background: "linear-gradient(135deg, rgba(90,165,180,0.22), rgba(176,212,208,0.28), rgba(212,175,55,0.18))",
+                  border: "1px solid rgba(90,165,180,0.35)",
+                  boxShadow: "inset 0 8px 30px rgba(255,255,255,0.22), 0 4px 14px rgba(75,160,175,0.12)",
+                }}
+              >
+                {/* Shimmer sweep */}
                 <motion.div
-                  className="absolute inset-0 -translate-x-full"
-                  style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.16), transparent)" }}
-                  animate={{ translateX: ["-120%", "160%"] }}
+                  className="absolute inset-0"
+                  style={{ background: "linear-gradient(90deg, transparent, rgba(90,165,180,0.14), rgba(212,175,55,0.10), transparent)" }}
+                  animate={{ x: ["-120%", "160%"] }}
                   transition={{ duration: 4, repeat: Infinity, repeatDelay: 2.2, ease: "easeInOut" }}
                 />
-                <p className="relative text-sm font-bold tracking-wide text-[#5a3b18] flex items-center justify-center gap-2.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]" />
+                <p className="relative text-sm font-bold tracking-wide text-[#1D4E5E] flex items-center justify-center gap-2.5">
+                  <motion.span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: "linear-gradient(135deg, #5BA3B0, #d4af37)" }}
+                    animate={{ scale: [1, 1.4, 1] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                  />
                   {t("hero.from_citizen")}
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]" />
+                  <motion.span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: "linear-gradient(135deg, #d4af37, #5BA3B0)" }}
+                    animate={{ scale: [1, 1.4, 1] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 1.25 }}
+                  />
                 </p>
               </div>
             </motion.div>
           </div>
         </motion.div>
 
-        {/* Rolled parchments under main scroll */}
+        {/* ── Rolled parchments (teal / gold / teal-green) ── */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: opened ? 1 : 0, y: opened ? 0 : 20 }}
-          transition={{ delay: 1.3, duration: 0.6 }}
+          initial={{ opacity: 0, y: 22 }}
+          animate={{ opacity: opened ? 1 : 0, y: opened ? 0 : 22 }}
+          transition={{ delay: 1.35, duration: 0.6 }}
           className="mt-8 flex items-center justify-center gap-3"
         >
-          {["#d8b36b", "#cfa15a", "#d6b072"].map((color, idx) => (
+          {[
+            { from: "#6BAAB8", to: "#A8D0D8", shadow: "rgba(107,170,184,0.45)" },
+            { from: "#C08A3C", to: "#D4AF6A", shadow: "rgba(192,138,60,0.45)" },
+            { from: "#4A9A8E", to: "#88C8C0", shadow: "rgba(74,154,142,0.40)" },
+          ].map(({ from, to, shadow }, idx) => (
             <motion.div
-              key={color}
-              whileHover={{ y: -4, rotate: idx === 1 ? 2 : -2 }}
-              className="relative w-24 h-10 rounded-full shadow-[0_12px_25px_-12px_rgba(0,0,0,0.35)]"
+              key={idx}
+              whileHover={{ y: -5, rotate: idx === 1 ? 2 : -2, transition: { duration: 0.2 } }}
+              className="relative w-24 h-10 rounded-full"
               style={{
-                background: `linear-gradient(135deg, ${color}, ${color}cc)`,
+                background: `linear-gradient(135deg, ${from}, ${to})`,
+                boxShadow: `0 12px 26px -12px ${shadow}`,
               }}
             >
-              <div className="absolute inset-0 rounded-full border border-amber-700/25 mix-blend-multiply" />
-              <div className="absolute inset-y-1 left-1/2 -translate-x-1/2 w-3 rounded-full bg-amber-900/70 shadow-inner" />
-              <div className="absolute inset-0 opacity-35 mix-blend-overlay" style={{ background: "radial-gradient(circle at 30% 40%, rgba(255,255,255,0.9), transparent 55%)" }} />
+              <div className="absolute inset-0 rounded-full border border-white/20" />
+              <div className="absolute inset-y-1 left-1/2 -translate-x-1/2 w-3 rounded-full bg-white/20 shadow-inner" />
+              <div
+                className="absolute inset-0 rounded-full opacity-30"
+                style={{ background: "radial-gradient(circle at 30% 38%, rgba(255,255,255,0.8), transparent 54%)" }}
+              />
             </motion.div>
           ))}
         </motion.div>
