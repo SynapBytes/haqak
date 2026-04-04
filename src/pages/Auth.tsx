@@ -45,10 +45,10 @@ function sanitizeOtpErrorMessage(message: string): string {
   if (lowered.includes("invalid otp") || lowered.includes("invalid verification code")) return "OTP invalid";
   if (lowered.includes("expired")) return "OTP expired";
   // Safe, user-actionable account creation errors
-  if (lowered.includes("already registered") || lowered.includes("phone number already")) return "Phone number already registered";
+  if (lowered.includes("already registered") || lowered.includes("phone number already registered")) return "Phone number already registered";
   if (lowered.includes("password") && (lowered.includes("weak") || lowered.includes("short") || lowered.includes("characters"))) return "Password should be at least 8 characters";
   if (lowered.includes("missing signup") || lowered.includes("missing mp-specific")) return "Missing required signup data";
-  if (lowered.includes("failed to create") || lowered.includes("failed to create account")) return "Failed to create account";
+  if (lowered.includes("failed to create")) return "Failed to create account";
   return "Unable to process OTP request";
 }
 

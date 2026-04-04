@@ -45,6 +45,8 @@ function formatPhoneNumber(phone: string): string {
   return `+${cleaned}`;
 }
 
+const DEFAULT_COUNTRY_CODE = "EG";
+
 // Generate a unique email from phone number
 function generateEmailFromPhone(phone: string): string {
   const cleaned = phone.replace(/\D/g, "");
@@ -236,14 +238,13 @@ serve(async (req) => {
       const userMetadata: Record<string, string | null | undefined> = {
         full_name: fullName,
         phone: formattedPhone,
-        countryCode: countryCode ?? "EG",
+        countryCode: countryCode ?? DEFAULT_COUNTRY_CODE,
         role,
         governorate,
         center: district,
         ...(mode === "signup-citizen" && {
           national_id: nationalId,
           district,
-          electoral_district: null,
         }),
         ...(mode === "signup-mp" && {
           display_name: displayName,
