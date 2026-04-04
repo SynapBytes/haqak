@@ -2,7 +2,7 @@ import {
   corsHeaders,
   isOriginAllowed,
   sendJson,
-} from "./_shared";
+} from "./_shared.js";
 
 type Req = {
   method?: string;
@@ -16,7 +16,8 @@ type Res = {
 };
 
 function applyCors(req: Req, res: Res): string | undefined {
-  const origin = req.headers.origin;
+  const rawOrigin = req.headers.origin;
+  const origin = Array.isArray(rawOrigin) ? rawOrigin[0] : rawOrigin;
   const headers = corsHeaders(origin);
   Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
   return origin;
