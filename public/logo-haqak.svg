@@ -15,18 +15,18 @@
   </defs>
   <rect width="1600" height="1200" fill="#000"/>
   <g filter="url(#shadow)">
-    <path d="M380 480 C580 340 1160 310 1280 420 C1160 520 780 560 380 480 Z" fill="url(#featherGrad)"/>
-    <path d="M420 500 C700 420 1100 420 1220 440" fill="none" stroke="#330000" stroke-width="8" stroke-linecap="round"/>
-    <path d="M460 480 C700 420 980 440 1120 470" fill="none" stroke="#330000" stroke-width="6" stroke-linecap="round"/>
-    <path d="M520 470 C780 430 980 460 1080 490" fill="none" stroke="#330000" stroke-width="5" stroke-linecap="round"/>
-    <path d="M620 460 C820 440 1000 490 1040 500" fill="none" stroke="#330000" stroke-width="5" stroke-linecap="round"/>
-    <path d="M700 456 L1020 510" stroke="#330000" stroke-width="5" stroke-linecap="round"/>
+    <path d="M230 350 C520 130 1310 65 1480 260 C1310 420 630 510 230 350 Z" fill="url(#featherGrad)"/>
+    <path d="M280 380 C650 250 1200 250 1360 290" fill="none" stroke="#330000" stroke-width="12" stroke-linecap="round"/>
+    <path d="M340 350 C650 250 1050 290 1230 350" fill="none" stroke="#330000" stroke-width="9" stroke-linecap="round"/>
+    <path d="M420 330 C750 220 1050 350 1170 400" fill="none" stroke="#330000" stroke-width="7.5" stroke-linecap="round"/>
+    <path d="M550 310 C800 220 1050 380 1130 420" fill="none" stroke="#330000" stroke-width="7.5" stroke-linecap="round"/>
+    <path d="M650 305 L1150 430" stroke="#330000" stroke-width="7.5" stroke-linecap="round"/>
   </g>
-  <g transform="translate(260 780)" fill="url(#textGrad)" font-family="'Poppins', 'Montserrat', 'Arial Black', 'Helvetica', sans-serif" font-weight="900" font-size="220" letter-spacing="28">
+  <g transform="translate(360 820)" fill="url(#textGrad)" font-family="'Poppins', 'Montserrat', 'Arial Black', 'Helvetica', sans-serif" font-weight="900" font-size="154" letter-spacing="20">
     <text x="0" y="0">H</text>
-    <text x="220" y="0">A</text>
-    <text x="440" y="0">Q</text>
-    <text x="660" y="0">A</text>
-    <text x="880" y="0">K</text>
+    <text x="154" y="0">A</text>
+    <text x="308" y="0">Q</text>
+    <text x="462" y="0">A</text>
+    <text x="616" y="0">K</text>
   </g>
 </svg>
