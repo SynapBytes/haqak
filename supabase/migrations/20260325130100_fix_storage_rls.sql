@@ -3,6 +3,7 @@
 
 -- Drop existing overly permissive SELECT policy
 DROP POLICY IF EXISTS "Authenticated users can read issue attachments" ON storage.objects;
+DROP POLICY IF EXISTS "Restricted read access to issue attachments" ON storage.objects;
 
 -- Create new restrictive SELECT policy
 -- Only allow:
@@ -32,6 +33,7 @@ CREATE POLICY "Restricted read access to issue attachments" ON storage.objects
 
 -- Ensure INSERT policy is restrictive
 DROP POLICY IF EXISTS "Authenticated users can upload issue attachments" ON storage.objects;
+DROP POLICY IF EXISTS "Users can only upload to their own folder" ON storage.objects;
 
 CREATE POLICY "Users can only upload to their own folder" ON storage.objects
   FOR INSERT
