@@ -6,21 +6,11 @@
 -- Example: Revoking access to all users
 REVOKE ALL ON SCHEMA public FROM public;
 
--- Example: Restrict access to specific tables (defensive/idempotent)
-DO $$
-BEGIN
-  IF to_regclass('public.sensitive_data') IS NOT NULL THEN
-    EXECUTE 'REVOKE ALL ON TABLE public.sensitive_data FROM PUBLIC';
+-- Example: Restrict access to specific tables
+REVOKE ALL ON TABLE sensitive_data FROM public;
+GRANT SELECT ON TABLE sensitive_data TO admin_role;
 
-    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
-      EXECUTE 'GRANT SELECT ON TABLE public.sensitive_data TO admin_role';
-    END IF;
-  END IF;
-END
-$$;
-
--- NOTE:
--- ALTER SYSTEM requires elevated privileges and is not safe for hosted migration runs.
--- Configure SSL at the platform/database level instead of in SQL migrations.
+-- Example: Ensure the use of secure connections
+ALTER SYSTEM SET ssl = 'on';
 
 -- Additional security hardening commands can be added here.
