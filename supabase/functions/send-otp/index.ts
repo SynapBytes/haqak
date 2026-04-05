@@ -30,9 +30,7 @@ function normalizePhone(input: string): string {
 }
 
 function maskPhone(phone: string): string {
-  if (phone.length <= 4) return "***";
-  const suffix = phone.slice(-3);
-  return `${phone.slice(0, 2)}***${suffix}`;
+  return "+***";
 }
 
 function getRequestId(req: Request): string | null {
@@ -56,6 +54,31 @@ function getEnvConfig() {
     accountSid: Deno.env.get("TWILIO_ACCOUNT_SID")?.trim() ?? "",
     authToken: Deno.env.get("TWILIO_AUTH_TOKEN")?.trim() ?? "",
     verifyServiceSid: Deno.env.get("TWILIO_VERIFY_SERVICE_SID")?.trim() ?? "",
+  };
+}
+
+function buildTwilioFailureResponse(
+  twilioStatus: string | null,
+  twilioErrorCode: number | null,
+  twilioMessage: string | null,
+  debugEnabled: boolean,
+  verifyServiceSid: string,
+) {
+  return {
+    error: "Twilio Verify send failed",
+    twilio: {
+      status: twilioStatus,
+      code: twilioErrorCode,
+      message: twilioMessage,
+    },
+    ...(debugEnabled
+      ? {
+        twilio_request_sent: true,
+        verify_service_sid_suffix: verifyServiceSid.slice(-6),
+        twilio_status: twilioStatus,
+        twilio_error_code: twilioErrorCode,
+      }
+      : {}),
   };
 }
 
@@ -101,8 +124,8 @@ serve(async (req) => {
       ? {
         twilio_request_sent: false,
         verify_service_sid_suffix: verifyServiceSid.slice(-6),
-        twilio_status: null as string | null,
-        twilio_error_code: null as number | null,
+        twilio_status: null,
+        twilio_error_code: null,
       }
       : {};
 
@@ -162,44 +185,26 @@ serve(async (req) => {
 
     if (!response.ok) {
       return jsonResponse(
-        {
-          error: "Twilio Verify send failed",
-          twilio: {
-            status: twilioStatus,
-            code: twilioErrorCode,
-            message: twilioMessage,
-          },
-          ...(debugEnabled
-            ? {
-              twilio_request_sent: true,
-              verify_service_sid_suffix: verifyServiceSid.slice(-6),
-              twilio_status: twilioStatus,
-              twilio_error_code: twilioErrorCode,
-            }
-            : {}),
-        },
+        buildTwilioFailureResponse(
+          twilioStatus,
+          twilioErrorCode,
+          twilioMessage,
+          debugEnabled,
+          verifyServiceSid,
+        ),
         502,
       );
     }
 
     if (!data.sid || !twilioStatus) {
       return jsonResponse(
-        {
-          error: "Twilio Verify send failed",
-          twilio: {
-            status: twilioStatus,
-            code: twilioErrorCode,
-            message: twilioMessage,
-          },
-          ...(debugEnabled
-            ? {
-              twilio_request_sent: true,
-              verify_service_sid_suffix: verifyServiceSid.slice(-6),
-              twilio_status: twilioStatus,
-              twilio_error_code: twilioErrorCode,
-            }
-            : {}),
-        },
+        buildTwilioFailureResponse(
+          twilioStatus,
+          twilioErrorCode,
+          twilioMessage,
+          debugEnabled,
+          verifyServiceSid,
+        ),
         502,
       );
     }

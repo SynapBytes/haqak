@@ -150,16 +150,7 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"dryRun":true,"phone":"+201012345678"}' \
             "${PROJECT_URL}/functions/v1/send-otp")
-          DRYRUN_READINESS=$(node -e '
-            const fs = require("node:fs");
-            const p = process.argv[1];
-            try {
-              const body = JSON.parse(fs.readFileSync(p, "utf8"));
-              process.stdout.write(body && body.readiness === true ? "true" : "false");
-            } catch {
-              process.stdout.write("false");
-            }
-          ' "$DRYRUN_RESPONSE")
+          DRYRUN_READINESS=$(jq -r '.readiness // false' "$DRYRUN_RESPONSE")
           echo "  → OPTIONS HTTP status: $OPTIONS_STATUS"
           echo "  → POST HTTP status: $POST_STATUS"
           echo "  → dryRun readiness: $DRYRUN_READINESS"
