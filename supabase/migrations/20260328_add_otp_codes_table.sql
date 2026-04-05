@@ -1,5 +1,5 @@
 -- Create OTP codes table for tracking sent OTPs
-CREATE TABLE public.otp_codes (
+CREATE TABLE IF NOT EXISTS public.otp_codes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   phone TEXT NOT NULL,
   code TEXT NOT NULL,

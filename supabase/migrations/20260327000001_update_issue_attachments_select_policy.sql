@@ -18,7 +18,7 @@ CREATE POLICY "Restricted read access to issue attachments" ON storage.objects
         EXISTS (
           SELECT 1 FROM public.issues
           WHERE id = (storage.foldername(name))[2]::uuid
-          AND assigned_mp_id = auth.uid()::uuid
+          AND assigned_mp_id = auth.uid()
         )
       ) OR
       -- Admins can access all

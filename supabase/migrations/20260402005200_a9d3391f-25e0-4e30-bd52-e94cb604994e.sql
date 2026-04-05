@@ -1,5 +1,5 @@
 -- Create otp_codes table for OTP verification
-CREATE TABLE public.otp_codes (
+CREATE TABLE IF NOT EXISTS public.otp_codes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   phone text NOT NULL,
   code text NOT NULL,
@@ -23,7 +23,7 @@ USING (true)
 WITH CHECK (true);
 
 -- Create rate_limit_logs table
-CREATE TABLE public.rate_limit_logs (
+CREATE TABLE IF NOT EXISTS public.rate_limit_logs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid,
   request_path text NOT NULL,

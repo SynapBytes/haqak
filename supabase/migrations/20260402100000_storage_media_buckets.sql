@@ -34,7 +34,7 @@ USING (
       AND EXISTS (
         SELECT 1 FROM public.issues
         WHERE id = (storage.foldername(name))[2]::uuid
-          AND assigned_mp_id = auth.uid()::uuid
+          AND assigned_mp_id = auth.uid()
       )
     )
     OR public.has_any_role(auth.uid(), ARRAY['admin', 'moderator']::public.app_role[])
