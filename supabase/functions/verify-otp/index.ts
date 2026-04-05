@@ -1,111 +1,191 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { OTP_CORS_HEADERS, jsonResponse } from "../_shared/cors.ts";
-
-interface VerifyOtpRequest {
-  phone: string;
-  code: string;
-}
-
-interface TwilioVerifyCheckResponse {
-  sid?: string;
-  status?: string;
-  valid?: boolean;
-  message?: string;
-  code?: number;
-}
-
-const E164_REGEX = /^\+[1-9]\d{1,14}$/;
-const OTP_CODE_REGEX = /^\d{4,10}$/;
-
-function getRequiredSecret(name: "TWILIO_ACCOUNT_SID" | "TWILIO_AUTH_TOKEN" | "TWILIO_VERIFY_SERVICE_SID"): string {
-  const value = Deno.env.get(name)?.trim();
-  if (!value) {
-    throw new Error(`Missing required secret: ${name}`);
-  }
-  return value;
-}
+import {
+  buildRequestId,
+  extractOtpCode,
+  getTwilioCode,
+  getTwilioMessage,
+  getTwilioSecrets,
+  hasCallerAuth,
+  isApprovedVerification,
+  isExpiredVerification,
+  logError,
+  logInfo,
+  logWarn,
+  maskPhone,
+  normalizePhone,
+  readJsonBody,
+  structuredError,
+  twilioFormRequest,
+} from "../_shared/otp.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { status: 200, headers: OTP_CORS_HEADERS });
   }
 
+  const requestId = buildRequestId(req);
+
   if (req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405);
+    return structuredError({ status: 405, code: "INVALID_METHOD", message: "Method not allowed" });
   }
 
+  if (!hasCallerAuth(req)) {
+    return structuredError({
+      status: 401,
+      code: "AUTH_REQUIRED",
+      message: "Authorization required. Provide Supabase anon apikey or Bearer token.",
+    });
+  }
+
+  const payload = await readJsonBody(req);
+  if (!payload) {
+    return structuredError({
+      status: 400,
+      code: "INVALID_JSON",
+      message: "Invalid JSON payload",
+    });
+  }
+
+  const phone = normalizePhone(payload.phone, payload.countryCode);
+  if (!phone) {
+    return structuredError({
+      status: 400,
+      code: "INVALID_PHONE",
+      message: "Invalid phone. Provide E.164 format or include countryCode.",
+    });
+  }
+
+  const code = extractOtpCode(payload);
+  if (!code) {
+    return structuredError({
+      status: 400,
+      code: "INVALID_OTP",
+      message: "Invalid OTP code format",
+    });
+  }
+
+  const maskedPhone = maskPhone(phone);
+
   try {
-    const { phone, code } = (await req.json()) as VerifyOtpRequest;
+    const secrets = getTwilioSecrets();
 
-    if (!phone || !E164_REGEX.test(phone)) {
-      return jsonResponse({ error: "Invalid phone. Use E.164 format, e.g. +201012345678" }, 400);
-    }
+    const twilioResult = await twilioFormRequest({
+      url: `https://verify.twilio.com/v2/Services/${secrets.verifyServiceSid}/VerificationCheck`,
+      formBody: new URLSearchParams({ To: phone, Code: code }),
+      secrets,
+      requestId,
+      operation: "verify",
+      maskedPhone,
+    });
 
-    if (!code || !OTP_CODE_REGEX.test(code)) {
-      return jsonResponse({ error: "Invalid code format" }, 400);
-    }
-
-    const accountSid = getRequiredSecret("TWILIO_ACCOUNT_SID");
-    const authToken = getRequiredSecret("TWILIO_AUTH_TOKEN");
-    const verifyServiceSid = getRequiredSecret("TWILIO_VERIFY_SERVICE_SID");
-
-    const response = await fetch(
-      `https://verify.twilio.com/v2/Services/${verifyServiceSid}/VerificationCheck`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          To: phone,
-          Code: code,
-        }).toString(),
-      },
-    );
-
-    const data = (await response.json().catch((parseError) => {
-      console.error("Failed to parse Twilio Verify check response JSON:", parseError);
-      return {};
-    })) as TwilioVerifyCheckResponse;
-
-    if (!response.ok) {
-      const status = response.status >= 400 && response.status < 500 ? response.status : 502;
-      return jsonResponse(
-        {
-          error: data.message ?? "Twilio Verify check failed",
-          twilio_code: data.code ?? null,
-        },
+    if (!twilioResult.response) {
+      const errorCode = twilioResult.timedOut ? "TWILIO_TIMEOUT" : "TWILIO_UNAVAILABLE";
+      const status = twilioResult.timedOut ? 504 : 502;
+      logError("otp.verify.twilio_unavailable", requestId, { maskedPhone, errorCode });
+      return structuredError({
         status,
-      );
+        code: errorCode,
+        message: "Unable to verify OTP at this time. Please try again.",
+      });
     }
 
-    const approved = data.status === "approved" || data.valid === true;
+    if (!twilioResult.response.ok) {
+      const twilioCode = getTwilioCode(twilioResult.data);
+      const twilioMessage = getTwilioMessage(twilioResult.data);
 
-    if (!approved) {
-      return jsonResponse(
-        {
+      if (twilioResult.response.status === 429) {
+        return structuredError({
+          status: 429,
+          code: "OTP_RATE_LIMITED",
+          message: twilioMessage ?? "Too many OTP attempts. Please wait and try again.",
+          details: { twilio_code: twilioCode },
+        });
+      }
+
+      if (isExpiredVerification(twilioResult.data)) {
+        logWarn("otp.verify.expired", requestId, { maskedPhone, twilioCode });
+        return structuredError({
+          status: 410,
+          code: "OTP_EXPIRED",
+          message: "OTP expired. Request a new code.",
+          details: { approved: false, verification_status: "expired", twilio_code: twilioCode },
+        });
+      }
+
+      const status = twilioResult.response.status >= 500 ? 502 : 401;
+      const errorCode = twilioResult.response.status >= 500 ? "TWILIO_UNAVAILABLE" : "OTP_REJECTED";
+      logWarn("otp.verify.rejected", requestId, {
+        maskedPhone,
+        twilioStatus: twilioResult.response.status,
+        twilioCode,
+      });
+
+      return structuredError({
+        status,
+        code: errorCode,
+        message: status === 401
+          ? "OTP verification failed"
+          : "Unable to verify OTP at this time. Please try again.",
+        details: {
           approved: false,
-          status: data.status ?? "denied",
-          message: "OTP verification failed",
+          verification_status: status === 401 ? "rejected" : "unavailable",
+          twilio_code: twilioCode,
         },
-        401,
-      );
+      });
     }
 
-    return jsonResponse(
-      {
-        approved: true,
-        status: data.status ?? "approved",
-        sid: data.sid ?? null,
-      },
-      200,
-    );
+    if (!isApprovedVerification(twilioResult.data)) {
+      if (isExpiredVerification(twilioResult.data)) {
+        logWarn("otp.verify.expired_status", requestId, { maskedPhone });
+        return structuredError({
+          status: 410,
+          code: "OTP_EXPIRED",
+          message: "OTP expired. Request a new code.",
+          details: { approved: false, verification_status: "expired" },
+        });
+      }
+
+      const verificationStatus = typeof twilioResult.data.status === "string" ? twilioResult.data.status : "rejected";
+      logWarn("otp.verify.not_approved", requestId, { maskedPhone, verificationStatus });
+      return structuredError({
+        status: 401,
+        code: "OTP_REJECTED",
+        message: "OTP verification failed",
+        details: {
+          approved: false,
+          verification_status: verificationStatus,
+        },
+      });
+    }
+
+    const sid = typeof twilioResult.data.sid === "string" ? twilioResult.data.sid : null;
+    const verificationStatus = typeof twilioResult.data.status === "string" ? twilioResult.data.status : "approved";
+
+    logInfo("otp.verify.approved", requestId, { maskedPhone, verificationStatus });
+
+    return jsonResponse({
+      approved: true,
+      success: true,
+      status: verificationStatus,
+      sid,
+      phone_masked: maskedPhone,
+      request_id: requestId,
+    });
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith("Missing required secret:")) {
-      return jsonResponse({ error: error.message }, 500);
+    if (error instanceof Error && error.message === "MISSING_TWILIO_SECRET") {
+      logError("otp.verify.missing_secret", requestId);
+      return structuredError({
+        status: 500,
+        code: "MISSING_SECRET",
+        message: "OTP service is not configured",
+      });
     }
 
-    return jsonResponse({ error: "Internal server error" }, 500);
+    logError("otp.verify.internal_error", requestId, {
+      errorType: error instanceof Error ? error.name : "unknown",
+    });
+
+    return structuredError({ status: 500, code: "INTERNAL_ERROR", message: "Internal server error" });
   }
 });

@@ -3,6 +3,7 @@
 
 -- Drop existing overly permissive SELECT policy
 DROP POLICY IF EXISTS "Authenticated users can read issue attachments" ON storage.objects;
+DROP POLICY IF EXISTS "Restricted read access to issue attachments" ON storage.objects;
 
 -- Create new restrictive SELECT policy
 -- Only allow:
@@ -18,8 +19,10 @@ CREATE POLICY "Restricted read access to issue attachments" ON storage.objects
       -- MPs can access attachments for their assigned issues
       EXISTS (
         SELECT 1 FROM public.issues
-        WHERE id = (storage.foldername(name))[2]::uuid
-        AND assigned_mp_id = auth.uid()::text
+        WHERE cardinality(storage.foldername(name)) >= 2
+        AND (storage.foldername(name))[2] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+        AND id = ((storage.foldername(name))[2])::uuid
+        AND assigned_mp_id = auth.uid()
       ) OR
       -- Admins can access all
       EXISTS (
@@ -32,6 +35,7 @@ CREATE POLICY "Restricted read access to issue attachments" ON storage.objects
 
 -- Ensure INSERT policy is restrictive
 DROP POLICY IF EXISTS "Authenticated users can upload issue attachments" ON storage.objects;
+DROP POLICY IF EXISTS "Users can only upload to their own folder" ON storage.objects;
 
 CREATE POLICY "Users can only upload to their own folder" ON storage.objects
   FOR INSERT
@@ -42,6 +46,7 @@ CREATE POLICY "Users can only upload to their own folder" ON storage.objects
 
 -- Ensure DELETE policy is restrictive
 DROP POLICY IF EXISTS "Users can delete their own attachments" ON storage.objects;
+DROP POLICY IF EXISTS "Users can only delete their own attachments" ON storage.objects;
 
 CREATE POLICY "Users can only delete their own attachments" ON storage.objects
   FOR DELETE
