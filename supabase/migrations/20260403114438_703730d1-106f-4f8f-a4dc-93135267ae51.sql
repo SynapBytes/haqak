@@ -2,6 +2,7 @@
 DROP POLICY IF EXISTS "Authenticated users can view issue-attachments" ON storage.objects;
 DROP POLICY IF EXISTS "Anyone can view issue attachments" ON storage.objects;
 
+DROP POLICY IF EXISTS "Owner can update own attachments" ON storage.objects;
 CREATE POLICY "Owner can update own attachments"
 ON storage.objects
 FOR UPDATE

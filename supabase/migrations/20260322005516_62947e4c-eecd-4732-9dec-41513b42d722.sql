@@ -2,6 +2,7 @@
 -- Tighten storage SELECT policy on issue-attachments
 DROP POLICY IF EXISTS "Authenticated users can view issue-attachments" ON storage.objects;
 
+DROP POLICY IF EXISTS "Users can view own or authorized attachments" ON storage.objects;
 CREATE POLICY "Users can view own or authorized attachments"
 ON storage.objects FOR SELECT TO authenticated
 USING (

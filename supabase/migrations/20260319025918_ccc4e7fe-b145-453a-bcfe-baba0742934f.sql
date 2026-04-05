@@ -90,10 +90,12 @@ INSERT INTO storage.buckets (id, name, public) VALUES ('issue-attachments', 'iss
 ON CONFLICT (id) DO NOTHING;
 
 -- Storage policies
+DROP POLICY IF EXISTS "Authenticated users can upload issue attachments" ON storage.objects;
 CREATE POLICY "Authenticated users can upload issue attachments" ON storage.objects
   FOR INSERT TO authenticated
   WITH CHECK (bucket_id = 'issue-attachments');
 
+DROP POLICY IF EXISTS "Anyone can view issue attachments" ON storage.objects;
 CREATE POLICY "Anyone can view issue attachments" ON storage.objects
   FOR SELECT TO authenticated
   USING (bucket_id = 'issue-attachments');

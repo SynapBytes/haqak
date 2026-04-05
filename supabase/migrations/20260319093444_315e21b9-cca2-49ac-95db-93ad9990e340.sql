@@ -40,6 +40,7 @@ DROP POLICY IF EXISTS "Allow authenticated uploads" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated users can upload issue attachments" ON storage.objects;
 
 -- Recreate upload policy with path restriction
+DROP POLICY IF EXISTS "Users can upload to own folder in issue-attachments" ON storage.objects;
 CREATE POLICY "Users can upload to own folder in issue-attachments"
 ON storage.objects FOR INSERT TO authenticated
 WITH CHECK (
@@ -50,6 +51,7 @@ WITH CHECK (
 -- Recreate select policy for issue-attachments (authenticated only)
 DROP POLICY IF EXISTS "Allow public read access on issue-attachments" ON storage.objects;
 DROP POLICY IF EXISTS "Public can view issue attachments" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can view issue-attachments" ON storage.objects;
 
 CREATE POLICY "Authenticated users can view issue-attachments"
 ON storage.objects FOR SELECT TO authenticated
