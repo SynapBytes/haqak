@@ -6,11 +6,18 @@
 -- Example: Revoking access to all users
 REVOKE ALL ON SCHEMA public FROM public;
 
--- Example: Restrict access to specific tables
-REVOKE ALL ON TABLE sensitive_data FROM public;
-GRANT SELECT ON TABLE sensitive_data TO admin_role;
+-- Example: Restrict access to specific tables (safe if table may not exist)
+DO $$
+BEGIN
+  IF to_regclass('public.sensitive_data') IS NOT NULL THEN
+    EXECUTE 'REVOKE ALL ON TABLE public.sensitive_data FROM public';
+    EXECUTE 'GRANT SELECT ON TABLE public.sensitive_data TO admin_role';
+  END IF;
+END $$;
 
--- Example: Ensure the use of secure connections
-ALTER SYSTEM SET ssl = 'on';
+-- NOTE:
+-- Removed unsupported command:
+-- ALTER SYSTEM SET ssl = 'on';
+-- (server-level setting; not allowed in Supabase preview pipeline)
 
 -- Additional security hardening commands can be added here.
