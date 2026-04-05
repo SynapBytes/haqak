@@ -144,13 +144,25 @@ jobs:
             -H "Origin: https://haqak.app" \
             -H "Access-Control-Request-Method: POST" \
             "${PROJECT_URL}/functions/v1/send-otp")
-          POST_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          DRYRUN_RESPONSE=$(mktemp)
+          POST_STATUS=$(curl -s -o "$DRYRUN_RESPONSE" -w "%{http_code}" \
             -X POST \
             -H "Content-Type: application/json" \
-            -d '{}' \
+            -d '{"dryRun":true,"phone":"+201012345678"}' \
             "${PROJECT_URL}/functions/v1/send-otp")
+          DRYRUN_READINESS=$(node -e '
+            const fs = require("node:fs");
+            const p = process.argv[1];
+            try {
+              const body = JSON.parse(fs.readFileSync(p, "utf8"));
+              process.stdout.write(body && body.readiness === true ? "true" : "false");
+            } catch {
+              process.stdout.write("false");
+            }
+          ' "$DRYRUN_RESPONSE")
           echo "  → OPTIONS HTTP status: $OPTIONS_STATUS"
           echo "  → POST HTTP status: $POST_STATUS"
+          echo "  → dryRun readiness: $DRYRUN_READINESS"
           # CORS preflight returns 200 when function exists; 404 means not deployed
           if [ "$OPTIONS_STATUS" = "404" ] || [ "$POST_STATUS" = "404" ]; then
             echo "::error::send-otp returned 404 (OPTIONS=$OPTIONS_STATUS, POST=$POST_STATUS) — function may not have deployed correctly."
@@ -160,7 +172,18 @@ jobs:
             echo "::error::send-otp OPTIONS returned $OPTIONS_STATUS (expected 200)."
             exit 1
           fi
-          echo "✅ send-otp is reachable (OPTIONS=$OPTIONS_STATUS, POST=$POST_STATUS)"
+          if [ "$POST_STATUS" != "200" ]; then
+            echo "::error::send-otp dryRun POST returned $POST_STATUS (expected 200)."
+            cat "$DRYRUN_RESPONSE"
+            exit 1
+          fi
+          if [ "$DRYRUN_READINESS" != "true" ]; then
+            echo "::error::send-otp dryRun readiness=false (expected true)."
+            cat "$DRYRUN_RESPONSE"
+            exit 1
+          fi
+          rm -f "$DRYRUN_RESPONSE"
+          echo "✅ send-otp is reachable and dryRun readiness is true (OPTIONS=$OPTIONS_STATUS, POST=$POST_STATUS)"
         env:
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
 
