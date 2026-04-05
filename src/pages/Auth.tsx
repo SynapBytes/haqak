@@ -38,6 +38,7 @@ const MEMBERSHIP_NUMBER_REGEX = /^[0-9]+$/;
 const MAX_MEMBERSHIP_NUMBER = 568;
 const OTP_REQUEST_TIMEOUT_MS = 12_000;
 const OTP_MAX_RETRIES = 2;
+const OTP_EXTRA_RETRY_ON_TRANSIENT_FAILURE = 1;
 const OTP_RETRY_BASE_DELAY_MS = 300;
 const LOCATION_LOOKUP_TIMEOUT_MS = 2_000;
 const DEFAULT_COUNTRY_CODE = "EG";
@@ -441,7 +442,7 @@ const Auth = () => {
           turnstileToken: turnstileToken ?? undefined,
           countryCode: dialCode,
         }),
-      }, OTP_MAX_RETRIES + 1);
+      }, OTP_MAX_RETRIES + OTP_EXTRA_RETRY_ON_TRANSIENT_FAILURE);
 
       const data = await response.json();
       if (!response.ok) {
