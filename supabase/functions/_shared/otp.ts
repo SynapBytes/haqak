@@ -144,7 +144,7 @@ export function getTwilioSecrets(): TwilioSecrets {
 }
 
 function getRetryConfig() {
-  const rawMaxRetries = Number.parseInt(Deno.env.get("OTP_TWILIO_MAX_RETRIES") ?? "1", 10);
+  const rawMaxRetries = Number.parseInt(Deno.env.get("OTP_TWILIO_MAX_RETRIES") ?? "2", 10);
   const maxRetries = Number.isFinite(rawMaxRetries) ? Math.min(Math.max(rawMaxRetries, 0), 3) : 1;
 
   const rawTimeoutMilliseconds = Number.parseInt(Deno.env.get("OTP_TWILIO_TIMEOUT_MS") ?? "8000", 10);

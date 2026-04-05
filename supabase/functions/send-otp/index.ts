@@ -54,6 +54,7 @@ serve(async (req) => {
   }
 
   const maskedPhone = maskPhone(phone);
+  logInfo("otp_send_start", requestId, { maskedPhone });
 
   try {
     const secrets = getTwilioSecrets();
@@ -70,6 +71,14 @@ serve(async (req) => {
     if (!twilioResult.response) {
       const errorCode = twilioResult.timedOut ? "TWILIO_TIMEOUT" : "TWILIO_UNAVAILABLE";
       const status = twilioResult.timedOut ? 504 : 502;
+      const providerMessage = twilioResult.timedOut
+        ? "Twilio request timed out"
+        : "Twilio network request failed";
+      logError("otp_send_failed", requestId, {
+        maskedPhone,
+        provider_error_code: errorCode,
+        provider_error_message: providerMessage,
+      });
       logError("otp.send.twilio_unavailable", requestId, { maskedPhone, errorCode });
       return structuredError({
         status,
@@ -88,6 +97,11 @@ serve(async (req) => {
         : 400;
       const errorCode = twilioResult.response.status === 429 ? "OTP_RATE_LIMITED" : "OTP_SEND_FAILED";
 
+      logWarn("otp_send_failed", requestId, {
+        maskedPhone,
+        provider_error_code: twilioCode,
+        provider_error_message: twilioMessage ?? "Failed to send OTP",
+      });
       logWarn("otp.send.twilio_rejected", requestId, {
         maskedPhone,
         twilioStatus: twilioResult.response.status,
@@ -105,6 +119,7 @@ serve(async (req) => {
     const sid = typeof twilioResult.data.sid === "string" ? twilioResult.data.sid : null;
     const status = typeof twilioResult.data.status === "string" ? twilioResult.data.status : "pending";
 
+    logInfo("otp_send_success", requestId, { maskedPhone, status });
     logInfo("otp.send.success", requestId, { maskedPhone, status });
 
     return jsonResponse({
@@ -118,6 +133,11 @@ serve(async (req) => {
     });
   } catch (error) {
     if (error instanceof Error && error.message === "MISSING_TWILIO_SECRET") {
+      logError("otp_send_failed", requestId, {
+        maskedPhone,
+        provider_error_code: "MISSING_SECRET",
+        provider_error_message: "OTP service is not configured",
+      });
       logError("otp.send.missing_secret", requestId);
       return structuredError({
         status: 500,
@@ -126,6 +146,11 @@ serve(async (req) => {
       });
     }
 
+    logError("otp_send_failed", requestId, {
+      maskedPhone,
+      provider_error_code: "INTERNAL_ERROR",
+      provider_error_message: error instanceof Error ? error.message : "Internal server error",
+    });
     logError("otp.send.internal_error", requestId, {
       errorType: error instanceof Error ? error.name : "unknown",
     });

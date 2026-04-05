@@ -42,6 +42,7 @@ const OTP_RETRY_BASE_DELAY_MS = 300;
 const LOCATION_LOOKUP_TIMEOUT_MS = 2_000;
 const DEFAULT_COUNTRY_CODE = "EG";
 const UNKNOWN_COUNTRY_NAME = "unknown";
+const E164_REGEX = /^\+[1-9]\d{1,14}$/;
 
 function sanitizeOtpErrorMessage(message: string): string {
   const lowered = message.toLowerCase();
@@ -50,6 +51,35 @@ function sanitizeOtpErrorMessage(message: string): string {
   if (lowered.includes("invalid otp") || lowered.includes("invalid verification code")) return "OTP invalid";
   if (lowered.includes("expired")) return "OTP expired";
   return "Unable to process OTP request";
+}
+
+function normalizePhoneToE164(phone: string, dialCode: string): string | null {
+  const normalizedDialCode = dialCode.trim();
+  if (!normalizedDialCode.startsWith("+")) return null;
+  const countryDigits = normalizedDialCode.replace(/\D/g, "");
+  if (!countryDigits) return null;
+
+  let subscriberDigits = phone.replace(/\D/g, "");
+  if (!subscriberDigits) return null;
+  if (subscriberDigits.startsWith("0")) {
+    subscriberDigits = subscriberDigits.slice(1);
+  }
+  if (!subscriberDigits) return null;
+
+  const normalized = `+${countryDigits}${subscriberDigits}`;
+  return E164_REGEX.test(normalized) ? normalized : null;
+}
+
+function logOtpEvent(
+  event: "otp_send_start" | "otp_send_success" | "otp_send_failed" | "location_lookup_failed_but_signup_continues",
+  details: Record<string, unknown>,
+): void {
+  const payload = { event, ...details };
+  if (event === "otp_send_failed" || event === "location_lookup_failed_but_signup_continues") {
+    console.warn(payload);
+    return;
+  }
+  console.info(payload);
 }
 
 async function fetchJsonWithRetry(
@@ -105,7 +135,7 @@ async function lookupUserLocation(): Promise<{ country: string; countryCode: str
 }
 
 function logLocationLookupFailureButContinue(reason: string): void {
-  console.warn("location_lookup_failed_but_signup_continues", { reason });
+  logOtpEvent("location_lookup_failed_but_signup_continues", { reason });
 }
 
 const Auth = () => {
@@ -388,23 +418,46 @@ const Auth = () => {
       return;
     }
 
+    let failureLogged = false;
     setLoading(true);
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       // Resolve the E.164 dial prefix (e.g. "+20") for the selected country code ("EG")
       const dialCode = countryCodes.countries.find((c) => c.code === countryCode)?.dialCode;
+      const normalizedPhone = dialCode ? normalizePhoneToE164(phone, dialCode) : null;
+      if (!normalizedPhone) {
+        setPhoneError(t("auth.phone_invalid"));
+        throw new Error("Invalid phone format");
+      }
       const otpMode = mode.replace("-otp", "");
-      console.info("otp_send_request_start", { mode: otpMode });
+      logOtpEvent("otp_send_start", { mode: otpMode });
       const response = await fetchJsonWithRetry(`${supabaseUrl}/functions/v1/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": supabaseKey },
-        body: JSON.stringify({ phone, mode: otpMode, turnstileToken: turnstileToken ?? undefined, countryCode: dialCode }),
-      });
+        body: JSON.stringify({
+          phone: normalizedPhone,
+          mode: otpMode,
+          turnstileToken: turnstileToken ?? undefined,
+          countryCode: dialCode,
+        }),
+      }, OTP_MAX_RETRIES + 1);
 
       const data = await response.json();
-      if (!response.ok) throw new Error(sanitizeOtpErrorMessage(String(data.error || "")));
-      console.info("otp_send_request_success", { mode: otpMode });
+      if (!response.ok) {
+        failureLogged = true;
+        logOtpEvent("otp_send_failed", {
+          mode: otpMode,
+          status: response.status,
+          provider_error_code: data?.error_code ?? data?.twilio_code ?? null,
+          provider_error_message: data?.error ?? data?.message ?? "OTP send request failed",
+        });
+        throw new Error(sanitizeOtpErrorMessage(String(data.error || "")));
+      }
+      logOtpEvent("otp_send_success", {
+        mode: otpMode,
+        twilio_status: data?.twilio_status ?? null,
+      });
 
       toast.success(t("auth.otp_sent"));
       setTurnstileToken(null); // Reset token after use
@@ -417,10 +470,13 @@ const Auth = () => {
       else if (mode === "signup-mp") setMode("signup-mp-otp");
       else if (mode === "forgot-password") setMode("forgot-password-otp");
     } catch (err: unknown) {
-      console.error("otp_send_request_failure", {
-        mode: mode.replace("-otp", ""),
-        error: err instanceof Error ? err.message : String(err),
-      });
+      if (!failureLogged) {
+        logOtpEvent("otp_send_failed", {
+          mode: mode.replace("-otp", ""),
+          provider_error_code: null,
+          provider_error_message: err instanceof Error ? err.message : String(err),
+        });
+      }
       toast.error(translateError((err instanceof Error ? err.message : String(err)) || t("auth.otp_send_error")));
     } finally {
       setLoading(false);
@@ -441,11 +497,16 @@ const Auth = () => {
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       // Resolve the E.164 dial prefix so verify-otp formats the phone identically to send-otp
       const dialCode = countryCodes.countries.find((c) => c.code === countryCode)?.dialCode;
+      const normalizedPhone = dialCode ? normalizePhoneToE164(phone, dialCode) : null;
+      if (!normalizedPhone) {
+        setPhoneError(t("auth.phone_invalid"));
+        throw new Error("Invalid phone format");
+      }
       const response = await fetchJsonWithRetry(`${supabaseUrl}/functions/v1/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": supabaseKey },
         body: JSON.stringify({ 
-          phone, 
+          phone: normalizedPhone, 
           otp: otpCode, 
           mode: mode.replace("-otp", ""),
           countryCode: dialCode,
