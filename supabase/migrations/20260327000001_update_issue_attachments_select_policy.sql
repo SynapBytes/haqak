@@ -25,3 +25,5 @@ CREATE POLICY "Restricted read access to issue attachments" ON storage.objects
       has_role(auth.uid(), 'admin')
     )
   );
+
+COMMENT ON POLICY "Restricted read access to issue attachments" ON storage.objects IS 'Restricts read access to issue attachments: uploader, active assigned MPs, and admins.';
