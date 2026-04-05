@@ -39,6 +39,9 @@ const MAX_MEMBERSHIP_NUMBER = 568;
 const OTP_REQUEST_TIMEOUT_MS = 12_000;
 const OTP_MAX_RETRIES = 2;
 const OTP_RETRY_BASE_DELAY_MS = 300;
+const LOCATION_LOOKUP_TIMEOUT_MS = 2_000;
+const DEFAULT_COUNTRY_CODE = "EG";
+const UNKNOWN_COUNTRY_NAME = "unknown";
 
 function sanitizeOtpErrorMessage(message: string): string {
   const lowered = message.toLowerCase();
@@ -75,6 +78,36 @@ async function fetchJsonWithRetry(
   throw lastError ?? new Error("Unable to process OTP request");
 }
 
+async function lookupUserLocation(): Promise<{ country: string; countryCode: string } | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), LOCATION_LOOKUP_TIMEOUT_MS);
+
+  try {
+    const response = await fetch("https://ipapi.co/json/", { signal: controller.signal });
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    if (typeof data.country_code !== "string" || data.country_code.trim().length === 0) {
+      return null;
+    }
+
+    return {
+      country: typeof data.country_name === "string" ? data.country_name : UNKNOWN_COUNTRY_NAME,
+      countryCode: data.country_code,
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function logLocationLookupFailureButContinue(reason: string): void {
+  console.warn("location_lookup_failed_but_signup_continues", { reason });
+}
+
 const Auth = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -88,7 +121,7 @@ const Auth = () => {
 
   // Form states
   const [phone, setPhone] = useState("");
-  const [countryCode, setCountryCode] = useState("EG");
+  const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -112,23 +145,35 @@ const Auth = () => {
 
   // Get user's location on component mount
   useEffect(() => {
+    let isMounted = true;
+
     const detectLocation = async () => {
       try {
-        const response = await fetch("https://ipapi.co/json/");
-        const data = await response.json();
-        if (data.country_code) {
-          setUserLocation({
-            country: data.country_name || "",
-            countryCode: data.country_code,
-          });
-          setCountryCode(data.country_code);
+        const location = await lookupUserLocation();
+        if (!isMounted) return;
+
+        if (location) {
+          setUserLocation(location);
+          setCountryCode(location.countryCode);
+        } else {
+          logLocationLookupFailureButContinue("empty_invalid_blocked_or_timeout");
+          setUserLocation(null);
+          setCountryCode(DEFAULT_COUNTRY_CODE);
         }
       } catch (err) {
+        if (!isMounted) return;
+        logLocationLookupFailureButContinue("unexpected_detect_location_error");
         console.error("Failed to detect location:", err);
-        setCountryCode("EG");
+        setUserLocation(null);
+        setCountryCode(DEFAULT_COUNTRY_CODE);
       }
     };
+
     detectLocation();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const phoneRegex = PHONE_REGEX;
@@ -349,14 +394,17 @@ const Auth = () => {
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       // Resolve the E.164 dial prefix (e.g. "+20") for the selected country code ("EG")
       const dialCode = countryCodes.countries.find((c) => c.code === countryCode)?.dialCode;
+      const otpMode = mode.replace("-otp", "");
+      console.info("otp_send_request_start", { mode: otpMode });
       const response = await fetchJsonWithRetry(`${supabaseUrl}/functions/v1/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": supabaseKey },
-        body: JSON.stringify({ phone, mode: mode.replace("-otp", ""), turnstileToken: turnstileToken ?? undefined, countryCode: dialCode }),
+        body: JSON.stringify({ phone, mode: otpMode, turnstileToken: turnstileToken ?? undefined, countryCode: dialCode }),
       });
 
       const data = await response.json();
       if (!response.ok) throw new Error(sanitizeOtpErrorMessage(String(data.error || "")));
+      console.info("otp_send_request_success", { mode: otpMode });
 
       toast.success(t("auth.otp_sent"));
       setTurnstileToken(null); // Reset token after use
@@ -369,6 +417,10 @@ const Auth = () => {
       else if (mode === "signup-mp") setMode("signup-mp-otp");
       else if (mode === "forgot-password") setMode("forgot-password-otp");
     } catch (err: unknown) {
+      console.error("otp_send_request_failure", {
+        mode: mode.replace("-otp", ""),
+        error: err instanceof Error ? err.message : String(err),
+      });
       toast.error(translateError((err instanceof Error ? err.message : String(err)) || t("auth.otp_send_error")));
     } finally {
       setLoading(false);
