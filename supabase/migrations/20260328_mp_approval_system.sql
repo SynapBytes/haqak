@@ -2,7 +2,7 @@
 -- Note: is_approved column already exists in profiles table, this migration adds supporting infrastructure
 
 -- Create a table to track approval history
-CREATE TABLE public.mp_approvals (
+CREATE TABLE IF NOT EXISTS public.mp_approvals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   approved_by_admin_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
@@ -22,15 +22,18 @@ CREATE INDEX idx_mp_approvals_status ON public.mp_approvals(status);
 CREATE INDEX idx_mp_approvals_created_at ON public.mp_approvals(created_at);
 
 -- Policies
+DROP POLICY IF EXISTS "Admins can view all MP approvals" ON public.mp_approvals;
 CREATE POLICY "Admins can view all MP approvals" ON public.mp_approvals
   FOR SELECT TO authenticated
   USING (public.has_role(auth.uid(), 'admin'));
 
+DROP POLICY IF EXISTS "Admins can update MP approvals" ON public.mp_approvals;
 CREATE POLICY "Admins can update MP approvals" ON public.mp_approvals
   FOR UPDATE TO authenticated
   USING (public.has_role(auth.uid(), 'admin'))
   WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
+DROP POLICY IF EXISTS "MPs can view their own approval status" ON public.mp_approvals;
 CREATE POLICY "MPs can view their own approval status" ON public.mp_approvals
   FOR SELECT TO authenticated
   USING (auth.uid() = user_id);

@@ -1,7 +1,7 @@
 -- Project Proposals, Voting, and Crowdfunding System
 
 -- 1. Project Proposals Table
-CREATE TABLE public.project_proposals (
+CREATE TABLE IF NOT EXISTS public.project_proposals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     title TEXT NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE public.project_proposals (
 );
 
 -- 2. Project Votes Table (Hyper-local Voting)
-CREATE TABLE public.project_votes (
+CREATE TABLE IF NOT EXISTS public.project_votes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID REFERENCES public.project_proposals(id) ON DELETE CASCADE NOT NULL,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE public.project_votes (
 );
 
 -- 3. Project Contributions Table (Crowdfunding)
-CREATE TABLE public.project_contributions (
+CREATE TABLE IF NOT EXISTS public.project_contributions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID REFERENCES public.project_proposals(id) ON DELETE CASCADE NOT NULL,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
@@ -57,7 +57,7 @@ CREATE TABLE public.project_contributions (
 );
 
 -- 4. Project Milestones Table
-CREATE TABLE public.project_milestones (
+CREATE TABLE IF NOT EXISTS public.project_milestones (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID REFERENCES public.project_proposals(id) ON DELETE CASCADE NOT NULL,
     title TEXT NOT NULL,
@@ -76,26 +76,33 @@ ALTER TABLE public.project_contributions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.project_milestones ENABLE ROW LEVEL SECURITY;
 
 -- 6. Policies for Project Proposals
+DROP POLICY IF EXISTS "Anyone can view active projects" ON public.project_proposals;
 CREATE POLICY "Anyone can view active projects" ON public.project_proposals
     FOR SELECT USING (status != 'pending_review' OR auth.uid() = user_id OR public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'mp'));
 
+DROP POLICY IF EXISTS "Citizens can propose projects" ON public.project_proposals;
 CREATE POLICY "Citizens can propose projects" ON public.project_proposals
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Admins and MPs can update projects" ON public.project_proposals;
 CREATE POLICY "Admins and MPs can update projects" ON public.project_proposals
     FOR UPDATE USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'mp'));
 
 -- 7. Policies for Project Votes
+DROP POLICY IF EXISTS "Users can view all votes" ON public.project_votes;
 CREATE POLICY "Users can view all votes" ON public.project_votes
     FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Users can vote once per project" ON public.project_votes;
 CREATE POLICY "Users can vote once per project" ON public.project_votes
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- 8. Policies for Contributions
+DROP POLICY IF EXISTS "Users can view their own contributions" ON public.project_contributions;
 CREATE POLICY "Users can view their own contributions" ON public.project_contributions
     FOR SELECT USING (auth.uid() = user_id OR public.has_role(auth.uid(), 'admin'));
 
+DROP POLICY IF EXISTS "Users can contribute to active funding" ON public.project_contributions;
 CREATE POLICY "Users can contribute to active funding" ON public.project_contributions
     FOR INSERT WITH CHECK (
         auth.uid() = user_id AND 

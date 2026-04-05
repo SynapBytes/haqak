@@ -9,7 +9,7 @@ ALTER TABLE public.issues ADD COLUMN IF NOT EXISTS is_flagged boolean NOT NULL D
 ALTER TABLE public.issues ADD COLUMN IF NOT EXISTS citizen_confirmed boolean NOT NULL DEFAULT false;
 
 -- Create issue_actions table for action log
-CREATE TABLE public.issue_actions (
+CREATE TABLE IF NOT EXISTS public.issue_actions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   issue_id uuid NOT NULL REFERENCES public.issues(id) ON DELETE CASCADE,
   user_id uuid NOT NULL,
@@ -20,6 +20,7 @@ CREATE TABLE public.issue_actions (
 
 ALTER TABLE public.issue_actions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view actions on their issues" ON public.issue_actions;
 CREATE POLICY "Users can view actions on their issues" ON public.issue_actions
   FOR SELECT TO authenticated
   USING (
@@ -28,6 +29,7 @@ CREATE POLICY "Users can view actions on their issues" ON public.issue_actions
     OR public.has_role(auth.uid(), 'admin')
   );
 
+DROP POLICY IF EXISTS "MPs and admins can insert actions" ON public.issue_actions;
 CREATE POLICY "MPs and admins can insert actions" ON public.issue_actions
   FOR INSERT TO authenticated
   WITH CHECK (
@@ -35,7 +37,7 @@ CREATE POLICY "MPs and admins can insert actions" ON public.issue_actions
   );
 
 -- Create notifications table
-CREATE TABLE public.notifications (
+CREATE TABLE IF NOT EXISTS public.notifications (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   title text NOT NULL,
@@ -47,20 +49,23 @@ CREATE TABLE public.notifications (
 
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own notifications" ON public.notifications;
 CREATE POLICY "Users can view their own notifications" ON public.notifications
   FOR SELECT TO authenticated
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own notifications" ON public.notifications;
 CREATE POLICY "Users can update their own notifications" ON public.notifications
   FOR UPDATE TO authenticated
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "System can insert notifications" ON public.notifications;
 CREATE POLICY "System can insert notifications" ON public.notifications
   FOR INSERT TO authenticated
   WITH CHECK (true);
 
 -- Create issue_attachments table
-CREATE TABLE public.issue_attachments (
+CREATE TABLE IF NOT EXISTS public.issue_attachments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   issue_id uuid NOT NULL REFERENCES public.issues(id) ON DELETE CASCADE,
   file_path text NOT NULL,
@@ -71,6 +76,7 @@ CREATE TABLE public.issue_attachments (
 
 ALTER TABLE public.issue_attachments ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view attachments on their issues" ON public.issue_attachments;
 CREATE POLICY "Users can view attachments on their issues" ON public.issue_attachments
   FOR SELECT TO authenticated
   USING (
@@ -79,6 +85,7 @@ CREATE POLICY "Users can view attachments on their issues" ON public.issue_attac
     OR public.has_role(auth.uid(), 'admin')
   );
 
+DROP POLICY IF EXISTS "Users can insert attachments" ON public.issue_attachments;
 CREATE POLICY "Users can insert attachments" ON public.issue_attachments
   FOR INSERT TO authenticated
   WITH CHECK (

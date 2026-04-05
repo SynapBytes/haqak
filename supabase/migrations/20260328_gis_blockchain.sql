@@ -62,5 +62,6 @@ FOR EACH ROW EXECUTE FUNCTION public.append_to_audit_trail();
 
 -- 5. Immutable RLS: No one can UPDATE or DELETE from the audit trail
 ALTER TABLE public.blockchain_audit_trail ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Audit trail is read-only for all" ON public.blockchain_audit_trail;
 CREATE POLICY "Audit trail is read-only for all" ON public.blockchain_audit_trail FOR SELECT TO authenticated USING (true);
 -- No INSERT/UPDATE/DELETE policies means only the SECURITY DEFINER function can insert.

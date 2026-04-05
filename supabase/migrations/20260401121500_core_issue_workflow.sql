@@ -21,6 +21,7 @@ CREATE TRIGGER update_issue_comments_updated_at
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- Visibility: issue owner, assigned MP, active MPs (oversight), admins, moderators
+DROP POLICY IF EXISTS "Participants can view comments" ON public.issue_comments;
 CREATE POLICY "Participants can view comments" ON public.issue_comments
   FOR SELECT TO authenticated
   USING (
@@ -34,6 +35,7 @@ CREATE POLICY "Participants can view comments" ON public.issue_comments
   );
 
 -- Comment creation: author must match auth.uid and be a participant or privileged role
+DROP POLICY IF EXISTS "Participants can add comments" ON public.issue_comments;
 CREATE POLICY "Participants can add comments" ON public.issue_comments
   FOR INSERT TO authenticated
   WITH CHECK (
@@ -50,12 +52,14 @@ CREATE POLICY "Participants can add comments" ON public.issue_comments
   );
 
 -- Allow authors to edit their own comments
+DROP POLICY IF EXISTS "Authors can edit their comments" ON public.issue_comments;
 CREATE POLICY "Authors can edit their comments" ON public.issue_comments
   FOR UPDATE TO authenticated
   USING (author_id = auth.uid())
   WITH CHECK (author_id = auth.uid());
 
 -- Admins and moderators can manage comments
+DROP POLICY IF EXISTS "Admins can manage comments" ON public.issue_comments;
 CREATE POLICY "Admins can manage comments" ON public.issue_comments
   FOR ALL TO authenticated
   USING (public.has_any_role(auth.uid(), ARRAY['admin', 'moderator']::public.app_role[]))
@@ -92,6 +96,7 @@ CREATE INDEX IF NOT EXISTS idx_issue_assignments_assigned_to
 ALTER TABLE public.issue_assignments ENABLE ROW LEVEL SECURITY;
 
 -- Assignment visibility mirrors issue visibility for MPs/admins plus issue owner
+DROP POLICY IF EXISTS "Participants can view assignments" ON public.issue_assignments;
 CREATE POLICY "Participants can view assignments" ON public.issue_assignments
   FOR SELECT TO authenticated
   USING (
@@ -105,6 +110,7 @@ CREATE POLICY "Participants can view assignments" ON public.issue_assignments
   );
 
 -- Only admins or active MPs can create assignments (MPs may self-assign)
+DROP POLICY IF EXISTS "Admins or MPs can assign issues" ON public.issue_assignments;
 CREATE POLICY "Admins or MPs can assign issues" ON public.issue_assignments
   FOR INSERT TO authenticated
   WITH CHECK (
@@ -116,6 +122,7 @@ CREATE POLICY "Admins or MPs can assign issues" ON public.issue_assignments
   );
 
 -- Allow closing/updating assignments by creator or admins
+DROP POLICY IF EXISTS "Assignment owners or admins can update" ON public.issue_assignments;
 CREATE POLICY "Assignment owners or admins can update" ON public.issue_assignments
   FOR UPDATE TO authenticated
   USING (
@@ -128,6 +135,7 @@ CREATE POLICY "Assignment owners or admins can update" ON public.issue_assignmen
   );
 
 -- Admins can clean up assignments if needed
+DROP POLICY IF EXISTS "Admins can delete assignments" ON public.issue_assignments;
 CREATE POLICY "Admins can delete assignments" ON public.issue_assignments
   FOR DELETE TO authenticated
   USING (public.has_any_role(auth.uid(), ARRAY['admin']::public.app_role[]));
@@ -186,6 +194,7 @@ CREATE TRIGGER log_issue_status_change
   EXECUTE FUNCTION public.log_issue_status_change();
 
 -- Status history visibility mirrors issue visibility
+DROP POLICY IF EXISTS "Participants can view status history" ON public.issue_status_history;
 CREATE POLICY "Participants can view status history" ON public.issue_status_history
   FOR SELECT TO authenticated
   USING (
@@ -199,6 +208,7 @@ CREATE POLICY "Participants can view status history" ON public.issue_status_hist
   );
 
 -- Inserts allowed for authenticated callers that are part of the issue (used by trigger) and service role
+DROP POLICY IF EXISTS "Participants can log status history" ON public.issue_status_history;
 CREATE POLICY "Participants can log status history" ON public.issue_status_history
   FOR INSERT TO authenticated
   WITH CHECK (
@@ -211,6 +221,7 @@ CREATE POLICY "Participants can log status history" ON public.issue_status_histo
     OR public.has_any_role(auth.uid(), ARRAY['admin', 'moderator']::public.app_role[])
   );
 
+DROP POLICY IF EXISTS "Service role can log status history" ON public.issue_status_history;
 CREATE POLICY "Service role can log status history" ON public.issue_status_history
   FOR INSERT TO service_role
   WITH CHECK (true);

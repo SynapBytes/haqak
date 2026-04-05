@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS public.blockchain_audit_trail (
 
 -- Make blockchain_audit_trail "immutable" via RLS and Triggers
 ALTER TABLE public.blockchain_audit_trail ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Audit trail is read-only" ON public.blockchain_audit_trail;
 CREATE POLICY "Audit trail is read-only" ON public.blockchain_audit_trail FOR SELECT TO authenticated USING (true);
 -- No INSERT/UPDATE/DELETE policies for non-system roles
 

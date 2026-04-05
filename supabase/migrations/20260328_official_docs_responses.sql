@@ -40,18 +40,21 @@ ADD COLUMN IF NOT EXISTS verified_at TIMESTAMP WITH TIME ZONE DEFAULT now();
 ALTER TABLE public.mp_responses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.official_documents ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view responses for their issues" ON public.mp_responses;
 CREATE POLICY "Users can view responses for their issues" ON public.mp_responses
     FOR SELECT TO authenticated
     USING (
         issue_id IN (SELECT id FROM public.issues WHERE user_id = auth.uid() OR assigned_mp_id = auth.uid())
     );
 
+DROP POLICY IF EXISTS "MPs can insert responses for assigned issues" ON public.mp_responses;
 CREATE POLICY "MPs can insert responses for assigned issues" ON public.mp_responses
     FOR INSERT TO authenticated
     WITH CHECK (
         issue_id IN (SELECT id FROM public.issues WHERE assigned_mp_id = auth.uid())
     );
 
+DROP POLICY IF EXISTS "Anyone authenticated can view official documents" ON public.official_documents;
 CREATE POLICY "Anyone authenticated can view official documents" ON public.official_documents
     FOR SELECT TO authenticated
     USING (true);

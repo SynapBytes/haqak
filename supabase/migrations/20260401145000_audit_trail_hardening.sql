@@ -25,6 +25,7 @@ ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Admins can view audit logs" ON public.audit_logs;
 DROP POLICY IF EXISTS "Admins can view all audit logs" ON public.audit_logs;
+DROP POLICY IF EXISTS "Oversight can view audit logs" ON public.audit_logs;
 CREATE POLICY "Oversight can view audit logs" ON public.audit_logs
   FOR SELECT TO authenticated
   USING (public.has_any_role(auth.uid(), ARRAY['admin','moderator']::public.app_role[]));

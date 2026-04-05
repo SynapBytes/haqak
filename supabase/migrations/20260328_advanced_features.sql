@@ -3,7 +3,7 @@
 -- ============================================================================
 -- 1. SMS Tracking Links Table
 -- ============================================================================
-CREATE TABLE public.sms_tracking_links (
+CREATE TABLE IF NOT EXISTS public.sms_tracking_links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   issue_id UUID REFERENCES public.issues(id) ON DELETE CASCADE NOT NULL,
   short_code TEXT NOT NULL UNIQUE,
@@ -28,10 +28,12 @@ CREATE INDEX idx_sms_tracking_recipient ON public.sms_tracking_links(recipient_t
 CREATE INDEX idx_sms_tracking_created_at ON public.sms_tracking_links(created_at);
 
 -- Policies
+DROP POLICY IF EXISTS "Admins can view all tracking links" ON public.sms_tracking_links;
 CREATE POLICY "Admins can view all tracking links" ON public.sms_tracking_links
   FOR SELECT TO authenticated
   USING (public.has_role(auth.uid(), 'admin'));
 
+DROP POLICY IF EXISTS "Users can view their own tracking links" ON public.sms_tracking_links;
 CREATE POLICY "Users can view their own tracking links" ON public.sms_tracking_links
   FOR SELECT TO authenticated
   USING (auth.uid() = recipient_id OR 
@@ -41,7 +43,7 @@ CREATE POLICY "Users can view their own tracking links" ON public.sms_tracking_l
 -- ============================================================================
 -- 2. Urgent Issues Alerts Table
 -- ============================================================================
-CREATE TABLE public.urgent_issue_alerts (
+CREATE TABLE IF NOT EXISTS public.urgent_issue_alerts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   issue_id UUID REFERENCES public.issues(id) ON DELETE CASCADE NOT NULL UNIQUE,
   urgency_level TEXT NOT NULL CHECK (urgency_level IN ('critical', 'high', 'medium')) DEFAULT 'medium',
@@ -63,15 +65,18 @@ CREATE INDEX idx_urgent_alerts_detected_at ON public.urgent_issue_alerts(detecte
 CREATE INDEX idx_urgent_alerts_resolved_at ON public.urgent_issue_alerts(resolved_at);
 
 -- Policies
+DROP POLICY IF EXISTS "Admins can view all urgent alerts" ON public.urgent_issue_alerts;
 CREATE POLICY "Admins can view all urgent alerts" ON public.urgent_issue_alerts
   FOR SELECT TO authenticated
   USING (public.has_role(auth.uid(), 'admin'));
 
+DROP POLICY IF EXISTS "MPs can view urgent alerts for their issues" ON public.urgent_issue_alerts;
 CREATE POLICY "MPs can view urgent alerts for their issues" ON public.urgent_issue_alerts
   FOR SELECT TO authenticated
   USING (issue_id IN (SELECT id FROM public.issues WHERE assigned_mp_id = auth.uid()) AND
          public.has_role(auth.uid(), 'mp'));
 
+DROP POLICY IF EXISTS "Citizens can view urgent alerts for their issues" ON public.urgent_issue_alerts;
 CREATE POLICY "Citizens can view urgent alerts for their issues" ON public.urgent_issue_alerts
   FOR SELECT TO authenticated
   USING (issue_id IN (SELECT id FROM public.issues WHERE user_id = auth.uid()));
@@ -79,7 +84,7 @@ CREATE POLICY "Citizens can view urgent alerts for their issues" ON public.urgen
 -- ============================================================================
 -- 3. Audit Logs Table
 -- ============================================================================
-CREATE TABLE public.audit_logs (
+CREATE TABLE IF NOT EXISTS public.audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   action TEXT NOT NULL,
@@ -105,10 +110,12 @@ CREATE INDEX idx_audit_logs_created_at ON public.audit_logs(created_at);
 CREATE INDEX idx_audit_logs_status ON public.audit_logs(status);
 
 -- Policies
+DROP POLICY IF EXISTS "Admins can view all audit logs" ON public.audit_logs;
 CREATE POLICY "Admins can view all audit logs" ON public.audit_logs
   FOR SELECT TO authenticated
   USING (public.has_role(auth.uid(), 'admin'));
 
+DROP POLICY IF EXISTS "Users can view their own audit logs" ON public.audit_logs;
 CREATE POLICY "Users can view their own audit logs" ON public.audit_logs
   FOR SELECT TO authenticated
   USING (auth.uid() = user_id);
@@ -132,7 +139,7 @@ CREATE INDEX IF NOT EXISTS idx_issues_urgent ON public.issues(is_urgent, urgency
 -- ============================================================================
 -- 5. SMS Notification History
 -- ============================================================================
-CREATE TABLE public.sms_notifications (
+CREATE TABLE IF NOT EXISTS public.sms_notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   issue_id UUID REFERENCES public.issues(id) ON DELETE CASCADE,
   recipient_phone TEXT NOT NULL,
@@ -157,10 +164,12 @@ CREATE INDEX idx_sms_notifications_message_type ON public.sms_notifications(mess
 CREATE INDEX idx_sms_notifications_created_at ON public.sms_notifications(created_at);
 
 -- Policies
+DROP POLICY IF EXISTS "Admins can view all SMS notifications" ON public.sms_notifications;
 CREATE POLICY "Admins can view all SMS notifications" ON public.sms_notifications
   FOR SELECT TO authenticated
   USING (public.has_role(auth.uid(), 'admin'));
 
+DROP POLICY IF EXISTS "Users can view SMS for their issues" ON public.sms_notifications;
 CREATE POLICY "Users can view SMS for their issues" ON public.sms_notifications
   FOR SELECT TO authenticated
   USING (issue_id IN (SELECT id FROM public.issues WHERE user_id = auth.uid() OR assigned_mp_id = auth.uid()));

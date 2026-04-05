@@ -14,28 +14,33 @@ DROP POLICY IF EXISTS "Service role can manage notifications" ON public.notifica
 DROP POLICY IF EXISTS "Admins can view all notifications" ON public.notifications;
 
 -- Service role has full access (system inserts notifications)
+DROP POLICY IF EXISTS "Service role can manage notifications" ON public.notifications;
 CREATE POLICY "Service role can manage notifications" ON public.notifications
   FOR ALL TO service_role
   USING (true)
   WITH CHECK (true);
 
 -- Authenticated users see only their own notifications
+DROP POLICY IF EXISTS "Users can view their own notifications" ON public.notifications;
 CREATE POLICY "Users can view their own notifications" ON public.notifications
   FOR SELECT TO authenticated
   USING (user_id = auth.uid());
 
 -- Users may update (mark read) their own notifications
+DROP POLICY IF EXISTS "Users can update their own notifications" ON public.notifications;
 CREATE POLICY "Users can update their own notifications" ON public.notifications
   FOR UPDATE TO authenticated
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
 -- Users may delete their own notifications
+DROP POLICY IF EXISTS "Users can delete their own notifications" ON public.notifications;
 CREATE POLICY "Users can delete their own notifications" ON public.notifications
   FOR DELETE TO authenticated
   USING (user_id = auth.uid());
 
 -- Admins/moderators can read all notifications for moderation purposes
+DROP POLICY IF EXISTS "Admins can view all notifications" ON public.notifications;
 CREATE POLICY "Admins can view all notifications" ON public.notifications
   FOR SELECT TO authenticated
   USING (public.has_any_role(auth.uid(), ARRAY['admin', 'moderator']::public.app_role[]));
@@ -62,11 +67,13 @@ ALTER TABLE public.rate_limit_logs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Service role can manage rate limit logs" ON public.rate_limit_logs;
 DROP POLICY IF EXISTS "Admins can view rate limit logs" ON public.rate_limit_logs;
 
+DROP POLICY IF EXISTS "Service role can manage rate limit logs" ON public.rate_limit_logs;
 CREATE POLICY "Service role can manage rate limit logs" ON public.rate_limit_logs
   FOR ALL TO service_role
   USING (true)
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Admins can view rate limit logs" ON public.rate_limit_logs;
 CREATE POLICY "Admins can view rate limit logs" ON public.rate_limit_logs
   FOR SELECT TO authenticated
   USING (public.has_any_role(auth.uid(), ARRAY['admin', 'moderator']::public.app_role[]));

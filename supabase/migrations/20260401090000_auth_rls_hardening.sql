@@ -99,12 +99,14 @@ CREATE POLICY "Restricted read access to issue attachments" ON storage.objects
 
 -- 9) Audit logs: restrict writes to service role only
 DROP POLICY IF EXISTS "System can insert audit logs" ON public.audit_logs;
+DROP POLICY IF EXISTS "Service role can insert audit logs" ON public.audit_logs;
 CREATE POLICY "Service role can insert audit logs" ON public.audit_logs
   FOR INSERT TO service_role
   WITH CHECK (true);
 
 -- 10) Submission attempts: only service role can write, admins can review
 DROP POLICY IF EXISTS "System can insert submission attempts" ON public.submission_attempts;
+DROP POLICY IF EXISTS "Service role can insert submission attempts" ON public.submission_attempts;
 CREATE POLICY "Service role can insert submission attempts" ON public.submission_attempts
   FOR INSERT TO service_role
   WITH CHECK (true);

@@ -62,6 +62,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 ALTER TABLE public.ai_anomalies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ai_alerts ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "MPs can view anomalies in their region" ON public.ai_anomalies;
 CREATE POLICY "MPs can view anomalies in their region" ON public.ai_anomalies
     FOR SELECT TO authenticated
     USING (EXISTS (
@@ -69,6 +70,7 @@ CREATE POLICY "MPs can view anomalies in their region" ON public.ai_anomalies
         WHERE p.user_id = auth.uid() AND (p.center = location_region OR p.governorate = location_region)
     ));
 
+DROP POLICY IF EXISTS "Users can view their own alerts" ON public.ai_alerts;
 CREATE POLICY "Users can view their own alerts" ON public.ai_alerts
     FOR SELECT TO authenticated
     USING (recipient_id = auth.uid());

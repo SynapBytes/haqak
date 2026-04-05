@@ -117,10 +117,12 @@ DROP POLICY IF EXISTS "Admins can read blockchain audit trail" ON public.blockch
 DROP POLICY IF EXISTS "Service role can insert blockchain audit trail" ON public.blockchain_audit_trail;
 
 -- Deny all by default for non-service roles, then grant selectively
+DROP POLICY IF EXISTS "Admins can read blockchain audit trail" ON public.blockchain_audit_trail;
 CREATE POLICY "Admins can read blockchain audit trail" ON public.blockchain_audit_trail
   FOR SELECT TO authenticated
   USING (public.has_any_role(auth.uid(), ARRAY['admin', 'moderator']::public.app_role[]));
 
+DROP POLICY IF EXISTS "Service role can insert blockchain audit trail" ON public.blockchain_audit_trail;
 CREATE POLICY "Service role can insert blockchain audit trail" ON public.blockchain_audit_trail
   FOR INSERT TO service_role
   WITH CHECK (true);

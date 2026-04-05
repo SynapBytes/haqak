@@ -7,6 +7,7 @@ DROP POLICY IF EXISTS "MPs can view citizen profiles" ON public.profiles;
 DROP POLICY IF EXISTS "MPs can view assigned citizen profiles" ON public.profiles;
 
 -- 2. Create the new strict policy
+DROP POLICY IF EXISTS "MPs can view assigned citizen profiles" ON public.profiles;
 CREATE POLICY "MPs can view assigned citizen profiles" ON public.profiles
   FOR SELECT TO authenticated
   USING (

@@ -21,6 +21,7 @@ CREATE INDEX idx_otp_codes_expires_at ON public.otp_codes(expires_at);
 CREATE INDEX idx_otp_codes_used ON public.otp_codes(used);
 
 -- Allow service role to manage OTP codes
+DROP POLICY IF EXISTS "Service role can manage OTP codes" ON public.otp_codes;
 CREATE POLICY "Service role can manage OTP codes" ON public.otp_codes
   FOR ALL TO service_role
   USING (true)

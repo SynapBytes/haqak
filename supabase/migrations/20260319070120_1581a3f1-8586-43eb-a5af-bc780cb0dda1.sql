@@ -1,5 +1,5 @@
 
-CREATE TABLE public.fcm_tokens (
+CREATE TABLE IF NOT EXISTS public.fcm_tokens (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   token text NOT NULL,

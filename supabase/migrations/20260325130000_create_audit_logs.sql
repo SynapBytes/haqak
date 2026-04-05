@@ -18,6 +18,7 @@ CREATE INDEX idx_audit_logs_action ON public.audit_logs(action);
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Only admins can view audit logs
+DROP POLICY IF EXISTS "Admins can view audit logs" ON public.audit_logs;
 CREATE POLICY "Admins can view audit logs" ON public.audit_logs
   FOR SELECT
   USING (
@@ -29,6 +30,7 @@ CREATE POLICY "Admins can view audit logs" ON public.audit_logs
   );
 
 -- System can insert audit logs
+DROP POLICY IF EXISTS "System can insert audit logs" ON public.audit_logs;
 CREATE POLICY "System can insert audit logs" ON public.audit_logs
   FOR INSERT
   WITH CHECK (true);

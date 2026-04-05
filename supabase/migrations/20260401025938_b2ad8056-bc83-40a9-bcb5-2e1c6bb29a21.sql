@@ -14,6 +14,7 @@ GRANT SELECT ON public.mp_public_profiles TO anon, authenticated;
 
 -- We need a permissive SELECT policy on profiles for anon to read via the view
 -- but scoped to only approved MP rows
+DROP POLICY IF EXISTS "Anon can read approved MP profiles via view" ON public.profiles;
 CREATE POLICY "Anon can read approved MP profiles via view" ON public.profiles
   FOR SELECT TO anon
   USING (is_approved = true AND has_role(user_id, 'mp'::app_role));

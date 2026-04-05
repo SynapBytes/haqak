@@ -29,16 +29,19 @@ ALTER TABLE public.feedbacks ENABLE ROW LEVEL SECURITY;
 
 -- Policies for contributions
 -- Anyone can insert a contribution (public support)
+DROP POLICY IF EXISTS "Anyone can insert a contribution" ON public.contributions;
 CREATE POLICY "Anyone can insert a contribution" ON public.contributions
     FOR INSERT WITH CHECK (true);
 
 -- Only admins can view all contributions (assuming there's an admin role or similar)
 -- For now, let's allow public to see only names of those who opted in
+DROP POLICY IF EXISTS "Public can view names of contributors who opted in" ON public.contributions;
 CREATE POLICY "Public can view names of contributors who opted in" ON public.contributions
     FOR SELECT USING (show_name = true AND status = 'succeeded');
 
 -- Policies for feedbacks
 -- Anyone can insert a feedback
+DROP POLICY IF EXISTS "Anyone can insert a feedback" ON public.feedbacks;
 CREATE POLICY "Anyone can insert a feedback" ON public.feedbacks
     FOR INSERT WITH CHECK (true);
 
@@ -46,6 +49,7 @@ CREATE POLICY "Anyone can insert a feedback" ON public.feedbacks
 -- (Assuming admin role check exists in the system)
 -- If there's a 'profiles' table with roles, we'd use that.
 -- Based on App.tsx, there's an 'admin' role.
+DROP POLICY IF EXISTS "Admins can view feedbacks" ON public.feedbacks;
 CREATE POLICY "Admins can view feedbacks" ON public.feedbacks
     FOR SELECT USING (
         EXISTS (

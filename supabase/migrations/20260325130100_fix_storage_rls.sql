@@ -10,6 +10,7 @@ DROP POLICY IF EXISTS "Restricted read access to issue attachments" ON storage.o
 -- 1. The user who uploaded the file
 -- 2. The assigned MP for the issue
 -- 3. Admins
+DROP POLICY IF EXISTS "Restricted read access to issue attachments" ON storage.objects;
 CREATE POLICY "Restricted read access to issue attachments" ON storage.objects
   FOR SELECT
   USING (

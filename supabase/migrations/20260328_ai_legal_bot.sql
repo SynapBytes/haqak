@@ -34,10 +34,12 @@ CREATE TABLE IF NOT EXISTS public.ai_bot_messages (
 ALTER TABLE public.ai_bot_conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ai_bot_messages ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can manage their own bot conversations" ON public.ai_bot_conversations;
 CREATE POLICY "Users can manage their own bot conversations" ON public.ai_bot_conversations
     FOR ALL TO authenticated
     USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can view their own bot messages" ON public.ai_bot_messages;
 CREATE POLICY "Users can view their own bot messages" ON public.ai_bot_messages
     FOR SELECT TO authenticated
     USING (EXISTS (
@@ -45,6 +47,7 @@ CREATE POLICY "Users can view their own bot messages" ON public.ai_bot_messages
         WHERE c.id = conversation_id AND c.user_id = auth.uid()
     ));
 
+DROP POLICY IF EXISTS "Users can insert their own bot messages" ON public.ai_bot_messages;
 CREATE POLICY "Users can insert their own bot messages" ON public.ai_bot_messages
     FOR INSERT TO authenticated
     WITH CHECK (EXISTS (

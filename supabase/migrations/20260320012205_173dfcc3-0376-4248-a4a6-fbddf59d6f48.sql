@@ -1,6 +1,6 @@
 
 -- Create push_subscriptions table for Web Push API
-CREATE TABLE public.push_subscriptions (
+CREATE TABLE IF NOT EXISTS public.push_subscriptions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   endpoint text NOT NULL,

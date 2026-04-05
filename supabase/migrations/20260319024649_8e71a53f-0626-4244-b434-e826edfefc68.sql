@@ -1,9 +1,21 @@
 
 -- Create role enum
-CREATE TYPE public.app_role AS ENUM ('citizen', 'mp', 'admin');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'app_role'
+      AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.app_role AS ENUM ('citizen', 'mp', 'admin');
+  END IF;
+END;
+$$;
 
 -- Create profiles table
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
   full_name TEXT NOT NULL,
@@ -15,7 +27,7 @@ CREATE TABLE public.profiles (
 );
 
 -- Create user_roles table
-CREATE TABLE public.user_roles (
+CREATE TABLE IF NOT EXISTS public.user_roles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   role app_role NOT NULL,
@@ -23,7 +35,7 @@ CREATE TABLE public.user_roles (
 );
 
 -- Create issues table
-CREATE TABLE public.issues (
+CREATE TABLE IF NOT EXISTS public.issues (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   title TEXT NOT NULL,
@@ -58,21 +70,33 @@ AS $$
 $$;
 
 -- Profiles policies
+DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
 CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
 CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
 CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT USING (public.has_role(auth.uid(), 'admin'));
+DROP POLICY IF EXISTS "Admins can update all profiles" ON public.profiles;
 CREATE POLICY "Admins can update all profiles" ON public.profiles FOR UPDATE USING (public.has_role(auth.uid(), 'admin'));
 
 -- User roles policies
+DROP POLICY IF EXISTS "Users can view their own roles" ON public.user_roles;
 CREATE POLICY "Users can view their own roles" ON public.user_roles FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can insert their own role on signup" ON public.user_roles;
 CREATE POLICY "Users can insert their own role on signup" ON public.user_roles FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Issues policies
+DROP POLICY IF EXISTS "Citizens can view their own issues" ON public.issues;
 CREATE POLICY "Citizens can view their own issues" ON public.issues FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Citizens can create issues" ON public.issues;
 CREATE POLICY "Citizens can create issues" ON public.issues FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "MPs can view all issues" ON public.issues;
 CREATE POLICY "MPs can view all issues" ON public.issues FOR SELECT USING (public.has_role(auth.uid(), 'mp'));
+DROP POLICY IF EXISTS "MPs can update issues" ON public.issues;
 CREATE POLICY "MPs can update issues" ON public.issues FOR UPDATE USING (public.has_role(auth.uid(), 'mp'));
+DROP POLICY IF EXISTS "Admins can do everything on issues" ON public.issues;
 CREATE POLICY "Admins can do everything on issues" ON public.issues FOR ALL USING (public.has_role(auth.uid(), 'admin'));
 
 -- Trigger for updated_at

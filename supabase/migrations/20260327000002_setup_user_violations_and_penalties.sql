@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS public.user_violations (
 ALTER TABLE public.user_violations ENABLE ROW LEVEL SECURITY;
 
 -- Only admins can view violations
+DROP POLICY IF EXISTS "Admins can view all violations" ON public.user_violations;
 CREATE POLICY "Admins can view all violations" ON public.user_violations
     FOR SELECT TO authenticated
     USING (has_role(auth.uid(), 'admin'));
