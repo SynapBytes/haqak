@@ -39,10 +39,12 @@ const MAX_MEMBERSHIP_NUMBER = 568;
 const OTP_REQUEST_TIMEOUT_MS = 12_000;
 const OTP_MAX_RETRIES = 2;
 const OTP_EXTRA_RETRY_ON_TRANSIENT_FAILURE = 1;
+const OTP_SEND_TOTAL_RETRIES = OTP_MAX_RETRIES + OTP_EXTRA_RETRY_ON_TRANSIENT_FAILURE;
 const OTP_RETRY_BASE_DELAY_MS = 300;
 const LOCATION_LOOKUP_TIMEOUT_MS = 2_000;
 const DEFAULT_COUNTRY_CODE = "EG";
 const UNKNOWN_COUNTRY_NAME = "unknown";
+// E.164 international phone format (e.g., +201001234567).
 const E164_REGEX = /^\+[1-9]\d{1,14}$/;
 
 function sanitizeOtpErrorMessage(message: string): string {
@@ -442,7 +444,7 @@ const Auth = () => {
           turnstileToken: turnstileToken ?? undefined,
           countryCode: dialCode,
         }),
-      }, OTP_MAX_RETRIES + OTP_EXTRA_RETRY_ON_TRANSIENT_FAILURE);
+      }, OTP_SEND_TOTAL_RETRIES);
 
       const data = await response.json();
       if (!response.ok) {
