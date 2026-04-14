@@ -15,24 +15,24 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 142 76% 36%;
+    --primary: 215 50% 23%; /* Deep Navy */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 20% 95%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 35 30% 96%; /* Warm Grey/Beige */
+    --secondary-foreground: 215 50% 23%;
 
-    --muted: 210 15% 93%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 35 10% 92%;
+    --muted-foreground: 215 20% 45%;
 
-    --accent: 217 91% 60%;
+    --accent: 43 45% 55%; /* Matte Gold */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 20% 90%;
-    --input: 214 20% 90%;
-    --ring: 217 91% 60%;
+    --border: 215 20% 88%;
+    --input: 215 20% 88%;
+    --ring: 43 45% 55%;
 
     --radius: 0.625rem;
 
@@ -59,25 +59,25 @@
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 20% 95%;
-    --card: 222 47% 9%;
-    --card-foreground: 210 20% 95%;
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 20% 95%;
-    --primary: 142 76% 36%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 217 32% 17%;
-    --secondary-foreground: 210 20% 95%;
-    --muted: 217 32% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 100%;
+    --background: 215 50% 5%; /* Very Deep Navy */
+    --foreground: 35 30% 96%;
+    --card: 215 50% 8%;
+    --card-foreground: 35 30% 96%;
+    --popover: 215 50% 8%;
+    --popover-foreground: 35 30% 96%;
+    --primary: 43 45% 55%; /* Matte Gold as primary in dark mode for elegance */
+    --primary-foreground: 215 50% 5%;
+    --secondary: 215 30% 15%;
+    --secondary-foreground: 35 30% 96%;
+    --muted: 215 30% 15%;
+    --muted-foreground: 215 15% 70%;
+    --accent: 43 45% 55%; /* Matte Gold */
+    --accent-foreground: 215 50% 5%;
     --destructive: 0 62% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 32% 17%;
-    --input: 217 32% 17%;
-    --ring: 217 91% 60%;
+    --destructive-foreground: 35 30% 96%;
+    --border: 215 30% 18%;
+    --input: 215 30% 18%;
+    --ring: 43 45% 55%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224 76% 48%;
@@ -100,13 +100,13 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    font-family: 'Cairo', sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'IBM Plex Sans Arabic', sans-serif;
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-family: 'Amiri', serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
   }
 
   p, span, div {
@@ -135,11 +135,13 @@
   }
 
   .civic-card {
-    @apply bg-card border border-border p-5 md:p-6 rounded-2xl transition-all duration-200;
+    @apply bg-card border border-border p-5 md:p-6 rounded-lg transition-all duration-200;
+    border-width: 0.5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   }
 
   .civic-card-hover {
-    @apply civic-card hover:border-accent/30 hover:shadow-sm cursor-pointer;
+    @apply civic-card hover:border-accent/40 hover:shadow-md cursor-pointer;
   }
 }
 

@@ -15,7 +15,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['"IBM Plex Sans Arabic"', 'sans-serif'],
+        sans: ['"Cairo"', 'sans-serif'],
+        serif: ['"Amiri"', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -97,6 +98,7 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.5s ease-out forwards",
+        "shimmer-gold": "shimmer-gold 2s linear infinite",
       },
     },
   },

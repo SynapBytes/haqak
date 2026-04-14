@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/contexts/ThemeContext";
 import ornament3 from "@/assets/egyptian-ornament-3.webp";
 import egyptianCobra from "@/assets/egyptian-cobra.webp";
-import egyptianAnkh from "@/assets/egyptian-ankh.webp";
+import transparencyIcon from "@/assets/transparency-icon.png";
 import egyptianBorder from "@/assets/egyptian-border.webp";
 
 interface MPProfile {
@@ -147,7 +147,7 @@ const MPProfilePage = () => {
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <img src={ornament3} alt="Egyptian Ornament" className="absolute top-12 right-4 w-[180px] md:w-[260px] lg:w-[320px] select-none" style={decoStyle([0.2, 0.12])} draggable={false} />
         <img src={egyptianCobra} alt="Egyptian Cobra Symbol" className="absolute bottom-10 left-6 w-[130px] md:w-[180px] lg:w-[230px] select-none" style={decoStyle([0.18, 0.1])} draggable={false} />
-        <img src={egyptianAnkh} alt="Egyptian Ankh Symbol" className="absolute top-24 left-8 w-[65px] md:w-[95px] lg:w-[120px] select-none" style={decoStyle([0.16, 0.09])} draggable={false} />
+        <img src={transparencyIcon} alt="Transparency Symbol" className="absolute top-24 left-8 w-[65px] md:w-[95px] lg:w-[120px] select-none opacity-20" style={decoStyle([0.16, 0.09])} draggable={false} />
         <img src={egyptianBorder} alt="Egyptian Decorative Border" className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[400px] md:w-[600px] select-none" style={decoStyle([0.14, 0.08])} draggable={false} />
         <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full blur-3xl" style={{ background: `radial-gradient(circle, hsl(var(--warning) / ${isDark ? 0.07 : 0.04}), transparent 70%)` }} />
       </div>

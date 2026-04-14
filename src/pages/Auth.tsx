@@ -22,7 +22,7 @@ import { analytics } from "@/lib/analytics";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
 import ornament2 from "@/assets/egyptian-ornament-2.webp";
-import egyptianAnkh from "@/assets/egyptian-ankh.webp";
+import justiceScales from "@/assets/justice-scales.png";
 import egyptianNefertiti from "@/assets/egyptian-nefertiti.webp";
 import ornament1 from "@/assets/egyptian-ornament-1.webp";
 import { validateEgyptianId, validateEgyptianIdWithReason, extractEgyptianIdInfo } from "@/lib/egyptianIdValidation";
@@ -573,7 +573,7 @@ const Auth = () => {
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <img src={ornament2} alt="" className="absolute top-10 right-6 w-[140px] md:w-[200px] lg:w-[260px] select-none" style={decoStyle([0.22, 0.13])} draggable={false} />
         <img src={egyptianNefertiti} alt="" className="absolute bottom-8 left-4 w-[130px] md:w-[190px] lg:w-[240px] select-none" style={decoStyle([0.2, 0.12])} draggable={false} />
-        <img src={egyptianAnkh} alt="" className="absolute top-20 left-8 w-[70px] md:w-[100px] lg:w-[130px] select-none" style={decoStyle([0.18, 0.1])} draggable={false} />
+        <img src={justiceScales} alt="" className="absolute top-20 left-8 w-[70px] md:w-[100px] lg:w-[130px] select-none opacity-20" style={decoStyle([0.18, 0.1])} draggable={false} />
         <img src={ornament1} alt="" className="absolute bottom-12 right-8 w-[100px] md:w-[150px] lg:w-[180px] select-none" style={decoStyle([0.16, 0.09])} draggable={false} />
         <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-3xl" style={{ background: `radial-gradient(circle, hsl(var(--warning) / ${isDark ? 0.08 : 0.04}), transparent 70%)` }} />
         <div className="absolute -bottom-40 -right-40 w-[400px] h-[400px] rounded-full blur-3xl" style={{ background: `radial-gradient(circle, hsl(var(--primary) / ${isDark ? 0.06 : 0.03}), transparent 70%)` }} />
