@@ -18,7 +18,7 @@ import {
   CheckCircle2, Globe, ClipboardCheck, Eye, 
   FileCheck, Headphones, Star, ChevronLeft, ArrowUpLeft,
   Phone, MapPin, Building2, Award, TrendingUp, Mail, Send,
-  Rocket, Target, Heart, Sparkles
+  Rocket, Target, Heart, Sparkles, Scale, FileText
 } from "lucide-react";
 import { useRef, useState, useEffect, useCallback } from "react";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
@@ -176,423 +176,165 @@ const HeroStatsCard = () => {
   );
 };
 
-/* ─── Hero Info Window — static particle data (defined outside to avoid re-creation) ─── */
-const PAPYRUS_PARTICLES = [
-  { id: 0,  x: "8%",  y: "14%", size: 3, color: "rgba(90,165,180,0.55)",   duration: 2.8, delay: 0.0 },
-  { id: 1,  x: "18%", y: "36%", size: 2, color: "rgba(212,175,55,0.45)",   duration: 3.4, delay: 0.5 },
-  { id: 2,  x: "32%", y: "60%", size: 2, color: "rgba(176,212,208,0.50)",  duration: 4.0, delay: 1.0 },
-  { id: 3,  x: "48%", y: "22%", size: 4, color: "rgba(90,165,180,0.40)",   duration: 3.1, delay: 1.5 },
-  { id: 4,  x: "63%", y: "76%", size: 2, color: "rgba(212,175,55,0.45)",   duration: 3.6, delay: 0.8 },
-  { id: 5,  x: "78%", y: "44%", size: 3, color: "rgba(176,212,208,0.55)",  duration: 2.5, delay: 1.3 },
-  { id: 6,  x: "88%", y: "18%", size: 2, color: "rgba(90,165,180,0.45)",   duration: 4.2, delay: 0.3 },
-  { id: 7,  x: "12%", y: "66%", size: 3, color: "rgba(212,175,55,0.40)",   duration: 3.0, delay: 1.8 },
-  { id: 8,  x: "27%", y: "82%", size: 2, color: "rgba(176,212,208,0.50)",  duration: 2.7, delay: 0.7 },
-  { id: 9,  x: "55%", y: "10%", size: 4, color: "rgba(90,165,180,0.35)",   duration: 3.8, delay: 1.1 },
-  { id: 10, x: "70%", y: "52%", size: 2, color: "rgba(212,175,55,0.50)",   duration: 2.3, delay: 0.4 },
-  { id: 11, x: "85%", y: "30%", size: 3, color: "rgba(176,212,208,0.45)",  duration: 4.4, delay: 1.6 },
-  { id: 12, x: "40%", y: "90%", size: 2, color: "rgba(90,165,180,0.40)",   duration: 3.2, delay: 0.9 },
-  { id: 13, x: "60%", y: "44%", size: 3, color: "rgba(212,175,55,0.35)",   duration: 2.6, delay: 0.2 },
+/* ─── Hero Info Window — static particle data ─── */
+const CARD_PARTICLES = [
+  { id: 0,  x: "8%",  y: "14%", size: 3, color: "rgba(90,165,180,0.25)",   duration: 2.8, delay: 0.0 },
+  { id: 1,  x: "18%", y: "36%", size: 2, color: "rgba(212,175,55,0.25)",   duration: 3.4, delay: 0.5 },
+  { id: 2,  x: "32%", y: "60%", size: 2, color: "rgba(176,212,208,0.30)",  duration: 4.0, delay: 1.0 },
+  { id: 3,  x: "48%", y: "22%", size: 4, color: "rgba(90,165,180,0.20)",   duration: 3.1, delay: 1.5 },
+  { id: 4,  x: "63%", y: "76%", size: 2, color: "rgba(212,175,55,0.25)",   duration: 3.6, delay: 0.8 },
+  { id: 5,  x: "78%", y: "44%", size: 3, color: "rgba(176,212,208,0.25)",  duration: 2.5, delay: 1.3 },
+  { id: 6,  x: "88%", y: "18%", size: 2, color: "rgba(90,165,180,0.25)",   duration: 4.2, delay: 0.3 },
+  { id: 7,  x: "12%", y: "66%", size: 3, color: "rgba(212,175,55,0.20)",   duration: 3.0, delay: 1.8 },
+  { id: 8,  x: "27%", y: "82%", size: 2, color: "rgba(176,212,208,0.30)",  duration: 2.7, delay: 0.7 },
+  { id: 9,  x: "55%", y: "10%", size: 4, color: "rgba(90,165,180,0.15)",   duration: 3.8, delay: 1.1 },
 ] as const;
 
 /* ─── Hero Info Window ─── */
 const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped: boolean }) => {
   const { t } = useTranslation();
 
-  const papyrusTexture = {
-    backgroundColor: "#E6F0F5",
+  const modernCardStyle = {
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     backgroundImage: `
-      linear-gradient(135deg, rgba(90,165,180,0.20) 0%, rgba(176,212,208,0.28) 30%, transparent 55%),
-      linear-gradient(315deg, rgba(212,175,55,0.22) 0%, rgba(235,215,160,0.32) 35%, transparent 60%),
-      linear-gradient(225deg, rgba(242,234,214,0.50) 0%, transparent 50%),
-      repeating-linear-gradient(90deg, rgba(75,150,170,0.07), rgba(75,150,170,0.07) 1px, transparent 3px, transparent 16px),
-      repeating-linear-gradient(0deg,  rgba(212,175,55,0.07),  rgba(212,175,55,0.07)  1px, transparent 6px, transparent 20px)
+      linear-gradient(135deg, rgba(90, 165, 180, 0.03) 0%, transparent 100%),
+      radial-gradient(circle at top right, rgba(212, 175, 55, 0.03), transparent 40%)
     `,
-    backgroundSize: "100% 100%, 100% 100%, 100% 100%, 240px 100%, 100% 200px",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(90, 165, 180, 0.15)",
+    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.1), inset 0 0 20px rgba(255, 255, 255, 0.5)",
   };
 
-  const ReedPenIcon = () => (
-    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#2E7A8A]" fill="none" stroke="currentColor" strokeWidth="3">
-      <path d="M10 52c10-6 24-28 30-42l6 6C32 34 16 48 10 52Z" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M33 27 19 41" strokeLinecap="round" />
-      <circle cx="45" cy="19" r="3" fill="currentColor" />
-    </svg>
-  );
-
-  const ShieldEyeIcon = () => (
-    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#2A6E7E]" fill="none" stroke="currentColor" strokeWidth="3">
-      <path d="M32 58s20-8 20-26V12L32 6 12 12v20c0 18 20 26 20 26Z" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M20 32s5-8 12-8 12 8 12 8-5 8-12 8-12-8-12-8Z" />
-      <circle cx="32" cy="32" r="4" fill="currentColor" />
-    </svg>
-  );
-
-  const SunEyeIcon = () => (
-    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#9E7B2F]" fill="none" stroke="currentColor" strokeWidth="3">
-      <circle cx="32" cy="32" r="10" />
-      <circle cx="32" cy="32" r="5" fill="currentColor" />
-      <path d="M32 8v8M32 48v8M56 32h-8M16 32H8M48.5 15.5 43 21M21 43l-5.5 5.5M48.5 48.5 43 43M21 21l-5.5-5.5" strokeLinecap="round" />
-    </svg>
-  );
-
-  const BridgeIcon = () => (
-    <svg viewBox="0 0 64 64" className="w-6 h-6 text-[#35698A]" fill="none" stroke="currentColor" strokeWidth="3">
-      <path d="M10 38h44" strokeLinecap="round" />
-      <path d="M14 38v10M50 38v10" strokeLinecap="round" />
-      <path d="M18 26c6-4 12-4 18 0s12 4 18 0" strokeLinecap="round" />
-      <path d="M26 38v-6M38 38v-6" strokeLinecap="round" />
-      <circle cx="18" cy="26" r="3" fill="currentColor" />
-      <circle cx="46" cy="26" r="3" fill="currentColor" />
-    </svg>
-  );
-
-  const CornerMotif = ({ className }: { className: string }) => (
-    <svg viewBox="0 0 64 64" className={`w-10 h-10 drop-shadow-sm ${className}`} fill="none" stroke="currentColor" strokeWidth="3">
-      <path d="M10 10c18 0 18 18 36 18" strokeLinecap="round" />
-      <path d="M22 10c0 10 12 12 12 24" strokeLinecap="round" />
-      <circle cx="48" cy="28" r="4" fill="currentColor" />
-    </svg>
-  );
-
   const infoSteps = [
-    { icon: ReedPenIcon,   text: t("hero.step1"),        accent: "#5BA3B0", border: "rgba(91,163,176,0.45)",  glow: "rgba(91,163,176,0.18)"  },
-    { icon: ShieldEyeIcon, text: t("hero.step2"),        accent: "#4A9A8E", border: "rgba(74,154,142,0.45)",  glow: "rgba(74,154,142,0.15)"  },
-    { icon: SunEyeIcon,    text: t("hero.step3"),        accent: "#C08A3C", border: "rgba(192,138,60,0.45)",  glow: "rgba(192,138,60,0.18)"  },
-    { icon: BridgeIcon,    text: t("hero.from_citizen"), accent: "#4A7EA8", border: "rgba(74,126,168,0.40)",  glow: "rgba(74,126,168,0.15)"  },
+    { text: t("hero.step1"), icon: FileText, accent: "#5BA3B0", border: "rgba(90,165,180,0.25)", glow: "rgba(90,165,180,0.12)" },
+    { text: t("hero.step2"), icon: Shield, accent: "#2A6E7E", border: "rgba(42,110,126,0.25)", glow: "rgba(42,110,126,0.12)" },
+    { text: t("hero.step3"), icon: Zap, accent: "#d4af37", border: "rgba(212,175,55,0.25)", glow: "rgba(212,175,55,0.12)" },
   ];
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 60, scaleX: 0.82, scaleY: 0.95, originX: 0.5 }}
-      animate={{ opacity: 1, y: 0, scaleX: 1, scaleY: 1 }}
-      transition={{ delay: 0.35, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-      whileHover={{ scale: 1.005 }}
-      className="relative group perspective-1000"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.8, duration: 0.8 }}
+      className="relative flex flex-col items-center w-full max-w-[580px] mx-auto z-10 mt-10 md:mt-16"
     >
-      {/* Multi-colour ambient glow */}
-      <div
-        className="absolute -inset-12 rounded-[3rem] opacity-50 group-hover:opacity-75 transition-opacity duration-1000 blur-3xl pointer-events-none"
-        style={{
-          background: [
-            "radial-gradient(ellipse at 30% 35%, rgba(90,165,180,0.38), transparent 48%)",
-            "radial-gradient(ellipse at 75% 65%, rgba(212,175,55,0.30), transparent 48%)",
-            "radial-gradient(ellipse at 55% 50%, rgba(155,210,200,0.22), transparent 55%)",
-          ].join(", "),
-        }}
-      />
-
-      {/* Main card wrapper */}
+      {/* ── Rope and seal ── */}
       <motion.div
-        initial={{ scaleX: 0.86, originX: 0.5 }}
-        animate={{ scaleX: 1 }}
-        transition={{ delay: 0.45, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-        className="relative overflow-visible"
-        style={{ fontFamily: "'Cairo', 'Amiri', 'IBM Plex Sans Arabic', sans-serif" }}
+        className="relative flex flex-col items-center z-20"
+        initial={{ y: -80 }}
+        animate={{ y: 0 }}
+        transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.9 }}
       >
-        {/* Hanging rope + seal */}
         <motion.div
-          initial={{ y: -90, opacity: 0, scaleY: 0.6 }}
-          animate={{ y: ropeDropped ? 0 : -90, opacity: 1, scaleY: ropeDropped ? 1 : 0.6 }}
-          transition={{ type: "spring", stiffness: 110, damping: 9, delay: 0.2 }}
-          className="absolute left-1/2 -translate-x-1/2 -top-24 flex flex-col items-center z-10 select-none"
-        >
-          {/* Rope */}
-          <div
-            className="w-px h-16"
-            style={{ background: "linear-gradient(to bottom, rgba(75,148,165,0.55), rgba(192,138,60,0.75), rgba(212,175,55,0.85))" }}
-          />
-          {/* Seal */}
-          <motion.div
-            initial={{ rotate: -10, scale: 0.8 }}
-            animate={{ rotate: ropeDropped ? 0 : -10, scale: 1 }}
-            transition={{ type: "spring", stiffness: 200, damping: 11, delay: 0.35 }}
-            className="relative w-12 h-12 rounded-full flex items-center justify-center"
-            style={{
-              background: "linear-gradient(135deg, #A8D4DA 0%, #6BAAB8 40%, #4A8A98 70%, #C08A3C 100%)",
-              boxShadow: "0 8px 24px rgba(75,160,175,0.45), 0 2px 8px rgba(0,0,0,0.18)",
-              border: "1.5px solid rgba(255,255,255,0.35)",
-            }}
-          >
-            <Sparkles className="w-5 h-5 text-white/90" />
-            {/* Ping ring */}
-            <div
-              className="absolute inset-0 rounded-full animate-ping opacity-45"
-              style={{ border: "1.5px solid rgba(107,170,184,0.6)" }}
-            />
-            {/* Shine */}
-            <div className="absolute top-1 left-1.5 w-3 h-3 rounded-full bg-white/30 blur-[3px]" />
-          </motion.div>
-        </motion.div>
-
-        {/* ── Papyrus scroll ── */}
+          className="w-0.5 h-24 md:h-32 origin-top"
+          initial={{ scaleY: 0 }}
+          animate={{ scaleY: 1 }}
+          transition={{ duration: 1, delay: 0.95 }}
+          style={{ background: "linear-gradient(to bottom, rgba(75,148,165,0.55), rgba(192,138,60,0.75), rgba(212,175,55,0.85))" }}
+        />
         <motion.div
-          initial={{ height: 120, scaleY: 0.5, opacity: 0, y: -30 }}
-          animate={{
-            height: opened ? 430 : 120,
-            scaleY: opened ? 1 : 0.5,
-            opacity: 1,
-            y: 0,
-          }}
-          transition={{ duration: 1.15, delay: 0.55, ease: [0.2, 0.9, 0.3, 1] }}
-          className="relative overflow-hidden rounded-[26px]"
+          initial={{ rotate: -10, scale: 0.8 }}
+          animate={{ rotate: ropeDropped ? 0 : -10, scale: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 11, delay: 0.35 }}
+          className="relative w-12 h-12 rounded-full flex items-center justify-center"
           style={{
-            ...papyrusTexture,
-            clipPath: "polygon(3% 0%, 97% 1%, 100% 8%, 98% 95%, 95% 100%, 5% 99%, 0 90%, 2% 6%)",
-            boxShadow: [
-              "0 35px 90px -35px rgba(40,80,90,0.38)",
-              "0 20px 60px -20px rgba(75,160,175,0.22)",
-              "inset 0 1px 0 rgba(255,255,255,0.55)",
-            ].join(", "),
-            border: "1px solid rgba(90,160,175,0.22)",
+            background: "linear-gradient(135deg, #A8D4DA 0%, #6BAAB8 40%, #4A8A98 70%, #C08A3C 100%)",
+            boxShadow: "0 8px 24px rgba(75,160,175,0.45), 0 2px 8px rgba(0,0,0,0.18)",
+            border: "1.5px solid rgba(255,255,255,0.35)",
           }}
         >
-          {/* ── Rods (teal-blue ↔ gold gradient) ── */}
-          <div
-            className="absolute -top-10 inset-x-3 h-10 rounded-full"
-            style={{
-              background: "linear-gradient(to bottom, #B8D8E0, #6BAAB8, #4A8A98, #C08A3C)",
-              boxShadow: "0 12px 20px rgba(0,0,0,0.14)",
-            }}
-          />
-          <div
-            className="absolute -bottom-10 inset-x-3 h-10 rounded-full"
-            style={{
-              background: "linear-gradient(to top, #B8D8E0, #6BAAB8, #4A8A98, #C08A3C)",
-              boxShadow: "0 -12px 20px rgba(0,0,0,0.11)",
-            }}
-          />
-          {/* Rod end-caps */}
-          {["-top-11 left-3", "-top-11 right-3", "-bottom-11 left-3", "-bottom-11 right-3"].map((pos, i) => (
-            <div
-              key={pos}
-              className={`absolute ${pos} w-4 h-12 rounded-full`}
-              style={{ background: i < 2 ? "linear-gradient(to bottom, #C8E4E8, #6BAAB8)" : "linear-gradient(to bottom, #6BAAB8, #C8E4E8)" }}
-            />
-          ))}
-
-          {/* ── Particle field ── */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-            {PAPYRUS_PARTICLES.map(p => (
-              <motion.div
-                key={p.id}
-                className="absolute rounded-full"
-                style={{ left: p.x, top: p.y, width: p.size, height: p.size, background: p.color }}
-                animate={{ y: [-6, 7, -6], opacity: [0.15, 0.75, 0.15], scale: [1, 1.6, 1] }}
-                transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: "easeInOut" }}
-              />
-            ))}
-          </div>
-
-          {/* ── Subtle grain/texture overlay ── */}
-          <div
-            className="absolute inset-0 opacity-25 mix-blend-multiply pointer-events-none z-[1]"
-            style={{
-              backgroundImage: [
-                "radial-gradient(circle at 18% 18%, rgba(255,255,255,0.35), transparent 40%)",
-                "radial-gradient(circle at 82% 10%, rgba(255,255,255,0.25), transparent 32%)",
-                "linear-gradient(90deg, rgba(70,140,160,0.12) 1px, transparent 2px)",
-                "linear-gradient(0deg, rgba(70,140,160,0.08) 1px, transparent 3px)",
-              ].join(", "),
-              backgroundSize: "100% 100%, 100% 100%, 150px 100%, 100% 190px",
-            }}
-          />
-
-          {/* ── Inner gradient-border frame ── */}
-          <div
-            className="absolute inset-[12px] rounded-[20px] pointer-events-none z-[2]"
-            style={{
-              background: "linear-gradient(#E6F0F5, #E6F0F5) padding-box, linear-gradient(135deg, rgba(90,165,180,0.65), rgba(212,175,55,0.55), rgba(74,154,142,0.45)) border-box",
-              border: "1.5px solid transparent",
-            }}
-          />
-
-          {/* ── Corner motifs – alternating teal / gold ── */}
-          <CornerMotif className="absolute -left-1 -top-1    text-[#5BA3B0] opacity-70" />
-          <CornerMotif className="absolute -right-1 -top-1   rotate-90  text-[#d4af37] opacity-70" />
-          <CornerMotif className="absolute -right-1 -bottom-1 rotate-180 text-[#5BA3B0] opacity-70" />
-          <CornerMotif className="absolute -left-1  -bottom-1 -rotate-90 text-[#d4af37] opacity-70" />
-
-          {/* ── Content ── */}
-          <div className="relative h-full flex flex-col z-[3]">
-
-            {/* Header */}
-            <motion.div
-              initial={{ opacity: 0, y: 30, filter: "blur(6px)" }}
-              animate={{ opacity: opened ? 1 : 0, y: opened ? 0 : 30, filter: opened ? "blur(0px)" : "blur(6px)" }}
-              transition={{ delay: 1, duration: 0.6 }}
-              className="px-8 pt-8 pb-5"
-            >
-              <div className="flex items-center gap-4">
-                <motion.div
-                  initial={{ scale: 0.82, rotate: -10 }}
-                  animate={{ scale: opened ? 1 : 0.82, rotate: opened ? 0 : -10 }}
-                  transition={{ type: "spring", stiffness: 180, damping: 14, delay: 1.05 }}
-                  className="relative flex-shrink-0"
-                >
-                  <div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                    style={{
-                      background: "linear-gradient(135deg, rgba(90,165,180,0.32), rgba(176,212,208,0.50), rgba(212,175,55,0.18))",
-                      border: "1.5px solid rgba(90,165,180,0.42)",
-                      boxShadow: "0 8px 22px rgba(90,165,180,0.22), inset 0 1px 0 rgba(255,255,255,0.45)",
-                    }}
-                  >
-                    <Shield className="w-7 h-7 text-[#2E7A8A]" />
-                  </div>
-                  {/* Subtle ring glow */}
-                  <div
-                    className="absolute -inset-1 rounded-[18px] pointer-events-none"
-                    style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(90,165,180,0.22), transparent 70%)", filter: "blur(4px)" }}
-                  />
-                </motion.div>
-
-                <div className="flex-1 min-w-0">
-                  <motion.h3
-                    initial={{ opacity: 0, x: 20, filter: "blur(6px)" }}
-                    animate={{ opacity: opened ? 1 : 0, x: opened ? 0 : 20, filter: opened ? "blur(0px)" : "blur(6px)" }}
-                    transition={{ delay: 1.1, duration: 0.6 }}
-                    className="text-xl font-bold tracking-tight text-[#1D5264]"
-                  >
-                    {t("hero.welcome_title")}
-                  </motion.h3>
-                  <motion.p
-                    initial={{ opacity: 0, x: 15 }}
-                    animate={{ opacity: opened ? 1 : 0, x: opened ? 0 : 15 }}
-                    transition={{ delay: 1.2, duration: 0.5 }}
-                    className="text-sm mt-1 text-[#3A6E7E]"
-                  >
-                    {t("hero.welcome_sub")}
-                  </motion.p>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Teal→Gold divider */}
-            <div className="mx-7 relative h-px">
-              <motion.div
-                className="absolute inset-0"
-                style={{ background: "linear-gradient(90deg, transparent, rgba(90,165,180,0.75), rgba(212,175,55,0.70), transparent)" }}
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: opened ? 1 : 0 }}
-                transition={{ delay: 1.1, duration: 0.7 }}
-              />
-            </div>
-
-            {/* Steps */}
-            <div className="relative px-7 py-5 space-y-3 flex-1">
-              {infoSteps.map((step, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: 38, filter: "blur(3px)" }}
-                  animate={{ opacity: opened ? 1 : 0, x: opened ? 0 : 38, filter: opened ? "blur(0px)" : "blur(3px)" }}
-                  transition={{ delay: 1.22 + i * 0.13, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                  whileHover={{
-                    x: -5,
-                    boxShadow: `0 14px 32px -14px ${step.glow}`,
-                    transition: { duration: 0.25 },
-                  }}
-                  className="flex items-center gap-3.5 rounded-2xl px-4 py-3 cursor-default"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(255,255,255,0.60), rgba(220,238,244,0.50))",
-                    backdropFilter: "blur(10px)",
-                    border: `1px solid ${step.border}`,
-                    boxShadow: `0 2px 14px ${step.glow}, inset 0 1px 0 rgba(255,255,255,0.55)`,
-                  }}
-                >
-                  <motion.div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                    style={{
-                      background: `linear-gradient(135deg, ${step.accent}22, ${step.accent}3a)`,
-                      border: `1.5px solid ${step.border}`,
-                      boxShadow: `0 4px 14px ${step.glow}`,
-                    }}
-                    whileHover={{ scale: 1.10, rotate: -5 }}
-                    transition={{ type: "spring", stiffness: 320, damping: 16 }}
-                  >
-                    <step.icon />
-                  </motion.div>
-                  <span className="text-sm font-semibold text-[#1D4E5E] leading-relaxed">
-                    {step.text}
-                  </span>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Footer tagline */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: opened ? 1 : 0, y: opened ? 0 : 12 }}
-              transition={{ delay: 1.62, duration: 0.5 }}
-              className="mx-7 mb-6"
-            >
-              <div
-                className="relative overflow-hidden rounded-2xl px-5 py-3.5 text-center"
-                style={{
-                  background: "linear-gradient(135deg, rgba(90,165,180,0.22), rgba(176,212,208,0.28), rgba(212,175,55,0.18))",
-                  border: "1px solid rgba(90,165,180,0.35)",
-                  boxShadow: "inset 0 8px 30px rgba(255,255,255,0.22), 0 4px 14px rgba(75,160,175,0.12)",
-                }}
-              >
-                {/* Shimmer sweep */}
-                <motion.div
-                  className="absolute inset-0"
-                  style={{ background: "linear-gradient(90deg, transparent, rgba(90,165,180,0.14), rgba(212,175,55,0.10), transparent)" }}
-                  animate={{ x: ["-120%", "160%"] }}
-                  transition={{ duration: 4, repeat: Infinity, repeatDelay: 2.2, ease: "easeInOut" }}
-                />
-                <p className="relative text-sm font-bold tracking-wide text-[#1D4E5E] flex items-center justify-center gap-2.5">
-                  <motion.span
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ background: "linear-gradient(135deg, #5BA3B0, #d4af37)" }}
-                    animate={{ scale: [1, 1.4, 1] }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                  />
-                  {t("hero.from_citizen")}
-                  <motion.span
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ background: "linear-gradient(135deg, #d4af37, #5BA3B0)" }}
-                    animate={{ scale: [1, 1.4, 1] }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 1.25 }}
-                  />
-                </p>
-              </div>
-            </motion.div>
-          </div>
-        </motion.div>
-
-        {/* ── Rolled parchments (teal / gold / teal-green) ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 22 }}
-          animate={{ opacity: opened ? 1 : 0, y: opened ? 0 : 22 }}
-          transition={{ delay: 1.35, duration: 0.6 }}
-          className="mt-8 flex items-center justify-center gap-3"
-        >
-          {[
-            { from: "#6BAAB8", to: "#A8D0D8", shadow: "rgba(107,170,184,0.45)" },
-            { from: "#C08A3C", to: "#D4AF6A", shadow: "rgba(192,138,60,0.45)" },
-            { from: "#4A9A8E", to: "#88C8C0", shadow: "rgba(74,154,142,0.40)" },
-          ].map(({ from, to, shadow }, idx) => (
-            <motion.div
-              key={idx}
-              whileHover={{ y: -5, rotate: idx === 1 ? 2 : -2, transition: { duration: 0.2 } }}
-              className="relative w-24 h-10 rounded-full"
-              style={{
-                background: `linear-gradient(135deg, ${from}, ${to})`,
-                boxShadow: `0 12px 26px -12px ${shadow}`,
-              }}
-            >
-              <div className="absolute inset-0 rounded-full border border-white/20" />
-              <div className="absolute inset-y-1 left-1/2 -translate-x-1/2 w-3 rounded-full bg-white/20 shadow-inner" />
-              <div
-                className="absolute inset-0 rounded-full opacity-30"
-                style={{ background: "radial-gradient(circle at 30% 38%, rgba(255,255,255,0.8), transparent 54%)" }}
-              />
-            </motion.div>
-          ))}
+          <Sparkles className="w-5 h-5 text-white/90" />
+          <div className="absolute inset-0 rounded-full animate-ping opacity-45" style={{ border: "1.5px solid rgba(107,170,184,0.6)" }} />
         </motion.div>
       </motion.div>
 
-      {/* Floating weekly stats badge */}
-      <HeroStatsCard />
+      {/* ── Main Card ── */}
+      <motion.div
+        initial={{ height: 120, opacity: 0, y: -30 }}
+        animate={{
+          height: opened ? "auto" : 120,
+          opacity: 1,
+          y: 0,
+        }}
+        transition={{ duration: 1.15, delay: 0.55, ease: [0.2, 0.9, 0.3, 1] }}
+        className="relative overflow-hidden rounded-[2.5rem] w-full"
+        style={modernCardStyle}
+      >
+        {/* Geometric pattern overlay */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, rgba(90, 165, 180, 0.15) 1px, transparent 0)", backgroundSize: "24px 24px" }} />
+
+        {/* Particle field */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          {CARD_PARTICLES.map(p => (
+            <motion.div
+              key={p.id}
+              className="absolute rounded-full"
+              style={{ left: p.x, top: p.y, width: p.size, height: p.size, background: p.color }}
+              animate={{ y: [-6, 7, -6], opacity: [0.1, 0.4, 0.1], scale: [1, 1.4, 1] }}
+              transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: "easeInOut" }}
+            />
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="relative h-full flex flex-col z-[3] p-8 md:p-10">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: opened ? 1 : 0, y: opened ? 0 : 20 }}
+            transition={{ delay: 1, duration: 0.6 }}
+            className="flex items-center gap-5 mb-8"
+          >
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center bg-accent/10 border border-accent/20 shadow-sm"
+            >
+              <Scale className="w-8 h-8 text-accent" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-foreground tracking-tight">
+                {t("hero.welcome_title")}
+              </h3>
+              <p className="text-muted-foreground mt-1">
+                {t("hero.welcome_sub")}
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Steps */}
+          <div className="space-y-4 mb-8">
+            {infoSteps.map((step, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: opened ? 1 : 0, x: opened ? 0 : 20 }}
+                transition={{ delay: 1.2 + i * 0.1, duration: 0.5 }}
+                className="flex items-center gap-4 p-4 rounded-2xl bg-card/50 border border-border/50 hover:border-accent/30 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-xl bg-accent/5 flex items-center justify-center border border-accent/10">
+                  <step.icon className="w-5 h-5 text-accent" />
+                </div>
+                <span className="font-semibold text-foreground">
+                  {step.text}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Footer tagline */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: opened ? 1 : 0 }}
+            transition={{ delay: 1.6, duration: 0.5 }}
+            className="text-center p-4 rounded-2xl bg-accent/[0.03] border border-accent/10"
+          >
+            <p className="text-sm font-bold text-accent flex items-center justify-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+              {t("hero.from_citizen")}
+              <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+            </p>
+          </motion.div>
+        </div>
+      </motion.div>
     </motion.div>
   );
 };
@@ -620,7 +362,6 @@ const SupportForm = () => {
     setSending(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      // Verify captcha
       const { data: captchaData, error: captchaError } = await supabase.functions.invoke("verify-captcha", {
         body: JSON.stringify({ token: captchaToken }),
       });
@@ -743,75 +484,43 @@ const SupportForm = () => {
       <Button
         type="submit"
         disabled={sending || !captchaToken}
-        className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90 h-12 text-base font-semibold rounded-xl shadow-lg shadow-accent/20"
+        className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90 h-12 text-base font-semibold rounded-xl shadow-lg shadow-accent"
       >
-        {sending ? (
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
-            <Send className="w-4 h-4" />
-          </motion.div>
-        ) : (
-          <Send className="w-4 h-4" />
-        )}
         {sending ? t("support.sending") : t("support.send")}
+        <Send className="w-4 h-4" />
       </Button>
     </form>
   );
 };
 
-
 const Landing = () => {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll();
   const [opened, setOpened] = useState(false);
   const [ropeDropped, setRopeDropped] = useState(false);
 
   useEffect(() => {
-    const timer1 = setTimeout(() => setRopeDropped(true), 400);
-    const timer2 = setTimeout(() => setOpened(true), 1000);
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
+    const timer1 = setTimeout(() => setRopeDropped(true), 600);
+    const timer2 = setTimeout(() => setOpened(true), 1600);
+    return () => { clearTimeout(timer1); clearTimeout(timer2); };
   }, []);
 
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, 100]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  
-  useEffect(() => {
-    const handleMouse = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight });
-    };
-    window.addEventListener("mousemove", handleMouse);
-    return () => window.removeEventListener("mousemove", handleMouse);
-  }, []);
-
-  /* ─── Data ─── */
   const features = [
-    { icon: MessageSquare, title: t("features.easy_report"), description: t("features.easy_report_desc"), gradient: "from-accent/20 to-accent/5" },
-    { icon: Shield, title: t("features.privacy"), description: t("features.privacy_desc"), gradient: "from-primary/20 to-primary/5" },
-    { icon: BarChart3, title: t("features.analytics"), description: t("features.analytics_desc"), gradient: "from-info/20 to-info/5" },
-    { icon: Zap, title: t("features.realtime"), description: t("features.realtime_desc"), gradient: "from-warning/20 to-warning/5" },
-    { icon: Globe, title: t("features.coverage"), description: t("features.coverage_desc"), gradient: "from-success/20 to-success/5" },
-    { icon: ClipboardCheck, title: t("features.review"), description: t("features.review_desc"), gradient: "from-accent/20 to-primary/5" },
-  ];
-
-  const visionPoints = [
-    { icon: Target, title: t("vision.our_vision"), description: t("vision.our_vision_desc"), color: "text-accent" },
-    { icon: Rocket, title: t("vision.our_mission"), description: t("vision.our_mission_desc"), color: "text-primary" },
-    { icon: Heart, title: t("vision.our_values"), description: t("vision.our_values_desc"), color: "text-success" },
-    { icon: Sparkles, title: t("vision.smart_management"), description: t("vision.smart_management_desc"), color: "text-warning" },
+    { title: t("features.easy_report"), description: t("features.easy_report_desc"), icon: MessageSquare, gradient: "from-accent/5 to-accent/10" },
+    { title: t("features.privacy"), description: t("features.privacy_desc"), icon: Shield, gradient: "from-info/5 to-info/10" },
+    { title: t("features.analytics"), description: t("features.analytics_desc"), icon: BarChart3, gradient: "from-primary/5 to-primary/10" },
+    { title: t("features.realtime"), description: t("features.realtime_desc"), icon: Zap, gradient: "from-warning/5 to-warning/10" },
+    { title: t("features.coverage"), description: t("features.coverage_desc"), icon: Globe, gradient: "from-success/5 to-success/10" },
+    { title: t("features.review"), description: t("features.review_desc"), icon: ClipboardCheck, gradient: "from-accent/5 to-accent/10" },
   ];
 
   const steps = [
-    { num: "١", title: t("steps.step1"), desc: t("steps.step1_desc"), icon: FileCheck, color: "from-accent to-accent/70" },
-    { num: "٢", title: t("steps.step2"), desc: t("steps.step2_desc"), icon: MessageSquare, color: "from-info to-info/70" },
-    { num: "٣", title: t("steps.step3"), desc: t("steps.step3_desc"), icon: ClipboardCheck, color: "from-warning to-warning/70" },
-    { num: "٤", title: t("steps.step4"), desc: t("steps.step4_desc"), icon: Eye, color: "from-success to-success/70" },
+    { num: "١", title: t("steps.step1"), desc: t("steps.step1_desc"), icon: Users, color: "from-accent to-accent/80" },
+    { num: "٢", title: t("steps.step2"), desc: t("steps.step2_desc"), icon: MessageSquare, color: "from-info to-info/80" },
+    { num: "٣", title: t("steps.step3"), desc: t("steps.step3_desc"), icon: ClipboardCheck, color: "from-warning to-warning/80" },
+    { num: "٤", title: t("steps.step4"), desc: t("steps.step4_desc"), icon: Eye, color: "from-success to-success/80" },
   ];
 
   const partners = [
@@ -820,173 +529,128 @@ const Landing = () => {
     { name: t("partners.citizens"), icon: Heart },
   ];
 
-  const trackSocialClick = (platform: string, url: string) => {
-    try {
-      analytics.track("footer_social_click", { platform, url, section: "landing_footer" });
-    } catch {
-      // no-op: analytics failures must never affect navigation
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
-      <DecorativeBackground />
+    <div className="relative min-h-screen bg-background overflow-x-hidden selection:bg-accent/20 selection:text-accent">
       <AppHeader />
-
-      {/* ═══════════ HERO ═══════════ */}
-      <section ref={heroRef} className="relative min-h-[90vh] flex flex-col items-center justify-center overflow-hidden">
+      <DecorativeBackground />
+      
+      {/* ═══════════ HERO SECTION ═══════════ */}
+      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
         <HeroDecorations isDark={isDark} />
+        
+        {/* Animated Orbs */}
+        <div className="absolute inset-0 pointer-events-none">
+          <GradientOrb className="w-[500px] h-[500px] bg-accent/[0.05] -top-20 -left-20" />
+          <GradientOrb className="w-[400px] h-[400px] bg-primary/[0.05] bottom-20 -right-20" />
+        </div>
 
-        <motion.div
-          style={{ y: heroY, opacity: heroOpacity }}
-          className="relative z-10 container px-4 py-20 md:py-28"
-        >
-          <div className="max-w-5xl mx-auto">
-            <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-14">
+        <div className="container px-4 relative z-10">
+          <div className="max-w-4xl mx-auto text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <motion.span
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/[0.08] text-accent text-xs font-bold tracking-wider mb-8 border border-accent/10"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {t("hero.badge")}
+              </motion.span>
+              
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-foreground mb-8 tracking-tight leading-[1.1]">
+                <span className="block">{t("hero.title_1")}</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-l from-accent via-primary to-accent animate-gradient-x">
+                  {t("hero.title_2")}
+                </span>
+              </h1>
+              
+              <p className="text-lg md:text-xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed">
+                {t("hero.subtitle")}
+              </p>
 
-              {/* ── Left: Hero text ── */}
-              <div className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-start gap-6">
-
-                {/* Badge */}
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-accent/30 bg-accent/10 text-accent text-sm font-medium"
-                >
-                  <Globe className="w-4 h-4" />
-                  <span>{t("hero.badge")}</span>
-                </motion.div>
-
-                {/* Title */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, duration: 0.6 }}
-                  className="space-y-1"
-                >
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-tight">
-                    {t("hero.title_1")}
-                  </h1>
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-accent leading-tight">
-                    {t("hero.title_2")}
-                  </h1>
-                </motion.div>
-
-                {/* Subtitle */}
-                <motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4, duration: 0.6 }}
-                  className="text-base md:text-lg text-muted-foreground max-w-xl leading-relaxed"
-                >
-                  {t("hero.subtitle")}
-                </motion.p>
-
-                {/* Buttons */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6, duration: 0.5 }}
-                  className="flex flex-col sm:flex-row gap-4"
-                >
-                  <MagneticButton>
-                    <Link to="/auth">
-                      <Button size="lg" className="gap-2.5 bg-accent text-accent-foreground hover:bg-accent/90 px-10 w-full sm:w-auto h-14 text-base font-semibold shadow-2xl shadow-accent/30 hover:shadow-accent/40 transition-all duration-300 rounded-2xl">
-                        {t("hero.cta_citizen")}
-                        <ArrowLeft className="w-5 h-5" />
-                      </Button>
-                    </Link>
-                  </MagneticButton>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
+                <MagneticButton>
                   <Link to="/auth">
-                    <Button size="lg" variant="outline" className="gap-2.5 px-10 w-full sm:w-auto h-14 text-base font-medium border-2 transition-all rounded-2xl backdrop-blur-sm hover:bg-accent/10 hover:border-accent/60 border-border text-foreground">
-                      {t("hero.cta_mp")}
-                      <ChevronLeft className="w-4 h-4" />
+                    <Button size="lg" className="h-16 px-10 text-lg font-bold rounded-2xl bg-accent text-accent-foreground hover:bg-accent/90 shadow-2xl shadow-accent/20 gap-3 group">
+                      {t("hero.cta_citizen")}
+                      <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
                     </Button>
                   </Link>
-                </motion.div>
-
-                {/* Trust indicators */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1, duration: 0.6 }}
-                  className="flex items-center gap-5 text-sm text-muted-foreground"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Shield className="w-4 h-4 text-primary" />
-                    <span>{t("hero.encrypted")}</span>
-                  </div>
-                  <div className="w-px h-4 bg-border" />
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                    <span>{t("hero.free")}</span>
-                  </div>
-                </motion.div>
+                </MagneticButton>
+                
+                <MagneticButton>
+                  <Link to="/auth?type=mp">
+                    <Button variant="outline" size="lg" className="h-16 px-10 text-lg font-bold rounded-2xl border-2 hover:bg-muted/50 gap-3">
+                      {t("hero.cta_mp")}
+                      <Building2 className="w-5 h-5" />
+                    </Button>
+                  </Link>
+                </MagneticButton>
               </div>
+            </motion.div>
 
-              {/* ── Right: Info window ── */}
-              <div className="w-full max-w-sm lg:w-[340px] flex-shrink-0">
-                <HeroInfoWindow opened={opened} ropeDropped={ropeDropped} />
-              </div>
-
-            </div>
+            {/* Hero Interactive Window */}
+            <HeroInfoWindow opened={opened} ropeDropped={ropeDropped} />
           </div>
-        </motion.div>
-
-        {/* Scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 2 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
-        >
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="w-6 h-10 rounded-full border-2 border-border flex items-start justify-center p-1.5"
-          >
-            <motion.div
-              animate={{ y: [0, 12, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className="w-1.5 h-1.5 rounded-full bg-accent"
-            />
-          </motion.div>
-        </motion.div>
+        </div>
       </section>
 
       {/* ═══════════ VISION SECTION ═══════════ */}
-      <section className="relative z-10 py-16 md:py-20">
+      <section className="relative py-24 md:py-32 overflow-hidden bg-card/30">
         <VisionDecorations isDark={isDark} />
         <div className="container px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-2xl md:text-4xl font-bold text-foreground tracking-tight">
-              {t("vision.title")}
-            </h2>
-          </motion.div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
-            {visionPoints.map((point, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-                whileHover={{ y: -4 }}
-                className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-6 text-center hover:shadow-xl transition-all duration-300 group cursor-default"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-card to-muted flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 border border-border/50">
-                  <point.icon className={`w-7 h-7 ${point.color}`} />
+          <div className="grid md:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, x: -40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="absolute -inset-4 bg-accent/5 rounded-[2.5rem] blur-2xl" />
+              <div className="relative bg-card border border-border rounded-[2.5rem] p-8 md:p-12 shadow-2xl">
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8 tracking-tight">
+                  {t("vision.title")}
+                </h2>
+                <div className="space-y-8">
+                  {[
+                    { title: t("vision.our_vision"), desc: t("vision.our_vision_desc"), icon: Target, color: "text-accent" },
+                    { title: t("vision.our_mission"), desc: t("vision.our_mission_desc"), icon: Rocket, color: "text-primary" },
+                    { title: t("vision.our_values"), desc: t("vision.our_values_desc"), icon: Heart, color: "text-warning" },
+                  ].map((item, i) => (
+                    <div key={i} className="flex gap-5">
+                      <div className={`shrink-0 w-12 h-12 rounded-2xl bg-muted flex items-center justify-center ${item.color}`}>
+                        <item.icon className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-lg text-foreground mb-1">{item.title}</h3>
+                        <p className="text-muted-foreground leading-relaxed">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <h3 className={`text-lg font-bold mb-2 ${point.color}`}>{point.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{point.description}</p>
-              </motion.div>
-            ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-8"
+            >
+              <div className="p-8 rounded-[2rem] bg-accent/[0.03] border border-accent/10">
+                <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mb-6">
+                  <Sparkles className="w-7 h-7 text-accent" />
+                </div>
+                <h3 className="text-2xl font-bold text-foreground mb-4">{t("vision.smart_management")}</h3>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  {t("vision.smart_management_desc")}
+                </p>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -994,7 +658,6 @@ const Landing = () => {
       {/* ═══════════ HOW IT WORKS ═══════════ */}
       <section className="relative py-24 md:py-32">
         <StepsDecorations isDark={isDark} />
-
         <div className="container px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1017,7 +680,6 @@ const Landing = () => {
           </motion.div>
 
           <div className="max-w-5xl mx-auto relative">
-            {/* Connecting line */}
             <div className="hidden md:block absolute top-[4.5rem] right-[12%] left-[12%] z-0">
               <div className="h-[2px] bg-gradient-to-l from-accent/30 via-warning/30 to-success/30 rounded-full" />
               <motion.div
@@ -1040,7 +702,6 @@ const Landing = () => {
                   className="relative group"
                 >
                   <div className="flex md:flex-col items-start md:items-center gap-5 md:gap-0">
-                    {/* Icon container */}
                     <div className="relative z-10 shrink-0">
                       <motion.div
                         whileHover={{ scale: 1.1, rotate: -5 }}
@@ -1064,7 +725,7 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* ═══════════ FEATURES - BENTO GRID ═══════════ */}
+      {/* ═══════════ FEATURES ═══════════ */}
       <section className="relative py-24 md:py-32 bg-gradient-to-b from-card/0 via-card/50 to-card/0">
         <FeaturesDecorations isDark={isDark} />
         <div className="container px-4">
@@ -1099,7 +760,6 @@ const Landing = () => {
                 whileHover={{ y: -6 }}
                 className={`relative bg-card border border-border rounded-3xl p-7 group hover:border-accent/20 hover:shadow-2xl transition-all duration-500 overflow-hidden ${i === 0 ? 'sm:col-span-2 lg:col-span-1' : ''}`}
               >
-                {/* Gradient hover overlay */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl`} />
                 
                 <div className="relative z-10">
@@ -1112,8 +772,6 @@ const Landing = () => {
                   <h3 className="font-bold text-foreground mb-3 text-lg">{feature.title}</h3>
                   <p className="text-sm text-muted-foreground leading-[1.8]">{feature.description}</p>
                 </div>
-
-                {/* Corner decoration */}
                 <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-accent/[0.04] group-hover:bg-accent/[0.08] transition-colors duration-500" />
               </motion.div>
             ))}
@@ -1124,10 +782,6 @@ const Landing = () => {
       {/* ═══════════ CONTACT / SUPPORT ═══════════ */}
       <section id="support" className="relative py-24 md:py-32 overflow-hidden">
         <SupportDecorations isDark={isDark} />
-        <div className="absolute inset-0 pointer-events-none">
-          <GradientOrb className="w-[400px] h-[400px] bg-accent/[0.04] top-20 -right-40" />
-        </div>
-
         <div className="container px-4 relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1160,18 +814,10 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* ═══════════ PARTNERS / TRUST ═══════════ */}
+      {/* ═══════════ PARTNERS ═══════════ */}
       <section className="relative py-16 border-y border-border bg-card/30">
         <PartnersDecorations isDark={isDark} />
         <div className="container px-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="text-center mb-10"
-          >
-            <p className="text-sm text-muted-foreground font-medium">{t("partners.title")}</p>
-          </motion.div>
           <div className="flex items-center justify-center gap-8 md:gap-16 flex-wrap">
             {partners.map((p, i) => (
               <motion.div
@@ -1180,7 +826,6 @@ const Landing = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                whileHover={{ scale: 1.05 }}
                 className="flex items-center gap-2.5 text-muted-foreground hover:text-foreground transition-colors cursor-default"
               >
                 <p.icon className="w-5 h-5" />
@@ -1200,15 +845,7 @@ const Landing = () => {
           className="relative overflow-hidden rounded-[2rem] max-w-4xl mx-auto"
         >
           <CTADecorations isDark={isDark} />
-          {/* Background */}
           <div className="absolute inset-0 bg-gradient-to-br from-accent via-info to-primary opacity-90" />
-          <div className="absolute inset-0 opacity-10" style={{
-            backgroundImage: "radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 50%, white 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
-          }} />
-          <GradientOrb className="w-[300px] h-[300px] bg-white/10 -top-20 -right-20" />
-          <GradientOrb className="w-[200px] h-[200px] bg-white/10 -bottom-10 -left-10" />
-
           <div className="relative z-10 p-10 md:p-16 text-center">
             <motion.div
               whileHover={{ rotate: -5, scale: 1.1 }}
@@ -1232,108 +869,10 @@ const Landing = () => {
         </motion.div>
       </section>
 
-      {/* ═══════════ FOOTER ═══════════ */}
       <footer className="relative border-t border-border py-12 bg-card/30">
         <FooterDecorations isDark={isDark} />
-        <div className="container px-4">
-          <div className="max-w-5xl mx-auto">
-            {/* Contribution Card in Footer */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="mb-16 p-8 rounded-3xl bg-gradient-to-br from-accent/5 via-background to-accent/5 border border-accent/10 relative overflow-hidden group"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-accent/10 transition-colors" />
-              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-                <div className="text-center md:text-right space-y-2">
-                  <h4 className="text-xl font-serif font-medium text-slate-900">{t("footer.support_haqak")}</h4>
-                  <p className="text-sm text-slate-500 max-w-md font-light leading-relaxed">{t("footer.support_haqak_desc")}</p>
-                </div>
-                <Link to="/support">
-                  <Button className="h-12 px-8 rounded-2xl font-medium gap-2.5 bg-slate-900 hover:bg-black text-white shadow-xl shadow-slate-200 transition-all active:scale-95">
-                    {t("footer.support_haqak_btn")}
-                    <Sparkles className="w-4 h-4" />
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
-
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-              <div className="flex items-center gap-3">
-                <picture className="flex items-center">
-                  <source srcSet="/haqak-logo.webp" type="image/webp" />
-                  <img src="/haqak-logo.png" alt="HAQAK logo" className="h-10 w-10 drop-shadow" />
-                </picture>
-                <picture className="h-10 flex items-center">
-                  <source srcSet="/haqak-wordmark.webp" type="image/webp" />
-                  <img src="/haqak-wordmark.png" alt={t("app_name")} className="h-10 w-auto drop-shadow" />
-                </picture>
-                <span className="sr-only">{t("app_name")}</span>
-                <span className="hidden sm:block text-xs text-muted-foreground">{t("tagline")}</span>
-              </div>
-              <div className="flex items-center gap-6 text-sm text-muted-foreground flex-wrap justify-center md:justify-end">
-                <Link to="/auth" className="hover:text-foreground transition-colors">{t("footer.login")}</Link>
-                <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
-                <Link to="/auth" className="hover:text-foreground transition-colors">{t("footer.register")}</Link>
-                <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
-                <Link to="/support" className="hover:text-foreground transition-colors font-medium text-accent">{t("footer.support_haqak_btn")}</Link>
-                <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
-                <button onClick={() => document.getElementById('support')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-foreground transition-colors cursor-pointer bg-transparent border-none p-0 text-sm text-muted-foreground">{t("footer.support")}</button>
-                <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
-                <Link to="/privacy" className="hover:text-foreground transition-colors">{t("footer.privacy")}</Link>
-                <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
-                <Link to="/terms" className="hover:text-foreground transition-colors">{t("footer.terms")}</Link>
-                <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
-                <Link to="/careers" className="hover:text-foreground transition-colors font-medium text-accent">{t("footer.careers")}</Link>
-              </div>
-            </div>
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.45, ease: "easeOut" }}
-              className="mb-8 rounded-2xl border border-border/60 bg-gradient-to-l from-muted/30 via-card/90 to-muted/30 px-4 py-5"
-            >
-              <div className="flex items-center justify-center md:justify-end gap-3 sm:gap-4">
-                {SOCIAL_LINKS.map((social) => (
-                  <Tooltip key={social.id}>
-                    <TooltipTrigger asChild>
-                      <a
-                        href={social.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={t("footer.follow_on", { platform: social.name })}
-                        onClick={() => trackSocialClick(social.id, social.href)}
-                        className={socialIconClassName}
-                      >
-                        <svg
-                          viewBox={social.iconViewBox}
-                          aria-hidden="true"
-                          className="h-5 w-5 transition-all duration-300 group-hover:scale-110"
-                          style={{ fill: social.color }}
-                        >
-                          <path d={social.iconPath} />
-                        </svg>
-                        <span
-                          className="pointer-events-none absolute inset-0 rounded-xl opacity-0 blur transition-opacity duration-300 group-hover:opacity-20 motion-reduce:opacity-0 motion-reduce:group-hover:opacity-0 motion-reduce:transition-none"
-                          style={{ backgroundColor: social.color }}
-                        />
-                      </a>
-                    </TooltipTrigger>
-                    <TooltipContent>{social.name}</TooltipContent>
-                  </Tooltip>
-                ))}
-              </div>
-            </motion.div>
-            <div className="pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <p className="text-xs text-muted-foreground">{t("footer.rights")}</p>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                {t("footer.status")}
-              </div>
-            </div>
-          </div>
+        <div className="container px-4 text-center">
+          <p className="text-sm text-muted-foreground">{t("footer.rights")}</p>
         </div>
       </footer>
     </div>

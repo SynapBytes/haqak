@@ -1,247 +1,191 @@
 import { useTheme } from "@/contexts/ThemeContext";
+import { 
+  Scale, 
+  MessageSquare, 
+  ShieldCheck, 
+  FileText, 
+  Globe, 
+  Users, 
+  CheckCircle2,
+  Zap,
+  LayoutGrid
+} from "lucide-react";
+import { motion } from "framer-motion";
 
-import ornament1 from "@/assets/egyptian-ornament-1.webp";
-import ornament2 from "@/assets/egyptian-ornament-2.webp";
-import ornament3 from "@/assets/egyptian-ornament-3.webp";
-import egyptianScene from "@/assets/egyptian-scene.webp";
-import egyptianAnkh from "@/assets/egyptian-ankh.webp";
-import egyptianPapyrus from "@/assets/egyptian-papyrus.webp";
-import egyptianNefertiti from "@/assets/egyptian-nefertiti.webp";
-import egyptianCobra from "@/assets/egyptian-cobra.webp";
-import egyptianBorder from "@/assets/egyptian-border.webp";
+const GeometricPattern = ({ isDark }: { isDark: boolean }) => (
+  <svg width="100%" height="100%" className="absolute inset-0 opacity-[0.03] pointer-events-none">
+    <pattern
+      id="classic-grid"
+      x="0"
+      y="0"
+      width="40"
+      height="40"
+      patternUnits="userSpaceOnUse"
+    >
+      <path
+        d="M 40 0 L 0 0 0 40"
+        fill="none"
+        stroke={isDark ? "white" : "black"}
+        strokeWidth="0.5"
+      />
+    </pattern>
+    <rect width="100%" height="100%" fill="url(#classic-grid)" />
+  </svg>
+);
 
-const Ornament = ({
-  src,
+const ModernOrnament = ({
+  Icon,
   className,
   isDark,
-  darkOpacity = 0.34,
-  lightOpacity = 0.2,
+  darkOpacity = 0.15,
+  lightOpacity = 0.08,
 }: {
-  src: string;
+  Icon: any;
   className: string;
   isDark: boolean;
   darkOpacity?: number;
   lightOpacity?: number;
 }) => (
-  <img
-    src={src}
-    alt=""
-    aria-hidden="true"
+  <motion.div
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: isDark ? darkOpacity : lightOpacity, scale: 1 }}
     className={`absolute pointer-events-none select-none ${className}`}
-    draggable={false}
-    style={{
-      opacity: isDark ? darkOpacity : lightOpacity,
-      filter: isDark
-        ? "brightness(1.08) drop-shadow(0 0 34px hsl(var(--warning) / 0.38))"
-        : "drop-shadow(0 14px 28px hsl(var(--warning) / 0.18))",
-    }}
-  />
+  >
+    <Icon 
+      className="w-full h-full" 
+      strokeWidth={1}
+      style={{
+        filter: isDark
+          ? "drop-shadow(0 0 20px hsl(var(--warning) / 0.2))"
+          : "drop-shadow(0 10px 15px hsl(var(--primary) / 0.1))",
+      }}
+    />
+  </motion.div>
 );
 
 export const HeroDecorations = ({ isDark }: { isDark: boolean }) => (
   <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none">
-    <Ornament
-      src={ornament2}
-      className="top-10 right-4 md:right-10 w-[180px] md:w-[260px] lg:w-[320px]"
+    <GeometricPattern isDark={isDark} />
+    <ModernOrnament
+      Icon={Scale}
+      className="top-10 right-4 md:right-10 w-32 md:w-48 lg:w-64"
       isDark={isDark}
-      darkOpacity={0.28}
-      lightOpacity={0.17}
     />
-    <Ornament
-      src={ornament3}
-      className="top-14 left-4 md:left-10 w-[190px] md:w-[270px] lg:w-[340px]"
+    <ModernOrnament
+      Icon={ShieldCheck}
+      className="top-14 left-4 md:left-10 w-32 md:w-48 lg:w-64"
       isDark={isDark}
-      darkOpacity={0.24}
-      lightOpacity={0.14}
     />
-    <Ornament
-      src={egyptianScene}
-      className="bottom-0 left-1/2 w-[520px] -translate-x-1/2 md:w-[720px] lg:w-[900px]"
+    <ModernOrnament
+      Icon={Globe}
+      className="bottom-10 left-10 w-24 md:w-32"
       isDark={isDark}
-      darkOpacity={0.22}
-      lightOpacity={0.12}
     />
-    <Ornament
-      src={egyptianAnkh}
-      className="right-[6%] top-[45%] w-[88px] md:w-[122px] lg:w-[150px]"
+    <ModernOrnament
+      Icon={MessageSquare}
+      className="right-[6%] top-[45%] w-20 md:w-28"
       isDark={isDark}
-      darkOpacity={0.24}
-      lightOpacity={0.14}
-    />
-    <Ornament
-      src={ornament1}
-      className="left-[6%] bottom-[18%] w-[120px] md:w-[170px] lg:w-[210px]"
-      isDark={isDark}
-      darkOpacity={0.2}
-      lightOpacity={0.11}
     />
   </div>
 );
 
 export const VisionDecorations = ({ isDark }: { isDark: boolean }) => (
   <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-    <Ornament
-      src={egyptianNefertiti}
-      className="right-4 bottom-8 w-[160px] md:right-10 md:w-[230px] lg:w-[290px]"
+    <ModernOrnament
+      Icon={Users}
+      className="right-4 bottom-8 w-40 md:w-56"
       isDark={isDark}
-      darkOpacity={0.22}
-      lightOpacity={0.13}
     />
-    <Ornament
-      src={egyptianAnkh}
-      className="left-4 top-8 w-[86px] md:left-10 md:w-[120px]"
+    <ModernOrnament
+      Icon={Scale}
+      className="left-4 top-8 w-24 md:w-32"
       isDark={isDark}
-      darkOpacity={0.22}
-      lightOpacity={0.13}
-    />
-    <Ornament
-      src={egyptianBorder}
-      className="left-0 top-1/2 hidden -translate-y-1/2 rotate-90 md:block md:w-[220px] lg:w-[300px]"
-      isDark={isDark}
-      darkOpacity={0.16}
-      lightOpacity={0.09}
     />
   </div>
 );
 
 export const StepsDecorations = ({ isDark }: { isDark: boolean }) => (
   <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-    <Ornament
-      src={egyptianPapyrus}
-      className="left-2 top-12 w-[130px] md:left-8 md:w-[190px] lg:w-[240px]"
+    <ModernOrnament
+      Icon={FileText}
+      className="left-2 top-12 w-32 md:w-48"
       isDark={isDark}
-      darkOpacity={0.24}
-      lightOpacity={0.15}
     />
-    <Ornament
-      src={egyptianCobra}
-      className="right-4 top-8 w-[150px] md:right-8 md:w-[210px] lg:w-[260px]"
+    <ModernOrnament
+      Icon={CheckCircle2}
+      className="right-4 top-8 w-40 md:w-52"
       isDark={isDark}
-      darkOpacity={0.2}
-      lightOpacity={0.12}
-    />
-    <Ornament
-      src={ornament1}
-      className="bottom-8 right-[10%] w-[110px] md:w-[160px]"
-      isDark={isDark}
-      darkOpacity={0.18}
-      lightOpacity={0.1}
     />
   </div>
 );
 
 export const FeaturesDecorations = ({ isDark }: { isDark: boolean }) => (
   <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-    <Ornament
-      src={ornament3}
-      className="left-2 top-10 w-[180px] md:left-8 md:w-[250px] lg:w-[320px]"
+    <ModernOrnament
+      Icon={Zap}
+      className="left-2 top-10 w-48 md:w-64"
       isDark={isDark}
-      darkOpacity={0.22}
-      lightOpacity={0.13}
     />
-    <Ornament
-      src={egyptianAnkh}
-      className="right-4 bottom-8 w-[80px] md:right-8 md:w-[120px] lg:w-[140px]"
+    <ModernOrnament
+      Icon={ShieldCheck}
+      className="right-4 bottom-8 w-24 md:w-32"
       isDark={isDark}
-      darkOpacity={0.22}
-      lightOpacity={0.13}
-    />
-    <Ornament
-      src={egyptianCobra}
-      className="top-1/2 right-2 hidden -translate-y-1/2 md:block md:w-[150px] lg:w-[220px]"
-      isDark={isDark}
-      darkOpacity={0.16}
-      lightOpacity={0.09}
     />
   </div>
 );
 
 export const SupportDecorations = ({ isDark }: { isDark: boolean }) => (
   <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-    <Ornament
-      src={egyptianPapyrus}
-      className="left-2 top-1/2 w-[160px] -translate-y-1/2 md:left-8 md:w-[240px] lg:w-[300px]"
+    <ModernOrnament
+      Icon={MessageSquare}
+      className="left-2 top-1/2 w-40 -translate-y-1/2 md:w-60"
       isDark={isDark}
-      darkOpacity={0.28}
-      lightOpacity={0.18}
     />
-    <Ornament
-      src={ornament2}
-      className="right-4 top-10 w-[95px] md:right-10 md:w-[140px]"
+    <ModernOrnament
+      Icon={Globe}
+      className="right-4 top-10 w-24 md:w-32"
       isDark={isDark}
-      darkOpacity={0.2}
-      lightOpacity={0.12}
-    />
-    <Ornament
-      src={ornament1}
-      className="bottom-6 left-1/2 w-[95px] -translate-x-1/2 md:w-[140px]"
-      isDark={isDark}
-      darkOpacity={0.18}
-      lightOpacity={0.1}
     />
   </div>
 );
 
 export const PartnersDecorations = ({ isDark }: { isDark: boolean }) => (
   <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-    <Ornament
-      src={egyptianBorder}
-      className="left-0 top-1/2 hidden -translate-y-1/2 rotate-90 md:block md:w-[220px]"
+    <ModernOrnament
+      Icon={Users}
+      className="left-1/2 top-4 w-16 -translate-x-1/2 md:w-24"
       isDark={isDark}
-      darkOpacity={0.16}
-      lightOpacity={0.1}
-    />
-    <Ornament
-      src={egyptianBorder}
-      className="right-0 top-1/2 hidden -translate-y-1/2 -rotate-90 md:block md:w-[220px]"
-      isDark={isDark}
-      darkOpacity={0.16}
-      lightOpacity={0.1}
-    />
-    <Ornament
-      src={egyptianAnkh}
-      className="left-1/2 top-4 w-[62px] -translate-x-1/2 md:w-[82px]"
-      isDark={isDark}
-      darkOpacity={0.18}
-      lightOpacity={0.11}
     />
   </div>
 );
 
 export const CTADecorations = ({ isDark }: { isDark: boolean }) => (
   <div className="absolute inset-0 z-[1] overflow-hidden rounded-[2rem] pointer-events-none">
-    <Ornament
-      src={egyptianAnkh}
-      className="left-5 top-5 w-[58px] md:w-[86px]"
+    <ModernOrnament
+      Icon={Zap}
+      className="left-5 top-5 w-16 md:w-24"
       isDark={isDark}
-      darkOpacity={0.24}
-      lightOpacity={0.16}
+      darkOpacity={0.2}
+      lightOpacity={0.1}
     />
-    <Ornament
-      src={ornament1}
-      className="right-5 bottom-5 w-[88px] md:w-[128px]"
+    <ModernOrnament
+      Icon={CheckCircle2}
+      className="right-5 bottom-5 w-24 md:w-32"
       isDark={isDark}
-      darkOpacity={0.22}
-      lightOpacity={0.14}
+      darkOpacity={0.2}
+      lightOpacity={0.1}
     />
   </div>
 );
 
 export const FooterDecorations = ({ isDark }: { isDark: boolean }) => (
   <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-    <Ornament
-      src={egyptianScene}
-      className="left-1/2 bottom-0 w-[360px] -translate-x-1/2 md:w-[520px]"
+    <ModernOrnament
+      Icon={LayoutGrid}
+      className="left-1/2 bottom-0 w-64 -translate-x-1/2 md:w-96"
       isDark={isDark}
-      darkOpacity={0.14}
-      lightOpacity={0.08}
-    />
-    <Ornament
-      src={ornament3}
-      className="right-4 top-3 hidden md:block md:w-[140px]"
-      isDark={isDark}
-      darkOpacity={0.14}
-      lightOpacity={0.08}
+      darkOpacity={0.1}
+      lightOpacity={0.05}
     />
   </div>
 );
@@ -252,6 +196,7 @@ const DecorativeBackground = () => {
 
   return (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+      <GeometricPattern isDark={isDark} />
       <div
         className="absolute -right-32 -top-32 h-[520px] w-[520px] rounded-full"
         style={{
