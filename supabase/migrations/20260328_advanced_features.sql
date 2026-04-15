@@ -229,6 +229,7 @@ DECLARE
   urgent_keywords TEXT[] := ARRAY['قتل', 'اغتصاب', 'عنف', 'تهديد', 'حريق', 'غرق', 'حادث', 'كارثة', 'طوارئ', 'عاجل', 'حرج', 'خطر', 'جريمة'];
   critical_keywords TEXT[] := ARRAY['قتل', 'اغتصاب', 'عنف مسلح', 'كارثة', 'حريق'];
   high_keywords TEXT[] := ARRAY['عنف', 'تهديد', 'حادث', 'طوارئ'];
+  keyword TEXT;
   combined_text TEXT;
   detected_keywords TEXT[];
   urgency TEXT;
@@ -238,7 +239,7 @@ BEGIN
   
   -- Check for critical keywords
   detected_keywords := ARRAY[]::TEXT[];
-  FOREACH urgent_keywords[1:array_length(urgent_keywords, 1)] AS keyword DO
+  FOREACH keyword IN ARRAY urgent_keywords LOOP
     IF combined_text LIKE '%' || keyword || '%' THEN
       detected_keywords := array_append(detected_keywords, keyword);
     END IF;
