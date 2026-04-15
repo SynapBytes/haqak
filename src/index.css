@@ -6,11 +6,11 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    --background: 210 15% 99%; /* Ivory white for professional appearance */
+    --foreground: 215 50% 15%; /* Deep navy for strong contrast */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card: 0 0% 100%; /* Pure white for cards */
+    --card-foreground: 215 50% 15%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
@@ -36,14 +36,14 @@
 
     --radius: 0.625rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-background: 210 15% 98%; /* Light background */
+    --sidebar-foreground: 215 50% 15%; /* Deep navy text */
+    --sidebar-primary: 215 50% 23%; /* Deep navy */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 35 30% 95%; /* Warm beige hover state */
+    --sidebar-accent-foreground: 215 50% 23%;
+    --sidebar-border: 215 20% 90%; /* Subtle borders */
+    --sidebar-ring: 43 45% 55%; /* Matte gold focus ring */
 
     /* Custom tokens */
     --warning: 38 92% 50%;
@@ -152,6 +152,23 @@
   .perspective-1000 {
     perspective: 1000px;
   }
+  
+  /* Standardized icon styles */
+  .icon-outline {
+    @apply stroke-current stroke-[1.5px] fill-none;
+  }
+  
+  .icon-solid {
+    @apply fill-current stroke-none;
+  }
+  
+  .icon-accent {
+    @apply text-accent transition-colors duration-200;
+  }
+  
+  .icon-primary {
+    @apply text-primary transition-colors duration-200;
+  }
 }
 
 @keyframes gradient-shift {
@@ -162,4 +179,32 @@
 @keyframes shimmer-gold {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+@keyframes subtle-pattern-shift {
+  0% { opacity: 0.02; }
+  50% { opacity: 0.03; }
+  100% { opacity: 0.02; }
+}
+
+/* Islamic geometric pattern background */
+.islamic-pattern-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.islamic-pattern-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('@/assets/islamic-pattern-minimal.png');
+  background-size: 400px 400px;
+  background-attachment: fixed;
+  opacity: 0.025;
+  pointer-events: none;
+  animation: subtle-pattern-shift 8s ease-in-out infinite;
+  z-index: 0;
 }
