@@ -253,25 +253,10 @@ serve(async (req) => {
     const mpIds = mps?.map((m) => m.user_id) || [];
     const adminIds = admins?.map((a) => a.user_id) || [];
 
-    // Get phone numbers for notifications
-    const { data: mpProfiles } = await supabase
-      .from("profiles")
-      .select("user_id, phone")
-      .in("user_id", mpIds);
-
-    const { data: adminProfiles } = await supabase
-      .from("profiles")
-      .select("user_id, phone")
-      .in("user_id", adminIds);
-
-    const notificationRecipients = [
-      ...(mpProfiles || []).map((p) => ({ userId: p.user_id, phone: p.phone, type: "mp" })),
-      ...(adminProfiles || []).map((p) => ({ userId: p.user_id, phone: p.phone, type: "admin" })),
-    ];
-
     // SMS delivery is deprecated in favor of email/in-app channels.
-    if (notificationRecipients.length > 0) {
-      console.info("urgent_alert_sms_deprecated", { recipients: notificationRecipients.length });
+    const recipientsCount = mpIds.length + adminIds.length;
+    if (recipientsCount > 0) {
+      console.info("urgent_alert_sms_deprecated", { recipients: recipientsCount });
     }
 
     // Update alert with notified users

@@ -8,7 +8,8 @@ import {
   Users, 
   CheckCircle2,
   Zap,
-  LayoutGrid
+  LayoutGrid,
+  type LucideIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -40,7 +41,7 @@ const ModernOrnament = ({
   darkOpacity = 0.15,
   lightOpacity = 0.08,
 }: {
-  Icon: any;
+  Icon: LucideIcon;
   className: string;
   isDark: boolean;
   darkOpacity?: number;
