@@ -76,15 +76,11 @@ const ALLOWED_EVENTS = new Set<NotificationEvent>([
   "renomination_request_submitted",
   "project_refund_threshold_met",
 ]);
-const ALLOWED_LEGACY_CHANNELS = new Set<LegacyChannel>(["email", "sms", "push"]);
+const ALLOWED_LEGACY_CHANNELS = new Set<LegacyChannel>(["email", "push"]);
 const MAX_RECIPIENTS = 300;
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "team@haqak.org";
-const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
-const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
-const TWILIO_PHONE_NUMBER = Deno.env.get("TWILIO_PHONE_NUMBER");
-const TWILIO_DEFAULT_COUNTRY_CODE = Deno.env.get("TWILIO_DEFAULT_COUNTRY_CODE") || "+20";
 
 function buildContent(payload: DispatchRequest, issueTitle?: string): NotificationContent {
   if (payload.title && payload.body) {
@@ -153,11 +149,6 @@ function buildContent(payload: DispatchRequest, issueTitle?: string): Notificati
   }
 }
 
-function toE164(phone: string): string {
-  if (phone.startsWith("+")) return phone;
-  return `${TWILIO_DEFAULT_COUNTRY_CODE}${phone.replace(/^0/, "")}`;
-}
-
 async function sendEmail(to: string, subject: string, body: string): Promise<{
   status: "sent" | "failed" | "skipped";
   provider_message_id?: string;
@@ -189,39 +180,12 @@ async function sendEmail(to: string, subject: string, body: string): Promise<{
   }
 }
 
-async function sendSms(to: string, body: string): Promise<{
+async function sendSms(_to: string, _body: string): Promise<{
   status: "sent" | "failed" | "skipped";
   provider_message_id?: string;
   error?: string;
 }> {
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
-    return { status: "skipped", error: "Twilio not configured" };
-  }
-  try {
-    const response = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`)}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          From: TWILIO_PHONE_NUMBER,
-          To: toE164(to),
-          Body: body,
-        }).toString(),
-      },
-    );
-    if (!response.ok) {
-      return { status: "failed", error: await response.text() };
-    }
-    const parsed = await response.json().catch(() => ({} as Record<string, unknown>));
-    const sid = typeof parsed?.sid === "string" ? parsed.sid : undefined;
-    return { status: "sent", provider_message_id: sid };
-  } catch (error) {
-    return { status: "failed", error: String(error) };
-  }
+  return { status: "skipped", error: "SMS delivery is deprecated; use email delivery" };
 }
 
 serve(async (req) => {

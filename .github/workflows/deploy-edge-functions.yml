@@ -1,6 +1,6 @@
 name: Deploy Supabase Edge Functions
 
-# Deploys send-otp and verify-otp Edge Functions on every push to main and on
+# Deploys request-email-verification and verify-email-code Edge Functions on every push to main and on
 # manual dispatch.  Only these two functions are deployed — never a blanket
 # "deploy all" — so an unrelated function with a compile error cannot block the
 # OTP endpoints from going live.
@@ -79,8 +79,8 @@ jobs:
           set -euo pipefail
           missing_files=()
           for f in \
-            supabase/functions/send-otp/index.ts \
-            supabase/functions/verify-otp/index.ts; do
+            supabase/functions/request-email-verification/index.ts \
+            supabase/functions/verify-email-code/index.ts; do
             if [ ! -f "$f" ]; then
               missing_files+=("$f")
             fi
@@ -97,26 +97,26 @@ jobs:
         with:
           version: 2.84.2
 
-      - name: Deploy send-otp
-        id: deploy_send_otp
+      - name: Deploy request-email-verification
+        id: deploy_request_email_verification
         shell: bash
         run: |
           set -euo pipefail
-          echo "Deploying send-otp..."
-          supabase functions deploy send-otp --project-ref "$SUPABASE_PROJECT_ID"
-          echo "✅ send-otp deployed."
+          echo "Deploying request-email-verification..."
+          supabase functions deploy request-email-verification --project-ref "$SUPABASE_PROJECT_ID"
+          echo "✅ request-email-verification deployed."
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
 
-      - name: Deploy verify-otp
-        id: deploy_verify_otp
+      - name: Deploy verify-email-code
+        id: deploy_verify_email_code
         shell: bash
         run: |
           set -euo pipefail
-          echo "Deploying verify-otp..."
-          supabase functions deploy verify-otp --project-ref "$SUPABASE_PROJECT_ID"
-          echo "✅ verify-otp deployed."
+          echo "Deploying verify-email-code..."
+          supabase functions deploy verify-email-code --project-ref "$SUPABASE_PROJECT_ID"
+          echo "✅ verify-email-code deployed."
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
@@ -132,66 +132,66 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
 
-      - name: Smoke test — send-otp reachable
+      - name: Smoke test — request-email-verification reachable
         id: smoke_send_otp
         shell: bash
         run: |
           set -euo pipefail
           PROJECT_URL="https://${SUPABASE_PROJECT_ID}.supabase.co"
-          echo "Checking send-otp endpoint at ${PROJECT_URL}/functions/v1/send-otp ..."
+          echo "Checking request-email-verification endpoint at ${PROJECT_URL}/functions/v1/request-email-verification ..."
           OPTIONS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -X OPTIONS \
             -H "Origin: https://haqak.app" \
             -H "Access-Control-Request-Method: POST" \
-            "${PROJECT_URL}/functions/v1/send-otp")
+            "${PROJECT_URL}/functions/v1/request-email-verification")
           POST_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST \
             -H "Content-Type: application/json" \
             -d '{}' \
-            "${PROJECT_URL}/functions/v1/send-otp")
+            "${PROJECT_URL}/functions/v1/request-email-verification")
           echo "  → OPTIONS HTTP status: $OPTIONS_STATUS"
           echo "  → POST HTTP status: $POST_STATUS"
           # CORS preflight returns 200 when function exists; 404 means not deployed
           if [ "$OPTIONS_STATUS" = "404" ] || [ "$POST_STATUS" = "404" ]; then
-            echo "::error::send-otp returned 404 (OPTIONS=$OPTIONS_STATUS, POST=$POST_STATUS) — function may not have deployed correctly."
+            echo "::error::request-email-verification returned 404 (OPTIONS=$OPTIONS_STATUS, POST=$POST_STATUS) — function may not have deployed correctly."
             exit 1
           fi
           if [ "$OPTIONS_STATUS" != "200" ]; then
-            echo "::error::send-otp OPTIONS returned $OPTIONS_STATUS (expected 200)."
+            echo "::error::request-email-verification OPTIONS returned $OPTIONS_STATUS (expected 200)."
             exit 1
           fi
-          echo "✅ send-otp is reachable (OPTIONS=$OPTIONS_STATUS, POST=$POST_STATUS)"
+          echo "✅ request-email-verification is reachable (OPTIONS=$OPTIONS_STATUS, POST=$POST_STATUS)"
         env:
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
 
-      - name: Smoke test — verify-otp reachable
+      - name: Smoke test — verify-email-code reachable
         id: smoke_verify_otp
         shell: bash
         run: |
           set -euo pipefail
           PROJECT_URL="https://${SUPABASE_PROJECT_ID}.supabase.co"
-          echo "Checking verify-otp endpoint at ${PROJECT_URL}/functions/v1/verify-otp ..."
+          echo "Checking verify-email-code endpoint at ${PROJECT_URL}/functions/v1/verify-email-code ..."
           OPTIONS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -X OPTIONS \
             -H "Origin: https://haqak.app" \
             -H "Access-Control-Request-Method: POST" \
-            "${PROJECT_URL}/functions/v1/verify-otp")
+            "${PROJECT_URL}/functions/v1/verify-email-code")
           POST_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST \
             -H "Content-Type: application/json" \
             -d '{}' \
-            "${PROJECT_URL}/functions/v1/verify-otp")
+            "${PROJECT_URL}/functions/v1/verify-email-code")
           echo "  → OPTIONS HTTP status: $OPTIONS_STATUS"
           echo "  → POST HTTP status: $POST_STATUS"
           if [ "$OPTIONS_STATUS" = "404" ] || [ "$POST_STATUS" = "404" ]; then
-            echo "::error::verify-otp returned 404 (OPTIONS=$OPTIONS_STATUS, POST=$POST_STATUS) — function may not have deployed correctly."
+            echo "::error::verify-email-code returned 404 (OPTIONS=$OPTIONS_STATUS, POST=$POST_STATUS) — function may not have deployed correctly."
             exit 1
           fi
           if [ "$OPTIONS_STATUS" != "200" ]; then
-            echo "::error::verify-otp OPTIONS returned $OPTIONS_STATUS (expected 200)."
+            echo "::error::verify-email-code OPTIONS returned $OPTIONS_STATUS (expected 200)."
             exit 1
           fi
-          echo "✅ verify-otp is reachable (OPTIONS=$OPTIONS_STATUS, POST=$POST_STATUS)"
+          echo "✅ verify-email-code is reachable (OPTIONS=$OPTIONS_STATUS, POST=$POST_STATUS)"
         env:
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
 
@@ -201,8 +201,8 @@ jobs:
         run: |
           set -euo pipefail
           PROJECT_URL="https://${SUPABASE_PROJECT_ID}.supabase.co"
-          DEPLOY_SEND_OUTCOME="${{ steps.deploy_send_otp.outcome }}"
-          DEPLOY_VERIFY_OUTCOME="${{ steps.deploy_verify_otp.outcome }}"
+          DEPLOY_SEND_OUTCOME="${{ steps.deploy_request_email_verification.outcome }}"
+          DEPLOY_VERIFY_OUTCOME="${{ steps.deploy_verify_email_code.outcome }}"
           SMOKE_SEND_OUTCOME="${{ steps.smoke_send_otp.outcome }}"
           SMOKE_VERIFY_OUTCOME="${{ steps.smoke_verify_otp.outcome }}"
           {
@@ -212,16 +212,16 @@ jobs:
             echo "|---|---|"
             echo "| **Trigger** | \`${{ github.event_name }}\` |"
             echo "| **Branch** | \`${{ github.ref_name }}\` |"
-            echo "| **Deployed** | \`send-otp\`, \`verify-otp\` |"
+            echo "| **Deployed** | \`request-email-verification\`, \`verify-email-code\` |"
             echo "| **Project URL** | ${PROJECT_URL} |"
             echo "| **Commit** | \`${{ github.sha }}\` |"
             echo ""
             echo "| Step | Result |"
             echo "|---|---|"
-            echo "| Deploy send-otp | ${DEPLOY_SEND_OUTCOME} |"
-            echo "| Deploy verify-otp | ${DEPLOY_VERIFY_OUTCOME} |"
-            echo "| Smoke test: send-otp | ${SMOKE_SEND_OUTCOME} |"
-            echo "| Smoke test: verify-otp | ${SMOKE_VERIFY_OUTCOME} |"
+            echo "| Deploy request-email-verification | ${DEPLOY_SEND_OUTCOME} |"
+            echo "| Deploy verify-email-code | ${DEPLOY_VERIFY_OUTCOME} |"
+            echo "| Smoke test: request-email-verification | ${SMOKE_SEND_OUTCOME} |"
+            echo "| Smoke test: verify-email-code | ${SMOKE_VERIFY_OUTCOME} |"
             echo ""
             if [ "${DEPLOY_SEND_OUTCOME}" = "success" ] && \
                [ "${DEPLOY_VERIFY_OUTCOME}" = "success" ] && \

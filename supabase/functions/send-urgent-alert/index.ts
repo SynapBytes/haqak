@@ -134,9 +134,6 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(
@@ -272,53 +269,10 @@ serve(async (req) => {
       ...(adminProfiles || []).map((p) => ({ userId: p.user_id, phone: p.phone, type: "admin" })),
     ];
 
-    // Send SMS notifications
-    let notifiedCount = 0;
-    const urgencyEmoji = urgencyLevel === "critical" ? "🚨" : urgencyLevel === "high" ? "⚠️" : "ℹ️";
-    // VULN-15 fix: sanitize user-supplied title against SMS header injection
-    // (newline characters in the title would add fraudulent lines to the SMS).
-    const safeTitle = title.replace(/[\r\n]/g, " ").slice(0, 100);
-
-    for (const recipient of notificationRecipients) {
-      const message = `${urgencyEmoji} تنبيه عاجل من حقك:\n${safeTitle}\nالأولوية: ${urgencyLevel}\nتابع: https://haqak.org/issues/${issueId}`;
-
-      // Send via Twilio
-      if (twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
-        try {
-          const formattedPhone = recipient.phone.startsWith("+") ? recipient.phone : `+20${recipient.phone.replace(/^0/, "")}`;
-
-          const response = await fetch(
-            `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
-                "Content-Type": "application/x-www-form-urlencoded",
-              },
-              body: new URLSearchParams({
-                From: twilioPhoneNumber,
-                To: formattedPhone,
-                Body: message,
-              }).toString(),
-            }
-          );
-
-          if (response.ok) {
-            notifiedCount++;
-
-            // Log SMS notification
-            await supabase.from("sms_notifications").insert({
-              issue_id: issueId,
-              recipient_phone: formattedPhone,
-              message_body: message,
-              message_type: "urgent_alert",
-              status: "sent",
-            });
-          }
-        } catch (error) {
-          console.error("SMS sending error:", error);
-        }
-      }
+    // SMS delivery is deprecated in favor of email/in-app channels.
+    const notifiedCount = 0;
+    if (notificationRecipients.length > 0) {
+      console.info("urgent_alert_sms_deprecated", { recipients: notificationRecipients.length });
     }
 
     // Update alert with notified users

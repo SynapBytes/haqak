@@ -7,7 +7,7 @@ export const AuthProfileSchema = z
     id: UuidStringSchema,
     user_id: UuidStringSchema,
     full_name: z.string().min(1),
-    phone: z.string().min(1),
+    phone: z.string(),
     governorate: z.string().nullable().optional(),
     district: z.string().nullable().optional(),
     electoral_district: z.string().nullable().optional(),
