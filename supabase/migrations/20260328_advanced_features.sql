@@ -94,6 +94,15 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
+-- Backfill columns when audit_logs already exists from older migrations
+ALTER TABLE public.audit_logs
+  ADD COLUMN IF NOT EXISTS entity_type TEXT,
+  ADD COLUMN IF NOT EXISTS entity_id UUID,
+  ADD COLUMN IF NOT EXISTS old_values JSONB,
+  ADD COLUMN IF NOT EXISTS new_values JSONB,
+  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'success',
+  ADD COLUMN IF NOT EXISTS error_message TEXT;
+
 -- Enable RLS
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
