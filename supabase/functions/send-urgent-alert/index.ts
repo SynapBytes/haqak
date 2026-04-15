@@ -270,7 +270,6 @@ serve(async (req) => {
     ];
 
     // SMS delivery is deprecated in favor of email/in-app channels.
-    const notifiedCount = 0;
     if (notificationRecipients.length > 0) {
       console.info("urgent_alert_sms_deprecated", { recipients: notificationRecipients.length });
     }
