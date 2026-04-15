@@ -180,14 +180,6 @@ async function sendEmail(to: string, subject: string, body: string): Promise<{
   }
 }
 
-async function sendSms(_to: string, _body: string): Promise<{
-  status: "sent" | "failed" | "skipped";
-  provider_message_id?: string;
-  error?: string;
-}> {
-  return { status: "skipped", error: "SMS delivery is deprecated; use email delivery" };
-}
-
 serve(async (req) => {
   const cors = buildCorsHeaders(req.headers.get("Origin"));
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -453,7 +445,6 @@ serve(async (req) => {
     };
 
     const enabledLegacy = new Set(body.channels ?? ["email"]);
-    const allowSms = enabledLegacy.has("sms");
     const allowEmail = enabledLegacy.has("email");
 
     const { data: recipientProfilesRaw } = await supabase
@@ -538,29 +529,6 @@ serve(async (req) => {
         sms: { status: "skipped", reason: "not_requested" },
         email: { status: "skipped", reason: "not_requested" },
       };
-
-      if (allowSms) {
-        if (!pref.sms_opt_in) {
-          recipientOutcome.sms = { status: "skipped", reason: "sms_opt_out" };
-        } else if (!recipientProfile?.phone_verified) {
-          recipientOutcome.sms = { status: "skipped", reason: "phone_not_verified" };
-        } else {
-          const phone = recipientProfile.phone || recipientProfile.contact_phone;
-          if (!phone) {
-            recipientOutcome.sms = { status: "skipped", reason: "missing_phone" };
-          } else {
-            const smsResult = await sendSms(phone, content.body);
-            recipientOutcome.sms = smsResult;
-            await supabase.from("notification_deliveries").insert({
-              notification_id: notificationId,
-              channel: "sms",
-              status: smsResult.status,
-              provider_message_id: smsResult.provider_message_id ?? null,
-              error: smsResult.error ?? null,
-            });
-          }
-        }
-      }
 
       if (allowEmail) {
         if (!pref.email_opt_in) {

@@ -164,7 +164,7 @@ const Auth = () => {
 
         const displayNameValid = displayName.trim().length > 0;
 
-        return commonValid && mpGeoValid && membershipValid && displayNameValid && geoValid;
+        return commonValid && mpGeoValid && membershipValid && displayNameValid;
       }
 
       return false;
