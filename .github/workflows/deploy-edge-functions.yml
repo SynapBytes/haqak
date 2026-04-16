@@ -8,7 +8,7 @@ name: Deploy Supabase Edge Functions
 # Required GitHub repository secrets (Settings → Secrets → Actions):
 #   SUPABASE_ACCESS_TOKEN  — Personal access token from https://app.supabase.com/account/tokens
 #   SUPABASE_PROJECT_ID    — Project reference ID shown in the Supabase dashboard URL
-#                            (e.g. "ebawkhmmebecxirksvog")
+#                            (for this repo: "wfuofurgkswotwuzosdd")
 #
 # One-time setup:
 #   1. Visit https://app.supabase.com/account/tokens → "Generate new token"
@@ -16,7 +16,7 @@ name: Deploy Supabase Edge Functions
 #   3. In GitHub: Settings → Secrets and variables → Actions → New repository secret
 #      Name: SUPABASE_ACCESS_TOKEN   Value: <token>
 #   4. Add another secret:
-#      Name: SUPABASE_PROJECT_ID     Value: <your-project-ref>
+#      Name: SUPABASE_PROJECT_ID     Value: wfuofurgkswotwuzosdd
 #   5. After secrets are set, trigger this workflow manually via:
 #      Actions → Deploy Supabase Edge Functions → Run workflow
 
@@ -59,7 +59,7 @@ jobs:
             echo "     Value: <token from step 1>"
             echo "  3. Add a second secret:"
             echo "     Name:  SUPABASE_PROJECT_ID"
-            echo "     Value: <your Supabase project ref, e.g. ebawkhmmebecxirksvog>"
+            echo "     Value: wfuofurgkswotwuzosdd"
             echo "  4. Re-run this workflow from the Actions tab."
             exit 1
           fi
