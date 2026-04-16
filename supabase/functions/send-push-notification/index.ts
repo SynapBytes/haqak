@@ -68,7 +68,6 @@ Deno.serve(async (req) => {
     }
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     // --- AUTH CHECK ---
@@ -80,24 +79,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    const authSupabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
+    // Use service-role client so getUser() verifies the JWT signature
+    // server-side. getClaims() only decodes the payload without signature
+    // verification, allowing forged tokens.
+    const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await authSupabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: authError } = await serviceSupabase.auth.getUser(token);
+    if (authError || !user) {
+      console.warn("send-push-notification: unauthorized attempt", { error: authError?.message });
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
-    const callerId = claimsData.claims.sub as string;
+    const callerId = user.id;
 
     // --- ROLE CHECK: only MPs and admins can send push to other users ---
-    const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
     const clientIp =
       req.headers.get("cf-connecting-ip") ||
       req.headers.get("x-real-ip") ||
