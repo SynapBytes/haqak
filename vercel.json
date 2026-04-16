@@ -4,6 +4,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/.env*", "destination": "/no-access" },
+    { "source": "/.git/:path*", "destination": "/no-access" },
+    { "source": "/.htaccess*", "destination": "/no-access" },
     {
       "source": "/(.*)",
       "destination": "/index.html"
