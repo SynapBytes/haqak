@@ -87,8 +87,6 @@ cp .env.example .env
   - Push: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, optional `VAPID_SUBJECT`
 - AI (server-side only): `OPENAI_API_KEY` (text), optional `OPENAI_MODEL`/`OPENAI_BASE_URL`
 - Vision safety (optional): `GEMINI_API_KEY` (used only for image moderation)
-  - Twilio (if SMS is enabled): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
-  - Optional SMS locale: `TWILIO_DEFAULT_COUNTRY_CODE` (defaults to `+20`)
   - Email (Resend): `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
 
 ### AI provider strategy (server-only)

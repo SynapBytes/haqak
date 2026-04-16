@@ -5,7 +5,7 @@ const DEFAULT_RATE_LIMIT_WINDOW_MINUTES = 1;
 const DEFAULT_RATE_LIMIT_MAX = 100;
 
 // Tighter limits for sensitive OTP / auth paths
-const SENSITIVE_PATHS = ["/send-otp", "/auth", "/verify-otp", "/verify-captcha"];
+const SENSITIVE_PATHS = ["/auth", "/request-email-verification", "/verify-email-code", "/verify-captcha"];
 const SENSITIVE_RATE_LIMIT_MAX = 10;
 const SENSITIVE_WINDOW_MINUTES = 1;
 

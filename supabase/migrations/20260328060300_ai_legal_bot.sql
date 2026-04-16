@@ -1,5 +1,7 @@
 -- AI Legal & Procedural Bot (Strategic Enhancement 4)
 
+CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
+
 -- 1. Table for Legal Knowledge Base (Vector Store Placeholder)
 CREATE TABLE IF NOT EXISTS public.legal_knowledge_base (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -7,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.legal_knowledge_base (
     content TEXT NOT NULL,
     category TEXT, -- e.g., 'electricity_law', 'citizen_rights', 'mp_procedures'
     law_reference TEXT, -- e.g., 'قانون رقم 10 لسنة 2020'
-    embedding VECTOR(1536), -- For semantic search (if pgvector is enabled)
+    embedding extensions.vector(1536), -- For semantic search
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 

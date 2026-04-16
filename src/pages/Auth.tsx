@@ -4,19 +4,17 @@ import { useNavigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { InputOTP } from "@/components/ui/input-otp";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, ShieldCheck, LogIn, ArrowRight, Eye, EyeOff, Lock, Phone, IdCard, Fingerprint, KeyRound, MapPin, Building2, Landmark, AlertCircle, CheckCircle2, Clock, Globe, Scale, FileText } from "lucide-react";
+import { User, ShieldCheck, LogIn, ArrowRight, Eye, EyeOff, Lock, IdCard, KeyRound, MapPin, Building2, Landmark, AlertCircle, CheckCircle2, Mail, Globe, Scale, FileText } from "lucide-react";
 import { 
   getDistrictOptions, 
   getElectoralDistrictOptions, 
   getGovernorateOptions, 
   isValidDistrictForGovernorate, 
   isValidElectoralDistrictForGovernorate, 
-  isValidGovernorate 
+  isValidGovernorate,
 } from "@/utils/egyptianElectoralData";
-import countryCodes from "@/data/countryCodes.json";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { analytics } from "@/lib/analytics";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -28,82 +26,11 @@ import { isNetworkFailureMessage } from "@/lib/authError";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import { APP_CONFIG } from "@/lib/config";
 
-type AuthMode = "login" | "login-otp" | "signup-citizen" | "signup-citizen-otp" | "signup-mp" | "signup-mp-otp" | "forgot-password" | "forgot-password-otp";
+type AuthMode = "login" | "signup-citizen" | "signup-mp" | "forgot-password";
 
-const PHONE_REGEX = /^01[0125][0-9]{8}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MEMBERSHIP_NUMBER_REGEX = /^[0-9]+$/;
 const MAX_MEMBERSHIP_NUMBER = 568;
-const OTP_REQUEST_TIMEOUT_MS = 12_000;
-const OTP_MAX_RETRIES = 2;
-const OTP_RETRY_BASE_DELAY_MS = 300;
-const LOCATION_LOOKUP_TIMEOUT_MS = 2_000;
-const DEFAULT_COUNTRY_CODE = "EG";
-const UNKNOWN_COUNTRY_NAME = "unknown";
-
-function sanitizeOtpErrorMessage(message: string): string {
-  const lowered = message.toLowerCase();
-  if (lowered.includes("too many") || lowered.includes("rate limit")) return "Too many requests";
-  if (lowered.includes("captcha")) return "CAPTCHA verification failed";
-  if (lowered.includes("invalid otp") || lowered.includes("invalid verification code")) return "OTP invalid";
-  if (lowered.includes("expired")) return "OTP expired";
-  return "Unable to process OTP request";
-}
-
-async function fetchJsonWithRetry(
-  url: string,
-  init: RequestInit,
-  retries = OTP_MAX_RETRIES,
-): Promise<Response> {
-  let lastError: unknown;
-  for (let attempt = 0; attempt <= retries; attempt += 1) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), OTP_REQUEST_TIMEOUT_MS);
-    try {
-      const response = await fetch(url, { ...init, signal: controller.signal });
-      if (response.ok) return response;
-      if (response.status < 500) return response;
-      if (attempt === retries) return response;
-      lastError = new Error(`OTP request failed with status ${response.status}`);
-    } catch (error) {
-      lastError = error;
-      if (attempt === retries) throw lastError;
-    } finally {
-      clearTimeout(timeout);
-    }
-    await new Promise((resolve) => setTimeout(resolve, OTP_RETRY_BASE_DELAY_MS * (attempt + 1)));
-  }
-  throw lastError ?? new Error("Unable to process OTP request");
-}
-
-async function lookupUserLocation(): Promise<{ country: string; countryCode: string } | null> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), LOCATION_LOOKUP_TIMEOUT_MS);
-
-  try {
-    const response = await fetch("https://ipapi.co/json/", { signal: controller.signal });
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
-    if (typeof data.country_code !== "string" || data.country_code.trim().length === 0) {
-      return null;
-    }
-
-    return {
-      country: typeof data.country_name === "string" ? data.country_name : UNKNOWN_COUNTRY_NAME,
-      countryCode: data.country_code,
-    };
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-function logLocationLookupFailureButContinue(reason: string): void {
-  console.warn("location_lookup_failed_but_signup_continues", { reason });
-}
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -111,14 +38,8 @@ const Auth = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [otpTimer, setOtpTimer] = useState(0);
-  const [canResendOtp, setCanResendOtp] = useState(false);
 
-  // Form states
-  const [phone, setPhone] = useState("");
-  const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -127,11 +48,9 @@ const Auth = () => {
   const [electoralDistrict, setElectoralDistrict] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [nationalId, setNationalId] = useState("");
-  const [nationalIdError, setNationalIdError] = useState("");
-  const [userLocation, setUserLocation] = useState<{ country: string; countryCode: string } | null>(null);
 
-  // Validation states
-  const [phoneError, setPhoneError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [nationalIdError, setNationalIdError] = useState("");
   const [membershipNumberError, setMembershipNumberError] = useState("");
   const [governorateError, setGovernorateError] = useState("");
   const [districtError, setDistrictError] = useState("");
@@ -140,40 +59,6 @@ const Auth = () => {
   const [signupSuccessful, setSignupSuccessful] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
-  // Get user's location on component mount
-  useEffect(() => {
-    let isMounted = true;
-
-    const detectLocation = async () => {
-      try {
-        const location = await lookupUserLocation();
-        if (!isMounted) return;
-
-        if (location) {
-          setUserLocation(location);
-          setCountryCode(location.countryCode);
-        } else {
-          logLocationLookupFailureButContinue("empty_invalid_blocked_or_timeout");
-          setUserLocation(null);
-          setCountryCode(DEFAULT_COUNTRY_CODE);
-        }
-      } catch (err) {
-        if (!isMounted) return;
-        logLocationLookupFailureButContinue("unexpected_detect_location_error");
-        console.error("Failed to detect location:", err);
-        setUserLocation(null);
-        setCountryCode(DEFAULT_COUNTRY_CODE);
-      }
-    };
-
-    detectLocation();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const phoneRegex = PHONE_REGEX;
   const membershipNumberRegex = MEMBERSHIP_NUMBER_REGEX;
   const passwordHasNumber = useMemo(() => /\d/.test(password), [password]);
   const passwordHasLetter = useMemo(() => /[a-zA-Z\u0600-\u06FF]/.test(password), [password]);
@@ -184,26 +69,17 @@ const Auth = () => {
     [governorate, district],
   );
 
-  // OTP Timer effect
   useEffect(() => {
-    if (otpTimer > 0) {
-      const timer = setTimeout(() => setOtpTimer(otpTimer - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (otpTimer === 0 && (mode.includes("otp"))) {
-      setCanResendOtp(true);
+    const normalized = email.trim();
+    if (normalized && !EMAIL_REGEX.test(normalized)) {
+      setEmailError(t("auth.email_invalid"));
+      return;
     }
-  }, [otpTimer, mode]);
+    setEmailError("");
+  }, [email, t]);
 
   useEffect(() => {
-    if (phone && !phoneRegex.test(phone)) {
-      setPhoneError(t("auth.phone_invalid"));
-    } else {
-      setPhoneError("");
-    }
-  }, [phone, t, phoneRegex]);
-
-  useEffect(() => {
-    if (nationalId && mode.includes("signup-citizen")) {
+    if (nationalId && mode === "signup-citizen") {
       const validation = validateEgyptianIdWithReason(nationalId);
       if (!validation.valid) {
         setNationalIdError(validation.reason || t("auth.national_id_invalid"));
@@ -239,53 +115,79 @@ const Auth = () => {
 
   useEffect(() => {
     const validateForm = () => {
+      const emailValid = EMAIL_REGEX.test(email.trim());
+
       if (mode === "login") {
-        return phoneRegex.test(phone) && password.length > 0;
+        return emailValid && password.length > 0;
       }
+
       if (mode === "forgot-password") {
-        const passwordValid = password.length >= 8 && passwordHasNumber && passwordHasLetter;
-        return phoneRegex.test(phone) && passwordValid;
+        return emailValid;
       }
+
       if (mode === "signup-citizen" || mode === "signup-mp") {
-        const phoneValid = phoneRegex.test(phone);
         const passwordValid = password.length >= 8 && passwordHasNumber && passwordHasLetter;
         const fullNameValid = fullName.trim().length > 0;
-        const commonValid = phoneValid && passwordValid && fullNameValid;
+        const commonValid = emailValid && passwordValid && fullNameValid;
+
         const geoValid =
           isValidGovernorate(governorate) &&
           isValidDistrictForGovernorate(governorate, district) &&
           !governorateError &&
           !districtError;
-        
+
         if (mode === "signup-citizen") {
-          const nationalIdValid = nationalId.length === 14 && 
-                                 validateEgyptianId(nationalId) && 
-                                 nationalIdError === "";
+          const nationalIdValid =
+            nationalId.length === 14 &&
+            validateEgyptianId(nationalId) &&
+            nationalIdError === "";
           return commonValid && nationalIdValid && geoValid;
         }
-        
-        if (mode === "signup-mp") {
-          const membershipValid = registrationNumber.length > 0 && 
-                                 membershipNumberRegex.test(registrationNumber) &&
-                                 parseInt(registrationNumber, 10) >= 1 &&
-                                 parseInt(registrationNumber, 10) <= MAX_MEMBERSHIP_NUMBER &&
-                                 membershipNumberError === "";
-          const geoValid =
-            isValidGovernorate(governorate) &&
-            isValidDistrictForGovernorate(governorate, district) &&
-            isValidElectoralDistrictForGovernorate(governorate, electoralDistrict, district) &&
-            !governorateError &&
-            !districtError &&
-            !electoralError;
-          const displayNameValid = displayName.trim().length > 0;
-          return commonValid && geoValid && membershipValid && displayNameValid;
-        }
-        return commonValid;
+
+        const mpGeoValid =
+          isValidGovernorate(governorate) &&
+          isValidDistrictForGovernorate(governorate, district) &&
+          isValidElectoralDistrictForGovernorate(governorate, electoralDistrict, district) &&
+          !governorateError &&
+          !districtError &&
+          !electoralError;
+
+        const membershipValid =
+          registrationNumber.length > 0 &&
+          membershipNumberRegex.test(registrationNumber) &&
+          parseInt(registrationNumber, 10) >= 1 &&
+          parseInt(registrationNumber, 10) <= MAX_MEMBERSHIP_NUMBER &&
+          membershipNumberError === "";
+
+        const displayNameValid = displayName.trim().length > 0;
+
+        return commonValid && mpGeoValid && membershipValid && displayNameValid;
       }
+
       return false;
     };
+
     setIsFormValid(validateForm());
-  }, [mode, phone, password, passwordHasNumber, passwordHasLetter, fullName, displayName, governorate, district, electoralDistrict, registrationNumber, membershipNumberError, nationalId, nationalIdError, governorateError, districtError, electoralError, phoneRegex, membershipNumberRegex]);
+  }, [
+    mode,
+    email,
+    password,
+    passwordHasNumber,
+    passwordHasLetter,
+    fullName,
+    displayName,
+    governorate,
+    district,
+    electoralDistrict,
+    registrationNumber,
+    membershipNumberError,
+    nationalId,
+    nationalIdError,
+    governorateError,
+    districtError,
+    electoralError,
+    membershipNumberRegex,
+  ]);
 
   useEffect(() => {
     if (!mode.includes("signup")) {
@@ -323,8 +225,7 @@ const Auth = () => {
   }, [governorate, district, electoralDistrict, mode, t]);
 
   const resetForm = () => {
-    setPhone("");
-    setCountryCode("EG");
+    setEmail("");
     setPassword("");
     setFullName("");
     setRegistrationNumber("");
@@ -333,30 +234,23 @@ const Auth = () => {
     setDistrict("");
     setElectoralDistrict("");
     setNationalId("");
-    setPhoneError("");
+    setEmailError("");
     setNationalIdError("");
     setGovernorateError("");
     setDistrictError("");
     setElectoralError("");
-    setOtpCode("");
-    setOtpTimer(0);
-    setCanResendOtp(false);
     setTurnstileToken(null);
   };
 
   const translateError = (msg: string): string => {
     if (isNetworkFailureMessage(msg)) return t("auth.error_network");
     if (msg.includes("Invalid login credentials")) return t("auth.error_credentials");
-    if (msg.includes("Phone not confirmed")) return t("auth.error_phone_not_confirmed");
     if (msg.includes("User already registered")) return t("auth.error_already_registered");
+    if (msg.includes("already been registered")) return t("auth.error_already_registered");
     if (msg.includes("Password should be")) return t("auth.password_weak");
-    if (msg.includes("OTP invalid")) return t("auth.error_otp_invalid");
-    if (msg.includes("OTP expired")) return t("auth.error_otp_expired");
-    if (msg.includes("rate limit")) return t("auth.error_rate_limit");
-    if (msg.includes("Too many requests")) return t("auth.error_too_many");
-    if (msg.includes("did not match the expected pattern")) return t("auth.error_pattern_mismatch");
     if (msg.includes("Email not confirmed")) return t("auth.error_email_not_confirmed");
-    if (msg.includes("already registered") || msg.includes("already been registered")) return t("auth.error_already_registered");
+    if (msg.includes("Invalid email")) return t("auth.email_invalid");
+    if (msg.includes("rate limit") || msg.includes("Too many requests")) return t("auth.error_too_many");
     return msg;
   };
 
@@ -364,7 +258,6 @@ const Auth = () => {
     const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).single();
     if (data?.role === "admin") return "/admin";
     if (data?.role === "mp") {
-      // Check if MP is approved
       const { data: profile } = await supabase.from("profiles").select("is_approved").eq("user_id", userId).single();
       if (!profile?.is_approved) {
         return "/mp-pending";
@@ -374,141 +267,102 @@ const Auth = () => {
     return "/citizen";
   };
 
-  const handleSendOtp = async (e: React.FormEvent) => {
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if ((mode === "signup-citizen" || mode === "signup-mp") && !isFormValid) {
+
+    if (!isFormValid) {
       toast.error(t("auth.form_invalid"));
       return;
     }
-    if (!phoneRegex.test(phone)) {
-      setPhoneError(t("auth.phone_invalid"));
-      return;
-    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const signupRole = mode === "signup-mp" ? "mp" : "citizen";
 
     setLoading(true);
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      // Resolve the E.164 dial prefix (e.g. "+20") for the selected country code ("EG")
-      const dialCode = countryCodes.countries.find((c) => c.code === countryCode)?.dialCode;
-      const otpMode = mode.replace("-otp", "");
-      console.info("otp_send_request_start", { mode: otpMode });
-      const response = await fetchJsonWithRetry(`${supabaseUrl}/functions/v1/send-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "apikey": supabaseKey },
-        body: JSON.stringify({ phone, mode: otpMode, turnstileToken: turnstileToken ?? undefined, countryCode: dialCode }),
+      if (mode === "login") {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: trimmedEmail,
+          password,
+        });
+        if (error) throw error;
+
+        analytics.track("login_success");
+        if (!data.user) throw new Error(t("auth.error_credentials"));
+
+        const redirect = await getRoleRedirect(data.user.id);
+        navigate(redirect);
+        return;
+      }
+
+      if (mode === "forgot-password") {
+        const redirectTo = `${window.location.origin}/reset-password`;
+        const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, { redirectTo });
+        if (error) throw error;
+
+        toast.success(t("auth.reset_link_sent"));
+        setTurnstileToken(null);
+        return;
+      }
+
+      const metadata: Record<string, string> = {
+        full_name: fullName,
+        role: signupRole,
+        governorate,
+        district,
+        phone: "",
+      };
+
+      if (mode === "signup-citizen") {
+        metadata.national_id = nationalId;
+      }
+
+      if (mode === "signup-mp") {
+        metadata.electoral_district = electoralDistrict;
+        metadata.membership_number = registrationNumber;
+        metadata.display_name = displayName;
+      }
+
+      const { error } = await supabase.auth.signUp({
+        email: trimmedEmail,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth`,
+          data: metadata,
+        },
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(sanitizeOtpErrorMessage(String(data.error || "")));
-      console.info("otp_send_request_success", { mode: otpMode });
+      if (error) throw error;
 
-      toast.success(t("auth.otp_sent"));
-      setTurnstileToken(null); // Reset token after use
-      setOtpTimer(300); // 5 minutes
-      setCanResendOtp(false);
-      
-      // Move to OTP verification mode
-      if (mode === "login") setMode("login-otp");
-      else if (mode === "signup-citizen") setMode("signup-citizen-otp");
-      else if (mode === "signup-mp") setMode("signup-mp-otp");
-      else if (mode === "forgot-password") setMode("forgot-password-otp");
+      analytics.track("signup_success", { role: signupRole });
+      setSignupSuccessful(true);
+      toast.success(t("auth.signup_check_email"));
+      resetForm();
+      setTimeout(() => {
+        setSignupSuccessful(false);
+        setMode("login");
+      }, 3000);
     } catch (err: unknown) {
-      console.error("otp_send_request_failure", {
-        mode: mode.replace("-otp", ""),
-        error: err instanceof Error ? err.message : String(err),
-      });
-      toast.error(translateError((err instanceof Error ? err.message : String(err)) || t("auth.otp_send_error")));
+      if (mode === "login") {
+        analytics.track("login_failure");
+      } else if (mode.includes("signup")) {
+        analytics.track("signup_failure", { role: signupRole });
+      }
+
+      toast.error(translateError((err instanceof Error ? err.message : String(err)) || t("auth.generic_error")));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otpCode.length !== 6) {
-      toast.error(t("auth.otp_invalid_length"));
-      return;
-    }
-
-    const signupRole = mode.includes("mp") ? "mp" : "citizen";
-    setOtpLoading(true);
-    try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      // Resolve the E.164 dial prefix so verify-otp formats the phone identically to send-otp
-      const dialCode = countryCodes.countries.find((c) => c.code === countryCode)?.dialCode;
-      const response = await fetchJsonWithRetry(`${supabaseUrl}/functions/v1/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "apikey": supabaseKey },
-        body: JSON.stringify({ 
-          phone, 
-          otp: otpCode, 
-          mode: mode.replace("-otp", ""),
-          countryCode: dialCode,
-          ...(mode.includes("signup") && { fullName, password, governorate, district, electoralDistrict, registrationNumber, displayName, nationalId }),
-          ...(mode === "forgot-password-otp" && { newPassword: password }),
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(sanitizeOtpErrorMessage(String(data.error || "")));
-
-      toast.success(t("auth.otp_verified"));
-
-      if (mode === "login-otp") {
-        // Perform login
-        const { error } = await supabase.auth.signInWithPassword({
-          email: data.email,
-          password: password,
-        });
-        if (error) throw error;
-        analytics.track("login_success");
-        const redirect = await getRoleRedirect(data.userId);
-        navigate(redirect);
-      } else if (mode.includes("signup")) {
-        // Account was created server-side during OTP verification — no client
-        // signUp() call is needed.  Just report success and redirect to login.
-        analytics.track("signup_success", { role: signupRole });
-        setSignupSuccessful(true);
-        resetForm();
-        setTimeout(() => {
-          setSignupSuccessful(false);
-          setMode("login");
-        }, 3000);
-      } else if (mode === "forgot-password-otp") {
-        // Password was reset server-side during OTP verification.
-        toast.success(t("auth.forgot_success"));
-        resetForm();
-        setMode("login");
-      }
-    } catch (err: unknown) {
-      // Track auth failures without exposing the raw error message (which may
-      // contain phone numbers or other PII).
-      if (mode === "login-otp") {
-        analytics.track("login_failure");
-      } else if (mode.includes("signup")) {
-        analytics.track("signup_failure", { role: signupRole });
-      }
-      toast.error(translateError((err instanceof Error ? err.message : String(err)) || t("auth.otp_verify_error")));
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
   const isSignup = mode.includes("signup");
-  const isForgot = mode.includes("forgot-password");
-  const isOtpMode = mode.includes("otp");
+  const isForgot = mode === "forgot-password";
 
   const modeConfig = {
     login: { title: t("auth.login_title"), subtitle: t("auth.login_subtitle"), icon: LogIn, gradient: "from-accent to-info" },
-    "login-otp": { title: t("auth.verify_otp"), subtitle: t("auth.verify_otp_subtitle"), icon: Fingerprint, gradient: "from-accent to-info" },
     "signup-citizen": { title: t("auth.signup_citizen_title"), subtitle: t("auth.signup_citizen_subtitle"), icon: User, gradient: "from-primary to-accent" },
-    "signup-citizen-otp": { title: t("auth.verify_otp"), subtitle: t("auth.verify_otp_subtitle"), icon: Fingerprint, gradient: "from-primary to-accent" },
     "signup-mp": { title: t("auth.signup_mp_title"), subtitle: t("auth.signup_mp_subtitle"), icon: ShieldCheck, gradient: "from-warning to-accent" },
-    "signup-mp-otp": { title: t("auth.verify_otp"), subtitle: t("auth.verify_otp_subtitle"), icon: Fingerprint, gradient: "from-warning to-accent" },
     "forgot-password": { title: t("auth.forgot_title"), subtitle: t("auth.forgot_subtitle"), icon: KeyRound, gradient: "from-accent to-primary" },
-    "forgot-password-otp": { title: t("auth.verify_otp"), subtitle: t("auth.verify_otp_subtitle"), icon: Fingerprint, gradient: "from-accent to-primary" },
   };
 
   const { title, subtitle, icon: ModeIcon, gradient } = modeConfig[mode];
@@ -520,7 +374,6 @@ const Auth = () => {
     <div className="min-h-screen bg-background relative overflow-hidden">
       <AppHeader />
 
-      {/* Signup success overlay */}
       <AnimatePresence>
         {signupSuccessful && (
           <motion.div
@@ -580,7 +433,6 @@ const Auth = () => {
 
       <div className="container py-8 md:py-16 flex justify-center px-4 relative z-10">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="w-full max-w-md">
-          {/* Header */}
           <div className="mb-8 text-center">
             <motion.div
               key={mode}
@@ -597,432 +449,335 @@ const Auth = () => {
             <p className="text-muted-foreground text-sm">{subtitle}</p>
           </div>
 
-          {/* Card */}
           <motion.div layout className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl overflow-hidden">
             <div className="p-7 md:p-8">
-              <AnimatePresence mode="wait">
-                {isOtpMode ? (
-                  <motion.form
-                    key={mode}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                    onSubmit={handleVerifyOtp}
-                    className="space-y-5"
-                  >
+              <motion.form
+                key={mode}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
+                onSubmit={handleAuthSubmit}
+                className="space-y-5"
+              >
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    {t("auth.email")}
+                  </label>
+                  <Input
+                    type="email"
+                    autoComplete="email"
+                    placeholder={t("auth.email_placeholder")}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                    className={cn(emailError && "border-destructive")}
+                  />
+                  {emailError && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {emailError}
+                    </p>
+                  )}
+                </div>
+
+                {!isForgot && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <Lock className="w-4 h-4" />
+                      {t("auth.password")}
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder={t("auth.password_placeholder")}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                        autoComplete={mode === "login" ? "current-password" : "new-password"}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {isSignup && password && (
+                      <p className="text-xs text-muted-foreground">
+                        {password.length >= 8 && passwordHasNumber && passwordHasLetter ? (
+                          <span className="text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {t("auth.password_strong")}</span>
+                        ) : (
+                          <span className="text-amber-600">{t("auth.password_requirements")}</span>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {isForgot && (
+                  <p className="text-xs text-muted-foreground">{t("auth.forgot_email_hint")}</p>
+                )}
+
+                {isSignup && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      {t("auth.full_name")}
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder={t("auth.full_name_placeholder")}
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value.replace(/^\s+/, ""))}
+                      disabled={loading}
+                    />
+                  </div>
+                )}
+
+                {mode === "signup-citizen" && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <IdCard className="w-4 h-4" />
+                      {t("auth.national_id")}
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder={t("auth.national_id_placeholder")}
+                      value={nationalId}
+                      onChange={(e) => setNationalId(e.target.value.replace(/\D/g, "").slice(0, 14))}
+                      disabled={loading}
+                      maxLength={14}
+                      className={nationalIdError ? "border-destructive" : ""}
+                    />
+                    {nationalIdError && (
+                      <p className="text-xs text-destructive flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {nationalIdError}
+                      </p>
+                    )}
+                    {nationalId && !nationalIdError && (
+                      <p className="text-xs text-green-600 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        {t("auth.national_id_valid")}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {isSignup && (
+                  <>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">{t("auth.otp_code")}</label>
-                      <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode} disabled={otpLoading}>
-                        {Array.from({ length: 6 }).map((_, i) => (
-                          <input key={i} className="w-10 h-12 text-center border rounded-md" />
-                        ))}
-                      </InputOTP>
-                      <p className="text-xs text-muted-foreground">{t("auth.otp_sent_to")} {phone}</p>
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        {t("auth.governorate")}
+                      </label>
+                      <Select
+                        value={governorate}
+                        onValueChange={(value) => {
+                          setGovernorate(value);
+                          setDistrict("");
+                          setElectoralDistrict("");
+                        }}
+                        disabled={loading}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("auth.select_governorate")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {governorateOptions.map((gov) => (
+                            <SelectItem key={gov.value} value={gov.value}>{gov.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {governorateError && (
+                        <p className="text-sm text-destructive flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {governorateError}
+                        </p>
+                      )}
                     </div>
 
-                    {otpTimer > 0 && (
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {t("auth.otp_expires_in")} {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, "0")}
-                        </span>
+                    {governorate && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                          <Building2 className="w-4 h-4" />
+                          {t("auth.district")}
+                        </label>
+                        <Select
+                          value={district}
+                          onValueChange={(value) => {
+                            setDistrict(value);
+                            setElectoralDistrict("");
+                          }}
+                          disabled={loading || districtOptions.length === 0}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("auth.select_district")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {districtOptions.map((dist) => (
+                              <SelectItem key={dist.value} value={dist.value}>{dist.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {districtError && (
+                          <p className="text-sm text-destructive flex items-center gap-1">
+                            <AlertCircle className="w-4 h-4" />
+                            {districtError}
+                          </p>
+                        )}
                       </div>
                     )}
+                  </>
+                )}
 
-                    <Button
-                      type="submit"
-                      disabled={otpCode.length !== 6 || otpLoading}
-                      className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
-                      size="lg"
-                    >
-                      {otpLoading ? t("auth.verifying") : t("auth.verify_otp")}
-                    </Button>
+                {mode.includes("signup-mp") && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        {t("auth.display_name")}
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder={t("auth.display_name_placeholder")}
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value.replace(/^\s+/, ""))}
+                        disabled={loading}
+                      />
+                    </div>
 
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={!canResendOtp || loading}
-                      onClick={handleSendOtp}
-                      className="w-full"
-                    >
-                      {canResendOtp ? t("auth.resend_otp") : t("auth.resend_otp_wait")}
-                    </Button>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Landmark className="w-4 h-4" />
+                        {t("auth.electoral_district")}
+                      </label>
+                      <Select
+                        value={electoralDistrict}
+                        onValueChange={setElectoralDistrict}
+                        disabled={loading || !governorate}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("auth.select_electoral_district")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {electoralOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {electoralError && (
+                        <p className="text-sm text-destructive flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {electoralError}
+                        </p>
+                      )}
+                    </div>
 
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <IdCard className="w-4 h-4" />
+                        {t("auth.registration_number")}
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder={t("auth.registration_number_placeholder")}
+                        value={registrationNumber}
+                        onChange={(e) => setRegistrationNumber(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                        disabled={loading}
+                        className={membershipNumberError ? "border-destructive" : ""}
+                      />
+                      {membershipNumberError && (
+                        <p className="text-sm text-destructive flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {membershipNumberError}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                <TurnstileCaptcha
+                  onVerify={setTurnstileToken}
+                  onExpire={() => setTurnstileToken(null)}
+                />
+
+                <Button
+                  type="submit"
+                  disabled={!isFormValid || loading || (!!APP_CONFIG.TURNSTILE_SITE_KEY && !turnstileToken)}
+                  className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                  size="lg"
+                >
+                  {loading
+                    ? t("auth.loading")
+                    : mode === "login"
+                    ? t("auth.login_button")
+                    : mode === "forgot-password"
+                    ? t("auth.send_reset_link")
+                    : t("auth.create_account")}
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+
+                <div className="space-y-3 pt-2">
+                  {mode === "login" && (
+                    <>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          setMode("forgot-password");
+                          resetForm();
+                        }}
+                        className="w-full text-sm"
+                      >
+                        {t("auth.forgot_password")}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setMode("signup-citizen");
+                          resetForm();
+                        }}
+                        className="w-full"
+                      >
+                        {t("auth.signup_citizen")}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setMode("signup-mp");
+                          resetForm();
+                        }}
+                        className="w-full"
+                      >
+                        {t("auth.signup_mp")}
+                      </Button>
+                    </>
+                  )}
+                  {(isSignup || isForgot) && (
                     <Button
                       type="button"
                       variant="ghost"
                       onClick={() => {
-                        setMode(mode.replace("-otp", "") as AuthMode);
-                        setOtpCode("");
-                        setOtpTimer(0);
+                        setMode("login");
+                        resetForm();
                       }}
-                      className="w-full"
+                      className="w-full text-sm"
                     >
-                      {t("auth.back")}
+                      {t("auth.back_to_login")}
                     </Button>
-                  </motion.form>
-                ) : (
-                  <motion.form
-                    key={mode}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                    onSubmit={handleSendOtp}
-                    className="space-y-5"
-                  >
-                    {/* Country Code and Phone Field */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                        <Phone className="w-4 h-4" />
-                        {t("auth.phone")}
-                      </label>
-                      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-center">
-                        <Select value={countryCode} onValueChange={setCountryCode} disabled={loading}>
-                          <SelectTrigger className="w-full sm:w-28">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {countryCodes.countries
-                              .sort((a, b) => a.priority - b.priority)
-                              .map((country) => (
-                                <SelectItem key={country.code} value={country.code}>
-                                  {country.flag} +{country.dialCode.replace("+", "")}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                        <Input
-                          type="tel"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          placeholder="01012345678"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
-                          disabled={loading}
-                          className={cn(
-                            "flex-1 text-center sm:text-left",
-                            "min-w-[200px] sm:min-w-[240px]",
-                            phoneError && "border-destructive"
-                          )}
-                        />
-                      </div>
-                      {phoneError && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {phoneError}</p>}
-                    </div>
-
-                    {/* Password Field — shown for login, signup, and forgot-password (new password).
-                        In forgot-password-otp the entire form switches to the OTP branch, so
-                        that mode never appears here; the condition guards future-proofing only. */}
-                    {mode !== "forgot-password-otp" && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                          <Lock className="w-4 h-4" />
-                          {mode === "forgot-password" ? t("auth.new_password") : t("auth.password")}
-                        </label>
-                        <div className="relative">
-                          <Input
-                            type={showPassword ? "text" : "password"}
-                            placeholder={t("auth.password_placeholder")}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            disabled={loading}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                          >
-                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
-                        </div>
-                        {(mode.includes("signup") || mode === "forgot-password") && password && (
-                          <p className="text-xs text-muted-foreground">
-                            {password.length >= 8 && passwordHasNumber && passwordHasLetter ? (
-                              <span className="text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {t("auth.password_strong")}</span>
-                            ) : (
-                              <span className="text-amber-600">{t("auth.password_requirements")}</span>
-                            )}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Full Name (for signup) */}
-                    {isSignup && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                          <User className="w-4 h-4" />
-                          {t("auth.full_name")}
-                        </label>
-                          <Input
-                            type="text"
-                            placeholder={t("auth.full_name_placeholder")}
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value.replace(/^\s+/, ""))}
-                            disabled={loading}
-                          />
-                      </div>
-                    )}
-
-                    {/* National ID (for citizen signup) */}
-                    {mode === "signup-citizen" && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                          <IdCard className="w-4 h-4" />
-                          {t("auth.national_id")}
-                        </label>
-                        <Input
-                          type="text"
-                          placeholder={t("auth.national_id_placeholder")}
-                          value={nationalId}
-                          onChange={(e) => setNationalId(e.target.value.replace(/\D/g, "").slice(0, 14))}
-                          disabled={loading}
-                          maxLength={14}
-                          className={nationalIdError ? "border-destructive" : ""}
-                        />
-                        {nationalIdError && (
-                          <p className="text-xs text-destructive flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" />
-                            {nationalIdError}
-                          </p>
-                        )}
-                        {nationalId && !nationalIdError && (
-                          <p className="text-xs text-green-600 flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3" />
-                            {t("auth.national_id_valid")}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Location fields for all signup roles */}
-                    {isSignup && (
-                      <>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                            <MapPin className="w-4 h-4" />
-                            {t("auth.governorate")}
-                          </label>
-                          <Select
-                            value={governorate}
-                            onValueChange={(value) => {
-                              setGovernorate(value);
-                              setDistrict("");
-                              setElectoralDistrict("");
-                            }}
-                            disabled={loading}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder={t("auth.select_governorate")} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {governorateOptions.map((gov) => (
-                                <SelectItem key={gov.value} value={gov.value}>{gov.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {governorateError && (
-                            <p className="text-sm text-destructive flex items-center gap-1">
-                              <AlertCircle className="w-4 h-4" />
-                              {governorateError}
-                            </p>
-                          )}
-                        </div>
-
-                        {governorate && (
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                              <Building2 className="w-4 h-4" />
-                              {t("auth.district")}
-                            </label>
-                            <Select
-                              value={district}
-                              onValueChange={(value) => {
-                                setDistrict(value);
-                                setElectoralDistrict("");
-                              }}
-                              disabled={loading || districtOptions.length === 0}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder={t("auth.select_district")} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {districtOptions.map((dist) => (
-                                  <SelectItem key={dist.value} value={dist.value}>{dist.label}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {districtError && (
-                              <p className="text-sm text-destructive flex items-center gap-1">
-                                <AlertCircle className="w-4 h-4" />
-                                {districtError}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </>
-                    )}
-
-                    {/* MP-specific fields */}
-                    {mode.includes("signup-mp") && (
-                      <>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                            <User className="w-4 h-4" />
-                            {t("auth.display_name")}
-                          </label>
-                          <Input
-                            type="text"
-                            placeholder={t("auth.display_name_placeholder")}
-                            value={displayName}
-                            onChange={(e) => setDisplayName(e.target.value.replace(/^\s+/, ""))}
-                            disabled={loading}
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                            <Landmark className="w-4 h-4" />
-                            {t("auth.electoral_district")}
-                          </label>
-                          <Select
-                            value={electoralDistrict}
-                            onValueChange={setElectoralDistrict}
-                            disabled={loading || !governorate}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder={t("auth.select_electoral_district")} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {electoralOptions.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {electoralError && (
-                            <p className="text-sm text-destructive flex items-center gap-1">
-                              <AlertCircle className="w-4 h-4" />
-                              {electoralError}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                            <IdCard className="w-4 h-4" />
-                            {t("auth.registration_number")}
-                          </label>
-                          <Input
-                            type="text"
-                            placeholder={t("auth.registration_number_placeholder")}
-                            value={registrationNumber}
-                            onChange={(e) => setRegistrationNumber(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                            disabled={loading}
-                            className={membershipNumberError ? "border-destructive" : ""}
-                          />
-                          {membershipNumberError && (
-                            <p className="text-sm text-destructive flex items-center gap-1">
-                              <AlertCircle className="w-4 h-4" />
-                              {membershipNumberError}
-                            </p>
-                          )}
-                        </div>
-                      </>
-                    )}
-
-                    {/* Turnstile CAPTCHA */}
-                    <TurnstileCaptcha
-                      onVerify={setTurnstileToken}
-                      onExpire={() => setTurnstileToken(null)}
-                    />
-
-                    {/* Submit Button */}
-                    <Button
-                      type="submit"
-                      disabled={!isFormValid || loading || (!!APP_CONFIG.TURNSTILE_SITE_KEY && !turnstileToken)}
-                      className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
-                      size="lg"
-                    >
-                      {loading ? t("auth.loading") : mode === "login" ? t("auth.send_otp") : mode === "forgot-password" ? t("auth.send_otp") : t("auth.send_otp")}
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-
-                    {/* Mode Switcher */}
-                    <div className="space-y-3 pt-2">
-                      {mode === "login" && (
-                        <>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => {
-                              setMode("forgot-password");
-                              resetForm();
-                            }}
-                            className="w-full text-sm"
-                          >
-                            {t("auth.forgot_password")}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setMode("signup-citizen");
-                              resetForm();
-                            }}
-                            className="w-full"
-                          >
-                            {t("auth.signup_citizen")}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setMode("signup-mp");
-                              resetForm();
-                            }}
-                            className="w-full"
-                          >
-                            {t("auth.signup_mp")}
-                          </Button>
-                        </>
-                      )}
-                      {isSignup && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          onClick={() => {
-                            setMode("login");
-                            resetForm();
-                          }}
-                          className="w-full text-sm"
-                        >
-                          {t("auth.back_to_login")}
-                        </Button>
-                      )}
-                      {isForgot && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          onClick={() => {
-                            setMode("login");
-                            resetForm();
-                          }}
-                          className="w-full text-sm"
-                        >
-                          {t("auth.back_to_login")}
-                        </Button>
-                      )}
-                    </div>
-                  </motion.form>
-                )}
-              </AnimatePresence>
+                  )}
+                </div>
+              </motion.form>
             </div>
           </motion.div>
 
-          {/* Footer Info */}
           <p className="text-center text-xs text-muted-foreground mt-6">
             {t("auth.terms_agreement")}
           </p>

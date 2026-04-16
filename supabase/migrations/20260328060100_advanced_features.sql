@@ -79,7 +79,7 @@ CREATE POLICY "Citizens can view urgent alerts for their issues" ON public.urgen
 -- ============================================================================
 -- 3. Audit Logs Table
 -- ============================================================================
-CREATE TABLE public.audit_logs (
+CREATE TABLE IF NOT EXISTS public.audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   action TEXT NOT NULL,
@@ -94,15 +94,24 @@ CREATE TABLE public.audit_logs (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
+-- Backfill columns when audit_logs already exists from older migrations
+ALTER TABLE public.audit_logs
+  ADD COLUMN IF NOT EXISTS entity_type TEXT,
+  ADD COLUMN IF NOT EXISTS entity_id UUID,
+  ADD COLUMN IF NOT EXISTS old_values JSONB,
+  ADD COLUMN IF NOT EXISTS new_values JSONB,
+  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'success',
+  ADD COLUMN IF NOT EXISTS error_message TEXT;
+
 -- Enable RLS
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Create indexes
-CREATE INDEX idx_audit_logs_user_id ON public.audit_logs(user_id);
-CREATE INDEX idx_audit_logs_action ON public.audit_logs(action);
-CREATE INDEX idx_audit_logs_entity ON public.audit_logs(entity_type, entity_id);
-CREATE INDEX idx_audit_logs_created_at ON public.audit_logs(created_at);
-CREATE INDEX idx_audit_logs_status ON public.audit_logs(status);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON public.audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON public.audit_logs(action);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON public.audit_logs(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON public.audit_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_status ON public.audit_logs(status);
 
 -- Policies
 CREATE POLICY "Admins can view all audit logs" ON public.audit_logs
@@ -220,6 +229,7 @@ DECLARE
   urgent_keywords TEXT[] := ARRAY['قتل', 'اغتصاب', 'عنف', 'تهديد', 'حريق', 'غرق', 'حادث', 'كارثة', 'طوارئ', 'عاجل', 'حرج', 'خطر', 'جريمة'];
   critical_keywords TEXT[] := ARRAY['قتل', 'اغتصاب', 'عنف مسلح', 'كارثة', 'حريق'];
   high_keywords TEXT[] := ARRAY['عنف', 'تهديد', 'حادث', 'طوارئ'];
+  keyword TEXT;
   combined_text TEXT;
   detected_keywords TEXT[];
   urgency TEXT;
@@ -229,7 +239,7 @@ BEGIN
   
   -- Check for critical keywords
   detected_keywords := ARRAY[]::TEXT[];
-  FOREACH urgent_keywords[1:array_length(urgent_keywords, 1)] AS keyword DO
+  FOREACH keyword IN ARRAY urgent_keywords LOOP
     IF combined_text LIKE '%' || keyword || '%' THEN
       detected_keywords := array_append(detected_keywords, keyword);
     END IF;

@@ -209,7 +209,7 @@ log_audit_event(
 - recipient_phone: رقم الهاتف
 - message_body: نص الرسالة
 - message_type: نوع الرسالة (issue_created/status_update/urgent_alert/resolution_notice)
-- twilio_sid: معرف Twilio
+- email_provider_id: معرف مزود البريد الإلكتروني
 - status: حالة الإرسال (queued/sent/failed/delivered)
 - tracking_link_id: معرف رابط التتبع
 - sent_at: وقت الإرسال
@@ -314,13 +314,12 @@ log_audit_event(
 
 ---
 
-## 8. التكامل مع Twilio
+## 8. التكامل مع مزود البريد الإلكتروني
 
 ### متطلبات البيئة
 ```env
-TWILIO_ACCOUNT_SID=your_twilio_account_sid
-TWILIO_AUTH_TOKEN=your_twilio_auth_token
-TWILIO_PHONE_NUMBER=+20xxxxxxxxx
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM_EMAIL="Haqak <no-reply@haqak.org>"
 ```
 
 ### معدلات الإرسال
@@ -386,7 +385,7 @@ TWILIO_PHONE_NUMBER=+20xxxxxxxxx
 
 ### المشكلة: لم تصل الإشعارات
 **الحل**:
-- تحقق من رصيد Twilio
+- تحقق من حالة مزود البريد الإلكتروني
 - تحقق من أرقام الهاتف
 - تحقق من السجلات
 
@@ -422,6 +421,6 @@ TWILIO_PHONE_NUMBER=+20xxxxxxxxx
 
 ## المراجع
 
-- [Twilio SMS API](https://www.twilio.com/docs/sms)
+- [Resend API](https://resend.com/docs/api-reference/introduction)
 - [Supabase Database](https://supabase.com/docs/guides/database)
 - [Edge Functions](https://supabase.com/docs/guides/functions)

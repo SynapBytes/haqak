@@ -3,13 +3,13 @@
 -- Context: Two earlier migrations created conflicting schemas for rate_limit_logs:
 --   • 20260325120100_create_rate_limit_logs_table.sql — schema expected by Edge Functions
 --     (user_id, request_timestamp, request_path, response_status, ip_address)
---   • 20260330_rate_limits.sql — conflicting schema (identifier, action, attempted_at)
+--   • 20260330010300_rate_limits.sql — conflicting schema (identifier, action, attempted_at)
 --
--- Edge Functions (send-otp) query/insert using the 20260325120100 column set.
+-- Edge Functions (auth/rate-limited endpoints) query/insert using the 20260325120100 column set.
 -- This migration ensures the table always has the columns those functions need,
 -- regardless of which migration was applied first, and removes any conflicting index.
 
--- Drop the conflicting index added by 20260330_rate_limits.sql if it was applied.
+-- Drop the conflicting index added by 20260330010300_rate_limits.sql if it was applied.
 -- That index references (identifier, action, attempted_at) which do not exist in
 -- the Edge-Function-compatible schema.
 DROP INDEX IF EXISTS public.idx_rate_limit_logs_lookup;
@@ -24,7 +24,7 @@ ALTER TABLE public.rate_limit_logs
   ADD COLUMN IF NOT EXISTS response_status INT         NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS ip_address      INET;
 
--- Ensure the index used by send-otp rate-limit queries exists.
+-- Ensure the index used by auth rate-limit queries exists.
 CREATE INDEX IF NOT EXISTS idx_rate_limit_logs_ip_path_time
   ON public.rate_limit_logs (ip_address, request_path, request_timestamp);
 
