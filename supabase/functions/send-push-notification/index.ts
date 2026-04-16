@@ -79,20 +79,21 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Use service-role client so getUser() verifies the JWT signature
+    // server-side. getClaims() only decodes the payload without signature
+    // verification, allowing forged tokens.
     const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const token = authHeader.replace("Bearer ", "");
-    const {
-      data: { user: callerUser },
-      error: authError,
-    } = await serviceSupabase.auth.getUser(token);
-    if (authError || !callerUser) {
+    const { data: { user }, error: authError } = await serviceSupabase.auth.getUser(token);
+    if (authError || !user) {
+      console.warn("send-push-notification: unauthorized attempt", { error: authError?.message });
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
-    const callerId = callerUser.id;
+    const callerId = user.id;
 
     // --- ROLE CHECK: only MPs and admins can send push to other users ---
     const clientIp =
