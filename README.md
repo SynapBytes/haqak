@@ -1,5 +1,7 @@
 # Haqak (حقك) — منصة Civic‑Tech مصرية مستقلة (MVP)
 
+[![Deploy to Vercel](https://github.com/Axonexiis/haqak/actions/workflows/deploy-to-vercel.yml/badge.svg)](https://github.com/Axonexiis/haqak/actions/workflows/deploy-to-vercel.yml)
+
 **Haqak (حقك)** منصة Civic‑Tech مصرية بتنظم تواصل ومتابعة القضايا المحلية بين **المواطنين** و**نواب مجلس الشعب** و**الإدارة** — بشكل واضح وسهل وشفاف:  
 تقديم قضية/شكوى → متابعة → مخرجات → رؤية أحسن للأولويات.
 

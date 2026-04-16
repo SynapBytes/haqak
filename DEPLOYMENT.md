@@ -33,11 +33,13 @@ For the full security hardening guide including HSTS, CORS, and the deployment c
 The workflow `.github/workflows/deploy-to-vercel.yml` builds the frontend and
 deploys it to Vercel Production on every push to `main`.
 
-Required GitHub secret:
+Required GitHub secrets:
 
 | Secret | Description |
 |--------|-------------|
 | `VERCEL_TOKEN` | Personal access token from https://vercel.com/account/tokens |
+| `VERCEL_ORG_ID` | Vercel team/org ID (Vercel team **Settings → General → Team ID**) |
+| `VERCEL_PROJECT_ID` | Vercel project ID (Vercel project **Settings → General → Project ID**) |
 
 Optional build-time secrets (pass real values for a production build; the CI
 workflow falls back to placeholders when these are absent):
@@ -49,14 +51,16 @@ workflow falls back to placeholders when these are absent):
 | `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key |
 | `VITE_VAPID_PUBLIC_KEY` | Web Push VAPID public key |
 
-**One-time token setup:**
+**One-time setup:**
 
 1. Visit <https://vercel.com/account/tokens> → **Create Token**
    - Name: e.g. `haqak-deploy` · Scope: Full Account
 2. Copy the token value (shown only once)
-3. In GitHub: **Settings → Secrets and variables → Actions → New repository secret**
-   - Name: `VERCEL_TOKEN` · Value: `<token from step 2>`
-4. Push to `main` (or run the workflow manually via **Actions → Deploy to Vercel → Run workflow**)
+3. Retrieve your IDs:
+   - `VERCEL_ORG_ID`: Vercel team **Settings → General → Team ID**
+   - `VERCEL_PROJECT_ID`: Vercel project **Settings → General → Project ID**
+4. In GitHub: **Settings → Secrets and variables → Actions → New repository secret** — add all three secrets
+5. Push to `main` (or run the workflow manually via **Actions → Deploy to Vercel → Run workflow**)
 
 ### Edge Functions — Supabase
 
@@ -118,7 +122,7 @@ Expected: `200` for OPTIONS.
 
 | Symptom | Fix |
 |---|---|
-| Vercel workflow fails — missing secrets | Add `VERCEL_TOKEN` secret (see Automated Deployment → Frontend above) |
+| Vercel workflow fails — missing secrets | Add `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` secrets (see Automated Deployment → Frontend above) |
 | Website shows old content after push | Check that the `deploy-to-vercel` workflow passed in Actions; clear browser cache or open in incognito |
 | Vercel build error | Review the Build step logs; ensure all `VITE_*` secrets are set |
 | `404 request-email-verification not found` | Deploy functions again manually or rerun workflow |
