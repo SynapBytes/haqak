@@ -3,13 +3,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { buildCorsHeaders } from "../shared/cors.ts";
 import { requireCsrfToken } from "../shared/csrf.ts";
 import { RateLimitError, rateLimiter } from "../shared/rate-limiter.ts";
+import { getSecret } from "../_shared/secrets.ts";
+import { validateProductionSecrets } from "../_shared/secret-validation.ts";
 
 interface VerifyBody {
   email: string;
   code: string;
 }
-
-const OTP_HMAC_SECRET = Deno.env.get("OTP_HMAC_SECRET");
 
 async function hmacSha256Hex(key: string, message: string): Promise<string> {
   const enc = new TextEncoder();
@@ -40,7 +40,11 @@ serve(async (req) => {
     if (csrfError) return csrfError;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const serviceKey = await getSecret("SUPABASE_SERVICE_ROLE_KEY");
+    const OTP_HMAC_SECRET = await getSecret("OTP_HMAC_SECRET");
+
+    validateProductionSecrets(["SUPABASE_SERVICE_ROLE_KEY", "OTP_HMAC_SECRET"]);
+
     if (!supabaseUrl || !serviceKey || !OTP_HMAC_SECRET) {
       return new Response(JSON.stringify({ error: "Server configuration error" }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
     }
