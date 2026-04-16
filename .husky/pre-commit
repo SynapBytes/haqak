@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+# Pre-commit hook: scan staged files for secrets using gitleaks.
+# Install gitleaks: https://github.com/gitleaks/gitleaks#installing
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact --config=.gitleaks.toml
+else
+  echo "⚠️  gitleaks not found — secret scanning skipped locally. CI will still scan. Install: https://github.com/gitleaks/gitleaks#installing"
+fi
