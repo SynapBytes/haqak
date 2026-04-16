@@ -116,34 +116,31 @@ jobs:
             exit 1
           fi
 
-      - name: Install gitleaks
-        shell: bash
+      - name: Install gitleaks CLI
         run: |
           set -euo pipefail
           VERSION="8.24.2"
-          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \
-            | tar -xz
-          sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" -o gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz gitleaks
+          sudo mv gitleaks /usr/local/bin/gitleaks
           gitleaks version
 
       - name: Gitleaks scan (working tree)
         if: ${{ github.event_name != 'schedule' }}
-        shell: bash
         run: |
           set -euo pipefail
-          ARGS="--source . --redact --config=.gitleaks.toml"
+          ARGS=(--source . --redact --config=.gitleaks.toml)
           if [[ -f ".gitleaks.baseline.json" ]]; then
-            ARGS="$ARGS --baseline-path=.gitleaks.baseline.json"
+            ARGS+=(--baseline-path=.gitleaks.baseline.json)
           fi
-          gitleaks detect $ARGS
+          gitleaks detect "${ARGS[@]}"
 
       - name: Gitleaks scan (full history)
         if: ${{ github.event_name == 'schedule' }}
-        shell: bash
         run: |
           set -euo pipefail
-          ARGS="--source . --redact --config=.gitleaks.toml --log-opts=--all"
+          ARGS=(--source . --redact --config=.gitleaks.toml --log-opts=--all)
           if [[ -f ".gitleaks.baseline.json" ]]; then
-            ARGS="$ARGS --baseline-path=.gitleaks.baseline.json"
+            ARGS+=(--baseline-path=.gitleaks.baseline.json)
           fi
-          gitleaks detect $ARGS
+          gitleaks detect "${ARGS[@]}"

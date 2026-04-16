@@ -20,29 +20,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Build gitleaks args
-        id: gitleaks_args
-        shell: bash
-        run: |
-          set -euo pipefail
-          ARGS="--source . --redact --config=.gitleaks.toml"
-          if [[ -f ".gitleaks.baseline.json" ]]; then
-            ARGS="$ARGS --baseline-path=.gitleaks.baseline.json"
-          fi
-          echo "args=$ARGS" >> "$GITHUB_OUTPUT"
-
-      - name: Install gitleaks
-        shell: bash
+      - name: Install gitleaks CLI
         run: |
           set -euo pipefail
           VERSION="8.24.2"
-          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \
-            | tar -xz
-          sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" -o gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz gitleaks
+          sudo mv gitleaks /usr/local/bin/gitleaks
           gitleaks version
 
       - name: Run gitleaks (fail on findings)
-        shell: bash
         run: |
           set -euo pipefail
-          gitleaks detect ${{ steps.gitleaks_args.outputs.args }}
+          ARGS=(--source . --redact --config=.gitleaks.toml)
+          if [[ -f ".gitleaks.baseline.json" ]]; then
+            ARGS+=(--baseline-path=.gitleaks.baseline.json)
+          fi
+          gitleaks detect "${ARGS[@]}"

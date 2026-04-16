@@ -9,7 +9,7 @@ import {
   CheckCircle2,
   Zap,
   LayoutGrid,
-  type LucideIcon,
+  type LucideIcon
 } from "lucide-react";
 import { motion } from "framer-motion";
 
