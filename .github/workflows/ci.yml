@@ -42,6 +42,12 @@ jobs:
         run: npm test
 
       - name: Build
+        env:
+          # Stub values so Vite can replace import.meta.env references at build
+          # time without real secrets. The app shows a config-error screen at
+          # runtime when these are not overridden with genuine values.
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: placeholder-anon-key
         run: npm run build
 
   dependency-audit-high:
