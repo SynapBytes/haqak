@@ -678,7 +678,7 @@ const Support = () => {
                   <Link to="/">{t("contribute.back_home")}</Link>
                 </Button>
                 <Button asChild className="h-12 px-8 rounded-xl bg-[#1A1A1A] hover:bg-black text-white font-medium shadow-[0_4px_20px_rgba(0,0,0,0.12)] group">
-                  <Link to="https://github.com/SynapBytes/haqak/projects/1" target="_blank" rel="noopener noreferrer">
+                  <Link to="https://github.com/Axonexiis/haqak/projects/1" target="_blank" rel="noopener noreferrer">
                     <span className="flex items-center gap-2">
                       {t("contribute.view_roadmap")}
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
