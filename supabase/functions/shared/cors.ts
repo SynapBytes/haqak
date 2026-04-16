@@ -2,10 +2,10 @@
  * CORS header builder scoped to a strict allowlist.
  *
  * Set ALLOWED_ORIGINS as comma-separated exact origins, e.g.
- *   https://haqak.org,https://www.haqak.org,https://haqak-git-main-synapbytes.vercel.app
+ *   https://haqak.org,https://www.haqak.org,https://haqak-git-main-axonexiis.vercel.app
  *
  * Optionally set ALLOWED_ORIGIN_REGEX to support preview subdomains, e.g.
- *   ^https://haqak-git-[a-z0-9-]+-synapbytes\\.vercel\\.app$
+ *   ^https://haqak-git-[a-z0-9-]+-axonexiis\\.vercel\\.app$
  *
  * Wildcard "*" is intentionally avoided to prevent credentialed abuse from
  * untrusted origins on authenticated/admin endpoints.
