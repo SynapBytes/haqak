@@ -96,7 +96,48 @@ Supabase edge functions use `buildCorsHeaders()` from `supabase/functions/shared
 
 ### 4. Content Security Policy (CSP)
 
-The frontend should set a strict CSP header to prevent XSS-based credential theft, which would negate TLS protections at the application layer.
+The frontend enforces a strict CSP header to prevent XSS-based credential theft, which would negate TLS protections at the application layer.
+
+The full CSP is set in two places that must remain in sync:
+
+| Location | Purpose |
+|----------|---------|
+| `vercel.json` (`Content-Security-Policy` header) | Enforced for all production and preview deployments |
+| `src/server/security-headers.ts` (`CSP_DIRECTIVES`) | Single source of truth; used by dev middleware and tests |
+
+Key directives:
+
+```
+default-src 'self'
+script-src 'self' https://challenges.cloudflare.com https://app.posthog.com ...
+style-src 'self' 'unsafe-inline' https://fonts.googleapis.com
+frame-ancestors 'none'
+upgrade-insecure-requests
+report-uri /api/csp-report
+```
+
+See [`CSP_IMPLEMENTATION_GUIDE.md`](./CSP_IMPLEMENTATION_GUIDE.md) for the
+complete directive reference, whitelisted-source rationale, and maintenance
+checklist.
+
+### 5. CSP Violation Monitoring
+
+The `report-uri /api/csp-report` directive causes browsers to POST a JSON
+payload to that endpoint whenever a policy violation is detected.
+
+Violation reports are processed by the utilities in `src/lib/csp-reporter.ts`:
+
+- **`parseCspReport(body)`** — safely extracts and validates the browser report.
+- **`shouldIgnoreViolation(report)`** — filters known false positives (browser
+  extensions, antivirus injections, synthetic monitors).
+- **`logCspViolation(report, logger?)`** — writes a structured JSON log entry.
+  Replace the default `console.warn` logger with a call to Sentry / PostHog /
+  your SIEM as needed.
+
+Monitor violations regularly; new violations may indicate:
+- A new third-party dependency that requires a whitelist addition.
+- A real XSS injection attempt.
+- A browser extension used by a majority of users that injects content.
 
 ---
 
@@ -162,6 +203,8 @@ Before each production deployment, verify:
 - [ ] `npm audit --audit-level=high` exits 0 for production deps
 - [ ] No secrets committed (`gitleaks detect`)
 - [ ] HSTS header is present in `vercel.json`
+- [ ] CSP header in `vercel.json` matches `CSP_DIRECTIVES` in `src/server/security-headers.ts`
+- [ ] CSP `report-uri` endpoint is reachable and logging violations
 - [ ] CORS allowlist in `ALLOWED_ORIGINS` secret is up to date
 - [ ] Supabase project is on a supported runtime (check Supabase dashboard)
 - [ ] All required Edge Function secrets are set (see `DEPLOYMENT.md`)
