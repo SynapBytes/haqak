@@ -410,7 +410,7 @@ https://haqak-app.com/genius
 ## 📞 الدعم والتطوير المستمر
 
 - 📧 الدعم الفني: `support@haqak.org`
-- 🐛 GitHub Issues: `SynapBytes/haqak/issues`
+- 🐛 GitHub Issues: `Axonexiis/haqak/issues`
 
 ---
 

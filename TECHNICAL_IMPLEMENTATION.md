@@ -6,7 +6,7 @@
 - **النسخة:** 2.0 (مع 5 ميزات ثورية متقدمة)
 - **لغة البرمجة:** TypeScript + React
 - **الإطار العمل:** Vite + React + TailwindCSS
-- **مستودع GitHub:** `SynapBytes/haqak`
+- **مستودع GitHub:** `Axonexiis/haqak`
 - **تاريخ التطبيق:** مارس 2026
 
 ---
@@ -389,7 +389,7 @@ Mobile: ✅ iOS 14+, Android 10+
 ### 1. التطوير المحلي
 ```bash
 # Clone the repository
-gh repo clone SynapBytes/haqak
+gh repo clone Axonexiis/haqak
 
 # Install dependencies
 npm install
@@ -629,7 +629,7 @@ Sentry.init({
 
 ### Support Channels
 - 📧 Support: `support@haqak.org`
-- 🐛 GitHub Issues: `SynapBytes/haqak/issues`
+- 🐛 GitHub Issues: `Axonexiis/haqak/issues`
 
 ---
 
