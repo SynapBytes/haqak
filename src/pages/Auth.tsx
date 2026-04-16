@@ -413,6 +413,7 @@ const Auth = () => {
         )}
       </AnimatePresence>
 
+      {/* Decorative background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-10 right-6 w-32 md:w-48 lg:w-64 select-none" style={{ opacity: isDark ? 0.08 : 0.05 }}>
           <Scale className="w-full h-full text-foreground" strokeWidth={0.75} />
