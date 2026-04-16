@@ -4,6 +4,28 @@
 
 ---
 
+## TLS / Node.js Version Requirements
+
+Haqak requires **Node.js ≥ 18.20.0** (ships with OpenSSL 3.x — not affected by Heartbleed CVE-2014-0160).
+
+```bash
+# Install and use the correct Node.js version
+nvm install   # reads .nvmrc → 18.20.0
+nvm use
+
+# Verify OpenSSL version (should be 3.x)
+node -e "console.log(process.versions.openssl)"
+```
+
+TLS requirements:
+- **Minimum TLS version:** TLS 1.2 (TLS 1.3 preferred)
+- TLS 1.0 and TLS 1.1 must not be enabled
+- Do not pass `--tls-min-v1.0` to the Node.js process
+
+For the full security hardening guide including HSTS, CORS, and the deployment checklist, see [`SECURITY_HARDENING.md`](./SECURITY_HARDENING.md).
+
+---
+
 ## Automated Deployment (GitHub Actions)
 
 The workflow `.github/workflows/deploy-edge-functions.yml` deploys these functions:
