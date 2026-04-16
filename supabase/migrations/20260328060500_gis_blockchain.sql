@@ -6,9 +6,9 @@ DO $$
 DECLARE
     earth_fn TEXT;
 BEGIN
-    IF to_regprocedure('extensions.ll_to_earth(double precision,double precision)') IS NOT NULL THEN
+    IF to_regproc('extensions.ll_to_earth') IS NOT NULL THEN
         earth_fn := 'extensions.ll_to_earth';
-    ELSIF to_regprocedure('public.ll_to_earth(double precision,double precision)') IS NOT NULL THEN
+    ELSIF to_regproc('public.ll_to_earth') IS NOT NULL THEN
         earth_fn := 'public.ll_to_earth';
     END IF;
 
