@@ -100,8 +100,11 @@ export function validateSecretStrength(
 // ── Production guard ──────────────────────────────────────────────────────────
 
 /**
- * Validate that the named environment variables meet cryptographic-strength
- * requirements.
+ * Validate that a set of already-resolved secret values meet cryptographic-
+ * strength requirements in production.
+ *
+ * Pass the values you resolved via `getSecret()` — this ensures Vault-sourced
+ * secrets are validated alongside env-var-sourced ones.
  *
  * - In **production** (`ENVIRONMENT=production`): logs structured errors for
  *   every weak secret.  Does NOT throw; the caller can decide to abort.
@@ -110,14 +113,13 @@ export function validateSecretStrength(
  * Returns `true` when all secrets pass, `false` when any fail.
  */
 export function validateProductionSecrets(
-  names: string[],
+  secrets: Record<string, string | null | undefined>,
 ): boolean {
   const env = (Deno.env.get("ENVIRONMENT") ?? "development").toLowerCase();
   if (env !== "production") return true;
 
   let allOk = true;
-  for (const name of names) {
-    const value = Deno.env.get(name);
+  for (const [name, value] of Object.entries(secrets)) {
     const result = validateSecretStrength(name, value);
     if (!result.ok) {
       allOk = false;

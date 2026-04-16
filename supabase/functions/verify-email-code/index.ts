@@ -43,7 +43,10 @@ serve(async (req) => {
     const serviceKey = await getSecret("SUPABASE_SERVICE_ROLE_KEY");
     const OTP_HMAC_SECRET = await getSecret("OTP_HMAC_SECRET");
 
-    validateProductionSecrets(["SUPABASE_SERVICE_ROLE_KEY", "OTP_HMAC_SECRET"]);
+    validateProductionSecrets({
+      SUPABASE_SERVICE_ROLE_KEY: serviceKey,
+      OTP_HMAC_SECRET: OTP_HMAC_SECRET,
+    });
 
     if (!supabaseUrl || !serviceKey || !OTP_HMAC_SECRET) {
       return new Response(JSON.stringify({ error: "Server configuration error" }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });

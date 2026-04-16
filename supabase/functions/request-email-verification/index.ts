@@ -54,7 +54,10 @@ serve(async (req) => {
     const RESEND_API_KEY = await getSecret("RESEND_API_KEY");
     const RESEND_FROM_EMAIL = await getSecret("RESEND_FROM_EMAIL") ?? "team@haqak.org";
 
-    validateProductionSecrets(["SUPABASE_SERVICE_ROLE_KEY", "OTP_HMAC_SECRET"]);
+    validateProductionSecrets({
+      SUPABASE_SERVICE_ROLE_KEY: serviceKey,
+      OTP_HMAC_SECRET: OTP_HMAC_SECRET,
+    });
 
     if (!supabaseUrl || !serviceKey || !OTP_HMAC_SECRET) {
       return new Response(JSON.stringify({ error: "Server configuration error" }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
