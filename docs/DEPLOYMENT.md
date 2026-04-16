@@ -47,20 +47,46 @@ supabase secrets set RESEND_FROM_EMAIL="Haqak <no-reply@haqak.org>"
 
 ---
 
-## 3. Environment Variables
+## 3. Supabase Vault Setup (Recommended for Production)
+
+Edge functions use `supabase/functions/_shared/secrets.ts` which supports
+fetching secrets from Supabase Vault instead of plain environment variables.
+Vault provides encrypted storage and enables zero-downtime secret rotation.
+
+```bash
+# Store OTP_HMAC_SECRET in Vault (replaces plain env var)
+supabase vault add --name OTP_HMAC_SECRET \
+  --value "$(openssl rand -hex 32)" \
+  --project-ref <project-ref>
+
+# Enable Vault reads in edge functions
+supabase secrets set SUPABASE_VAULT_ENABLED=true
+
+# Verify Vault entry
+supabase vault list --project-ref <project-ref>
+```
+
+See **[docs/SECURITY_SECRET_ROTATION.md](SECURITY_SECRET_ROTATION.md)** for
+the complete Vault setup guide, zero-downtime rotation workflow, and emergency
+rotation procedures.
+
+---
+
+## 4. Environment Variables
 
 See: `supabase/functions/.env.example`
 
 Key categories:
 - Supabase keys (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)
 - Security (`OTP_HMAC_SECRET`, `TURNSTILE_SECRET_KEY`, `ALLOWED_ORIGINS`)
+- Secret manager (`SUPABASE_VAULT_ENABLED`)
 - Email (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`)
 
 ---
 
-## 4. Troubleshooting
+## 5. Troubleshooting
 
-### 4.1 404 on verification functions
+### 5.1 404 on verification functions
 
 Redeploy:
 
@@ -70,23 +96,33 @@ supabase functions deploy request-email-verification
 supabase functions deploy verify-email-code
 ```
 
-### 4.2 CORS preflight fails
+### 5.2 CORS preflight fails
 
 Set `ALLOWED_ORIGINS` to include your frontend domain.
 
-### 4.3 Missing GitHub workflow secrets
+### 5.3 Missing GitHub workflow secrets
 
 Add `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_ID` in repo settings.
 
-### 4.4 Email not received
+### 5.4 Email not received
 
 - Verify `RESEND_API_KEY` and `RESEND_FROM_EMAIL`
 - Check provider logs (Resend)
 - Verify spam/junk folders
 
+### 5.5 `500 Server configuration error` after secret rotation
+
+Vault-cached values have a 5-minute TTL.  Wait up to 5 minutes, or redeploy
+the function to clear the cache immediately.
+
+### 5.6 `weak_secret_detected` in production logs
+
+A deployed secret does not meet entropy requirements.  Follow the rotation
+guide in `docs/SECURITY_SECRET_ROTATION.md`.
+
 ---
 
-## 5. Smoke Test
+## 6. Smoke Test
 
 ```bash
 PROJECT_URL="https://<PROJECT_REF>.supabase.co"
@@ -105,3 +141,14 @@ curl -s -o /dev/null -w "%{http_code}" \
 ```
 
 Expected: `200` for OPTIONS.
+
+---
+
+## 7. Secret Rotation
+
+See **[docs/SECURITY_SECRET_ROTATION.md](SECURITY_SECRET_ROTATION.md)** for:
+- JWT secret hardening and rotation
+- Zero-downtime OTP HMAC rotation via Vault
+- Emergency rotation procedures
+- Health check commands
+- Monitoring and alerting setup

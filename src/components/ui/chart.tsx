@@ -59,30 +59,44 @@ const ChartContainer = React.forwardRef<
 ChartContainer.displayName = "Chart";
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
-  const colorConfig = Object.entries(config).filter(([_, config]) => config.theme || config.color);
-
-  if (!colorConfig.length) {
-    return null;
-  }
-
-  const cssText = Object.entries(THEMES)
-    .map(
-      ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
-    return color ? `  --color-${key}: ${color};` : null;
-  })
-  .join("\n")}
-}
-`,
-    )
-    .join("\n");
-
-  return (
-    <style>{cssText}</style>
+  const colorConfig = React.useMemo(
+    () => Object.entries(config).filter(([, cfg]) => cfg.theme || cfg.color),
+    [config],
   );
+
+  React.useEffect(() => {
+    if (!colorConfig.length) return;
+
+    const chartEl = document.querySelector(
+      `[data-chart="${CSS.escape(id)}"]`,
+    ) as HTMLElement | null;
+    if (!chartEl) return;
+
+    const applyColors = () => {
+      const isDark = document.documentElement.classList.contains("dark");
+
+      colorConfig.forEach(([key, itemConfig]) => {
+        const color =
+          (isDark ? itemConfig.theme?.dark : itemConfig.theme?.light) ??
+          itemConfig.color;
+        if (color) {
+          chartEl.style.setProperty(`--color-${key}`, color);
+        }
+      });
+    };
+
+    applyColors();
+
+    const observer = new MutationObserver(applyColors);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, [id, colorConfig]);
+
+  return null;
 };
 
 const ChartTooltip = RechartsPrimitive.Tooltip;

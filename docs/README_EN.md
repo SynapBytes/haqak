@@ -22,7 +22,7 @@ Vitest
 
 ## Quick Start
 ```bash
-git clone https://github.com/SynapBytes/haqak.git
+git clone https://github.com/Axonexiis/haqak.git
 cd haqak
 npm install
 cp .env.example .env
