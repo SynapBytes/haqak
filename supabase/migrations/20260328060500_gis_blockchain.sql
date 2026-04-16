@@ -1,10 +1,10 @@
 -- GIS Integration & Blockchain Audit Trail (Strategic Enhancements 2 & 3)
 
--- 1. GIS Integration: Spatial Data Support (PostGIS is usually available in Supabase)
--- We'll use the existing latitude/longitude columns but add a spatial index for performance
-CREATE INDEX IF NOT EXISTS idx_issues_location_point ON public.issues USING GIST (
-    ll_to_earth(latitude, longitude)
-) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
+-- 1. GIS Integration: Spatial Data Support
+-- Use a portable index that does not depend on optional extensions (earthdistance/postgis)
+CREATE INDEX IF NOT EXISTS idx_issues_location_point
+ON public.issues (latitude, longitude)
+WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
 
 -- 2. Blockchain Audit Trail: Immutable Record of Actions
 -- We'll use a specialized table with a cryptographic hash chain to ensure immutability
