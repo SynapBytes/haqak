@@ -45,6 +45,7 @@ async function readStorageObjectAsText(
   bucket: string,
   path: string,
 ): Promise<string> {
+  if (path.includes('..')) throw new Error('Invalid path');
   const { data, error } = await supabase.storage.from(bucket).download(path);
   if (error || !data) return "";
   const arr = await data.arrayBuffer();

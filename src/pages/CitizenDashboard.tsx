@@ -213,6 +213,9 @@ const CitizenDashboard = () => {
           { showToast: false, extras: { file_name: file.name, boundary: "verify-upload-integrity" } },
         );
         // Remove the corrupted upload
+        if (path.includes('..')) {
+          throw new Error('Invalid path');
+        }
         await supabase.storage.from("issue-attachments").remove([path]);
         toast.error(`${t("dashboard.file_integrity_failed")}: ${file.name}`);
         continue;
