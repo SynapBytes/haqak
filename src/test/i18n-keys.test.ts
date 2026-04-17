@@ -38,9 +38,11 @@ function extractUsedKeys(source: string): string[] {
   let m: RegExpExecArray | null;
   while ((m = pattern.exec(source)) !== null) {
     const key = m[1];
-    // Only consider keys that look like namespaced i18n keys (contain a dot
-    // and don't look like SQL column lists, URLs, etc.)
-    if (key.includes(".") && !key.startsWith("http") && !key.startsWith("/")) {
+    // Only consider keys that look like valid i18n namespace paths:
+    // - must contain a dot (separating namespace from sub-key)
+    // - namespace prefix must be a plain identifier (letters/digits/underscores)
+    // This excludes SQL column lists, URLs, file paths, and other non-i18n strings.
+    if (/^[A-Za-z_]\w*\./.test(key)) {
       found.push(key);
     }
   }
@@ -58,7 +60,8 @@ function listSourceFiles(dir: string, exclude: string[] = []): string[] {
         results.push(...listSourceFiles(full, exclude));
       }
     } else if (entry.isFile() && /\.(ts|tsx)$/.test(entry.name)) {
-      const isTest = entry.name.includes(".test.") || entry.name.includes(".spec.");
+      // Exclude test/spec files and the test setup file
+      const isTest = /\.(test|spec)\.(ts|tsx)$/.test(entry.name);
       const isSetup = entry.name === "setup.ts";
       if (!isTest && !isSetup) {
         results.push(full);
