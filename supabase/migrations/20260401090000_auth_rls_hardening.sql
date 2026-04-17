@@ -29,6 +29,38 @@ AS $$
   );
 $$;
 
+-- Text-based role helpers are used in this migration so the newly added enum
+-- value ('moderator') is not referenced as an enum before transaction commit.
+CREATE OR REPLACE FUNCTION public.has_role_text(_user_id uuid, _role text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles ur
+    WHERE ur.user_id = _user_id
+      AND ur.role::text = _role
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.has_any_role_text(_user_id uuid, _roles text[])
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles ur
+    WHERE ur.user_id = _user_id
+      AND ur.role::text = ANY (_roles)
+  );
+$$;
+
 CREATE OR REPLACE FUNCTION public.is_admin(_user_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -43,25 +75,25 @@ $$;
 DROP POLICY IF EXISTS "Moderators can view profiles" ON public.profiles;
 CREATE POLICY "Moderators can view profiles" ON public.profiles
   FOR SELECT TO authenticated
-  USING (public.has_role(auth.uid(), 'moderator'));
+  USING (public.has_role_text(auth.uid(), 'moderator'));
 
 -- 4) user_roles: allow moderators to audit roles (read-only)
 DROP POLICY IF EXISTS "Moderators can view all roles" ON public.user_roles;
 CREATE POLICY "Moderators can view all roles" ON public.user_roles
   FOR SELECT TO authenticated
-  USING (public.has_role(auth.uid(), 'moderator'));
+  USING (public.has_role_text(auth.uid(), 'moderator'));
 
 -- 5) Issues visibility for moderators (read-only)
 DROP POLICY IF EXISTS "Moderators can view all issues" ON public.issues;
 CREATE POLICY "Moderators can view all issues" ON public.issues
   FOR SELECT TO authenticated
-  USING (public.has_role(auth.uid(), 'moderator'));
+  USING (public.has_role_text(auth.uid(), 'moderator'));
 
 -- 6) Issue actions: moderators can read all actions
 DROP POLICY IF EXISTS "Moderators can view issue actions" ON public.issue_actions;
 CREATE POLICY "Moderators can view issue actions" ON public.issue_actions
   FOR SELECT TO authenticated
-  USING (public.has_role(auth.uid(), 'moderator'));
+  USING (public.has_role_text(auth.uid(), 'moderator'));
 
 -- 7) Issue attachments table: allow moderators to read attachments
 DROP POLICY IF EXISTS "Users can view attachments on their issues" ON public.issue_attachments;
@@ -74,7 +106,7 @@ CREATE POLICY "Users can view attachments on their issues" ON public.issue_attac
         AND issues.user_id = auth.uid()
     )
     OR public.is_active_mp(auth.uid())
-    OR public.has_any_role(auth.uid(), ARRAY['admin', 'moderator']::public.app_role[])
+    OR public.has_any_role_text(auth.uid(), ARRAY['admin', 'moderator'])
   );
 
 -- 8) Storage bucket read policy: add moderator allowance
@@ -93,7 +125,7 @@ CREATE POLICY "Restricted read access to issue attachments" ON storage.objects
             AND assigned_mp_id = auth.uid()::uuid
         )
       )
-      OR public.has_any_role(auth.uid(), ARRAY['admin', 'moderator']::public.app_role[])
+      OR public.has_any_role_text(auth.uid(), ARRAY['admin', 'moderator'])
     )
   );
 
@@ -112,7 +144,7 @@ CREATE POLICY "Service role can insert submission attempts" ON public.submission
 DROP POLICY IF EXISTS "Admins can view all submission attempts" ON public.submission_attempts;
 CREATE POLICY "Admins can view all submission attempts" ON public.submission_attempts
   FOR SELECT TO authenticated
-  USING (public.has_any_role(auth.uid(), ARRAY['admin', 'moderator']::public.app_role[]));
+  USING (public.has_any_role_text(auth.uid(), ARRAY['admin', 'moderator']));
 
 -- 11) Rate limit logs: service role manages, admins may inspect
 DROP POLICY IF EXISTS "Service role can manage rate limit logs" ON public.rate_limit_logs;
@@ -124,7 +156,7 @@ CREATE POLICY "Service role can manage rate limit logs" ON public.rate_limit_log
 DROP POLICY IF EXISTS "Admins can view rate limit logs" ON public.rate_limit_logs;
 CREATE POLICY "Admins can view rate limit logs" ON public.rate_limit_logs
   FOR SELECT TO authenticated
-  USING (public.has_any_role(auth.uid(), ARRAY['admin', 'moderator']::public.app_role[]));
+  USING (public.has_any_role_text(auth.uid(), ARRAY['admin', 'moderator']));
 
 -- 12) CAPTCHA verifications: only service role should access
 DROP POLICY IF EXISTS "Service role can manage captcha verifications" ON public.captcha_verifications;
