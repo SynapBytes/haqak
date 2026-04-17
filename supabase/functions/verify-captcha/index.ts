@@ -7,7 +7,7 @@ const TOKEN_TTL_SECONDS = 5 * 60;
 
 /** Rate-limiting: max verification attempts per identifier per window. */
 const RATE_LIMIT_MAX = 5;
-const RATE_LIMIT_WINDOW_SECONDS = 60;
+const RATE_LIMIT_WINDOW_MINUTES = 1;
 const RATE_LIMIT_PATH = "/verify-captcha";
 
 /** Compute a SHA-256 hex digest of `input`. */
@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
         RATE_LIMIT_PATH,
         ipAddress,
         200,
-        { maxRequests: RATE_LIMIT_MAX, windowMinutes: RATE_LIMIT_WINDOW_SECONDS / 60 },
+        { maxRequests: RATE_LIMIT_MAX, windowMinutes: RATE_LIMIT_WINDOW_MINUTES },
       );
     } catch (rateError) {
       if (rateError instanceof RateLimitError) {

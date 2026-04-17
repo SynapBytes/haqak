@@ -63,7 +63,7 @@ CREATE OR REPLACE FUNCTION public.sync_mp_approvals_from_profile()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path TO 'public'
 AS $$
 BEGIN
   IF NEW.is_approved IS DISTINCT FROM OLD.is_approved
@@ -148,7 +148,7 @@ CREATE OR REPLACE FUNCTION public.validate_issue_assignment_assignee()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path TO 'public'
 AS $$
 BEGIN
   IF NOT EXISTS (
@@ -180,7 +180,7 @@ CREATE OR REPLACE FUNCTION public.log_issue_status_change()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path TO 'public'
 AS $$
 DECLARE
   _actor_id uuid;

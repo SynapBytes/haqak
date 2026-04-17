@@ -58,6 +58,8 @@ function normalizeStoragePath(path: string): string {
     if (decodedPart === "..") {
       throw new Error("Invalid path");
     }
+    // Preserve encoded segment representation in the final key to avoid
+    // altering canonical object names during normalization.
     parts.push(rawPart);
   }
 
