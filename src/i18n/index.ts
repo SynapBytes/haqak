@@ -81,6 +81,12 @@ const updateDocumentLanguage = (lang: string) => {
   document.documentElement.lang = lang;
 };
 
+const getActiveLang = () => resolveLang(i18n.resolvedLanguage || i18n.language || DEFAULT_LANG);
+
+const getGenericMissingCopy = (lang: SupportedLang) => {
+  return lang === "en" ? "Content unavailable" : "النص غير متاح";
+};
+
 const initialLang = getSavedLang();
 updateDocumentLanguage(initialLang);
 
@@ -96,13 +102,14 @@ i18n.use(initReactI18next).init({
   returnEmptyString: false,
   interpolation: { escapeValue: false },
   parseMissingKeyHandler: (key, defaultValue) => {
-    const emergencyValue = resolveEmergencyValue(key, i18n.resolvedLanguage || i18n.language || DEFAULT_LANG);
+    const activeLang = getActiveLang();
+    const emergencyValue = resolveEmergencyValue(key, activeLang);
     if (isDev) {
-      console.warn(`[i18n] Missing translation key "${key}" for "${i18n.resolvedLanguage || i18n.language || DEFAULT_LANG}"`);
+      console.warn(`[i18n] Missing translation key "${key}" for "${activeLang}"`);
     }
     if (typeof emergencyValue === "string") return emergencyValue;
     if (typeof defaultValue === "string" && defaultValue.trim()) return defaultValue;
-    return isDev ? key : "";
+    return isDev ? key : getGenericMissingCopy(activeLang);
   },
 });
 
