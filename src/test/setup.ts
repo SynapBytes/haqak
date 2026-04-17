@@ -1,5 +1,11 @@
 import "@testing-library/jest-dom";
+import { cleanup } from "@testing-library/react";
 import { webcrypto } from "node:crypto";
+import { afterEach } from "vitest";
+
+afterEach(() => {
+  cleanup();
+});
 
 // Vitest runs on Node 18 in CI, where `globalThis.crypto` may be undefined
 // or present (via jsdom) but without a working `.subtle`. Provide the Node.js
