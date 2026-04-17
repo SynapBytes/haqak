@@ -26,6 +26,7 @@ const EMERGENCY_TRANSLATIONS: Record<SupportedLang, Record<string, unknown>> = {
       delete: "حذف",
       error: "حدث خطأ. حاول مرة أخرى.",
       loading: "جاري التحميل...",
+      retry: "إعادة المحاولة",
       unknown: "غير معروف",
     },
     not_found: {
@@ -60,6 +61,7 @@ const EMERGENCY_TRANSLATIONS: Record<SupportedLang, Record<string, unknown>> = {
       delete: "Delete",
       error: "An error occurred. Please try again.",
       loading: "Loading...",
+      retry: "Retry",
       unknown: "Unknown",
     },
     not_found: {

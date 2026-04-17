@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
@@ -24,30 +24,46 @@ const CenterOnboarding = () => {
   const navigate = useNavigate();
   const [centers, setCenters] = useState<Center[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [governorate, setGovernorate] = useState<string>("");
   const [centerId, setCenterId] = useState<string>("");
+  // Prevent duplicate fetches when the profile dependency changes after
+  // the initial auth resolution (e.g. center_id going from undefined → null).
+  const fetchedRef = useRef(false);
+  // Guard against concurrent in-flight requests (e.g. rapid retry clicks).
+  const isFetchingRef = useRef(false);
+
+  const fetchCenters = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    setLoading(true);
+    setLoadError(false);
+    const { data, error } = await supabase
+      .from("centers")
+      .select("id, governorate_en, governorate_ar, district_en, district_ar")
+      .order("governorate_ar", { ascending: true })
+      .order("district_ar", { ascending: true });
+    if (error) {
+      setLoadError(true);
+      toast.error(t("center_onboarding.load_error"));
+    } else {
+      setCenters((data ?? []) as Center[]);
+    }
+    setLoading(false);
+    isFetchingRef.current = false;
+  }, [t]);
 
   useEffect(() => {
     if (profile?.center_id) {
       navigate(role === "mp" ? "/mp" : "/citizen", { replace: true });
       return;
     }
-    const fetchCenters = async () => {
-      const { data, error } = await supabase
-        .from("centers")
-        .select("id, governorate_en, governorate_ar, district_en, district_ar")
-        .order("governorate_ar", { ascending: true })
-        .order("district_ar", { ascending: true });
-      if (error) {
-        toast.error(t("center_onboarding.load_error"));
-      } else {
-        setCenters((data ?? []) as Center[]);
-      }
-      setLoading(false);
-    };
-    fetchCenters();
-  }, [navigate, profile?.center_id, role, t]);
+    if (!fetchedRef.current) {
+      fetchedRef.current = true;
+      fetchCenters();
+    }
+  }, [fetchCenters, navigate, profile?.center_id, role]);
 
   const governorates = useMemo(() => {
     const seen = new Map<string, { en: string; ar: string }>();
@@ -92,6 +108,16 @@ const CenterOnboarding = () => {
           {loading ? (
             <div className="flex items-center justify-center py-6">
               <Loader2 className="w-6 h-6 animate-spin text-accent" />
+            </div>
+          ) : loadError ? (
+            <div className="space-y-3 text-center py-4">
+              <p className="text-sm text-destructive">{t("center_onboarding.load_error")}</p>
+              <Button
+                variant="outline"
+                onClick={fetchCenters}
+              >
+                {t("common.retry")}
+              </Button>
             </div>
           ) : (
             <>
