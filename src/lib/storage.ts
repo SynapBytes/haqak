@@ -36,7 +36,7 @@ export {
  */
 async function avScanFile(_file: File): Promise<void> {
   if (import.meta.env.VITE_AV_SCAN_ENABLED === "true") {
-    throw new Error("AV scanning is enabled but no scanner is configured");
+    throw new Error("File upload blocked: antivirus scanning is enabled but not configured");
   }
 }
 
@@ -55,7 +55,7 @@ function normalizeStoragePath(path: string): string {
     } catch {
       throw new Error("Invalid path");
     }
-    if (decodedPart === ".." || rawPart === "..") {
+    if (decodedPart === "..") {
       throw new Error("Invalid path");
     }
     parts.push(rawPart);

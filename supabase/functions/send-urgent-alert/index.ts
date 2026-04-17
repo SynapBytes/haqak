@@ -167,8 +167,13 @@ Deno.serve(async (req) => {
       });
     } catch (rateError) {
       if (rateError instanceof RateLimitError) {
-        return new Response(JSON.stringify({ success: false, error: "Too many requests" }), {
-          status: 429,
+        return new Response(JSON.stringify({
+          success: false,
+          error: rateError.reason === "storage_error"
+            ? "Rate limiting is temporarily unavailable. Please retry shortly."
+            : "Too many requests",
+        }), {
+          status: rateError.reason === "storage_error" ? 503 : 429,
           headers: {
             ...cors,
             "Content-Type": "application/json",

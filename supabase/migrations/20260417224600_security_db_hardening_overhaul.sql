@@ -161,7 +161,7 @@ BEGIN
         OR (ur.role = 'mp'::public.app_role AND COALESCE(p.is_approved, false) = true)
       )
   ) THEN
-    RAISE EXCEPTION 'assigned_to must be an approved MP or admin'
+    RAISE EXCEPTION 'assigned_to must be an approved MP or admin role'
       USING ERRCODE = '23514';
   END IF;
 

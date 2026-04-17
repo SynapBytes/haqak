@@ -16,10 +16,12 @@ export interface RateLimiterOptions {
 
 export class RateLimitError extends Error {
   retryAfterSeconds: number;
-  constructor(retryAfterSeconds: number) {
-    super('Rate limit exceeded');
+  reason: "limit_exceeded" | "storage_error";
+  constructor(retryAfterSeconds: number, reason: "limit_exceeded" | "storage_error" = "limit_exceeded") {
+    super(reason === "limit_exceeded" ? "Rate limit exceeded" : "Rate limiter storage unavailable");
     this.name = 'RateLimitError';
     this.retryAfterSeconds = retryAfterSeconds;
+    this.reason = reason;
   }
 }
 
@@ -62,7 +64,7 @@ export const rateLimiter = async (
 
     if (userError) {
       console.error('Rate limiter DB error (user):', userError.code);
-      throw new RateLimitError(windowMinutes * 60);
+      throw new RateLimitError(windowMinutes * 60, "storage_error");
     }
     if (userCount !== null && userCount >= maxRequests) {
       throw new RateLimitError(windowMinutes * 60);
@@ -79,7 +81,7 @@ export const rateLimiter = async (
 
   if (ipError) {
     console.error('Rate limiter DB error (ip):', ipError.code);
-    throw new RateLimitError(windowMinutes * 60);
+    throw new RateLimitError(windowMinutes * 60, "storage_error");
   }
   if (ipCount !== null && ipCount >= maxRequests) {
     throw new RateLimitError(windowMinutes * 60);
@@ -94,6 +96,6 @@ export const rateLimiter = async (
   });
   if (insertError) {
     console.error('Rate limiter DB error (insert):', insertError.code);
-    throw new RateLimitError(windowMinutes * 60);
+    throw new RateLimitError(windowMinutes * 60, "storage_error");
   }
 };

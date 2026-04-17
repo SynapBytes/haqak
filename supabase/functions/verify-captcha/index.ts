@@ -8,6 +8,7 @@ const TOKEN_TTL_SECONDS = 5 * 60;
 /** Rate-limiting: max verification attempts per identifier per window. */
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_SECONDS = 60;
+const RATE_LIMIT_PATH = "/verify-captcha";
 
 /** Compute a SHA-256 hex digest of `input`. */
 async function sha256(input: string): Promise<string> {
@@ -32,6 +33,10 @@ Deno.serve(async (req) => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.error("Missing required env vars for verify-captcha", {
+      hasSupabaseUrl: Boolean(SUPABASE_URL),
+      hasServiceRoleKey: Boolean(SUPABASE_SERVICE_ROLE_KEY),
+    });
     return new Response(JSON.stringify({ error: "Server configuration error", valid: false }), {
       status: 503,
       headers: { ...cors, "Content-Type": "application/json" },
@@ -72,17 +77,23 @@ Deno.serve(async (req) => {
       await rateLimiter(
         supabase,
         userId,
-        "/verify-captcha",
+        RATE_LIMIT_PATH,
         ipAddress,
         200,
         { maxRequests: RATE_LIMIT_MAX, windowMinutes: RATE_LIMIT_WINDOW_SECONDS / 60 },
       );
     } catch (rateError) {
       if (rateError instanceof RateLimitError) {
+        const status = rateError.reason === "storage_error" ? 503 : 429;
         return new Response(
-          JSON.stringify({ error: "Too many CAPTCHA attempts. Please wait and try again.", valid: false }),
+          JSON.stringify({
+            error: rateError.reason === "storage_error"
+              ? "Rate limiting is temporarily unavailable. Please retry shortly."
+              : "Too many CAPTCHA attempts. Please wait and try again.",
+            valid: false,
+          }),
           {
-            status: 429,
+            status,
             headers: {
               ...cors,
               "Content-Type": "application/json",
