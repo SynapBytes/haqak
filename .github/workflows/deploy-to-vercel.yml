@@ -4,17 +4,18 @@ name: Deploy to Vercel
 # manual dispatch.  The workflow builds the app first; if the build fails the
 # deploy step is never reached, so only a known-good artefact is promoted.
 #
-# Required GitHub repository secret (Settings → Secrets → Actions):
-#   VERCEL_TOKEN  — Vercel personal access token from https://vercel.com/account/tokens
+# Required GitHub repository secrets (Settings → Secrets → Actions):
+#   VERCEL_TOKEN      — Vercel personal access token (https://vercel.com/account/tokens)
+#   VERCEL_ORG_ID     — Vercel team/org ID (found in Vercel team Settings → General)
+#   VERCEL_PROJECT_ID — Vercel project ID (found in project Settings → General)
 #
 # One-time setup:
 #   1. Visit https://vercel.com/account/tokens → "Create Token"
 #      Name: haqak-deploy   Scope: Full Account   Expiration: choose as needed
 #   2. Copy the token value (it is shown only once)
 #   3. In GitHub: Settings → Secrets and variables → Actions → New repository secret
-#      Name:  VERCEL_TOKEN
-#      Value: <token from step 2>
-#   4. After the secret is set, push to main (or run this workflow manually via
+#      Add all three secrets listed above.
+#   4. After the secrets are set, push to main (or run this workflow manually via
 #      Actions → Deploy to Vercel → Run workflow) to trigger the first deploy.
 #
 # The workflow uses Node.js version from .nvmrc and the Vercel CLI to deploy.
@@ -27,6 +28,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   deploy:
@@ -35,29 +37,43 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
+      pull-requests: write
 
     steps:
       - name: Validate required secrets
         shell: bash
         run: |
           set -euo pipefail
+          MISSING=""
           if [ -z "${VERCEL_TOKEN:-}" ]; then
-            echo "::error::Missing required GitHub secret: VERCEL_TOKEN"
+            MISSING="${MISSING} VERCEL_TOKEN"
+          fi
+          if [ -z "${VERCEL_ORG_ID:-}" ]; then
+            MISSING="${MISSING} VERCEL_ORG_ID"
+          fi
+          if [ -z "${VERCEL_PROJECT_ID:-}" ]; then
+            MISSING="${MISSING} VERCEL_PROJECT_ID"
+          fi
+          if [ -n "${MISSING}" ]; then
+            echo "::error::Missing required GitHub secret(s):${MISSING}"
             echo ""
             echo "Setup instructions:"
             echo "  1. Visit https://vercel.com/account/tokens → Create Token"
             echo "     Name: haqak-deploy   Scope: Full Account"
             echo "  2. Copy the token (shown only once)"
             echo "  3. In GitHub: Settings → Secrets and variables → Actions"
-            echo "     → New repository secret"
-            echo "     Name:  VERCEL_TOKEN"
-            echo "     Value: <token from step 2>"
+            echo "     → New repository secret — add all three secrets:"
+            echo "     VERCEL_TOKEN      = <token from step 2>"
+            echo "     VERCEL_ORG_ID     = <team/org ID from Vercel team Settings → General>"
+            echo "     VERCEL_PROJECT_ID = <project ID from Vercel project Settings → General>"
             echo "  4. Re-run this workflow from the Actions tab."
             exit 1
           fi
-          echo "✅ VERCEL_TOKEN secret is present."
+          echo "✅ All required Vercel secrets are present."
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -94,11 +110,49 @@ jobs:
           set -euo pipefail
           echo "Deploying to Vercel..."
           npm install --global vercel@latest
-          DEPLOY_URL=$(vercel deploy --prod --yes --token "$VERCEL_TOKEN")
+          DEPLOY_URL=$(vercel deploy --prod --yes \
+            --token "$VERCEL_TOKEN" \
+            --org-id "$VERCEL_ORG_ID" \
+            --project-id "$VERCEL_PROJECT_ID")
           echo "deploy_url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
           echo "✅ Deployed to Vercel: ${DEPLOY_URL}"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Post PR comment with deployment status
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const buildOutcome = '${{ steps.build.outcome }}';
+            const deployOutcome = '${{ steps.deploy.outcome }}';
+            const deployUrl = '${{ steps.deploy.outputs.deploy_url }}';
+            const success = buildOutcome === 'success' && deployOutcome === 'success';
+            const statusIcon = success ? '✅' : '❌';
+            const statusText = success
+              ? '**Deployment succeeded** — the latest changes are live on Vercel.'
+              : '**Deployment failed** — check the [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.';
+
+            let body = `## 🚀 Vercel Deployment\n\n`;
+            body += `| | |\n|---|---|\n`;
+            body += `| **Branch** | \`${{ github.ref_name }}\` |\n`;
+            body += `| **Commit** | \`${{ github.sha }}\` |\n`;
+            if (deployUrl) {
+              body += `| **Deploy URL** | ${deployUrl} |\n`;
+            }
+            body += `\n| Step | Result |\n|---|---|\n`;
+            body += `| Build | ${buildOutcome} |\n`;
+            body += `| Deploy | ${deployOutcome} |\n`;
+            body += `\n${statusIcon} ${statusText}\n`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
 
       - name: Report deployment status
         if: always()
@@ -131,7 +185,7 @@ jobs:
               echo "❌ **Deployment failed** — check the logs above for details."
               echo ""
               echo "**Common fixes:**"
-              echo "- Ensure \`VERCEL_TOKEN\` secret is set (see workflow comments for setup steps)."
+              echo "- Ensure \`VERCEL_TOKEN\`, \`VERCEL_ORG_ID\`, and \`VERCEL_PROJECT_ID\` secrets are set."
               echo "- Check that the Vercel project is linked to this repository."
               echo "- Review the Build step logs for compile errors."
             fi
