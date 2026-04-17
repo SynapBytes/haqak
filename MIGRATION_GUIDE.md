@@ -1,16 +1,16 @@
 # 🔐 Supabase Account Migration Guide
 
-This guide documents the complete migration from the old Supabase account
-(`ujbiyzabdonykzfofsiz`) to the new account (`wfuofurgkswotwuzosdd`).
+This guide documents the production lock-in to the active Supabase project:
+`wfuofurgkswotwuzosdd`.
 
 ---
 
 ## 📋 Overview
 
-| Item | Old | New |
-|------|-----|-----|
-| Project Ref | `ujbiyzabdonykzfofsiz` | `wfuofurgkswotwuzosdd` |
-| Project URL | `https://ujbiyzabdonykzfofsiz.supabase.co` | `https://wfuofurgkswotwuzosdd.supabase.co` |
+| Item | Value |
+|------|-------|
+| Project Ref | `wfuofurgkswotwuzosdd` |
+| Project URL | `https://wfuofurgkswotwuzosdd.supabase.co` |
 
 ---
 
@@ -18,10 +18,13 @@ This guide documents the complete migration from the old Supabase account
 
 - [ ] Update GitHub Secrets (see [Step 1](#step-1-update-github-secrets))
 - [ ] Update Vercel Environment Variables (see [Step 2](#step-2-update-vercel-environment-variables))
+- [ ] Force a Vercel redeploy after env updates (see [Step 2.1](#step-21-force-redeploy-after-env-updates))
 - [ ] Set Supabase Edge Function Secrets (see [Step 3](#step-3-set-supabase-edge-function-secrets))
 - [ ] Run database migrations on the new project (see [Step 4](#step-4-run-database-migrations))
 - [ ] Deploy Edge Functions to the new project (see [Step 5](#step-5-deploy-edge-functions))
-- [ ] Verify the application is working end-to-end
+- [ ] Verify cache headers and service-worker freshness (see [Step 6](#step-6-cache-and-cdn-freshness-checks))
+- [ ] Verify the application is working end-to-end (see [Step 7](#step-7-end-to-end-verification))
+- [ ] Prepare rollback path before production approval (see [Step 8](#step-8-rollback-plan-fast-and-safe))
 
 ---
 
@@ -73,6 +76,18 @@ the following (apply to all environments: Production, Preview, Development):
 
 ---
 
+## Step 2.1: Force Redeploy After Env Updates
+
+After updating Vercel env variables, run a forced redeploy so both frontend and
+serverless execution use the new values:
+
+1. Go to **Vercel → Deployments**
+2. Select latest production deployment
+3. Click **Redeploy** and enable **Use existing Build Cache: OFF** (fresh build)
+4. Confirm deploy completes successfully before moving forward
+
+---
+
 ## Step 3: Set Supabase Edge Function Secrets
 
 Go to **Supabase Dashboard → Project Settings → Edge Functions → Secrets**
@@ -110,8 +125,17 @@ supabase link --project-ref wfuofurgkswotwuzosdd
 supabase db push
 ```
 
-> If you prefer the Supabase Dashboard, you can run each `.sql` file in
-> `supabase/migrations/` using the SQL Editor.
+Then verify migration status in Supabase Dashboard:
+
+1. Open **Supabase → SQL Editor**
+2. Run:
+   ```sql
+   select version
+   from supabase_migrations.schema_migrations
+   order by version desc
+   limit 20;
+   ```
+3. Confirm latest versions match the newest files in `supabase/migrations/`
 
 ---
 
@@ -132,7 +156,31 @@ GitHub Secrets (updated in Step 1).
 
 ---
 
-## 🔍 Verification
+## Step 6: Cache and CDN Freshness Checks
+
+Validate production caching is safe after migration:
+
+```bash
+APP_URL="https://haqak.app"
+
+# index.html must not be cached
+curl -I "${APP_URL}/index.html"
+
+# service worker entrypoints must not be cached
+curl -I "${APP_URL}/sw.js"
+curl -I "${APP_URL}/registerSW.js"
+
+# API responses should be no-store
+curl -I "${APP_URL}/api/csp-report"
+```
+
+Expected:
+- `index.html`, `sw.js`, `registerSW.js` include `Cache-Control: no-cache, no-store, must-revalidate`
+- `/api/*` includes `Cache-Control: no-store`
+
+---
+
+## Step 7: End-to-End Verification
 
 After completing all steps, verify the application is working:
 
@@ -143,6 +191,22 @@ After completing all steps, verify the application is working:
    supabase functions logs --project-ref wfuofurgkswotwuzosdd
    ```
 4. **Database** — confirm that tables and rows are accessible from the app.
+5. **Media** — upload and read at least one image/document from expected buckets.
+
+---
+
+## Step 8: Rollback Plan (Fast and Safe)
+
+If post-deploy verification fails:
+
+1. **Freeze changes** (stop additional deploys)
+2. **Revert Vercel env vars** to the last known good set
+3. **Redeploy in Vercel** with build cache disabled
+4. **Re-run Edge Function deploy** with known-good secrets
+5. **Validate smoke tests** and key user journeys again before reopening traffic
+
+Keep a copy of previous environment values in secure secret managers only
+(never commit secrets to the repo).
 
 ---
 

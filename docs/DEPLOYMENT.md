@@ -16,12 +16,15 @@ Required GitHub repository secrets:
 - `SUPABASE_ACCESS_TOKEN`
 - `SUPABASE_PROJECT_ID`
 
+For this repository, set:
+- `SUPABASE_PROJECT_ID=wfuofurgkswotwuzosdd`
+
 ---
 
 ## 1. Local Development
 
 ```bash
-supabase link --project-ref <project-ref>
+supabase link --project-ref wfuofurgkswotwuzosdd
 cp supabase/functions/.env.example supabase/functions/.env
 supabase functions serve
 ```
@@ -57,13 +60,13 @@ Vault provides encrypted storage and enables zero-downtime secret rotation.
 # Store OTP_HMAC_SECRET in Vault (replaces plain env var)
 supabase vault add --name OTP_HMAC_SECRET \
   --value "$(openssl rand -hex 32)" \
-  --project-ref <project-ref>
+  --project-ref wfuofurgkswotwuzosdd
 
 # Enable Vault reads in edge functions
 supabase secrets set SUPABASE_VAULT_ENABLED=true
 
 # Verify Vault entry
-supabase vault list --project-ref <project-ref>
+supabase vault list --project-ref wfuofurgkswotwuzosdd
 ```
 
 See **[docs/SECURITY_SECRET_ROTATION.md](SECURITY_SECRET_ROTATION.md)** for
@@ -91,7 +94,7 @@ Key categories:
 Redeploy:
 
 ```bash
-supabase link --project-ref <project-ref>
+supabase link --project-ref wfuofurgkswotwuzosdd
 supabase functions deploy request-email-verification
 supabase functions deploy verify-email-code
 ```
@@ -125,7 +128,7 @@ guide in `docs/SECURITY_SECRET_ROTATION.md`.
 ## 6. Smoke Test
 
 ```bash
-PROJECT_URL="https://<PROJECT_REF>.supabase.co"
+PROJECT_URL="https://wfuofurgkswotwuzosdd.supabase.co"
 
 curl -s -o /dev/null -w "%{http_code}" \
   -X OPTIONS \
@@ -142,9 +145,43 @@ curl -s -o /dev/null -w "%{http_code}" \
 
 Expected: `200` for OPTIONS.
 
+## 6.1 Cache freshness checks (required after env changes)
+
+```bash
+APP_URL="https://haqak.app"
+curl -I "${APP_URL}/index.html"
+curl -I "${APP_URL}/sw.js"
+curl -I "${APP_URL}/registerSW.js"
+```
+
+Expected: `Cache-Control: no-cache, no-store, must-revalidate`
+for `index.html`, `sw.js`, and `registerSW.js`.
+
 ---
 
-## 7. Secret Rotation
+## 7. End-to-End Verification
+
+Before production sign-off, confirm:
+
+1. Sign up and sign in both work with email verification flow.
+2. Edge functions return expected non-404 responses and logs are healthy.
+3. File/image upload and retrieval succeed from the expected bucket.
+4. No stale frontend behavior appears after hard refresh.
+
+---
+
+## 8. Rollback (Fast)
+
+If checks fail after deploy:
+
+1. Revert Vercel environment variables to last known-good values.
+2. Force redeploy in Vercel with build cache disabled.
+3. Redeploy edge functions for `wfuofurgkswotwuzosdd`.
+4. Repeat smoke + end-to-end checks before reopening traffic.
+
+---
+
+## 9. Secret Rotation
 
 See **[docs/SECURITY_SECRET_ROTATION.md](SECURITY_SECRET_ROTATION.md)** for:
 - JWT secret hardening and rotation
