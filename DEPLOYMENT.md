@@ -72,12 +72,15 @@ Required GitHub secrets:
 - `SUPABASE_ACCESS_TOKEN`
 - `SUPABASE_PROJECT_ID`
 
+For this repository, `SUPABASE_PROJECT_ID` must be:
+- `wfuofurgkswotwuzosdd`
+
 ---
 
 ## Manual Deployment
 
 ```bash
-supabase link --project-ref <your-project-ref>
+supabase link --project-ref wfuofurgkswotwuzosdd
 supabase functions deploy request-email-verification
 supabase functions deploy verify-email-code
 ```
@@ -99,7 +102,7 @@ supabase secrets set RESEND_FROM_EMAIL="Haqak <no-reply@haqak.org>"
 ## Verify
 
 ```bash
-PROJECT_URL="https://<PROJECT_REF>.supabase.co"
+PROJECT_URL="https://wfuofurgkswotwuzosdd.supabase.co"
 
 curl -s -o /dev/null -w "%{http_code}" \
   -X OPTIONS \
@@ -116,6 +119,19 @@ curl -s -o /dev/null -w "%{http_code}" \
 
 Expected: `200` for OPTIONS.
 
+## Post-redeploy cache checks
+
+After env changes and redeploy, verify runtime freshness:
+
+```bash
+APP_URL="https://haqak.app"
+curl -I "${APP_URL}/index.html"
+curl -I "${APP_URL}/sw.js"
+curl -I "${APP_URL}/registerSW.js"
+```
+
+Expected `Cache-Control: no-cache, no-store, must-revalidate` for all three.
+
 ---
 
 ## Troubleshooting
@@ -129,3 +145,10 @@ Expected: `200` for OPTIONS.
 | CORS preflight fails | Add origin to `ALLOWED_ORIGINS` secret |
 | `500 Server configuration error` | Ensure required secrets are set |
 | Workflow fails — missing Supabase secrets | Add `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_ID` |
+
+## Rollback (if post-deploy checks fail)
+
+1. Revert Vercel env variables to last known-good values.
+2. Force redeploy in Vercel with build cache disabled.
+3. Re-deploy edge functions for project `wfuofurgkswotwuzosdd`.
+4. Re-run smoke tests and sign-in/sign-up verification before reopening traffic.
