@@ -9,11 +9,9 @@ permissions: read-all
 
 env:
   ZAP_FAIL_RISKS: High
-  ZAP_PRODUCTION_URL: https://haqak.vercel.app
+  ZAP_PRODUCTION_URL: https://haqak.org
   # Optional explicit target override for DAST scans.
   DAST_TARGET_URL: ""
-  # Optional PR preview URL from deployment workflow/integration.
-  VERCEL_PREVIEW_URL: ""
 
 jobs:
   zap-dast:
@@ -42,8 +40,6 @@ jobs:
 
           if [[ -n "${DAST_TARGET_URL:-}" ]]; then
             TARGET_URL="$(normalize_url "${DAST_TARGET_URL}")"
-          elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" && -n "${VERCEL_PREVIEW_URL:-}" ]]; then
-            TARGET_URL="$(normalize_url "${VERCEL_PREVIEW_URL}")"
           else
             TARGET_URL="$(normalize_url "${ZAP_PRODUCTION_URL}")"
           fi

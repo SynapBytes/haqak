@@ -32,8 +32,7 @@ This repository uses GitHub Actions-only security workflows for PRs and pushes t
 ### DAST target selection
 
 - **ZAP DAST** (`.github/workflows/security-zap-dast.yml`)
-  - On `pull_request`: scans the Vercel preview URL pattern.
-  - On `push` to `main`: scans `ZAP_PRODUCTION_URL` (default `https://haqak.vercel.app`).
+  - On `push` to `main`: scans `ZAP_PRODUCTION_URL` (default `https://haqak.org`).
   - Baseline scan only (no auth in MVP).
   - Fails on configurable risks using `ZAP_FAIL_RISKS` (default `High` on `push`; PRs still scan and upload artifacts without failing this gate).
   - Always uploads report artifacts.
@@ -84,4 +83,3 @@ From repository root:
 
 - Ensure Actions are enabled for this repository.
 - To surface SARIF findings in Security tab for private repos, enable the repository/org plan feature for **Code Scanning / GitHub Advanced Security** as applicable.
-- If using a custom Vercel team slug, set `VERCEL_TEAM_SLUG` in workflow env.

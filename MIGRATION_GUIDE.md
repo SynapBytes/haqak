@@ -17,8 +17,8 @@ This guide documents the production lock-in to the active Supabase project:
 ## ✅ Checklist
 
 - [ ] Update GitHub Secrets (see [Step 1](#step-1-update-github-secrets))
-- [ ] Update Vercel Environment Variables (see [Step 2](#step-2-update-vercel-environment-variables))
-- [ ] Force a Vercel redeploy after env updates (see [Step 2.1](#step-21-force-redeploy-after-env-updates))
+- [ ] Update GitHub Actions Secrets for frontend build (see [Step 2](#step-2-update-github-actions-secrets))
+- [ ] Trigger a redeploy after secrets update (see [Step 2.1](#step-21-trigger-redeploy-after-secrets-update))
 - [ ] Set Supabase Edge Function Secrets (see [Step 3](#step-3-set-supabase-edge-function-secrets))
 - [ ] Run database migrations on the new project (see [Step 4](#step-4-run-database-migrations))
 - [ ] Deploy Edge Functions to the new project (see [Step 5](#step-5-deploy-edge-functions))
@@ -43,48 +43,35 @@ the following secrets:
 
 ---
 
-## Step 2: Update Vercel Environment Variables
+## Step 2: Update GitHub Actions Secrets
 
-Go to **Vercel → Project Settings → Environment Variables** and update each of
-the following (apply to all environments: Production, Preview, Development):
+Go to **GitHub → Settings → Secrets and variables → Actions** and update the
+following secrets (these are injected into the Vite build at deploy time):
 
 ### Frontend variables
 
-| Variable | Value |
-|----------|-------|
+| Secret Name | Value |
+|-------------|-------|
 | `VITE_SUPABASE_URL` | `https://wfuofurgkswotwuzosdd.supabase.co` |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | *(new anon/public key from Supabase Dashboard → Settings → API)* |
 
-### Server-side variables
+### Unchanged secrets (verify these are still set)
 
-| Variable | Value |
-|----------|-------|
-| `SUPABASE_URL` | `https://wfuofurgkswotwuzosdd.supabase.co` |
-| `SUPABASE_ANON_KEY` | *(new anon/public key from Supabase Dashboard → Settings → API)* |
-| `SUPABASE_SERVICE_ROLE_KEY` | *(new service role key — keep this secret, never share it publicly)* |
-| `OTP_HMAC_SECRET` | *(generate with: `openssl rand -hex 32`)* |
-| `GEMINI_API_KEY` | *(Gemini API key for image moderation — optional)* |
-
-### Unchanged variables (verify these are still set)
-
-| Variable | Notes |
-|----------|-------|
-| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile — no change needed |
-| `RESEND_API_KEY` | Resend email provider — no change needed |
-| `VAPID_PUBLIC_KEY` | Push notification key — no change needed |
-| `VAPID_PRIVATE_KEY` | Push notification key — no change needed |
+| Secret Name | Notes |
+|-------------|-------|
+| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile — no change needed |
+| `VITE_VAPID_PUBLIC_KEY` | Push notification key — no change needed |
 
 ---
 
-## Step 2.1: Force Redeploy After Env Updates
+## Step 2.1: Trigger Redeploy After Secrets Update
 
-After updating Vercel env variables, run a forced redeploy so both frontend and
-serverless execution use the new values:
+After updating GitHub Actions secrets, trigger a fresh deploy so the frontend
+build picks up the new values:
 
-1. Go to **Vercel → Deployments**
-2. Select latest production deployment
-3. Click **Redeploy** and enable **Use existing Build Cache: OFF** (fresh build)
-4. Confirm deploy completes successfully before moving forward
+1. Go to **Actions → Build and Deploy to GitHub Pages**
+2. Click **Run workflow** → select `main` → click **Run workflow**
+3. Confirm deploy completes successfully before moving forward
 
 ---
 
@@ -103,7 +90,7 @@ supabase secrets set --project-ref wfuofurgkswotwuzosdd \
   RESEND_API_KEY=<your_resend_api_key> \
   VAPID_PUBLIC_KEY=<your_vapid_public_key> \
   VAPID_PRIVATE_KEY=<your_vapid_private_key> \
-  ALLOWED_ORIGINS=https://haqak.app,https://www.haqak.app
+  ALLOWED_ORIGINS=https://haqak.org,https://www.haqak.org
 ```
 
 > **Note about `OTP_HMAC_SECRET`:** This secret is used to HMAC-sign OTP tokens
@@ -161,7 +148,7 @@ GitHub Secrets (updated in Step 1).
 Validate production caching is safe after migration:
 
 ```bash
-APP_URL="https://haqak.app"
+APP_URL="https://haqak.org"
 
 # index.html must not be cached
 curl -I "${APP_URL}/index.html"
@@ -200,8 +187,8 @@ After completing all steps, verify the application is working:
 If post-deploy verification fails:
 
 1. **Freeze changes** (stop additional deploys)
-2. **Revert Vercel env vars** to the last known good set
-3. **Redeploy in Vercel** with build cache disabled
+2. **Revert GitHub Actions secrets** to the last known good set
+3. **Re-trigger deploy** via GitHub Actions with cache disabled
 4. **Re-run Edge Function deploy** with known-good secrets
 5. **Validate smoke tests** and key user journeys again before reopening traffic
 
@@ -218,5 +205,5 @@ Keep a copy of previous environment values in secure secret managers only
 | `.env.example` | Updated Supabase URL, anon key reference, project ID, and clarified OTP/Gemini comments |
 | `supabase/functions/.env.example` | Updated Supabase URL, anon key reference, and clarified OTP comment |
 
-> **Note:** `vercel.json` and `package.json` required no changes — they already
-> use wildcard patterns (`*.supabase.co`) and contain no hardcoded project IDs.
+> **Note:** `package.json` required no changes — it already uses wildcard
+> patterns (`*.supabase.co`) and contains no hardcoded project IDs.

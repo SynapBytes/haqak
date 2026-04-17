@@ -174,8 +174,8 @@ Before production sign-off, confirm:
 
 If checks fail after deploy:
 
-1. Revert Vercel environment variables to last known-good values.
-2. Force redeploy in Vercel with build cache disabled.
+1. Revert GitHub Actions secrets to last known-good values.
+2. Trigger a new deploy via **Actions → Build and Deploy to GitHub Pages → Run workflow**.
 3. Redeploy edge functions for `wfuofurgkswotwuzosdd`.
 4. Repeat smoke + end-to-end checks before reopening traffic.
 

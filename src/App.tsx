@@ -9,7 +9,6 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import PushNotificationProvider from "@/components/PushNotificationProvider";
 import { useTranslation } from "react-i18next";
 import { AppRole } from "@/constants/roles";
-import { SpeedInsights } from "@vercel/speed-insights/react";
 import { queryClient } from "@/lib/queryClient";
 
 // Lazy-loaded pages
@@ -105,7 +104,6 @@ function App() {
               </Suspense>
             </AuthProvider>
           </BrowserRouter>
-          <SpeedInsights />
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>

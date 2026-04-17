@@ -10,7 +10,7 @@
  *  3. Provides a `shouldIgnoreViolation` filter for known false positives.
  *  4. Exports a `logCspViolation` function for structured logging / forwarding.
  *
- * Usage in an Edge Function (Supabase / Vercel serverless):
+ * Usage in an Edge Function (Supabase serverless):
  *
  *   import { parseCspReport, shouldIgnoreViolation, logCspViolation } from "@/lib/csp-reporter";
  *
@@ -155,8 +155,7 @@ export function shouldIgnoreViolation(report: CspViolationReport): boolean {
  *
  * In production this can be replaced with a call to a real observability
  * service (Sentry, Datadog, PostHog, etc.).  The default implementation
- * writes a JSON line to `console.warn` so that it is captured by Vercel /
- * Supabase function logs.
+ * writes a JSON line to `console.warn` so that it is captured by Supabase function logs.
  */
 export function logCspViolation(
   report: CspViolationReport,

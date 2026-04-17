@@ -12,13 +12,12 @@ maintaining the policy as the application evolves.
 
 | Environment | Where the CSP is set |
 |-------------|----------------------|
-| **Production (Vercel)** | `vercel.json` → `headers[*].Content-Security-Policy` |
+| **Production (GitHub Pages)** | `src/server/security-headers.ts` → `CSP_DIRECTIVES` (single source of truth) |
 | **Development (Vite dev server)** | `src/server/security-headers.ts` → `viteSecurityHeaders()` |
 | **Edge Functions / custom servers** | `src/server/security-headers.ts` → `buildSecurityHeaders()` |
 
 The single source-of-truth for directive values is the `CSP_DIRECTIVES` array in
-`src/server/security-headers.ts`.  The `vercel.json` header must be kept in sync
-with that array.
+`src/server/security-headers.ts`.
 
 ---
 
@@ -250,9 +249,8 @@ When integrating a new third-party service:
    Network panel with a cleared cache).
 2. Add the minimum required sources to the relevant directives in
    `src/server/security-headers.ts` (`CSP_DIRECTIVES`).
-3. Mirror the change to the `Content-Security-Policy` value in `vercel.json`.
-4. Document the new source in this guide with a purpose comment.
-5. Run `npm test` to confirm the updated header is picked up by the test suite.
+3. Document the new source in this guide with a purpose comment.
+4. Run `npm test` to confirm the updated header is picked up by the test suite.
 
 ---
 
