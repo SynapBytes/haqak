@@ -69,7 +69,8 @@ const CenterOnboarding = () => {
       setLoadError(true);
       setUsingFallback(true);
       setCenters(FALLBACK_CENTERS);
-      // Preserve governorate/center selections the user may have already made.
+      // Reset selections so stale UUIDs from a previous successful fetch
+      // are not inadvertently used against the local-fallback dataset.
       setCenterId("");
       setGovernorate("");
       toast.error(t("center_onboarding.load_error"));

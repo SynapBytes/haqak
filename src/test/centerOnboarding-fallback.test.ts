@@ -11,7 +11,6 @@
 
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
-import path from "node:path";
 import { LOCAL_CENTERS, LOCAL_GOVERNORATES } from "@/data/egyptCentersData";
 
 // ---------------------------------------------------------------------------
@@ -116,7 +115,7 @@ describe("egyptCentersData — cross-validation", () => {
 
 describe("CenterOnboarding.tsx — fallback and validation code paths", () => {
   const source = fs.readFileSync(
-    path.resolve(__dirname, "../../src/pages/CenterOnboarding.tsx"),
+    "src/pages/CenterOnboarding.tsx",
     "utf8",
   );
 
