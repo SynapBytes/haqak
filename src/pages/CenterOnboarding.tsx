@@ -13,7 +13,9 @@ import { useTranslation } from "react-i18next";
 type Center = {
   id: string;
   governorate_en: string;
+  governorate_ar: string;
   district_en: string;
+  district_ar: string;
 };
 
 const CenterOnboarding = () => {
@@ -34,9 +36,9 @@ const CenterOnboarding = () => {
     const fetchCenters = async () => {
       const { data, error } = await supabase
         .from("centers")
-        .select("id, governorate_en, district_en")
-        .order("governorate_en", { ascending: true })
-        .order("district_en", { ascending: true });
+        .select("id, governorate_en, governorate_ar, district_en, district_ar")
+        .order("governorate_ar", { ascending: true })
+        .order("district_ar", { ascending: true });
       if (error) {
         toast.error(t("center_onboarding.load_error"));
       } else {
@@ -47,13 +49,18 @@ const CenterOnboarding = () => {
     fetchCenters();
   }, [navigate, profile?.center_id, role, t]);
 
-  const governorates = useMemo(
-    () => Array.from(new Set(centers.map((c) => c.governorate_en))),
-    [centers],
-  );
+  const governorates = useMemo(() => {
+    const seen = new Map<string, { en: string; ar: string }>();
+    for (const c of centers) {
+      if (!seen.has(c.governorate_en)) {
+        seen.set(c.governorate_en, { en: c.governorate_en, ar: c.governorate_ar });
+      }
+    }
+    return Array.from(seen.values());
+  }, [centers]);
 
   const filteredCenters = useMemo(
-    () => centers.filter((c) => !governorate || c.governorate_en === governorate),
+    () => centers.filter((c) => c.governorate_en === governorate),
     [centers, governorate],
   );
 
@@ -70,7 +77,7 @@ const CenterOnboarding = () => {
       return;
     }
     toast.success(t("center_onboarding.saved"));
-    navigate(role === "mp" ? "/mp" : "/mps", { replace: true });
+    navigate(role === "mp" ? "/mp" : "/citizen", { replace: true });
   };
 
   return (
@@ -89,10 +96,9 @@ const CenterOnboarding = () => {
           ) : (
             <>
               <Select
-                value={governorate || "__none"}
+                value={governorate}
                 onValueChange={(value) => {
-                  const next = value === "__none" ? "" : value;
-                  setGovernorate(next);
+                  setGovernorate(value);
                   setCenterId("");
                 }}
               >
@@ -100,29 +106,28 @@ const CenterOnboarding = () => {
                   <SelectValue placeholder={t("center_onboarding.governorate")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none">{t("center_onboarding.all_governorates")}</SelectItem>
                   {governorates.map((gov) => (
-                    <SelectItem key={gov} value={gov}>
-                      {gov}
+                    <SelectItem key={gov.en} value={gov.en}>
+                      {gov.ar}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={centerId} onValueChange={setCenterId}>
+              <Select value={centerId} onValueChange={setCenterId} disabled={!governorate}>
                 <SelectTrigger>
                   <SelectValue placeholder={t("center_onboarding.center")} />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredCenters.map((center) => (
                     <SelectItem key={center.id} value={center.id}>
-                      {center.governorate_en} / {center.district_en}
+                      {center.district_ar}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Button onClick={onSave} disabled={!centerId || saving} className="w-full">
+              <Button onClick={onSave} disabled={!governorate || !centerId || saving} className="w-full">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("center_onboarding.continue")}
               </Button>
             </>
