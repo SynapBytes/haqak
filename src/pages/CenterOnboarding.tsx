@@ -9,7 +9,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { LOCAL_CENTERS, LOCAL_GOVERNORATES } from "@/data/egyptCentersData";
 
+// Center rows returned from the Supabase `centers` table.
 type Center = {
   id: string;
   governorate_en: string;
@@ -18,6 +20,16 @@ type Center = {
   district_ar: string;
 };
 
+// Build a stable fallback Center list from the local dataset.
+// `id` is left empty because the UUID is only available from the DB.
+const FALLBACK_CENTERS: Center[] = LOCAL_CENTERS.map((lc) => ({
+  id: "",
+  governorate_en: lc.governorate_en,
+  governorate_ar: lc.governorate_ar,
+  district_en: lc.district_en,
+  district_ar: lc.district_ar,
+}));
+
 const CenterOnboarding = () => {
   const { user, role, profile } = useAuth();
   const { t } = useTranslation();
@@ -25,8 +37,13 @@ const CenterOnboarding = () => {
   const [centers, setCenters] = useState<Center[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  // True when the Supabase fetch failed or returned 0 rows and we are
+  // showing data from the local fallback dataset instead.
+  const [usingFallback, setUsingFallback] = useState(false);
   const [saving, setSaving] = useState(false);
   const [governorate, setGovernorate] = useState<string>("");
+  // In normal mode centerId holds the Supabase UUID.
+  // In fallback mode centerId holds district_en (resolved to UUID on save).
   const [centerId, setCenterId] = useState<string>("");
   // Prevent duplicate fetches when the profile dependency changes after
   // the initial auth resolution (e.g. center_id going from undefined → null).
@@ -44,12 +61,24 @@ const CenterOnboarding = () => {
       .select("id, governorate_en, governorate_ar, district_en, district_ar")
       .order("governorate_ar", { ascending: true })
       .order("district_ar", { ascending: true });
-    if (error) {
+
+    if (error || !data?.length) {
+      // Failed or empty table: fall back to the local dataset so the
+      // dropdowns are still usable.  On save we will re-query Supabase
+      // for the UUID using the selected governorate + district pair.
       setLoadError(true);
+      setUsingFallback(true);
+      setCenters(FALLBACK_CENTERS);
+      // Reset selections so stale UUIDs from a previous successful fetch
+      // are not inadvertently used against the local-fallback dataset.
+      setCenterId("");
+      setGovernorate("");
       toast.error(t("center_onboarding.load_error"));
     } else {
-      setCenters((data ?? []) as Center[]);
+      setCenters(data as Center[]);
+      setUsingFallback(false);
     }
+
     setLoading(false);
     isFetchingRef.current = false;
   }, [t]);
@@ -66,6 +95,7 @@ const CenterOnboarding = () => {
   }, [fetchCenters, navigate, profile?.center_id, role]);
 
   const governorates = useMemo(() => {
+    if (usingFallback) return LOCAL_GOVERNORATES;
     const seen = new Map<string, { en: string; ar: string }>();
     for (const c of centers) {
       if (!seen.has(c.governorate_en)) {
@@ -73,7 +103,7 @@ const CenterOnboarding = () => {
       }
     }
     return Array.from(seen.values());
-  }, [centers]);
+  }, [centers, usingFallback]);
 
   const filteredCenters = useMemo(
     () => centers.filter((c) => c.governorate_en === governorate),
@@ -81,11 +111,42 @@ const CenterOnboarding = () => {
   );
 
   const onSave = async () => {
-    if (!user || !centerId) return;
+    if (!user || !centerId || !governorate) return;
+
+    // Validate that the selected center actually belongs to the selected
+    // governorate before sending anything to the server.
+    const isConsistent = filteredCenters.some(
+      (c) => (usingFallback ? c.district_en : c.id) === centerId,
+    );
+    if (!isConsistent) {
+      toast.error(t("center_onboarding.save_error"));
+      return;
+    }
+
     setSaving(true);
+
+    let resolvedCenterId = centerId;
+
+    if (usingFallback) {
+      // centerId is district_en in fallback mode — resolve to the real UUID.
+      const { data: centerData, error: lookupError } = await supabase
+        .from("centers")
+        .select("id")
+        .eq("governorate_en", governorate)
+        .eq("district_en", centerId)
+        .maybeSingle();
+
+      if (lookupError || !centerData?.id) {
+        toast.error(t("center_onboarding.save_error"));
+        setSaving(false);
+        return;
+      }
+      resolvedCenterId = centerData.id;
+    }
+
     const { error } = await supabase
       .from("profiles")
-      .update({ center_id: centerId })
+      .update({ center_id: resolvedCenterId })
       .eq("user_id", user.id);
     if (error) {
       toast.error(error.message || t("center_onboarding.save_error"));
@@ -109,18 +170,24 @@ const CenterOnboarding = () => {
             <div className="flex items-center justify-center py-6">
               <Loader2 className="w-6 h-6 animate-spin text-accent" />
             </div>
-          ) : loadError ? (
-            <div className="space-y-3 text-center py-4">
-              <p className="text-sm text-destructive">{t("center_onboarding.load_error")}</p>
-              <Button
-                variant="outline"
-                onClick={fetchCenters}
-              >
-                {t("common.retry")}
-              </Button>
-            </div>
           ) : (
             <>
+              {loadError && (
+                <div className="space-y-2 rounded-md border border-destructive/30 bg-destructive/5 p-3">
+                  <p className="text-sm text-destructive">{t("center_onboarding.load_error")}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      fetchedRef.current = false;
+                      fetchCenters();
+                    }}
+                  >
+                    {t("common.retry")}
+                  </Button>
+                </div>
+              )}
+
               <Select
                 value={governorate}
                 onValueChange={(value) => {
@@ -146,7 +213,10 @@ const CenterOnboarding = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {filteredCenters.map((center) => (
-                    <SelectItem key={center.id} value={center.id}>
+                    <SelectItem
+                      key={center.district_en}
+                      value={usingFallback ? center.district_en : center.id}
+                    >
                       {center.district_ar}
                     </SelectItem>
                   ))}
