@@ -455,6 +455,17 @@
       }
     ]
   },
+  "center_onboarding": {
+    "title": "Select your center",
+    "subtitle": "Choose your governorate and local center to complete account setup.",
+    "governorate": "Governorate",
+    "all_governorates": "All governorates",
+    "center": "Center",
+    "continue": "Continue",
+    "saved": "Center saved successfully",
+    "load_error": "Could not load centers right now. Please try again.",
+    "save_error": "Could not save center. Please try again."
+  },
   "terms_of_service": {
     "badge": "Terms & Conditions",
     "title": "Terms of Service",
