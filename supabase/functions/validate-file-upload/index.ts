@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
 import { buildCorsHeaders } from "../shared/cors.ts";
 import { RateLimitError, rateLimiter } from "../shared/rate-limiter.ts";
@@ -36,7 +35,7 @@ function matchesAnyRule(
   );
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const cors = buildCorsHeaders(req.headers.get("Origin"), true);
 
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });

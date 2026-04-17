@@ -1,6 +1,6 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
-import { buildCorsHeaders } from "../shared/cors.ts";
+import { buildCorsHeaders, isAllowedOrigin } from "../shared/cors.ts";
+import { RateLimitError, rateLimiter } from "../shared/rate-limiter.ts";
 
 /** Maximum age of a CAPTCHA challenge response we accept (5 minutes). */
 const TOKEN_TTL_SECONDS = 5 * 60;
@@ -18,8 +18,9 @@ async function sha256(input: string): Promise<string> {
     .join("");
 }
 
-serve(async (req) => {
-  const cors = buildCorsHeaders(req.headers.get("Origin"), true);
+Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const cors = buildCorsHeaders(origin, true);
 
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
@@ -30,12 +31,33 @@ serve(async (req) => {
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const supabase =
-    SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
-      ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-      : null;
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return new Response(JSON.stringify({ error: "Server configuration error", valid: false }), {
+      status: 503,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   try {
+    const authHeader = req.headers.get("Authorization");
+    const authToken = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : null;
+    let userId: string | null = null;
+
+    if (authToken) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser(authToken);
+      if (!authError && user?.id) {
+        userId = user.id;
+      }
+    }
+
+    if (!userId && !isAllowedOrigin(origin)) {
+      return new Response(JSON.stringify({ error: "Unauthorized origin or missing auth token", valid: false }), {
+        status: 403,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
     const { token } = await req.json();
 
     if (!token) {
@@ -45,31 +67,31 @@ serve(async (req) => {
       });
     }
 
-    // ── FIX #5: Rate limiting (5 attempts / 60 s per IP) ──────────────────────
-    if (supabase) {
-      const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_SECONDS * 1000).toISOString();
-      const { count } = await supabase
-        .from("rate_limit_logs")
-        .select("*", { count: "exact", head: true })
-        .eq("identifier", ipAddress)
-        .eq("action", "verify-captcha")
-        .gte("attempted_at", windowStart);
-
-      if ((count ?? 0) >= RATE_LIMIT_MAX) {
+    // Rate limiting (5 attempts / 60 s per IP)
+    try {
+      await rateLimiter(
+        supabase,
+        userId,
+        "/verify-captcha",
+        ipAddress,
+        200,
+        { maxRequests: RATE_LIMIT_MAX, windowMinutes: RATE_LIMIT_WINDOW_SECONDS / 60 },
+      );
+    } catch (rateError) {
+      if (rateError instanceof RateLimitError) {
         return new Response(
           JSON.stringify({ error: "Too many CAPTCHA attempts. Please wait and try again.", valid: false }),
-          { status: 429, headers: { ...cors, "Content-Type": "application/json" } },
+          {
+            status: 429,
+            headers: {
+              ...cors,
+              "Content-Type": "application/json",
+              "Retry-After": String(rateError.retryAfterSeconds),
+            },
+          },
         );
       }
-
-      // Record this attempt (best-effort; don't fail the request if insert fails)
-      await supabase.from("rate_limit_logs").insert({
-        identifier: ipAddress,
-        action: "verify-captcha",
-        attempted_at: new Date().toISOString(),
-      }).then(({ error }) => {
-        if (error) console.warn("rate_limit_logs insert error:", error.message);
-      });
+      throw rateError;
     }
 
     const TURNSTILE_SECRET_KEY = Deno.env.get("TURNSTILE_SECRET_KEY");
@@ -91,8 +113,8 @@ serve(async (req) => {
 
     // ── FIX #1: Single-use enforcement — reject already-verified tokens ────────
     // Compute the hash once and reuse it when recording the token later.
-    const tokenHash = supabase ? await sha256(token) : null;
-    if (supabase && tokenHash) {
+    const tokenHash = await sha256(token);
+    if (tokenHash) {
       const { data: existing } = await supabase
         .from("captcha_verifications")
         .select("id")
@@ -151,7 +173,7 @@ serve(async (req) => {
     }
 
     // ── FIX #1: Record the token hash to prevent replay ───────────────────────
-    if (supabase && tokenHash) {
+    if (tokenHash) {
       await supabase.from("captcha_verifications").insert({
         token_hash: tokenHash,
         ip_address: ipAddress,

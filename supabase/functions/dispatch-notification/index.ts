@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
 import { buildParticipantSet } from "../shared/access-control.ts";
 import { buildCorsHeaders } from "../shared/cors.ts";
 import { requireCsrfToken } from "../shared/csrf.ts";
@@ -180,7 +179,7 @@ async function sendEmail(to: string, subject: string, body: string): Promise<{
   }
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const cors = buildCorsHeaders(req.headers.get("Origin"));
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 

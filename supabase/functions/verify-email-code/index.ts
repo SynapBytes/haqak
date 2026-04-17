@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
 import { buildCorsHeaders } from "../shared/cors.ts";
 import { requireCsrfToken } from "../shared/csrf.ts";
 import { RateLimitError, rateLimiter } from "../shared/rate-limiter.ts";
@@ -26,7 +25,7 @@ async function hmacSha256Hex(key: string, message: string): Promise<string> {
     .join("");
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const cors = buildCorsHeaders(req.headers.get("Origin"));
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
@@ -101,7 +100,10 @@ serve(async (req) => {
     }
 
     if ((verificationRow.attempts ?? 0) >= 5) {
-      return new Response(JSON.stringify({ error: "Too many attempts" }), { status: 429, headers: { ...cors, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Too many attempts" }), {
+        status: 429,
+        headers: { ...cors, "Content-Type": "application/json", "Retry-After": "60" },
+      });
     }
 
     const expected = await hmacSha256Hex(

@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
 import { analyzeImageSafety } from "../shared/ai-service.ts";
 import { buildCorsHeaders } from "../shared/cors.ts";
@@ -153,7 +152,7 @@ function buildValidatedUrl(baseUrl: string): string {
   return url.href;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const cors = buildCorsHeaders(req.headers.get("Origin"), true);
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 

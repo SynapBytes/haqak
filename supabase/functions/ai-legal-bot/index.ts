@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
 import { draftAssistantReply, type AiMeta, AI_TEXT_INPUT_LIMIT, MAX_AI_REQUEST_BODY_BYTES } from "../shared/ai-service.ts";
 import { rateLimiter } from "../shared/rate-limiter.ts";
@@ -6,7 +5,7 @@ import { buildCorsHeaders } from "../shared/cors.ts";
 
 const MAX_ASSISTANT_INPUT_LENGTH = AI_TEXT_INPUT_LIMIT;
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const cors = buildCorsHeaders(req.headers.get("Origin"));
 
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
@@ -134,7 +133,7 @@ serve(async (req) => {
     if (error instanceof Error && error.message.includes("Rate limit exceeded")) {
       return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
         status: 429,
-        headers: { ...cors, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json", "Retry-After": "60" },
       });
     }
     const msg = error instanceof Error ? error.message : "Unknown error";
