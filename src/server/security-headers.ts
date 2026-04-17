@@ -98,7 +98,7 @@ export function buildSecurityHeaders(): Record<string, string> {
 /**
  * Express-compatible middleware that applies all security headers to every
  * response.  Use this in the local Vite/Express dev server so development
- * parity with production (Vercel) is maintained.
+ * parity with production (GitHub Pages) is maintained.
  *
  * @example
  * import express from "express";

@@ -20,13 +20,13 @@ Heartbleed is a critical buffer over-read vulnerability in the Heartbeat Extensi
 
 | Component | Runtime | OpenSSL Version | Heartbleed Risk |
 |-----------|---------|----------------|-----------------|
-| Frontend (Vercel) | Node.js ≥ 18.20 | OpenSSL 3.x | ✅ Not vulnerable |
+| Frontend (GitHub Pages) | Node.js ≥ 18.20 | OpenSSL 3.x | ✅ Not vulnerable |
 | Backend (Supabase Edge Functions) | Deno (managed) | Managed by Supabase | ✅ Not vulnerable |
 | Database (PostgreSQL) | Supabase managed | Managed by Supabase | ✅ Not vulnerable |
 | CI/CD (GitHub Actions) | Node.js ≥ 18.20 | OpenSSL 3.x | ✅ Not vulnerable |
 | Local development | Node.js ≥ 18.20 (enforced via `.nvmrc`) | OpenSSL 3.x | ✅ Not vulnerable |
 
-**Summary:** The platform is **not directly vulnerable** to Heartbleed. Node.js ≥ 18.x ships with OpenSSL 3.x, which is not affected. Vercel and Supabase manage their own TLS termination infrastructure and apply patches independently.
+**Summary:** The platform is **not directly vulnerable** to Heartbleed. Node.js ≥ 18.x ships with OpenSSL 3.x, which is not affected. GitHub Pages and Supabase manage their own TLS termination infrastructure and apply patches independently.
 
 ---
 
@@ -63,30 +63,20 @@ Any output starting with `1.0.1` through `1.0.1f` would indicate a vulnerable en
 
 ### 1. TLS Version Policy
 
-Haqak edge functions and the frontend enforce **TLS 1.2 minimum**; TLS 1.3 is preferred. Vercel and Supabase both default to TLS 1.3.
+Haqak edge functions and the frontend enforce **TLS 1.2 minimum**; TLS 1.3 is preferred. GitHub Pages and Supabase both default to TLS 1.3.
 
-- TLS 1.0 and 1.1 are **disabled** by default in Node.js 18+ and on Vercel/Supabase.
+- TLS 1.0 and 1.1 are **disabled** by default in Node.js 18+ and on GitHub Pages/Supabase.
 - Do not downgrade TLS using `--tls-min-v1.0` or `NODE_OPTIONS=--tls-min-v1.0`.
 
 ### 2. HSTS (HTTP Strict Transport Security)
 
-`vercel.json` should include HSTS headers. Verify:
+GitHub Pages automatically enforces HTTPS and HSTS for custom domains. The `Strict-Transport-Security` header is served by GitHub Pages infrastructure. Verify the header is active:
 
-```json
-{
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Strict-Transport-Security",
-          "value": "max-age=63072000; includeSubDomains; preload"
-        }
-      ]
-    }
-  ]
-}
+```bash
+curl -I https://haqak.org/ | grep -i strict-transport
 ```
+
+Expected: `Strict-Transport-Security: max-age=...`
 
 ### 3. CORS Security
 
@@ -102,8 +92,8 @@ The full CSP is set in two places that must remain in sync:
 
 | Location | Purpose |
 |----------|---------|
-| `vercel.json` (`Content-Security-Policy` header) | Enforced for all production and preview deployments |
 | `src/server/security-headers.ts` (`CSP_DIRECTIVES`) | Single source of truth; used by dev middleware and tests |
+| `index.html` (meta tag, if applicable) | Optional client-side fallback |
 
 Key directives:
 
@@ -190,7 +180,7 @@ Full policy: [`SECURITY.md`](./SECURITY.md)
 | Weekly (automated) | Dependabot opens PRs for outdated packages |
 | Weekly (automated) | Full `npm audit` report (low/medium, non-blocking) |
 | Quarterly (manual) | Review and update `package.json` overrides |
-| Quarterly (manual) | Verify Vercel/Supabase TLS configuration |
+| Quarterly (manual) | Verify GitHub Pages/Supabase TLS configuration |
 | Annually | Full security audit and penetration test |
 
 ---
@@ -202,8 +192,8 @@ Before each production deployment, verify:
 - [ ] Node.js version ≥ 18.20.0 in CI (`node --version`)
 - [ ] `npm audit --audit-level=high` exits 0 for production deps
 - [ ] No secrets committed (`gitleaks detect`)
-- [ ] HSTS header is present in `vercel.json`
-- [ ] CSP header in `vercel.json` matches `CSP_DIRECTIVES` in `src/server/security-headers.ts`
+- [ ] HSTS header is active on haqak.org (enforced by GitHub Pages)
+- [ ] CSP header in `src/server/security-headers.ts` (`CSP_DIRECTIVES`) is up to date
 - [ ] CSP `report-uri` endpoint is reachable and logging violations
 - [ ] CORS allowlist in `ALLOWED_ORIGINS` secret is up to date
 - [ ] Supabase project is on a supported runtime (check Supabase dashboard)

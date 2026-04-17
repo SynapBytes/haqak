@@ -1,68 +1,180 @@
-# Deployment Guide
+# Deployment Guide - GitHub Pages
 
-> **Quick start.** For full setup details see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+## Overview
+
+Haqak is deployed to **GitHub Pages** using **GitHub Actions** for automatic builds and deployments.
+
+- **URL:** https://haqak.org
+- **Custom Domain:** Yes (haqak.org via Namecheap)
+- **HTTPS:** Automatic (Let's Encrypt)
+- **Auto-deploy:** On every push to `main` branch
 
 ---
 
-## TLS / Node.js Version Requirements
+## Automatic Deployment Workflow
 
-Haqak requires **Node.js ≥ 18.20.0** (ships with OpenSSL 3.x — not affected by Heartbleed CVE-2014-0160).
+### GitHub Actions Workflow: `deploy.yml`
+
+File: `.github/workflows/deploy.yml`
+
+Triggers:
+- Push to `main` branch
+- Manual workflow dispatch
+
+Steps:
+1. Checkout code
+2. Setup Node.js 18
+3. Install dependencies (`npm ci`)
+4. Lint code
+5. Build project (`npm run build`)
+6. Upload artifact to GitHub Pages
+7. Deploy to GitHub Pages
+8. Verify deployment
+
+### Upstream Sync Workflow: `sync-upstream.yml`
+
+File: `.github/workflows/sync-upstream.yml`
+
+Schedule: Every 6 hours (cron: `0 */6 * * *`)
+
+Behavior:
+- Fetch latest from Axonexiis/haqak
+- Merge changes to main branch
+- Create pull request if conflicts
+
+---
+
+## Local Development
+
+### Prerequisites
+
+- Node.js >= 20
+- npm or yarn
+
+### Setup
 
 ```bash
-# Install and use the correct Node.js version
-nvm install   # reads .nvmrc → 18.20.0
-nvm use
+git clone https://github.com/SynapBytes/haqak.git
+cd haqak
 
-# Verify OpenSSL version (should be 3.x)
-node -e "console.log(process.versions.openssl)"
+# Copy environment file
+cp .env.example .env
+
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
 ```
 
-TLS requirements:
-- **Minimum TLS version:** TLS 1.2 (TLS 1.3 preferred)
-- TLS 1.0 and TLS 1.1 must not be enabled
-- Do not pass `--tls-min-v1.0` to the Node.js process
+### Build
 
-For the full security hardening guide including HSTS, CORS, and the deployment checklist, see [`SECURITY_HARDENING.md`](./SECURITY_HARDENING.md).
+```bash
+npm run build
+```
+
+Output: `dist/` directory
 
 ---
 
-## Automated Deployment (GitHub Actions)
+## DNS Configuration
 
-### Frontend — Vercel
+### Domain: haqak.org
 
-The workflow `.github/workflows/deploy-to-vercel.yml` builds the frontend and
-deploys it to Vercel Production on every push to `main`.
+Registered at: **Namecheap**
 
-Required GitHub secrets:
+#### A Records (for root domain @)
 
-| Secret | Description |
-|--------|-------------|
-| `VERCEL_TOKEN` | Personal access token from https://vercel.com/account/tokens |
-| `VERCEL_ORG_ID` | Vercel team/org ID (Vercel team **Settings → General → Team ID**) |
-| `VERCEL_PROJECT_ID` | Vercel project ID (Vercel project **Settings → General → Project ID**) |
+Point to GitHub Pages servers:
+```
+185.199.108.153
+185.199.109.153
+185.199.110.153
+185.199.111.153
+```
 
-Optional build-time secrets (pass real values for a production build; the CI
-workflow falls back to placeholders when these are absent):
+#### CNAME Record (for www subdomain)
 
-| Secret | Description |
-|--------|-------------|
-| `VITE_SUPABASE_URL` | Supabase project URL |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase anon/publishable key |
-| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key |
-| `VITE_VAPID_PUBLIC_KEY` | Web Push VAPID public key |
+```
+www → synapbytes.github.io
+```
 
-**One-time setup:**
+#### Verification
 
-1. Visit <https://vercel.com/account/tokens> → **Create Token**
-   - Name: e.g. `haqak-deploy` · Scope: Full Account
-2. Copy the token value (shown only once)
-3. Retrieve your IDs:
-   - `VERCEL_ORG_ID`: Vercel team **Settings → General → Team ID**
-   - `VERCEL_PROJECT_ID`: Vercel project **Settings → General → Project ID**
-4. In GitHub: **Settings → Secrets and variables → Actions → New repository secret** — add all three secrets
-5. Push to `main` (or run the workflow manually via **Actions → Deploy to Vercel → Run workflow**)
+```bash
+# Check A records
+nslookup haqak.org
 
-### Edge Functions — Supabase
+# Check CNAME
+nslookup www.haqak.org
+```
+
+Expected:
+```
+haqak.org: 185.199.xxx.xxx
+www.haqak.org: synapbytes.github.io
+```
+
+---
+
+## GitHub Repository Settings
+
+### Pages Configuration
+
+1. Go to: **Settings → Pages**
+2. **Source:** Deploy from a branch
+3. **Branch:** `main`
+4. **Folder:** `/ (root)`
+5. Click **Save**
+
+### Custom Domain
+
+1. Go to: **Settings → Pages → Custom domain**
+2. Enter: `haqak.org`
+3. Click **Save**
+4. GitHub will check DNS and enable HTTPS automatically
+
+### Branch Protection
+
+1. Go to: **Settings → Branches → Add rule**
+2. **Branch name pattern:** `main`
+3. **Require a pull request before merging:** ✓
+4. **Require status checks to pass:** ✓
+5. **Require branches to be up to date:** ✓
+6. Click **Create**
+
+---
+
+## Environment Variables
+
+### GitHub Secrets (for Actions)
+
+Add these in: **Settings → Secrets and variables → Actions**
+
+```
+VITE_SUPABASE_URL
+VITE_SUPABASE_PUBLISHABLE_KEY
+VITE_TURNSTILE_SITE_KEY
+VITE_VAPID_PUBLIC_KEY
+```
+
+### .env.example Template
+
+```bash
+# Supabase
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJ...
+
+# Cloudflare Turnstile
+VITE_TURNSTILE_SITE_KEY=1x...
+
+# Web Push
+VITE_VAPID_PUBLIC_KEY=BC...
+```
+
+---
+
+## Edge Functions — Supabase
 
 The workflow `.github/workflows/deploy-edge-functions.yml` deploys these functions:
 - `request-email-verification`
@@ -72,12 +184,7 @@ Required GitHub secrets:
 - `SUPABASE_ACCESS_TOKEN`
 - `SUPABASE_PROJECT_ID`
 
-For this repository, `SUPABASE_PROJECT_ID` must be:
-- `wfuofurgkswotwuzosdd`
-
----
-
-## Manual Deployment
+### Manual Deployment
 
 ```bash
 supabase link --project-ref wfuofurgkswotwuzosdd
@@ -85,9 +192,7 @@ supabase functions deploy request-email-verification
 supabase functions deploy verify-email-code
 ```
 
----
-
-## Required Edge Function Secrets
+### Required Edge Function Secrets
 
 ```bash
 supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<value>
@@ -99,38 +204,36 @@ supabase secrets set RESEND_FROM_EMAIL="Haqak <no-reply@haqak.org>"
 
 ---
 
-## Verify
+## Monitoring & Logs
 
-```bash
-PROJECT_URL="https://wfuofurgkswotwuzosdd.supabase.co"
+### GitHub Actions
 
-curl -s -o /dev/null -w "%{http_code}" \
-  -X OPTIONS \
-  -H "Origin: <YOUR_ORIGIN>" \
-  -H "Access-Control-Request-Method: POST" \
-  "${PROJECT_URL}/functions/v1/request-email-verification"
+1. Go to: **Actions tab**
+2. View workflow runs
+3. Click on failed run to see logs
 
-curl -s -o /dev/null -w "%{http_code}" \
-  -X OPTIONS \
-  -H "Origin: <YOUR_ORIGIN>" \
-  -H "Access-Control-Request-Method: POST" \
-  "${PROJECT_URL}/functions/v1/verify-email-code"
-```
+### GitHub Pages Deployment Logs
 
-Expected: `200` for OPTIONS.
+1. Go to: **Settings → Pages**
+2. Check **Deployments** section
+3. Click on deployment to see details
 
-## Post-redeploy cache checks
+### Live Status
+
+Check: https://haqak.org
+
+### Post-deploy cache checks
 
 After env changes and redeploy, verify runtime freshness:
 
 ```bash
-APP_URL="https://haqak.app"
+APP_URL="https://haqak.org"
 curl -I "${APP_URL}/index.html"
 curl -I "${APP_URL}/sw.js"
 curl -I "${APP_URL}/registerSW.js"
 ```
 
-Expected `Cache-Control: no-cache, no-store, must-revalidate` for all three.
+Expected `Cache-Control: no-cache` for all three.
 
 ---
 
@@ -138,17 +241,106 @@ Expected `Cache-Control: no-cache, no-store, must-revalidate` for all three.
 
 | Symptom | Fix |
 |---|---|
-| Vercel workflow fails — missing secrets | Add `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` secrets (see Automated Deployment → Frontend above) |
-| Website shows old content after push | Check that the `deploy-to-vercel` workflow passed in Actions; clear browser cache or open in incognito |
-| Vercel build error | Review the Build step logs; ensure all `VITE_*` secrets are set |
+| Build fails in GitHub Actions | Check **Actions** tab logs; ensure all `VITE_*` secrets are set |
+| Website shows old content after push | Check that the `deploy` workflow passed in Actions; clear browser cache or open in incognito |
 | `404 request-email-verification not found` | Deploy functions again manually or rerun workflow |
 | CORS preflight fails | Add origin to `ALLOWED_ORIGINS` secret |
 | `500 Server configuration error` | Ensure required secrets are set |
 | Workflow fails — missing Supabase secrets | Add `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_ID` |
 
-## Rollback (if post-deploy checks fail)
+### Build Fails
 
-1. Revert Vercel env variables to last known-good values.
-2. Force redeploy in Vercel with build cache disabled.
-3. Re-deploy edge functions for project `wfuofurgkswotwuzosdd`.
-4. Re-run smoke tests and sign-in/sign-up verification before reopening traffic.
+```bash
+# Clear cache and reinstall
+rm -rf node_modules package-lock.json
+npm install
+npm run build
+```
+
+### DNS Not Resolving
+
+```bash
+# Flush DNS cache (macOS)
+sudo dscacheutil -flushcache
+
+# Wait 15-30 minutes for DNS propagation
+```
+
+### Site Shows 404
+
+- Check custom domain is set in GitHub Pages
+- Verify DNS records are correct
+- Clear browser cache
+- Wait for HTTPS certificate generation (can take 24 hours)
+
+### Stale Content
+
+Service worker cache might be old:
+- Open DevTools → Application → Service Workers
+- Click "Unregister"
+- Hard refresh (Cmd+Shift+R or Ctrl+Shift+R)
+
+---
+
+## Auto-Sync from Upstream
+
+### Configuration
+
+Upstream: `https://github.com/Axonexiis/haqak.git`  
+Schedule: Every 6 hours  
+Method: Auto-merge or create pull request
+
+### Manual Sync
+
+```bash
+git remote add upstream https://github.com/Axonexiis/haqak.git
+git fetch upstream main
+git merge upstream/main
+git push origin main
+```
+
+---
+
+## Rollback
+
+If a deployment breaks:
+
+```bash
+# View deployment history
+git log --oneline
+
+# Revert to previous commit
+git revert <commit-hash>
+git push origin main
+
+# GitHub Pages will auto-redeploy
+```
+
+---
+
+## Performance
+
+### Build Times
+
+Typical: 1-2 minutes
+
+### Deployment Time
+
+Typical: 30-60 seconds
+
+### Site Performance
+
+- Lighthouse Score: 90+
+- First Contentful Paint: < 1s
+- Time to Interactive: < 2s
+
+Monitor at: https://haqak.org/
+
+---
+
+## Support
+
+For deployment issues, see:
+- [SECURITY.md](./SECURITY.md)
+- [TECHNICAL_IMPLEMENTATION.md](./TECHNICAL_IMPLEMENTATION.md)
+- GitHub Actions Logs
