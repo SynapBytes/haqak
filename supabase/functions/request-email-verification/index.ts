@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
 import { buildCorsHeaders } from "../shared/cors.ts";
 import { requireCsrfToken } from "../shared/csrf.ts";
 import { RateLimitError, rateLimiter } from "../shared/rate-limiter.ts";
@@ -35,7 +34,7 @@ function generateCode(): string {
   return String(100000 + (arr[0] % 900000));
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const cors = buildCorsHeaders(req.headers.get("Origin"));
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
@@ -82,8 +81,12 @@ serve(async (req) => {
       });
     } catch (error) {
       if (error instanceof RateLimitError) {
-        return new Response(JSON.stringify({ error: "Too many requests" }), {
-          status: 429,
+        return new Response(JSON.stringify({
+          error: error.reason === "storage_error"
+            ? "Rate limiting is temporarily unavailable. Please retry shortly."
+            : "Too many requests",
+        }), {
+          status: error.reason === "storage_error" ? 503 : 429,
           headers: { ...cors, "Content-Type": "application/json", "Retry-After": String(error.retryAfterSeconds) },
         });
       }

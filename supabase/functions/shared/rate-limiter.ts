@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.2';
 
 // Default limits — callers may override via the options parameter
 const DEFAULT_RATE_LIMIT_WINDOW_MINUTES = 1;
@@ -16,10 +16,12 @@ export interface RateLimiterOptions {
 
 export class RateLimitError extends Error {
   retryAfterSeconds: number;
-  constructor(retryAfterSeconds: number) {
-    super('Rate limit exceeded');
+  reason: "limit_exceeded" | "storage_error";
+  constructor(retryAfterSeconds: number, reason: "limit_exceeded" | "storage_error" = "limit_exceeded") {
+    super(reason === "limit_exceeded" ? "Rate limit exceeded" : "Rate limiter storage unavailable");
     this.name = 'RateLimitError';
     this.retryAfterSeconds = retryAfterSeconds;
+    this.reason = reason;
   }
 }
 
@@ -35,7 +37,7 @@ export class RateLimitError extends Error {
  */
 export const rateLimiter = async (
   supabase: ReturnType<typeof createClient>,
-  userId: string,
+  userId: string | null,
   path: string,
   ipAddress = "0.0.0.0",
   responseStatus = 200,
@@ -51,19 +53,22 @@ export const rateLimiter = async (
   const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
   const safeIp = ipAddress || "0.0.0.0";
 
-  // Count requests by userId + path within the window
-  const { count: userCount, error: userError } = await supabase
-    .from('rate_limit_logs')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('request_path', path)
-    .gte('request_timestamp', windowStart);
+  // Count requests by userId + path within the window when user is authenticated
+  if (userId) {
+    const { count: userCount, error: userError } = await supabase
+      .from('rate_limit_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('request_path', path)
+      .gte('request_timestamp', windowStart);
 
-  if (userError) {
-    // Fail open on DB errors to avoid blocking legitimate traffic
-    console.error('Rate limiter DB error (user):', userError.code);
-  } else if (userCount !== null && userCount >= maxRequests) {
-    throw new RateLimitError(windowMinutes * 60);
+    if (userError) {
+      console.error('Rate limiter DB error (user):', userError.code);
+      throw new RateLimitError(windowMinutes * 60, "storage_error");
+    }
+    if (userCount !== null && userCount >= maxRequests) {
+      throw new RateLimitError(windowMinutes * 60);
+    }
   }
 
   // Count requests by IP + path within the window (defends against multi-account abuse)
@@ -76,15 +81,21 @@ export const rateLimiter = async (
 
   if (ipError) {
     console.error('Rate limiter DB error (ip):', ipError.code);
-  } else if (ipCount !== null && ipCount >= maxRequests) {
+    throw new RateLimitError(windowMinutes * 60, "storage_error");
+  }
+  if (ipCount !== null && ipCount >= maxRequests) {
     throw new RateLimitError(windowMinutes * 60);
   }
 
   // Log the current request
-  await supabase.from('rate_limit_logs').insert({
+  const { error: insertError } = await supabase.from('rate_limit_logs').insert({
     user_id: userId,
     request_path: path,
     response_status: responseStatus,
     ip_address: safeIp,
   });
+  if (insertError) {
+    console.error('Rate limiter DB error (insert):', insertError.code);
+    throw new RateLimitError(windowMinutes * 60, "storage_error");
+  }
 };

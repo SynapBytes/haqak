@@ -17,5 +17,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Schedule the cron job to run daily at midnight
-SELECT cron.schedule('0 0 * * *', 'SELECT close_inactive_conversations()');
+-- Schedule the cron job to run daily at midnight when pg_cron is available.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'cron')
+     AND to_regprocedure('cron.schedule(text,text)') IS NOT NULL THEN
+    PERFORM cron.schedule('0 0 * * *', 'SELECT close_inactive_conversations()');
+  END IF;
+END
+$$;

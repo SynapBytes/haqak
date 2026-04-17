@@ -32,10 +32,7 @@ export function buildCorsHeaders(
   requestOrigin: string | null,
   extended = false,
 ): Record<string, string> {
-  const origin = requestOrigin &&
-    (ALLOWED_ORIGINS.has(requestOrigin) || (ALLOWED_ORIGIN_REGEX?.test(requestOrigin) ?? false))
-    ? requestOrigin
-    : "";
+  const origin = isAllowedOrigin(requestOrigin) ? requestOrigin ?? "" : "";
   return {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -43,4 +40,9 @@ export function buildCorsHeaders(
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin",
   };
+}
+
+export function isAllowedOrigin(requestOrigin: string | null): boolean {
+  if (!requestOrigin) return false;
+  return ALLOWED_ORIGINS.has(requestOrigin) || (ALLOWED_ORIGIN_REGEX?.test(requestOrigin) ?? false);
 }

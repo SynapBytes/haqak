@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
 import { buildParticipantSet } from "../shared/access-control.ts";
 import { buildCorsHeaders } from "../shared/cors.ts";
 import { requireCsrfToken } from "../shared/csrf.ts";
@@ -73,7 +72,7 @@ function detectUrgency(title: string, description: string): { level: string; key
   return { level: "low", keywords: [] };
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const cors = buildCorsHeaders(req.headers.get("Origin"));
 
   // Handle CORS preflight
@@ -168,8 +167,13 @@ serve(async (req) => {
       });
     } catch (rateError) {
       if (rateError instanceof RateLimitError) {
-        return new Response(JSON.stringify({ success: false, error: "Too many requests" }), {
-          status: 429,
+        return new Response(JSON.stringify({
+          success: false,
+          error: rateError.reason === "storage_error"
+            ? "Rate limiting is temporarily unavailable. Please retry shortly."
+            : "Too many requests",
+        }), {
+          status: rateError.reason === "storage_error" ? 503 : 429,
           headers: {
             ...cors,
             "Content-Type": "application/json",

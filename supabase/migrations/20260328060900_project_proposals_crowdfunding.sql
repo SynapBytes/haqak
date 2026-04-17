@@ -50,7 +50,7 @@ CREATE TABLE public.project_contributions (
     project_id UUID REFERENCES public.project_proposals(id) ON DELETE CASCADE NOT NULL,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     amount DECIMAL(18,2) NOT NULL CHECK (amount > 0),
-    payment_status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'refunded', 'failed')),
+    payment_status TEXT NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('pending', 'completed', 'refunded', 'failed')),
     payment_reference TEXT, -- Reference from Fawry/CIB/InstaPay
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()

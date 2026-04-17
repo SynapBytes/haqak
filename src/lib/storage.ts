@@ -35,42 +35,69 @@ export {
  * continues.  Once a real scanner is wired in, it should throw on detection.
  */
 async function avScanFile(_file: File): Promise<void> {
-  // When AV_SCAN_ENABLED=true but the actual scanner is not yet wired in,
-  // log a warning so operators are aware the security layer is inactive.
   if (import.meta.env.VITE_AV_SCAN_ENABLED === "true") {
-    console.warn("[storage] AV_SCAN_ENABLED is true but no AV scanner is configured. TODO[AV]: wire in a real scanner.");
+    throw new Error("File upload blocked: antivirus scanning is enabled but not configured");
   }
-  // TODO[AV]: call external AV service here
+}
+
+function normalizeStoragePath(path: string): string {
+  const normalizedInput = path.replaceAll("\\", "/").trim();
+  if (!normalizedInput || normalizedInput.startsWith("/")) {
+    throw new Error("Invalid path");
+  }
+
+  const parts: string[] = [];
+  for (const rawPart of normalizedInput.split("/")) {
+    if (!rawPart || rawPart === ".") continue;
+    let decodedPart: string;
+    try {
+      decodedPart = decodeURIComponent(rawPart);
+    } catch {
+      throw new Error("Invalid path");
+    }
+    if (decodedPart === "..") {
+      throw new Error("Invalid path");
+    }
+    // Preserve encoded segment representation in the final key to avoid
+    // altering canonical object names during normalization.
+    parts.push(rawPart);
+  }
+
+  const normalized = parts.join("/");
+  if (!normalized) {
+    throw new Error("Invalid path");
+  }
+  return normalized;
 }
 
 export const uploadIssueAttachment = async (path: string, file: File) => {
   const validation = validateBeforeUpload([file]);
   if (!validation.valid) throw new Error(validation.error ?? "File validation failed");
   await avScanFile(file);
-  if (path.includes('..')) throw new Error("Invalid path");
-  const { error } = await supabase.storage.from(ATTACHMENTS_BUCKET).upload(path, file);
+  const safePath = normalizeStoragePath(path);
+  const { error } = await supabase.storage.from(ATTACHMENTS_BUCKET).upload(safePath, file);
   if (error) throw error;
-  return { bucket: ATTACHMENTS_BUCKET, path };
+  return { bucket: ATTACHMENTS_BUCKET, path: safePath };
 };
 
 export const uploadAvatar = async (path: string, file: File) => {
   const validation = validateBeforeUpload([file]);
   if (!validation.valid) throw new Error(validation.error ?? "File validation failed");
   await avScanFile(file);
-  if (path.includes('..')) throw new Error("Invalid path");
-  const { error } = await supabase.storage.from(AVATARS_BUCKET).upload(path, file, { upsert: true });
+  const safePath = normalizeStoragePath(path);
+  const { error } = await supabase.storage.from(AVATARS_BUCKET).upload(safePath, file, { upsert: true });
   if (error) throw error;
-  return { bucket: AVATARS_BUCKET, path };
+  return { bucket: AVATARS_BUCKET, path: safePath };
 };
 
 export const uploadModerationEvidence = async (path: string, file: File) => {
   const validation = validateBeforeUpload([file]);
   if (!validation.valid) throw new Error(validation.error ?? "File validation failed");
   await avScanFile(file);
-  if (path.includes('..')) throw new Error("Invalid path");
-  const { error } = await supabase.storage.from(MODERATION_BUCKET).upload(path, file);
+  const safePath = normalizeStoragePath(path);
+  const { error } = await supabase.storage.from(MODERATION_BUCKET).upload(safePath, file);
   if (error) throw error;
-  return { bucket: MODERATION_BUCKET, path };
+  return { bucket: MODERATION_BUCKET, path: safePath };
 };
 
 export const uploadIdentityVerificationImage = async (path: string, file: File) => {
@@ -82,12 +109,10 @@ export const uploadIdentityVerificationImage = async (path: string, file: File) 
     throw new Error("Identity image size must be 8MB or smaller");
   }
   await avScanFile(file);
-  if (path.includes('..')) {
-    throw new Error("Invalid path");
-  }
-  const { error } = await supabase.storage.from(ID_VERIFICATIONS_BUCKET).upload(path, file, { upsert: false });
+  const safePath = normalizeStoragePath(path);
+  const { error } = await supabase.storage.from(ID_VERIFICATIONS_BUCKET).upload(safePath, file, { upsert: false });
   if (error) throw error;
-  return { bucket: ID_VERIFICATIONS_BUCKET, path };
+  return { bucket: ID_VERIFICATIONS_BUCKET, path: safePath };
 };
 
 export const uploadMpPublicImage = async (path: string, file: File) => {
@@ -99,12 +124,10 @@ export const uploadMpPublicImage = async (path: string, file: File) => {
     throw new Error("Image size must be 5MB or smaller");
   }
   await avScanFile(file);
-  if (path.includes('..')) {
-    throw new Error("Invalid path");
-  }
-  const { error } = await supabase.storage.from(MP_PUBLIC_IMAGES_BUCKET).upload(path, file, { upsert: false });
+  const safePath = normalizeStoragePath(path);
+  const { error } = await supabase.storage.from(MP_PUBLIC_IMAGES_BUCKET).upload(safePath, file, { upsert: false });
   if (error) throw error;
-  return { bucket: MP_PUBLIC_IMAGES_BUCKET, path };
+  return { bucket: MP_PUBLIC_IMAGES_BUCKET, path: safePath };
 };
 
 export const saveModerationEvidence = async (issueId: string, file: File, uploadedBy: string) => {
@@ -125,8 +148,8 @@ export const getSignedDownloadUrl = async (
   path: string,
   expiresInSeconds: number = DEFAULT_SIGNED_URL_EXPIRY,
 ) => {
-  if (path.includes('..')) throw new Error("Invalid path");
-  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresInSeconds);
+  const safePath = normalizeStoragePath(path);
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(safePath, expiresInSeconds);
   if (error || !data?.signedUrl) throw error ?? new Error("Unable to create signed URL");
   return data.signedUrl;
 };

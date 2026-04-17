@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
 import { buildCorsHeaders } from "../shared/cors.ts";
 import { RateLimitError, rateLimiter } from "../shared/rate-limiter.ts";
 
@@ -24,7 +23,7 @@ async function shortCodeToPseudoUuid(shortCode: string): Promise<string> {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const cors = buildCorsHeaders(req.headers.get("Origin"));
 
   // Handle CORS preflight
@@ -75,9 +74,14 @@ serve(async (req) => {
     } catch (rateError) {
       if (rateError instanceof RateLimitError) {
         return new Response(
-          JSON.stringify({ success: false, error: "Too many requests" }),
+          JSON.stringify({
+            success: false,
+            error: rateError.reason === "storage_error"
+              ? "Rate limiting is temporarily unavailable. Please retry shortly."
+              : "Too many requests",
+          }),
           {
-            status: 429,
+            status: rateError.reason === "storage_error" ? 503 : 429,
             headers: {
               ...cors,
               "Content-Type": "application/json",
