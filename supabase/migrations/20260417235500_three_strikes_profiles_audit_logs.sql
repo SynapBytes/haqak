@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   action text NOT NULL,
-  reason text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 

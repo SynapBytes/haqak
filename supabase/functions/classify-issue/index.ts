@@ -7,6 +7,34 @@ const MAX_DESCRIPTION_LENGTH_BEFORE_AI = 3000;
 const MAX_SENDER_NAME_LENGTH = 400;
 const MAX_AI_REQUEST_BODY_BYTES = 10_000;
 const GEMINI_MODEL = "gemini-2.0-flash";
+const PERMANENT_BAN_DAYS = 36525;
+// Treat bans close to 100 years as permanent to tolerate minor clock / migration drift.
+const PERMANENT_BAN_DETECTION_RATIO = 0.8;
+const GEMINI_MODERATION_SYSTEM_INSTRUCTION = `
+أنت نظام تدقيق وإعادة صياغة رسمي شديد الصرامة لمنصة شكاوى حكومية.
+نفّذ القواعد التالية حرفيًا:
+1) افحص النص لاكتشاف أي إساءة مباشرة أو خفية، إهانة، تهديد، تحريض، ابتزاز، ألفاظ نابية، أو محتوى غير لائق.
+2) أعد فقط كائن JSON صحيح وبدون أي نص إضافي.
+3) استخدم المفاتيح فقط:
+- is_offensive: boolean
+- refined_description: string
+- core_issue: string
+- reason: string
+4) إذا كان is_offensive = true:
+- ضع refined_description كسلسلة فارغة.
+- ضع core_issue كسلسلة فارغة.
+- reason يجب أن يشرح سبب الرفض باختصار.
+5) إذا كان is_offensive = false:
+- أعد صياغة complaint في refined_description وفق القواعد التالية بالضبط:
+  أ) احذف كليًا أي تحيات أو مجاملات أو دعاء أو مشاعر شخصية أو أحاديث جانبية.
+  ب) الصياغة تكون مباشرة جدًا ورسمية ومختصرة.
+  ج) يجب أن يبدأ النص حرفيًا بهذا النمط:
+     "يتقدم المواطن [الاسم بالعربية] بشكوى/طلب بخصوص..."
+     وإذا كان الاسم بغير العربية، قم بكتابته/نقله إلى العربية تلقائيًا.
+  د) اعرض تفاصيل المشكلة والإجراء المطلوب كنقاط تعداد عربية مهنية وواضحة.
+6) core_issue يجب أن يكون جملة عربية واحدة قصيرة تلخص جوهر المشكلة فقط.
+7) لا تضف أي مفاتيح أخرى إطلاقًا.
+`.trim();
 
 const HARSH_ARABIC_PROFANITY_PATTERNS: RegExp[] = [
   /(?:^|[\s\p{P}])(?:ابن\s*الكلب|كلب|قحبة|شرموط|شرموطة|عرص|خول|زانية|وسخ)(?:$|[\s\p{P}])/iu,
@@ -36,6 +64,13 @@ const coerceString = (value: unknown, fallback = ""): string => {
   return fallback;
 };
 
+const sanitizeForPrompt = (value: unknown, maxLength = 3000): string =>
+  coerceString(value, "")
+    .replace(/[<>]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+
 const hasHarshLocalProfanity = (text: string): boolean =>
   HARSH_ARABIC_PROFANITY_PATTERNS.some((pattern) => pattern.test(text));
 
@@ -46,7 +81,7 @@ const getBanPenalty = (newViolationCount: number) => {
   if (newViolationCount === 2) {
     return { days: 14, label: "14 يومًا", permanent: false };
   }
-  return { days: 36525, label: "100 سنة (حظر دائم)", permanent: true };
+  return { days: PERMANENT_BAN_DAYS, label: "100 سنة (حظر دائم)", permanent: true };
 };
 
 const formatBanNotice = (label: string, permanent: boolean) =>
@@ -57,8 +92,9 @@ const formatBanNotice = (label: string, permanent: boolean) =>
 const classifyPermanentBan = (bannedUntil: string) => {
   const untilMs = new Date(bannedUntil).getTime();
   const nowMs = Date.now();
-  const hundredYearsMs = 100 * 365 * 24 * 60 * 60 * 1000;
-  return Number.isFinite(untilMs) && untilMs - nowMs >= hundredYearsMs * 0.8;
+  if (!Number.isFinite(nowMs)) return false;
+  const permanentBanMs = PERMANENT_BAN_DAYS * 24 * 60 * 60 * 1000;
+  return Number.isFinite(untilMs) && untilMs - nowMs >= permanentBanMs * PERMANENT_BAN_DETECTION_RATIO;
 };
 
 const applyViolationAndBan = async (
@@ -89,14 +125,6 @@ const applyViolationAndBan = async (
     user_id: userId,
     action: "issue_content_rejected_ban_applied",
     reason,
-    entity_type: "profile",
-    entity_id: userId,
-    new_values: {
-      violation_count: newViolationCount,
-      banned_until: bannedUntil.toISOString(),
-      penalty: penalty.label,
-    },
-    status: "success",
   });
 
   if (auditError) {
@@ -121,36 +149,10 @@ const callGeminiModeration = async (
     throw new Error("GEMINI_API_KEY is not configured");
   }
 
-  const systemInstruction = `
-أنت نظام تدقيق وإعادة صياغة رسمي شديد الصرامة لمنصة شكاوى حكومية.
-نفّذ القواعد التالية حرفيًا:
-1) افحص النص لاكتشاف أي إساءة مباشرة أو خفية، إهانة، تهديد، تحريض، ابتزاز، ألفاظ نابية، أو محتوى غير لائق.
-2) أعد فقط كائن JSON صحيح وبدون أي نص إضافي.
-3) استخدم المفاتيح فقط:
-- is_offensive: boolean
-- refined_description: string
-- core_issue: string
-- reason: string
-4) إذا كان is_offensive = true:
-- ضع refined_description كسلسلة فارغة.
-- ضع core_issue كسلسلة فارغة.
-- reason يجب أن يشرح سبب الرفض باختصار.
-5) إذا كان is_offensive = false:
-- أعد صياغة complaint في refined_description وفق القواعد التالية بالضبط:
-  أ) احذف كليًا أي تحيات أو مجاملات أو دعاء أو مشاعر شخصية أو أحاديث جانبية.
-  ب) الصياغة تكون مباشرة جدًا ورسمية ومختصرة.
-  ج) يجب أن يبدأ النص حرفيًا بهذا النمط:
-     "يتقدم المواطن [الاسم بالعربية] بشكوى/طلب بخصوص..."
-     وإذا كان الاسم بغير العربية، قم بكتابته/نقله إلى العربية تلقائيًا.
-  د) اعرض تفاصيل المشكلة والإجراء المطلوب كنقاط تعداد عربية مهنية وواضحة.
-6) core_issue يجب أن يكون جملة عربية واحدة قصيرة تلخص جوهر المشكلة فقط.
-7) لا تضف أي مفاتيح أخرى إطلاقًا.
-`.trim();
-
   const userPayload = {
-    citizen_full_name: fullName,
-    title,
-    description,
+    citizen_full_name: sanitizeForPrompt(fullName, 500),
+    title: sanitizeForPrompt(title, MAX_TITLE_LENGTH_BEFORE_AI),
+    description: sanitizeForPrompt(description, MAX_DESCRIPTION_LENGTH_BEFORE_AI),
   };
 
   const response = await fetch(
@@ -163,7 +165,7 @@ const callGeminiModeration = async (
       },
       body: JSON.stringify({
         systemInstruction: {
-          parts: [{ text: systemInstruction }],
+          parts: [{ text: GEMINI_MODERATION_SYSTEM_INSTRUCTION }],
         },
         contents: [
           {
@@ -319,7 +321,7 @@ Deno.serve(async (req) => {
     const trimmedTitle = normalizedTitle.slice(0, MAX_TITLE_LENGTH_BEFORE_AI);
     const trimmedDescription = normalizedDescription.slice(0, MAX_DESCRIPTION_LENGTH_BEFORE_AI);
     const safeSenderName = typeof senderName === "string" ? senderName.slice(0, MAX_SENDER_NAME_LENGTH) : "";
-    const profileFullName = coerceString(profile?.full_name, safeSenderName || "غير معروف");
+    const effectiveFullName = coerceString(profile?.full_name, safeSenderName || "غير معروف");
 
     const concatenatedText = `${trimmedTitle}\n${trimmedDescription}`;
     if (hasHarshLocalProfanity(concatenatedText)) {
@@ -342,7 +344,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const moderation = await callGeminiModeration(profileFullName, trimmedTitle, trimmedDescription);
+    const moderation = await callGeminiModeration(effectiveFullName, trimmedTitle, trimmedDescription);
 
     if (moderation.is_offensive) {
       const penalty = await applyViolationAndBan(
@@ -366,6 +368,9 @@ Deno.serve(async (req) => {
 
     const refinedDescription = moderation.refined_description || trimmedDescription;
     const coreIssue = moderation.core_issue || trimmedTitle;
+    if (!moderation.refined_description || !moderation.core_issue) {
+      console.warn("Gemini returned empty refined_description/core_issue for accepted content; fallback values were applied.");
+    }
 
     return new Response(JSON.stringify({
       status: "accepted",
@@ -375,9 +380,9 @@ Deno.serve(async (req) => {
       refined_description: refinedDescription,
       ai_summary: coreIssue,
       core_issue: coreIssue,
-      category: "individual",
-      issueCategory: "general",
-      priority: "normal",
+      category: "individual", // kept static for backward compatibility with current client flow
+      issueCategory: "general", // kept static for backward compatibility with current client flow
+      priority: "normal", // kept static for backward compatibility with current client flow
       ai_meta: {
         provider: "gemini",
         model: GEMINI_MODEL,
