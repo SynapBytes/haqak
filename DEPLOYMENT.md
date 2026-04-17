@@ -28,6 +28,38 @@ For the full security hardening guide including HSTS, CORS, and the deployment c
 
 ## Automated Deployment (GitHub Actions)
 
+### Frontend — Vercel
+
+The workflow `.github/workflows/deploy-to-vercel.yml` builds the frontend and
+deploys it to Vercel Production on every push to `main`.
+
+Required GitHub secret:
+
+| Secret | Description |
+|--------|-------------|
+| `VERCEL_TOKEN` | Personal access token from https://vercel.com/account/tokens |
+
+Optional build-time secrets (pass real values for a production build; the CI
+workflow falls back to placeholders when these are absent):
+
+| Secret | Description |
+|--------|-------------|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase anon/publishable key |
+| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key |
+| `VITE_VAPID_PUBLIC_KEY` | Web Push VAPID public key |
+
+**One-time token setup:**
+
+1. Visit <https://vercel.com/account/tokens> → **Create Token**
+   - Name: e.g. `haqak-deploy` · Scope: Full Account
+2. Copy the token value (shown only once)
+3. In GitHub: **Settings → Secrets and variables → Actions → New repository secret**
+   - Name: `VERCEL_TOKEN` · Value: `<token from step 2>`
+4. Push to `main` (or run the workflow manually via **Actions → Deploy to Vercel → Run workflow**)
+
+### Edge Functions — Supabase
+
 The workflow `.github/workflows/deploy-edge-functions.yml` deploys these functions:
 - `request-email-verification`
 - `verify-email-code`
@@ -102,10 +134,13 @@ Expected `Cache-Control: no-cache, no-store, must-revalidate` for all three.
 
 | Symptom | Fix |
 |---|---|
+| Vercel workflow fails — missing secrets | Add `VERCEL_TOKEN` secret (see Automated Deployment → Frontend above) |
+| Website shows old content after push | Check that the `deploy-to-vercel` workflow passed in Actions; clear browser cache or open in incognito |
+| Vercel build error | Review the Build step logs; ensure all `VITE_*` secrets are set |
 | `404 request-email-verification not found` | Deploy functions again manually or rerun workflow |
 | CORS preflight fails | Add origin to `ALLOWED_ORIGINS` secret |
 | `500 Server configuration error` | Ensure required secrets are set |
-| Workflow fails — missing secrets | Add `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_ID` |
+| Workflow fails — missing Supabase secrets | Add `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_ID` |
 
 ## Rollback (if post-deploy checks fail)
 
