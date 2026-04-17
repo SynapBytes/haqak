@@ -21,6 +21,27 @@ const EMERGENCY_TRANSLATIONS: Record<SupportedLang, Record<string, unknown>> = {
       load_error: "تعذر تحميل المراكز حالياً. حاول مرة أخرى.",
       save_error: "تعذر حفظ المركز. حاول مرة أخرى.",
     },
+    common: {
+      cancel: "إلغاء",
+      delete: "حذف",
+      error: "حدث خطأ. حاول مرة أخرى.",
+      loading: "جاري التحميل...",
+      unknown: "غير معروف",
+    },
+    not_found: {
+      title: "الصفحة غير موجودة",
+      go_home: "العودة للرئيسية",
+    },
+    reset_password: {
+      title: "إعادة تعيين كلمة المرور",
+      submit: "تعيين كلمة المرور",
+      success: "تم تعيين كلمة المرور بنجاح",
+      error: "تعذر تعيين كلمة المرور. حاول مرة أخرى.",
+      min_error: "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
+      mismatch: "كلمتا المرور غير متطابقتين",
+      invalid_link: "رابط إعادة التعيين غير صالح أو منتهي الصلاحية",
+      back_to_login: "العودة لتسجيل الدخول",
+    },
   },
   en: {
     center_onboarding: {
@@ -33,6 +54,27 @@ const EMERGENCY_TRANSLATIONS: Record<SupportedLang, Record<string, unknown>> = {
       saved: "Center saved successfully",
       load_error: "Could not load centers right now. Please try again.",
       save_error: "Could not save center. Please try again.",
+    },
+    common: {
+      cancel: "Cancel",
+      delete: "Delete",
+      error: "An error occurred. Please try again.",
+      loading: "Loading...",
+      unknown: "Unknown",
+    },
+    not_found: {
+      title: "Page not found",
+      go_home: "Go to home",
+    },
+    reset_password: {
+      title: "Reset Password",
+      submit: "Set Password",
+      success: "Password set successfully",
+      error: "Could not set password. Please try again.",
+      min_error: "Password must be at least 8 characters",
+      mismatch: "Passwords do not match",
+      invalid_link: "Reset link is invalid or expired",
+      back_to_login: "Back to login",
     },
   },
 };
