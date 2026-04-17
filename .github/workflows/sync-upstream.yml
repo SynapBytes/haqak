@@ -1,0 +1,71 @@
+name: Sync from Axonexiis Upstream
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    name: Sync upstream
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: git remote add upstream https://github.com/Axonexiis/haqak.git || git remote set-url upstream https://github.com/Axonexiis/haqak.git
+
+      - name: Fetch upstream
+        run: git fetch upstream main:upstream-main
+
+      - name: Check for differences
+        id: check-diff
+        run: |
+          if git diff --quiet main upstream-main; then
+            echo "status=no-changes" >> $GITHUB_OUTPUT
+            echo "No upstream changes detected."
+          else
+            echo "status=has-changes" >> $GITHUB_OUTPUT
+            echo "Upstream changes detected."
+          fi
+
+      - name: Merge upstream
+        id: merge
+        if: steps.check-diff.outputs.status == 'has-changes'
+        continue-on-error: true
+        run: |
+          git merge upstream-main -m "🔄 Sync from Axonexiis/haqak at $(date -u +'%Y-%m-%dT%H:%M:%SZ')" --allow-unrelated-histories
+
+      - name: Push to origin
+        if: steps.check-diff.outputs.status == 'has-changes' && steps.merge.outcome == 'success'
+        run: |
+          git push origin main
+
+      - name: Create Pull Request if merge failed
+        if: steps.check-diff.outputs.status == 'has-changes' && steps.merge.outcome == 'failure'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: '🔄 Sync from Axonexiis/haqak'
+          title: '🔄 Sync upstream changes from Axonexiis'
+          body: |
+            # Upstream Sync
+
+            Automatic sync from Axonexiis/haqak
+
+            Please review and merge if changes are correct.
+          branch: sync/upstream-${{ github.run_number }}
+          delete-branch: true
