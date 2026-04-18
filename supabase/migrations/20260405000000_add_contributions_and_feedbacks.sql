@@ -43,17 +43,9 @@ CREATE POLICY "Anyone can insert a feedback" ON public.feedbacks
     FOR INSERT WITH CHECK (true);
 
 -- Only admins can view feedbacks
--- (Assuming admin role check exists in the system)
--- If there's a 'profiles' table with roles, we'd use that.
--- Based on App.tsx, there's an 'admin' role.
 CREATE POLICY "Admins can view feedbacks" ON public.feedbacks
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE profiles.user_id = auth.uid()
-            AND profiles.role = 'admin'
-        )
-    );
+    FOR SELECT TO authenticated
+    USING (public.has_role(auth.uid(), 'admin'));
 
 -- Add to realtime if needed
 ALTER PUBLICATION supabase_realtime ADD TABLE public.contributions;
