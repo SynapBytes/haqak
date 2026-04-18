@@ -48,8 +48,8 @@ interface MPResponse {
   created_at: string;
 }
 
-const escapeSupabaseFilterValue = (value: string) =>
-  value.replace(/[%(),]/g, " ").replace(/\s+/g, " ").trim();
+const sanitizeLocationTerm = (value: string) =>
+  value.replace(/[^\p{L}\p{N}\s-]/gu, "").replace(/\s+/g, " ").trim();
 
 const MPDashboard = () => {
   const { t } = useTranslation();
@@ -93,25 +93,47 @@ const MPDashboard = () => {
   });
 
   const issuesQuery = useQuery({
-    queryKey: ["mp-issues", user?.id, profileQuery.data?.governorate ?? null, profileQuery.data?.constituency ?? null],
-    enabled: !!user && !profileQuery.isLoading,
+    queryKey: ["mp-issues", user?.id, profileQuery.data?.governorate, profileQuery.data?.constituency],
+    enabled: !!user && profileQuery.isSuccess,
     queryFn: async () => {
-      const conditions = [`assigned_mp_id.eq.${user!.id}`, "assigned_mp_id.is.null"];
-      const mpGovernorate = profileQuery.data?.governorate;
-      const mpConstituency = profileQuery.data?.constituency;
-      if (mpGovernorate) {
-        conditions.push(`location.ilike.%${escapeSupabaseFilterValue(mpGovernorate)}%`);
-      }
-      if (mpConstituency) {
-        conditions.push(`location.ilike.%${escapeSupabaseFilterValue(mpConstituency)}%`);
-      }
+      const locationTerms = [
+        sanitizeLocationTerm(profileQuery.data?.governorate ?? ""),
+        sanitizeLocationTerm(profileQuery.data?.constituency ?? ""),
+      ].filter((term) => term.length >= 2);
 
-      const { data, error } = await supabase
+      const assignedIssuesPromise = supabase
         .from("issues")
         .select("*")
-        .or(conditions.join(","))
-        .order("created_at", { ascending: false });
-      if (error) throw error;
+        .or(`assigned_mp_id.eq.${user!.id},assigned_mp_id.is.null`);
+
+      const locationIssuePromises = locationTerms.map((term) =>
+        supabase.from("issues").select("*").ilike("location", `%${term}%`),
+      );
+
+      const [assignedIssuesResult, ...locationIssueResults] = await Promise.all([
+        assignedIssuesPromise,
+        ...locationIssuePromises,
+      ]);
+
+      if (assignedIssuesResult.error) throw assignedIssuesResult.error;
+      locationIssueResults.forEach((result) => {
+        if (result.error) throw result.error;
+      });
+
+      const combined = [...(assignedIssuesResult.data ?? [])];
+      locationIssueResults.forEach((result) => {
+        if (result.data?.length) {
+          combined.push(...result.data);
+        }
+      });
+
+      const dedupedById = new Map<string, (typeof combined)[number]>();
+      combined.forEach((row) => {
+        dedupedById.set(row.id, row);
+      });
+      const data = Array.from(dedupedById.values()).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
 
       return (data ?? []).map((d) => {
         const row = d as Record<string, unknown>;

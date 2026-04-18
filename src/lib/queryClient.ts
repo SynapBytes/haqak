@@ -1,12 +1,13 @@
 import { QueryClient } from "@tanstack/react-query";
 
-const getStaleTime = (queryKey: readonly unknown[]) => {
-  const joined = queryKey
-    .map((part) => (typeof part === "string" ? part.toLowerCase() : ""))
-    .join(".");
+const ISSUE_QUERY_ROOTS = new Set(["citizen-issues", "mp-issues", "admin-issues"]);
+const PROFILE_QUERY_TOKEN = "profile";
 
-  if (joined.includes("issue")) return 30_000;
-  if (joined.includes("profile")) return 5 * 60_000;
+const getStaleTime = (queryKey: readonly unknown[]) => {
+  const root = typeof queryKey[0] === "string" ? queryKey[0].toLowerCase() : "";
+
+  if (ISSUE_QUERY_ROOTS.has(root)) return 30_000;
+  if (root.includes(PROFILE_QUERY_TOKEN)) return 5 * 60_000;
   return 60_000;
 };
 

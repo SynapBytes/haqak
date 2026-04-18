@@ -30,7 +30,6 @@ import { handleClientError } from "@/lib/errors";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type IssueRow = Database["public"]["Tables"]["issues"]["Row"];
-type UserRoleRow = Database["public"]["Tables"]["user_roles"]["Row"];
 
 interface UserProfile {
   id: string;
@@ -65,10 +64,11 @@ interface IdentityVerificationRow {
   rejection_reason: string | null;
 }
 
+const PAGE_SIZE = 25;
+
 const AdminDashboard = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const PAGE_SIZE = 25;
   const [searchQuery, setSearchQuery] = useState("");
   const [issueSearchQuery, setIssueSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"users" | "issues" | "analytics" | "verifications" | "renomination" | "banks">("users");
@@ -104,7 +104,7 @@ const AdminDashboard = () => {
       if (userIds.length > 0) {
         const rolesRes = await supabase.from("user_roles").select("*").in("user_id", userIds);
         if (rolesRes.error) throw rolesRes.error;
-        (rolesRes.data ?? []).forEach((r: UserRoleRow) => {
+        (rolesRes.data ?? []).forEach((r) => {
           const existing = rolesByUser.get(r.user_id) ?? [];
           rolesByUser.set(r.user_id, [...existing, r.role as AppRole]);
         });
@@ -203,7 +203,7 @@ const AdminDashboard = () => {
   const issuesTotalPages = Math.max(1, Math.ceil(issuesTotal / PAGE_SIZE));
   const loading = usersQuery.isLoading || issuesQuery.isLoading || verificationsQuery.isLoading;
 
-  const fetchData = async () => {
+  const invalidateAllAdminQueries = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
       queryClient.invalidateQueries({ queryKey: ["admin-issues"] }),
@@ -225,7 +225,7 @@ const AdminDashboard = () => {
     onSuccess: async ({ approve }) => {
       toast.success(approve ? t("admin_dashboard.mp_approved") : t("admin_dashboard.mp_revoked"));
       analytics.track(approve ? "admin_approved_mp" : "admin_rejected_mp");
-      await fetchData();
+      await invalidateAllAdminQueries();
     },
     onError: () => {
       toast.error(t("admin_dashboard.error"));
@@ -256,7 +256,7 @@ const AdminDashboard = () => {
       }
 
       toast.success(t("admin_dashboard.role_updated"));
-      fetchData();
+      invalidateAllAdminQueries();
     } catch {
       toast.error(t("admin_dashboard.role_update_error"));
     }
@@ -272,7 +272,7 @@ const AdminDashboard = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       toast.success(t("admin_dashboard.account_deleted"));
-      fetchData();
+      invalidateAllAdminQueries();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t("admin_dashboard.delete_error"));
     }
@@ -295,7 +295,7 @@ const AdminDashboard = () => {
     } else {
       toast.success(ban ? t("admin_dashboard.user_banned") : t("admin_dashboard.user_unbanned"));
       analytics.track(ban ? "admin_banned_user" : "admin_unbanned_user");
-      fetchData();
+      invalidateAllAdminQueries();
     }
     setBanningUser(null);
   };
@@ -382,7 +382,7 @@ const AdminDashboard = () => {
 
       toast.success(status === "verified" ? "تم اعتماد الهوية" : "تم رفض التحقق");
       setSelectedVerification(null);
-      await fetchData();
+      await invalidateAllAdminQueries();
     } catch (error) {
       handleClientError(
         { code: "admin.verifications.decision_failed", message: "فشل حفظ قرار التحقق", retryable: true },

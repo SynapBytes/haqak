@@ -149,7 +149,7 @@ const CitizenDashboard = () => {
   useEffect(() => {
     // reputation columns not yet in profiles table – use defaults
     setReputation({ points: 0, rank: "مواطن جديد" });
-  }, [issues.length]);
+  }, []);
 
   useEffect(() => {
     if (mpIdParam && mpNameParam) {
