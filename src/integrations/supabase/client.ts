@@ -2,17 +2,43 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.trim();
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
+const LEGACY_SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+
+const missingConfigVars: string[] = [];
+
+if (!SUPABASE_URL) {
+  missingConfigVars.push("VITE_SUPABASE_URL");
+}
+
+if (!SUPABASE_ANON_KEY) {
+  missingConfigVars.push("VITE_SUPABASE_ANON_KEY");
+}
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
 /** Non-null when Supabase env vars are missing; checked by main.tsx at bootstrap. */
 export const supabaseConfigError: string | null =
-  !SUPABASE_URL || !SUPABASE_ANON_KEY
-    ? "Missing Supabase configuration: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set."
+  missingConfigVars.length > 0
+    ? `Missing Supabase configuration: ${missingConfigVars.join(", ")} must be set.`
     : null;
+
+if (supabaseConfigError) {
+  const legacyKeyHint = LEGACY_SUPABASE_PUBLISHABLE_KEY
+    ? "Detected legacy VITE_SUPABASE_PUBLISHABLE_KEY. Rename it to VITE_SUPABASE_ANON_KEY."
+    : "Expected key: VITE_SUPABASE_ANON_KEY (Supabase anon key).";
+
+  console.error(
+    [
+      "🚨🚨🚨 SUPABASE CONFIGURATION ERROR 🚨🚨🚨",
+      supabaseConfigError,
+      legacyKeyHint,
+      "App will render the configuration error screen instead of crashing.",
+    ].join("\n")
+  );
+}
 
 // Use placeholder values when config is missing so createClient doesn't throw
 // at module load time; the app will show a config-error screen instead.
