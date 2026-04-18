@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
+import { getIssueCategoryLabel } from "@/lib/issueCategories";
 
 export interface Issue {
   id: string;
@@ -124,7 +125,7 @@ const IssueCard = ({ issue, onClick }: IssueCardProps) => {
       {/* Footer Info */}
       <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
         <span className="px-2.5 py-1 rounded-lg bg-muted/50 text-foreground text-xs font-medium">
-          {issue.category}
+          {getIssueCategoryLabel(issue.category, t)}
         </span>
         {issue.location && (
           <span className="flex items-center gap-1 text-xs">

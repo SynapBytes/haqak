@@ -16,6 +16,12 @@ const offensivePatterns = [
   /\b(nigger|faggot|retard|idiot|stupid|dumb|moron)\b/gi,
 ];
 
+const offensiveKeywordTokens = [
+  "شتيمة", "سب", "قذف", "تهديد", "جنسي", "عنف", "إرهاب", "قتل", "اغتصاب", "تحرش",
+  "كس", "زب", "نيك", "طيز", "خول", "حمار", "كلب", "ديوث", "عاهرة", "ساقطة",
+  "fuck", "shit", "damn", "bitch", "asshole", "rape", "kill", "murder", "terrorist", "abuse",
+];
+
 // Patterns for detecting potentially problematic content
 const suspiciousPatterns = [
   /\b(تهديد|تهدد|سأقتل|سأضرب|سأحرق|سأفجر|سأنتقم)\b/gi,
@@ -53,8 +59,8 @@ const maxFileSizes: Record<string, number> = {
 export interface ContentFilterResult {
   isClean: boolean;
   isSuspicious: boolean;
-  offensiveMatches: string[];
-  suspiciousMatches: string[];
+  offensiveMatches: number;
+  suspiciousMatches: number;
   reason?: string;
 }
 
@@ -67,33 +73,54 @@ export interface AttachmentValidationResult {
 /**
  * Detects offensive content in text
  */
-export function detectOffensiveContent(text: string): string[] {
-  const matches: string[] = [];
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const spacingBypassRegex = (token: string): RegExp => {
+  const compactToken = token.replace(/\s+/g, "");
+  const joiner = "[\\s._\\-~*]*";
+  const pattern = compactToken
+    .split("")
+    .map((char) => escapeRegex(char))
+    .join(joiner);
+  return new RegExp(pattern, "giu");
+};
+
+const offensiveSpacingPatterns = offensiveKeywordTokens.map(spacingBypassRegex);
+
+export function detectOffensiveContent(text: string): number {
+  let matches = 0;
   
   for (const pattern of offensivePatterns) {
     const found = text.match(pattern);
     if (found) {
-      matches.push(...found);
+      matches += found.length;
+    }
+  }
+
+  for (const pattern of offensiveSpacingPatterns) {
+    const found = text.match(pattern);
+    if (found) {
+      matches += found.length;
     }
   }
   
-  return [...new Set(matches)]; // Remove duplicates
+  return matches;
 }
 
 /**
  * Detects suspicious content patterns
  */
-export function detectSuspiciousContent(text: string): string[] {
-  const matches: string[] = [];
+export function detectSuspiciousContent(text: string): number {
+  let matches = 0;
   
   for (const pattern of suspiciousPatterns) {
     const found = text.match(pattern);
     if (found) {
-      matches.push(...found);
+      matches += found.length;
     }
   }
   
-  return [...new Set(matches)]; // Remove duplicates
+  return matches;
 }
 
 /**
@@ -106,15 +133,15 @@ export function filterContent(title: string, description: string): ContentFilter
   const suspiciousMatches = detectSuspiciousContent(combinedText);
   
   const result: ContentFilterResult = {
-    isClean: offensiveMatches.length === 0,
-    isSuspicious: suspiciousMatches.length > 0,
+    isClean: offensiveMatches === 0,
+    isSuspicious: suspiciousMatches > 0,
     offensiveMatches,
     suspiciousMatches,
   };
   
-  if (offensiveMatches.length > 0) {
+  if (offensiveMatches > 0) {
     result.reason = "محتوى مسيء أو غير لائق تم اكتشافه";
-  } else if (suspiciousMatches.length > 0) {
+  } else if (suspiciousMatches > 0) {
     result.reason = "محتوى يحتوي على تهديدات أو عنف";
   }
   
@@ -175,15 +202,23 @@ export function validateAttachments(files: File[]): AttachmentValidationResult {
 /**
  * Sanitizes text by removing or replacing offensive content
  */
-export function sanitizeText(text: string): string {
-  let sanitized = text;
+export function censorText(text: string): string {
+  let censored = text;
   
   for (const pattern of offensivePatterns) {
-    sanitized = sanitized.replace(pattern, '***');
+    censored = censored.replace(pattern, "***");
   }
-  
-  return sanitized;
+
+  for (const pattern of offensiveSpacingPatterns) {
+    censored = censored.replace(pattern, "***");
+  }
+
+  return censored;
 }
+
+// Backward-compatible alias for existing callers that may still import the old
+// intent name while migration to `censorText` is completed.
+export const redactOffensiveContent = censorText;
 
 /**
  * Checks if content is suitable for publication
@@ -200,12 +235,12 @@ export function getContentReport(title: string, description: string): string[] {
   const filterResult = filterContent(title, description);
   const issues: string[] = [];
   
-  if (filterResult.offensiveMatches.length > 0) {
-    issues.push(`تم اكتشاف كلمات مسيئة: ${filterResult.offensiveMatches.join(', ')}`);
+  if (filterResult.offensiveMatches > 0) {
+    issues.push(`تم اكتشاف محتوى مسيء (عدد الأنماط: ${filterResult.offensiveMatches})`);
   }
   
-  if (filterResult.suspiciousMatches.length > 0) {
-    issues.push(`تم اكتشاف محتوى مريب: ${filterResult.suspiciousMatches.join(', ')}`);
+  if (filterResult.suspiciousMatches > 0) {
+    issues.push(`تم اكتشاف محتوى مريب (عدد الأنماط: ${filterResult.suspiciousMatches})`);
   }
   
   return issues;
