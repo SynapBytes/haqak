@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sanitizeText } from "@/lib/sanitize";
+import SeoHead from "@/components/SeoHead";
 
 type ExtendedPublicTables = Database["public"]["Tables"] & {
   contributions: {
@@ -234,6 +235,7 @@ const Support = () => {
 
   return (
     <div className="min-h-screen bg-[#FDFCFB] text-[#1A1A1A] selection:bg-amber-100/60" dir={isRTL ? "rtl" : "ltr"}>
+      <SeoHead title={t("seo.support_title")} description={t("seo.support_description")} path="/support" />
       {/* Ambient background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div className="absolute -top-[15%] -left-[10%] w-[50%] h-[50%] bg-amber-50/60 rounded-full blur-[140px]" />

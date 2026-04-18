@@ -14,6 +14,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "i18n:check": "vitest run src/test/i18n-keys.test.ts",
+    "links:check": "vitest run src/config/socialLinks.test.ts",
     "prepare": "husky"
   },
   "dependencies": {

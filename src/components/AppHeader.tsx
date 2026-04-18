@@ -92,6 +92,21 @@ const AppHeader = () => {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1">
+          <Link to="/support">
+            <Button variant={isActive("/support") ? "secondary" : "ghost"} size="sm">
+              {t("nav.support")}
+            </Button>
+          </Link>
+          <Link to="/success-stories">
+            <Button variant={isActive("/success-stories") ? "secondary" : "ghost"} size="sm">
+              {t("nav.success_stories")}
+            </Button>
+          </Link>
+          <Link to="/faq">
+            <Button variant={isActive("/faq") ? "secondary" : "ghost"} size="sm">
+              {t("nav.faq")}
+            </Button>
+          </Link>
           {session && (
             <>
               <Link to="/citizen">
@@ -188,6 +203,21 @@ const AppHeader = () => {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-card px-4 py-3 space-y-2 animate-fade-in">
+          <Link to="/support" onClick={() => setMobileMenuOpen(false)}>
+            <Button variant={isActive("/support") ? "secondary" : "ghost"} size="sm" className="w-full justify-start">
+              {t("nav.support")}
+            </Button>
+          </Link>
+          <Link to="/success-stories" onClick={() => setMobileMenuOpen(false)}>
+            <Button variant={isActive("/success-stories") ? "secondary" : "ghost"} size="sm" className="w-full justify-start">
+              {t("nav.success_stories")}
+            </Button>
+          </Link>
+          <Link to="/faq" onClick={() => setMobileMenuOpen(false)}>
+            <Button variant={isActive("/faq") ? "secondary" : "ghost"} size="sm" className="w-full justify-start">
+              {t("nav.faq")}
+            </Button>
+          </Link>
           {session ? (
             <>
               <div className="flex items-center gap-2 pb-3 mb-2 border-b border-border">
