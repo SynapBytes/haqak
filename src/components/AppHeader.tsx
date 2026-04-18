@@ -9,6 +9,23 @@ import { useEffect, useState } from "react";
 
 type SignInCTAProps = { label: string; className?: string; fullWidth?: boolean; onClick?: () => void };
 
+const AVATAR_PATH_PREFIX = "/storage/v1/object/public/avatars/";
+
+const getSafeAvatarUrl = (avatarUrl: string | null | undefined): string | null => {
+  if (!avatarUrl) return null;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  if (!supabaseUrl) return null;
+
+  try {
+    const origin = new URL(supabaseUrl).origin;
+    const parsed = new URL(avatarUrl);
+    const expectedPrefix = `${origin}${AVATAR_PATH_PREFIX}`;
+    return parsed.href.startsWith(expectedPrefix) ? parsed.href : null;
+  } catch {
+    return null;
+  }
+};
+
 const SignInCTAButton = ({ label, className, fullWidth = false, onClick }: SignInCTAProps) => (
   <Link to="/auth" className={className} onClick={onClick}>
     <Button
@@ -27,6 +44,7 @@ const AppHeader = () => {
   const { theme, toggleTheme } = useTheme();
   const { t, i18n } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const safeAvatarUrl = getSafeAvatarUrl(profile?.avatar_url);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -46,7 +64,7 @@ const AppHeader = () => {
   // Language change side-effects (dir/lang/localStorage) are handled globally in src/i18n/index.ts
 
   const getLangLabel = () => {
-    return i18n.language === "ar" ? "Switch to English" : "التبديل للعربية";
+    return i18n.language === "ar" ? t("nav.switch_to_english") : t("nav.switch_to_arabic");
   };
 
   return (
@@ -101,7 +119,7 @@ const AppHeader = () => {
               {role === "mp" && (
                 <Link to="/mp/settings">
                   <Button variant={isActive("/mp/settings") ? "secondary" : "ghost"} size="sm" className="gap-2">
-                    <User className="w-4 h-4" /> إعدادات النائب
+                    <User className="w-4 h-4" /> {t("nav.mp_settings")}
                   </Button>
                 </Link>
               )}
@@ -140,8 +158,8 @@ const AppHeader = () => {
             <div className="hidden md:flex items-center gap-3">
               <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                 <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
-                  {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt={profile.full_name || t("nav.my_account")} className="w-full h-full object-cover" />
+                  {safeAvatarUrl ? (
+                    <img src={safeAvatarUrl} alt={profile.full_name || t("nav.my_account")} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-xs font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
                   )}
@@ -159,7 +177,7 @@ const AppHeader = () => {
           <button
             className="md:hidden p-2 text-muted-foreground hover:text-foreground"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? "إغلاق القائمة" : "فتح القائمة"}
+            aria-label={mobileMenuOpen ? t("nav.close_menu") : t("nav.open_menu")}
             aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -174,8 +192,8 @@ const AppHeader = () => {
             <>
               <div className="flex items-center gap-2 pb-3 mb-2 border-b border-border">
                 <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
-                  {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt={profile.full_name || t("nav.my_account")} className="w-full h-full object-cover" />
+                  {safeAvatarUrl ? (
+                    <img src={safeAvatarUrl} alt={profile.full_name || t("nav.my_account")} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-xs font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
                   )}
@@ -207,7 +225,7 @@ const AppHeader = () => {
               {role === "mp" && (
                 <Link to="/mp/settings" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant={isActive("/mp/settings") ? "secondary" : "ghost"} size="sm" className="w-full justify-start gap-2">
-                    <User className="w-4 h-4" /> إعدادات النائب
+                    <User className="w-4 h-4" /> {t("nav.mp_settings")}
                   </Button>
                 </Link>
               )}

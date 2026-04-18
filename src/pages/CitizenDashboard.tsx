@@ -44,8 +44,9 @@ import {
   parseVerifyUploadIntegrityResponse,
 } from "@/lib/boundaryAdapters";
 import { handleClientError } from "@/lib/errors";
+import { ISSUE_CATEGORY_KEYS, normalizeIssueCategory, type IssueCategoryKey } from "@/lib/issueCategories";
 
-const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitation", "education", "electricity", "other"] as const;
+const categoryKeys = ISSUE_CATEGORY_KEYS;
 
 const CitizenDashboard = () => {
   const { user } = useAuth();
@@ -60,7 +61,7 @@ const CitizenDashboard = () => {
   const [assignedMpName, setAssignedMpName] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState<IssueCategoryKey | "">("");
   const [location, setLocation] = useState("");
   const [issueType, setIssueType] = useState<"individual" | "collective">("individual");
   const [submitting, setSubmitting] = useState(false);
@@ -98,7 +99,7 @@ const CitizenDashboard = () => {
           title: d.title,
           description: d.description,
           status: d.status as Issue["status"],
-          category: d.category,
+          category: normalizeIssueCategory(d.category),
           location: d.location,
           timeAgo: d.created_at,
           issue_type: ((row.issue_type as string) || "individual") as "collective" | "individual",
@@ -122,7 +123,7 @@ const CitizenDashboard = () => {
       description: string;
       refined_title: string;
       refined_description: string;
-      category: string;
+      category: IssueCategoryKey;
       location: string;
       issue_type: "individual" | "collective";
       ai_summary: string | null;
@@ -294,12 +295,12 @@ const CitizenDashboard = () => {
     }
 
     // Validate that the issue location is within Egypt
-    if (latitude && longitude) {
-      if (!isLocationInEgypt(latitude, longitude)) {
-        toast.error("البلاغ يجب أن يكون عن مشكلة داخل حدود مصر فقط");
-        return;
+      if (latitude && longitude) {
+        if (!isLocationInEgypt(latitude, longitude)) {
+          toast.error(t("dashboard.egypt_only"));
+          return;
+        }
       }
-    }
 
     setSubmitting(true);
     try {
@@ -313,7 +314,7 @@ const CitizenDashboard = () => {
 
       let finalTitle = sanitizeText(title);
       let finalDescription = sanitizeText(description);
-      let finalCategory = category;
+      let finalCategory: IssueCategoryKey = category || "other";
       let finalIssueType = issueType;
       let aiSummary: string | null = null;
       let priority = "normal";
@@ -327,7 +328,7 @@ const CitizenDashboard = () => {
       const senderName = senderProfile?.full_name || "";
 
       try {
-        toast.info("جاري تحليل الشكوى بالذكاء الاصطناعي...");
+        toast.info(t("dashboard.classifying_ai"));
         const { data: classifyData, error: classifyError } = await supabase.functions.invoke("classify-issue", {
           body: { 
             title, 
@@ -343,7 +344,7 @@ const CitizenDashboard = () => {
           const normalizedClassify = normalizeClassifyIssueResponse(classifyData, {
             title,
             description,
-            category,
+            category: category || "other",
             issueType,
             aiSummary: null,
             priority: "normal",
@@ -352,7 +353,7 @@ const CitizenDashboard = () => {
           if (normalizedClassify.rejected) {
             // Check if rejection is due to location being outside Egypt
             if (normalizedClassify.rejectionReason && normalizedClassify.rejectionReason.includes("location")) {
-              toast.error("البلاغ يجب أن يكون عن مشكلة داخل حدود مصر فقط");
+              toast.error(t("dashboard.egypt_only"));
             } else {
               toast.error(normalizedClassify.rejectionReason || t("dashboard.rejected"));
             }
@@ -364,7 +365,7 @@ const CitizenDashboard = () => {
             handleClientError(
               {
                 code: "issue.classify.invalid_response",
-                message: "تعذر تحليل البلاغ حالياً",
+                message: t("dashboard.ai_unavailable"),
                 retryable: true,
               },
               undefined,
@@ -374,17 +375,17 @@ const CitizenDashboard = () => {
 
           finalTitle = normalizedClassify.title;
           finalDescription = normalizedClassify.description;
-          finalCategory = normalizedClassify.category;
+          finalCategory = normalizeIssueCategory(normalizedClassify.category);
           finalIssueType = normalizedClassify.issueType;
           aiSummary = normalizedClassify.aiSummary;
           priority = normalizedClassify.priority;
         } else if (classifyError) {
           handleClientError(
             {
-              code: "issue.classify.invoke_failed",
-              message: "تعذر تحليل البلاغ حالياً",
-              retryable: true,
-            },
+                code: "issue.classify.invoke_failed",
+                message: t("dashboard.ai_unavailable"),
+                retryable: true,
+              },
             classifyError,
             { showToast: false, extras: { boundary: "classify-issue.invoke" } },
           );
@@ -393,7 +394,7 @@ const CitizenDashboard = () => {
         handleClientError(
           {
             code: "issue.classify.invalid_response",
-            message: "تعذر تحليل البلاغ حالياً",
+            message: t("dashboard.ai_unavailable"),
             retryable: true,
           },
           err,
@@ -530,15 +531,15 @@ const CitizenDashboard = () => {
               </TabsTrigger>
               <TabsTrigger value="legal-bot" className="gap-2 data-[state=active]:bg-accent">
                 <MessageCircle className="w-4 h-4" />
-                المساعد القانوني
+                {t("dashboard.legal_assistant")}
               </TabsTrigger>
               <TabsTrigger value="mobile-app" className="gap-2 data-[state=active]:bg-accent">
                 <Smartphone className="w-4 h-4" />
-                تطبيق حقك
+                {t("dashboard.mobile_app")}
               </TabsTrigger>
               <TabsTrigger value="engagement" className="gap-2 data-[state=active]:bg-accent">
                 <FileText className="w-4 h-4" />
-                الاستطلاعات والإعلانات
+                {t("dashboard.engagement")}
               </TabsTrigger>
             </TabsList>
 
@@ -617,7 +618,7 @@ const CitizenDashboard = () => {
                       {assignedMpName[0]}
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">موجه إلى النائب:</p>
+                      <p className="text-xs text-muted-foreground">{t("dashboard.issue_to_mp")}</p>
                       <p className="font-bold text-accent">{assignedMpName}</p>
                     </div>
                   </div>
@@ -625,18 +626,18 @@ const CitizenDashboard = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground px-1">عنوان المشكلة</label>
-                    <Input placeholder="مثال: انقطاع المياه في حي الأمل" value={title} onChange={(e) => setTitle(e.target.value)} className="h-14 rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent" />
+                    <label className="text-sm font-semibold text-foreground px-1">{t("dashboard.title")}</label>
+                    <Input placeholder={t("dashboard.title_placeholder")} value={title} onChange={(e) => setTitle(e.target.value)} className="h-14 rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground px-1">القطاع</label>
-                    <Select value={category} onValueChange={setCategory}>
+                    <label className="text-sm font-semibold text-foreground px-1">{t("dashboard.category")}</label>
+                    <Select value={category} onValueChange={(value) => setCategory(normalizeIssueCategory(value))}>
                       <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent">
-                        <SelectValue placeholder="اختر القطاع المعني" />
+                        <SelectValue placeholder={t("dashboard.category_placeholder")} />
                       </SelectTrigger>
                       <SelectContent>
                         {categoryKeys.map((key) => (
-                          <SelectItem key={key} value={t(`categories.${key}`)}>{t(`categories.${key}`)}</SelectItem>
+                          <SelectItem key={key} value={key}>{t(`categories.${key}`)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -645,22 +646,22 @@ const CitizenDashboard = () => {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center px-1">
-                    <label className="text-sm font-semibold text-foreground">وصف المشكلة</label>
+                    <label className="text-sm font-semibold text-foreground">{t("dashboard.description")}</label>
                   </div>
-                  <Textarea placeholder="اشرح تفاصيل المشكلة، متى بدأت، وما هي مطالبك..." value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-[150px] rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent resize-none p-4" />
+                  <Textarea placeholder={t("dashboard.description_placeholder")} value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-[150px] rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent resize-none p-4" />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground px-1">الموقع الجغرافي</label>
+                  <label className="text-sm font-semibold text-foreground px-1">{t("dashboard.location")}</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input placeholder="حدد المنطقة أو العنوان التفصيلي" value={location} onChange={(e) => setLocation(e.target.value)} className="h-14 pl-12 rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent" />
+                    <Input placeholder={t("dashboard.location_placeholder")} value={location} onChange={(e) => setLocation(e.target.value)} className="h-14 pl-12 rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent" />
                   </div>
                   <LocationPicker latitude={latitude} longitude={longitude} onChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }} />
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-sm font-semibold text-foreground px-1">المرفقات (صور أو مستندات)</label>
+                  <label className="text-sm font-semibold text-foreground px-1">{t("dashboard.attach_files")}</label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {files.map((file, i) => (
                       <div key={i} className="relative aspect-square rounded-2xl bg-muted overflow-hidden group border border-border/50">
@@ -673,7 +674,7 @@ const CitizenDashboard = () => {
                     {files.length < 5 && (
                       <button type="button" onClick={() => fileInputRef.current?.click()} className="aspect-square rounded-2xl border-2 border-dashed border-border hover:border-accent hover:bg-accent/5 transition-all flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-accent">
                         <ImagePlus className="w-8 h-8" />
-                        <span className="text-xs font-medium">إضافة صورة</span>
+                        <span className="text-xs font-medium">{t("dashboard.attach_files")}</span>
                       </button>
                     )}
                   </div>
@@ -688,7 +689,7 @@ const CitizenDashboard = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <p className="text-sm font-semibold text-foreground px-1">التحقق البشري (CAPTCHA)</p>
+                  <p className="text-sm font-semibold text-foreground px-1">CAPTCHA</p>
                   <TurnstileCaptcha onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
                 </div>
 
@@ -697,12 +698,12 @@ const CitizenDashboard = () => {
                     {submitting ? (
                       <div className="flex items-center gap-3">
                         <Loader2 className="w-6 h-6 animate-spin" />
-                        <span>جاري المعالجة بالذكاء الاصطناعي...</span>
+                        <span>{t("dashboard.classifying_ai")}</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-3">
                         <Send className="w-6 h-6" />
-                        <span>إرسال الشكوى رسمياً</span>
+                        <span>{t("dashboard.submit")}</span>
                       </div>
                     )}
                   </Button>

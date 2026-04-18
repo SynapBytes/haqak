@@ -35,6 +35,7 @@ import MPPublicPostsManager from "@/components/MPPublicPostsManager";
 import type { Issue } from "@/components/IssueCard";
 import type { IssueStatus } from "@/components/StatusBadge";
 import { IssueGridSkeleton } from "@/components/ListSkeletons";
+import { ISSUE_CATEGORY_KEYS, getIssueCategoryLabel, normalizeIssueCategory, type IssueCategoryKey } from "@/lib/issueCategories";
 
 interface ActionLog {
   id: string;
@@ -56,7 +57,7 @@ const MPDashboard = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState<"all" | IssueCategoryKey>("all");
   const [selectedStatus, setSelectedStatus] = useState<"all" | IssueStatus>("all");
   const [selectedType, setSelectedType] = useState<"all" | "individual" | "collective">("all");
   const [selectedPriority, setSelectedPriority] = useState<"all" | "urgent" | "humanitarian" | "normal">("all");
@@ -70,14 +71,7 @@ const MPDashboard = () => {
 
   const categories = [
     { key: "all", label: t("categories.all") },
-    { key: "مياه", label: t("categories.water") },
-    { key: "طرق", label: t("categories.roads") },
-    { key: "مرافق عامة", label: t("categories.public_facilities") },
-    { key: "صحة", label: t("categories.health") },
-    { key: "نظافة", label: t("categories.sanitation") },
-    { key: "تعليم", label: t("categories.education") },
-    { key: "كهرباء", label: t("categories.electricity") },
-    { key: "أخرى", label: t("categories.other") },
+    ...ISSUE_CATEGORY_KEYS.map((key) => ({ key, label: t(`categories.${key}`) })),
   ];
 
   const profileQuery = useQuery({
@@ -146,7 +140,7 @@ const MPDashboard = () => {
           refined_title: (row.refined_title as string) || d.title,
           refined_description: (row.refined_description as string) || d.description,
           status: d.status as Issue["status"],
-          category: d.category,
+          category: normalizeIssueCategory(d.category),
           location: d.location,
           timeAgo: d.created_at,
           issue_type: (d.issue_type || "individual") as Issue["issue_type"],
@@ -480,7 +474,7 @@ const MPDashboard = () => {
                   />
                 </div>
 
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                 <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value === "all" ? "all" : normalizeIssueCategory(value))}>
                   <SelectTrigger>{t("categories.all")}</SelectTrigger>
                   <SelectContent>
                     {categories.map((cat) => (
@@ -622,7 +616,7 @@ const MPDashboard = () => {
                         title: selectedIssue.refined_title || selectedIssue.title,
                         description: selectedIssue.refined_description || selectedIssue.description,
                         citizenName: "مواطن مسجل",
-                        category: selectedIssue.category,
+                        category: getIssueCategoryLabel(selectedIssue.category, t),
                         location: selectedIssue.location || "غير محدد",
                         date: selectedIssue.timeAgo,
                         status: selectedIssue.status
@@ -678,7 +672,7 @@ const MPDashboard = () => {
                                       description: selectedIssue.refined_description || selectedIssue.description,
                                       citizenName: "مواطن مسجل",
                                       mpName: user?.email || "عضو مجلس النواب",
-                                      category: selectedIssue.category,
+                                      category: getIssueCategoryLabel(selectedIssue.category, t),
                                       location: selectedIssue.location || "غير محدد",
                                       date: new Date(res.created_at).toLocaleDateString("ar-EG"),
                                       status: selectedIssue.status,
