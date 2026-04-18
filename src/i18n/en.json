@@ -925,6 +925,7 @@
     "role_mp": "MP",
     "verified": "Verified",
     "load_more": "Load more",
-    "no_center": "Complete your center onboarding first to see your center's members."
+    "no_center": "Complete your center onboarding first to see your center's members.",
+    "previous": "Previous"
   }
 }

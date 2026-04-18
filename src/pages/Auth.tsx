@@ -73,8 +73,7 @@ const Auth = () => {
       const redirect = await getRoleRedirect(session.user.id);
       navigate(redirect, { replace: true });
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [navigate]);
   const [loginRoleHint, setLoginRoleHint] = useState<"citizen" | "mp">("citizen");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

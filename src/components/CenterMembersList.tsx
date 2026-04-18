@@ -92,7 +92,7 @@ const CenterMembersList = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {members.map((member, idx) => (
           <div
-            key={`${member.display_name}-${idx}`}
+            key={`${page}-${idx}-${member.role}-${member.display_name}`}
             className="flex items-center gap-3 rounded-xl border border-border/50 bg-card/50 px-4 py-3"
           >
             {/* Avatar placeholder */}
@@ -131,7 +131,7 @@ const CenterMembersList = () => {
               disabled={isFetching}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
             >
-              ← السابق
+              ← {t("center_members.previous")}
             </Button>
           )}
 
