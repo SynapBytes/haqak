@@ -34,7 +34,6 @@ if (supabaseConfigError) {
     [
       "🚨🚨🚨 SUPABASE CONFIGURATION ERROR 🚨🚨🚨",
       supabaseConfigError,
-      `Missing/empty variable(s): ${missingConfigVars.join(", ")}`,
       legacyKeyHint,
       "App will render the configuration error screen instead of crashing.",
     ].join("\n")

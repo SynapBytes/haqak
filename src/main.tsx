@@ -90,7 +90,7 @@ createRoot(rootElement).render(
           </p>
           {IS_DEVELOPMENT ? (
             <p style={{ color: "#999", fontSize: "0.85rem", maxWidth: "480px", marginTop: "0.5rem" }}>
-              Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY (ANON_KEY)
+              Missing VITE_SUPABASE_URL or ANON_KEY
             </p>
           ) : null}
         </div>
