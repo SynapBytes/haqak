@@ -91,7 +91,7 @@ const CitizenComplaintTimeline = ({ issue }: { issue?: TimelineIssue }) => {
               <div className="space-y-2" aria-live="polite">
                 {timelineEvents.map((event, index) => (
                   <div
-                    key={`${event.status}-${event.timestamp}-${event.actor}-${event.note ?? ""}`}
+                    key={`${event.status}-${event.timestamp}-${event.actor}-${index}`}
                     className="rounded-lg border border-border/40 p-3"
                   >
                     <p className="text-sm font-medium">{t(`dashboard.timeline_${event.status}`)}</p>

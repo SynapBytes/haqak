@@ -1,6 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 import {
-  ComplaintTimelineEventSchema,
   ComplaintTimelineResponseSchema,
   type ComplaintTimelineEvent,
   type ComplaintTimelineStatus,
@@ -67,7 +66,6 @@ export const fetchComplaintTimeline = async (issueId: string): Promise<FetchTime
 
   const parsed = ComplaintTimelineResponseSchema.parse(data);
   const events = parsed.events
-    .map((event) => ComplaintTimelineEventSchema.parse(event))
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
   const seen = new Set(events.map((event) => event.status));
