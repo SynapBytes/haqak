@@ -17,7 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
-  Search, Filter, BarChart3, AlertCircle, CheckCircle2, Clock, Loader2,
+  Search, Filter, AlertCircle,
   X, Users, User, FileText, TrendingUp, PieChart, MessageCircle,
   LayoutDashboard, List, ShieldCheck, Send
 } from "lucide-react";
@@ -551,10 +551,14 @@ const MPDashboard = () => {
                 <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Search className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">لا توجد نتائج مطابقة للفلاتر الحالية</h3>
-                <p className="text-muted-foreground mb-5">جرّب تعديل الفلاتر أو إعادة تعيينها لعرض جميع الشكاوى.</p>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  {t("mp_dashboard.filtered_empty_title", { defaultValue: "لا توجد نتائج مطابقة للفلاتر الحالية" })}
+                </h3>
+                <p className="text-muted-foreground mb-5">
+                  {t("mp_dashboard.filtered_empty_description", { defaultValue: "جرّب تعديل الفلاتر أو إعادة تعيينها لعرض جميع الشكاوى." })}
+                </p>
                 <Button variant="outline" onClick={clearFilters} className="rounded-xl">
-                  إعادة تعيين الفلاتر
+                  {t("mp_dashboard.reset_filters", { defaultValue: "إعادة تعيين الفلاتر" })}
                 </Button>
               </motion.div>
             )}
@@ -647,7 +651,9 @@ const MPDashboard = () => {
                         <div className="flex items-center justify-between">
                           <h3 className="font-bold text-foreground">الردود الرسمية والمتابعة</h3>
                           {responsesState === "coming-soon" ? (
-                            <Badge className="bg-warning/10 text-warning border-warning/20">قريبًا</Badge>
+                            <Badge className="bg-warning/10 text-warning border-warning/20">
+                              {t("common.coming_soon", { defaultValue: "قريبًا" })}
+                            </Badge>
                           ) : (
                             <Badge className="bg-success/10 text-success border-success/20">موثق</Badge>
                           )}
@@ -655,7 +661,9 @@ const MPDashboard = () => {
 
                         <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
                           {responsesState === "loading" ? (
-                            <div className="text-center py-8 text-muted-foreground text-sm">جارٍ تحميل الردود...</div>
+                            <div className="text-center py-8 text-muted-foreground text-sm">
+                              {t("mp_dashboard.loading_responses", { defaultValue: "جارٍ تحميل الردود..." })}
+                            </div>
                           ) : mpResponses.length > 0 ? (
                             mpResponses.map((res) => (
                               <div key={res.id} className="bg-muted/30 p-4 rounded-2xl border border-border/30 relative group">
@@ -681,9 +689,13 @@ const MPDashboard = () => {
                               </div>
                             ))
                           ) : responsesState === "coming-soon" ? (
-                            <div className="text-center py-8 text-muted-foreground text-sm">ميزة عرض الردود الرسمية الكاملة ستكون متاحة قريبًا.</div>
+                            <div className="text-center py-8 text-muted-foreground text-sm">
+                              {t("mp_dashboard.responses_coming_soon", { defaultValue: "ميزة عرض الردود الرسمية الكاملة ستكون متاحة قريبًا." })}
+                            </div>
                           ) : (
-                            <div className="text-center py-8 text-muted-foreground text-sm">لا توجد ردود رسمية حتى الآن</div>
+                            <div className="text-center py-8 text-muted-foreground text-sm">
+                              {t("mp_dashboard.no_official_responses", { defaultValue: "لا توجد ردود رسمية حتى الآن" })}
+                            </div>
                           )}
                         </div>
 

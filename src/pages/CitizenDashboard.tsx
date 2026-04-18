@@ -771,7 +771,9 @@ const CitizenDashboard = () => {
                       <div className="flex items-center justify-between">
                         <h3 className="font-bold text-foreground">الردود الرسمية من النائب</h3>
                         {responsesState === "coming-soon" ? (
-                          <Badge className="bg-warning/10 text-warning border-warning/20">قريبًا</Badge>
+                          <Badge className="bg-warning/10 text-warning border-warning/20">
+                            {t("common.coming_soon", { defaultValue: "قريبًا" })}
+                          </Badge>
                         ) : (
                           <Badge className="bg-success/10 text-success border-success/20">موثق</Badge>
                         )}
@@ -781,7 +783,9 @@ const CitizenDashboard = () => {
                         {responsesState === "loading" ? (
                           <div className="text-center py-12 space-y-3">
                             <Clock className="w-10 h-10 text-muted-foreground/30 mx-auto" />
-                            <p className="text-muted-foreground text-sm">جارٍ تحميل الردود الرسمية...</p>
+                            <p className="text-muted-foreground text-sm">
+                              {t("dashboard.loading_responses", { defaultValue: "جارٍ تحميل الردود الرسمية..." })}
+                            </p>
                           </div>
                         ) : mpResponses.length > 0 ? (
                           mpResponses.map((res) => (
@@ -810,7 +814,9 @@ const CitizenDashboard = () => {
                         ) : responsesState === "coming-soon" ? (
                           <div className="text-center py-12 space-y-3">
                             <Clock className="w-10 h-10 text-muted-foreground/30 mx-auto" />
-                            <p className="text-muted-foreground text-sm">ميزة الردود الرسمية الكاملة ستكون متاحة قريبًا.</p>
+                            <p className="text-muted-foreground text-sm">
+                              {t("dashboard.responses_coming_soon", { defaultValue: "ميزة الردود الرسمية الكاملة ستكون متاحة قريبًا." })}
+                            </p>
                           </div>
                         ) : (
                           <div className="text-center py-12 space-y-3">

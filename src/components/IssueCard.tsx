@@ -4,6 +4,7 @@ import { MapPin, Clock, Users, User, Flag, CheckCircle2, AlertTriangle, Heart } 
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
+import { ar, enUS } from "date-fns/locale";
 
 export interface Issue {
   id: string;
@@ -30,16 +31,17 @@ interface IssueCardProps {
 }
 
 const IssueCard = ({ issue, onClick }: IssueCardProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   // Use refined title if available, otherwise use original
   const displayTitle = issue.refined_title || issue.title;
   const displayDescription = issue.refined_description || issue.description;
   const issueDate = new Date(issue.timeAgo);
+  const timeLocale = i18n.language.startsWith("ar") ? ar : enUS;
   const displayTime =
     Number.isNaN(issueDate.getTime())
       ? issue.timeAgo
-      : formatDistanceToNow(issueDate, { addSuffix: true });
+      : formatDistanceToNow(issueDate, { addSuffix: true, locale: timeLocale });
   
   return (
     <motion.div

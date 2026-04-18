@@ -299,7 +299,9 @@
     "issue_submitted": "Issue submitted successfully and will be reviewed",
     "error_submitting": "Could not submit the issue. Please try again.",
     "file_integrity_failed": "Could not verify file integrity. Please try uploading again.",
-    "rejected": "Issue was rejected due to: inappropriate content"
+    "rejected": "Issue was rejected due to: inappropriate content",
+    "loading_responses": "Loading official responses...",
+    "responses_coming_soon": "Full official responses view will be available soon."
   },
   "auth": {
     "login_title": "Welcome Back",
@@ -479,7 +481,8 @@
     "error": "An error occurred. Please try again.",
     "loading": "Loading...",
     "retry": "Retry",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "coming_soon": "Coming soon"
   },
   "categories": {
     "all": "All",
@@ -626,7 +629,13 @@
     "status_resolved": "Status changed to: Resolved",
     "status_updated": "Issue status updated successfully",
     "error_update": "Could not update status. Please try again.",
-    "citizen_confirm_action": "Citizen confirmation"
+    "citizen_confirm_action": "Citizen confirmation",
+    "filtered_empty_title": "No results match the current filters",
+    "filtered_empty_description": "Try adjusting your filters or reset them to view all issues.",
+    "reset_filters": "Reset filters",
+    "loading_responses": "Loading responses...",
+    "responses_coming_soon": "Full official responses view will be available soon.",
+    "no_official_responses": "No official responses yet"
   },
   "admin": {
     "fetch_error": "Could not load audit data. Please try again.",
