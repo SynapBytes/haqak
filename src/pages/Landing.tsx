@@ -20,7 +20,7 @@ import {
   Phone, MapPin, Building2, Award, TrendingUp, Mail, Send,
   Rocket, Target, Heart, Sparkles, Scale, FileText
 } from "lucide-react";
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -531,13 +531,17 @@ const Landing = () => {
     { name: t("partners.citizens"), icon: Heart },
   ];
 
-  const socialLinks = getEnabledSocialLinks()
-    .map((entry) => {
-      const icon = SOCIAL_ICONS.find((item) => item.id === entry.id);
-      if (!icon) return null;
-      return { ...icon, href: entry.href };
-    })
-    .filter((item): item is (SocialIconConfig & { href: string }) => Boolean(item));
+  const socialLinks = useMemo(
+    () =>
+      getEnabledSocialLinks()
+        .map((entry) => {
+          const icon = SOCIAL_ICONS.find((item) => item.id === entry.id);
+          if (!icon) return null;
+          return { ...icon, href: entry.href };
+        })
+        .filter((item): item is (SocialIconConfig & { href: string }) => Boolean(item)),
+    [],
+  );
 
   return (
     <div className="relative min-h-screen bg-background overflow-x-hidden selection:bg-accent/20 selection:text-accent">

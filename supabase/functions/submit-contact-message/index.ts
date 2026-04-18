@@ -5,6 +5,7 @@ import { RateLimitError, rateLimiter } from "../shared/rate-limiter.ts";
 const RATE_LIMIT_PATH = "/submit-contact-message";
 const RATE_LIMIT_MAX = 4;
 const RATE_LIMIT_WINDOW_MINUTES = 1;
+const SUCCESS_RESPONSE_STATUS = 200;
 
 type SubmitPayload = {
   name?: string;
@@ -12,6 +13,18 @@ type SubmitPayload = {
   message?: string;
   captchaToken?: string;
   website?: string;
+};
+
+const maskIp = (ip: string): string => {
+  if (ip.includes(".")) {
+    const parts = ip.split(".");
+    if (parts.length === 4) return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
+  }
+  if (ip.includes(":")) {
+    const segments = ip.split(":");
+    return `${segments.slice(0, 4).join(":")}::`;
+  }
+  return "unknown";
 };
 
 const json = (body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) =>
@@ -71,7 +84,7 @@ Deno.serve(async (req) => {
     const website = (body.website ?? "").toString().trim();
 
     if (website.length > 0) {
-      console.warn("submit-contact-message: honeypot_triggered", { ipAddress });
+      console.warn("submit-contact-message: honeypot_triggered", { ipAddress: maskIp(ipAddress) });
       return json({ error: "spam_detected", valid: false }, 400, cors);
     }
 
@@ -85,7 +98,7 @@ Deno.serve(async (req) => {
         userId,
         RATE_LIMIT_PATH,
         ipAddress,
-        200,
+        SUCCESS_RESPONSE_STATUS,
         { maxRequests: RATE_LIMIT_MAX, windowMinutes: RATE_LIMIT_WINDOW_MINUTES },
       );
     } catch (rateError) {
@@ -137,7 +150,7 @@ Deno.serve(async (req) => {
       hasEmail: Boolean(email),
       messageLength: message.length,
       userId: userId ?? "anonymous",
-      ipAddress,
+      ipAddress: maskIp(ipAddress),
     });
 
     return json({ valid: true }, 200, cors);

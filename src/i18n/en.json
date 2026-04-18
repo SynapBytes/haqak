@@ -802,56 +802,54 @@
     "before": "Before",
     "after": "After",
     "load_more": "Load more",
-    "items": [
-      {
-        "title": "Main street lighting restored",
-        "governorate": "Cairo",
-        "duration": "6 days",
-        "authority": "Governorate Electricity Company",
-        "before": "Complete night-time blackout",
-        "after": "Poles reactivated and faulty units replaced"
-      },
-      {
-        "title": "Sewage overflow resolved",
-        "governorate": "Giza",
-        "duration": "4 days",
-        "authority": "Water and Sanitation Company",
-        "before": "Standing water blocked residents",
-        "after": "Drain cleared, line repaired, and road restored"
-      },
-      {
-        "title": "Local clinic service resumed",
-        "governorate": "Minya",
-        "duration": "11 days",
-        "authority": "Health Directorate",
-        "before": "Facility stopped receiving cases",
-        "after": "Service resumed with duty staff"
-      },
-      {
-        "title": "Student transport schedule improved",
-        "governorate": "Alexandria",
-        "duration": "8 days",
-        "authority": "Governorate Transport Office",
-        "before": "Daily congestion and delays",
-        "after": "Extra lines added and schedules adjusted"
-      },
-      {
-        "title": "Waste removed around a school",
-        "governorate": "Sharqia",
-        "duration": "3 days",
-        "authority": "Local Administrative Unit",
-        "before": "Garbage accumulation and health risks",
-        "after": "Waste removed with recurring cleanup schedule"
-      },
-      {
-        "title": "Internal road subsidence fixed",
-        "governorate": "Assiut",
-        "duration": "9 days",
-        "authority": "Roads Authority",
-        "before": "Road dip blocked movement and safety",
-        "after": "Subsidence treated and road resurfaced"
-      }
-    ]
+    "story_1": {
+      "title": "Main street lighting restored",
+      "governorate": "Cairo",
+      "duration": "6 days",
+      "authority": "Governorate Electricity Company",
+      "before": "Complete night-time blackout",
+      "after": "Poles reactivated and faulty units replaced"
+    },
+    "story_2": {
+      "title": "Sewage overflow resolved",
+      "governorate": "Giza",
+      "duration": "4 days",
+      "authority": "Water and Sanitation Company",
+      "before": "Standing water blocked residents",
+      "after": "Drain cleared, line repaired, and road restored"
+    },
+    "story_3": {
+      "title": "Local clinic service resumed",
+      "governorate": "Minya",
+      "duration": "11 days",
+      "authority": "Health Directorate",
+      "before": "Facility stopped receiving cases",
+      "after": "Service resumed with duty staff"
+    },
+    "story_4": {
+      "title": "Student transport schedule improved",
+      "governorate": "Alexandria",
+      "duration": "8 days",
+      "authority": "Governorate Transport Office",
+      "before": "Daily congestion and delays",
+      "after": "Extra lines added and schedules adjusted"
+    },
+    "story_5": {
+      "title": "Waste removed around a school",
+      "governorate": "Sharqia",
+      "duration": "3 days",
+      "authority": "Local Administrative Unit",
+      "before": "Garbage accumulation and health risks",
+      "after": "Waste removed with recurring cleanup schedule"
+    },
+    "story_6": {
+      "title": "Internal road subsidence fixed",
+      "governorate": "Assiut",
+      "duration": "9 days",
+      "authority": "Roads Authority",
+      "before": "Road dip blocked movement and safety",
+      "after": "Subsidence treated and road resurfaced"
+    }
   },
   "faq": {
     "title": "Help Center",
@@ -863,31 +861,29 @@
       "security": "Security",
       "accounts": "Accounts"
     },
-    "items": [
-      {
-        "q": "Is Haqak an official government service?",
-        "a": "No. Haqak is an independent civic platform that facilitates communication between citizens and MPs."
-      },
-      {
-        "q": "How do I submit a new complaint?",
-        "a": "Sign in, fill in the issue details, set the location, and submit your request."
-      },
-      {
-        "q": "How is my data protected?",
-        "a": "We use layered security controls and minimize sensitive details in logs."
-      },
-      {
-        "q": "What if I forget my password?",
-        "a": "Use the password reset option from the sign-in page."
-      },
-      {
-        "q": "Can I track complaint progress step by step?",
-        "a": "Yes. The platform shows a clear progress pipeline from receipt to resolution."
-      },
-      {
-        "q": "Can I update my account details later?",
-        "a": "Yes. You can update your basic profile data from the account page."
-      }
-    ]
+    "q1": {
+      "question": "Is Haqak an official government service?",
+      "answer": "No. Haqak is an independent civic platform that facilitates communication between citizens and MPs."
+    },
+    "q2": {
+      "question": "How do I submit a new complaint?",
+      "answer": "Sign in, fill in the issue details, set the location, and submit your request."
+    },
+    "q3": {
+      "question": "How is my data protected?",
+      "answer": "We use layered security controls and minimize sensitive details in logs."
+    },
+    "q4": {
+      "question": "What if I forget my password?",
+      "answer": "Use the password reset option from the sign-in page."
+    },
+    "q5": {
+      "question": "Can I track complaint progress step by step?",
+      "answer": "Yes. The platform shows a clear progress pipeline from receipt to resolution."
+    },
+    "q6": {
+      "question": "Can I update my account details later?",
+      "answer": "Yes. You can update your basic profile data from the account page."
+    }
   }
 }

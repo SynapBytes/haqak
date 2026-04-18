@@ -21,14 +21,36 @@ const upsertLink = (selector: string, attrs: Record<string, string>) => {
   Object.entries(attrs).forEach(([key, value]) => node!.setAttribute(key, value));
 };
 
-const SeoHead = ({ title, description, path = "/" }: { title: string; description: string; path?: string }) => {
+const upsertJsonLd = (payload: unknown) => {
+  const selector = 'script[type="application/ld+json"][data-seo="jsonld"]';
+  let node = document.head.querySelector<HTMLScriptElement>(selector);
+  if (!node) {
+    node = document.createElement("script");
+    node.setAttribute("type", "application/ld+json");
+    node.setAttribute("data-seo", "jsonld");
+    document.head.appendChild(node);
+  }
+  node.textContent = JSON.stringify(payload);
+};
+
+const SeoHead = ({
+  title,
+  description,
+  path = "/",
+  structuredData,
+}: {
+  title: string;
+  description: string;
+  path?: string;
+  structuredData?: unknown;
+}) => {
   const { i18n } = useTranslation();
 
   useEffect(() => {
     const lang = i18n.language.startsWith("en") ? "en" : "ar";
     const canonical = `${SITE_URL}${path}`;
-    const arabicUrl = `${SITE_URL}/?lang=ar${path === "/" ? "" : `&path=${encodeURIComponent(path)}`}`;
-    const englishUrl = `${SITE_URL}/?lang=en${path === "/" ? "" : `&path=${encodeURIComponent(path)}`}`;
+    const arabicUrl = `${SITE_URL}${path}${path.includes("?") ? "&" : "?"}lang=ar`;
+    const englishUrl = `${SITE_URL}${path}${path.includes("?") ? "&" : "?"}lang=en`;
     document.title = title;
     upsertMeta('meta[name="description"]', { name: "description", content: description });
     upsertMeta('meta[name="keywords"]', {
@@ -50,7 +72,10 @@ const SeoHead = ({ title, description, path = "/" }: { title: string; descriptio
       hreflang: "x-default",
       href: `${SITE_URL}/`,
     });
-  }, [description, i18n.language, path, title]);
+    if (structuredData) {
+      upsertJsonLd(structuredData);
+    }
+  }, [description, i18n.language, path, structuredData, title]);
 
   return null;
 };
