@@ -170,8 +170,23 @@ WITH seed(governorate_en, governorate_ar, district_en, district_ar) AS (
     ('Sohag', 'سوهاج', 'Sohag', 'سوهاج'),
     ('Sohag', 'سوهاج', 'Akhmim', 'أخميم')
 )
-INSERT INTO public.centers (governorate_en, governorate_ar, district_en, district_ar)
-SELECT s.governorate_en, s.governorate_ar, s.district_en, s.district_ar
+INSERT INTO public.centers (
+  governorate_en,
+  governorate_ar,
+  district_en,
+  district_ar,
+  code,
+  name_ar,
+  name_en
+)
+SELECT
+  s.governorate_en,
+  s.governorate_ar,
+  s.district_en,
+  s.district_ar,
+  md5(lower(s.governorate_en || '-' || s.district_en)),
+  s.district_ar,
+  s.district_en
 FROM seed s
 ON CONFLICT (governorate_en, district_en) DO NOTHING;
 
