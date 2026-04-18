@@ -4,7 +4,7 @@ import type { Database } from './types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.trim();
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+const LEGACY_SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
 
 const missingConfigVars: string[] = [];
 
@@ -26,7 +26,7 @@ export const supabaseConfigError: string | null =
     : null;
 
 if (supabaseConfigError) {
-  const legacyKeyHint = SUPABASE_PUBLISHABLE_KEY
+  const legacyKeyHint = LEGACY_SUPABASE_PUBLISHABLE_KEY
     ? "Detected legacy VITE_SUPABASE_PUBLISHABLE_KEY. Rename it to VITE_SUPABASE_ANON_KEY."
     : "Expected key: VITE_SUPABASE_ANON_KEY (Supabase anon key).";
 
