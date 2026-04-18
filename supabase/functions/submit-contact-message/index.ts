@@ -6,6 +6,8 @@ const RATE_LIMIT_PATH = "/submit-contact-message";
 const RATE_LIMIT_MAX = 4;
 const RATE_LIMIT_WINDOW_MINUTES = 1;
 const SUCCESS_RESPONSE_STATUS = 200;
+const EMAIL_REGEX =
+  /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
 
 type SubmitPayload = {
   name?: string;
@@ -90,6 +92,9 @@ Deno.serve(async (req) => {
 
     if (!name || !email || !message || !captchaToken) {
       return json({ error: "missing_fields", valid: false }, 400, cors);
+    }
+    if (!EMAIL_REGEX.test(email) || email.length > 254) {
+      return json({ error: "invalid_email", valid: false }, 400, cors);
     }
 
     try {

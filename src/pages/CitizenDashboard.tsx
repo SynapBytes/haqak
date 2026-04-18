@@ -47,6 +47,8 @@ import {
 } from "@/lib/boundaryAdapters";
 import { handleClientError } from "@/lib/errors";
 import { ISSUE_CATEGORY_KEYS, normalizeIssueCategory, type IssueCategoryKey } from "@/lib/issueCategories";
+import CitizenComplaintTimeline from "@/components/CitizenComplaintTimeline";
+import { APP_CONFIG } from "@/lib/config";
 
 const categoryKeys = ISSUE_CATEGORY_KEYS;
 
@@ -548,6 +550,7 @@ const CitizenDashboard = () => {
     { label: t("dashboard.resolved"), value: issues.filter(i => i.status === 'resolved').length, icon: CheckCircle2, color: "text-success", bg: "bg-success/10" },
     { label: t("dashboard.in_progress"), value: issues.filter(i => i.status === 'in-progress').length, icon: Clock, color: "text-info", bg: "bg-info/10" },
   ];
+  const latestIssue = issues[0];
 
   return (
     <div className="min-h-screen bg-background relative overflow-x-hidden">
@@ -589,6 +592,10 @@ const CitizenDashboard = () => {
             </motion.div>
           ))}
         </div>
+
+        {APP_CONFIG.FEATURES.ENABLE_CITIZEN_TIMELINE && (
+          <CitizenComplaintTimeline issue={latestIssue ? { id: latestIssue.id, status: latestIssue.status, title: latestIssue.title } : undefined} />
+        )}
 
 <Tabs defaultValue="issues" className="space-y-8">
             <TabsList className="bg-card/50 backdrop-blur-sm border-accent/20 p-1">

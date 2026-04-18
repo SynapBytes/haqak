@@ -45,4 +45,17 @@ describe("Support page", () => {
 
     await waitFor(() => expect(screen.getByText("كريم")).toBeInTheDocument());
   });
+
+  it("uses a valid in-page anchor for transparency charter navigation", async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <Support />
+      </MemoryRouter>
+    );
+    await waitFor(() => expect(mockFrom).toHaveBeenCalledWith("contributions"));
+
+    const transparencyLinks = screen.getAllByRole("link", { name: "contribute.transparency" });
+    expect(transparencyLinks.some((link) => link.getAttribute("href")?.includes("#transparency-charter"))).toBe(true);
+    expect(container.querySelector("#transparency-charter")).toBeInTheDocument();
+  });
 });

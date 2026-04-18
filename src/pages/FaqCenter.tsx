@@ -1,9 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AppHeader from "@/components/AppHeader";
 import SeoHead from "@/components/SeoHead";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { analytics } from "@/lib/analytics";
+import { searchFaqItems } from "@/lib/faqSearch";
+import { APP_CONFIG } from "@/lib/config";
 
 type FAQItem = {
   id: string;
@@ -29,16 +32,30 @@ const FaqCenter = () => {
   );
 
   const normalized = query.trim().toLowerCase();
-  const filtered = useMemo(
-    () =>
-      faqs.filter((item) =>
-        !normalized ||
+  const filtered = useMemo(() => {
+    if (APP_CONFIG.FEATURES.ENABLE_FAQ_SMART_SEARCH) {
+      return searchFaqItems(faqs, normalized);
+    }
+    return faqs.filter((item) => {
+      if (!normalized) return true;
+      return (
         item.question.toLowerCase().includes(normalized) ||
         item.answer.toLowerCase().includes(normalized) ||
-        item.category.toLowerCase().includes(normalized),
-      ),
-    [faqs, normalized],
-  );
+        item.category.toLowerCase().includes(normalized)
+      );
+    });
+  }, [faqs, normalized]);
+
+  useEffect(() => {
+    if (normalized.length < 2) return;
+    const timeoutId = window.setTimeout(() => {
+      analytics.track("faq_search_performed", {
+        query_length: normalized.length,
+        result_count: filtered.length,
+      });
+    }, 300);
+    return () => window.clearTimeout(timeoutId);
+  }, [filtered.length, normalized]);
 
   const faqSchema = {
     "@context": "https://schema.org",
