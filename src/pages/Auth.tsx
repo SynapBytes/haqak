@@ -32,10 +32,49 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MEMBERSHIP_NUMBER_REGEX = /^[0-9]+$/;
 const MAX_MEMBERSHIP_NUMBER = 568;
 
+/**
+ * Determine the correct post-login redirect path for a user by their ID.
+ * Extracted as a module-level helper so both the login handler and the
+ * already-authenticated redirect effect can share the same logic.
+ */
+async function getRoleRedirect(userId: string): Promise<string> {
+  try {
+    const [{ data: roleData, error: roleError }, { data: profileData, error: profileError }] =
+      await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
+        supabase.from("profiles").select("is_approved").eq("user_id", userId).maybeSingle(),
+      ]);
+
+    if (roleError) throw roleError;
+    if (profileError) throw profileError;
+
+    if (roleData?.role === "admin") return "/admin";
+    if (roleData?.role === "mp") {
+      if (!profileData?.is_approved) return "/mp-pending";
+      return "/mp";
+    }
+    return "/citizen";
+  } catch (error) {
+    console.error("Failed to resolve role redirect", error);
+    return "/citizen";
+  }
+}
+
 const Auth = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [mode, setMode] = useState<AuthMode>("login");
+
+  // Redirect already-authenticated users to their dashboard so they don't
+  // land on the login page after refreshing or clicking the email confirm link.
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session?.user) return;
+      const redirect = await getRoleRedirect(session.user.id);
+      navigate(redirect, { replace: true });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [loginRoleHint, setLoginRoleHint] = useState<"citizen" | "mp">("citizen");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -266,35 +305,6 @@ const Auth = () => {
     return msg;
   };
 
-  const getRoleRedirect = async (userId: string): Promise<string> => {
-    try {
-      const [{ data: roleData, error: roleError }, { data: profileData, error: profileError }] = await Promise.all([
-        supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
-        supabase.from("profiles").select("is_approved").eq("user_id", userId).maybeSingle(),
-      ]);
-
-      if (roleError) {
-        throw roleError;
-      }
-
-      if (profileError) {
-        throw profileError;
-      }
-
-      if (roleData?.role === "admin") return "/admin";
-      if (roleData?.role === "mp") {
-        if (!profileData?.is_approved) {
-          return "/mp-pending";
-        }
-        return "/mp";
-      }
-      return "/citizen";
-    } catch (error) {
-      console.error("Failed to resolve role redirect", error);
-      return "/citizen";
-    }
-  };
-
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -355,7 +365,7 @@ const Auth = () => {
         metadata.display_name = displayName;
       }
 
-      const { error } = await supabase.auth.signUp({
+      const { data: signupData, error } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
         options: {
@@ -367,6 +377,17 @@ const Auth = () => {
       if (error) throw error;
 
       analytics.track("signup_success", { role: signupRole });
+
+      // When email confirmation is disabled in Supabase, signUp returns an
+      // active session immediately.  Redirect directly to the dashboard so
+      // the user is not forced to log in again.
+      if (signupData.session?.user) {
+        const redirect = await getRoleRedirect(signupData.session.user.id);
+        navigate(redirect, { replace: true });
+        return;
+      }
+
+      // Email confirmation is required — inform the user.
       setSignupSuccessful(true);
       toast.success(t("auth.signup_check_email"));
       resetForm();

@@ -913,5 +913,18 @@
       "question": "Can I update my account details later?",
       "answer": "Yes. You can update your basic profile data from the account page."
     }
+  },
+  "center_members": {
+    "title": "Center Members",
+    "subtitle": "Registered members in your center",
+    "loading": "Loading members...",
+    "empty": "No other members are registered in your center yet.",
+    "error": "Failed to load the members list. Please try again.",
+    "retry": "Retry",
+    "role_citizen": "Citizen",
+    "role_mp": "MP",
+    "verified": "Verified",
+    "load_more": "Load more",
+    "no_center": "Complete your center onboarding first to see your center's members."
   }
 }
