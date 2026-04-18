@@ -21,7 +21,7 @@
   - add `profiles.center_id -> centers.id`
   - keep compatibility fields: `governorate`, `district`, `center`, `constituency`, `electoral_district`
   - add profile verification metadata:
-    - `email`, `email_verified`, `phone_verified`
+    - `email`, `email_verified`
     - `verification_status` (`unverified|pending|verified|rejected`)
     - `verification_submitted_at`, `verification_decided_at`, `verification_decided_by`
 
@@ -65,5 +65,5 @@
 
 ## Out of Scope
 - Identity verification queue and private ID storage.
-- Unified multi-channel notification pipeline (in-app + SMS + email).
+- Unified multi-channel notification pipeline (in-app + email).
 - Polls, announcements, events, re-nomination, projects/donations workflows beyond Sprint 1.

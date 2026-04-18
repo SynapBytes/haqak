@@ -196,7 +196,7 @@ supabase functions deploy verify-email-code
 
 ```bash
 supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<value>
-supabase secrets set OTP_HMAC_SECRET=$(openssl rand -hex 32)
+supabase secrets set EMAIL_CODE_HMAC_SECRET=$(openssl rand -hex 32)
 supabase secrets set TURNSTILE_SECRET_KEY=<value>
 supabase secrets set RESEND_API_KEY=<value>
 supabase secrets set RESEND_FROM_EMAIL="Haqak <no-reply@haqak.org>"

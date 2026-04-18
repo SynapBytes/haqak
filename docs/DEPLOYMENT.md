@@ -42,7 +42,7 @@ Set secrets:
 
 ```bash
 supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<value>
-supabase secrets set OTP_HMAC_SECRET=$(openssl rand -hex 32)
+supabase secrets set EMAIL_CODE_HMAC_SECRET=$(openssl rand -hex 32)
 supabase secrets set TURNSTILE_SECRET_KEY=<value>
 supabase secrets set RESEND_API_KEY=<value>
 supabase secrets set RESEND_FROM_EMAIL="Haqak <no-reply@haqak.org>"
@@ -57,8 +57,8 @@ fetching secrets from Supabase Vault instead of plain environment variables.
 Vault provides encrypted storage and enables zero-downtime secret rotation.
 
 ```bash
-# Store OTP_HMAC_SECRET in Vault (replaces plain env var)
-supabase vault add --name OTP_HMAC_SECRET \
+# Store EMAIL_CODE_HMAC_SECRET in Vault (replaces plain env var)
+supabase vault add --name EMAIL_CODE_HMAC_SECRET \
   --value "$(openssl rand -hex 32)" \
   --project-ref wfuofurgkswotwuzosdd
 
@@ -81,7 +81,7 @@ See: `supabase/functions/.env.example`
 
 Key categories:
 - Supabase keys (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)
-- Security (`OTP_HMAC_SECRET`, `TURNSTILE_SECRET_KEY`, `ALLOWED_ORIGINS`)
+- Security (`EMAIL_CODE_HMAC_SECRET`, `TURNSTILE_SECRET_KEY`, `ALLOWED_ORIGINS`)
 - Secret manager (`SUPABASE_VAULT_ENABLED`)
 - Email (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`)
 
@@ -185,7 +185,7 @@ If checks fail after deploy:
 
 See **[docs/SECURITY_SECRET_ROTATION.md](SECURITY_SECRET_ROTATION.md)** for:
 - JWT secret hardening and rotation
-- Zero-downtime OTP HMAC rotation via Vault
+- Zero-downtime email-code HMAC rotation via Vault
 - Emergency rotation procedures
 - Health check commands
 - Monitoring and alerting setup

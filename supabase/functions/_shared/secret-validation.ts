@@ -8,7 +8,7 @@
  *
  * Usage:
  *   import { validateProductionSecrets } from "../_shared/secret-validation.ts";
- *   await validateProductionSecrets(["OTP_HMAC_SECRET", "SUPABASE_SERVICE_ROLE_KEY"]);
+ *   await validateProductionSecrets(["EMAIL_CODE_HMAC_SECRET", "SUPABASE_SERVICE_ROLE_KEY"]);
  */
 
 // ── Known-weak placeholder patterns ──────────────────────────────────────────

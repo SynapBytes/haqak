@@ -750,7 +750,6 @@ export type Database = {
           created_at: string
           email_opt_in: boolean
           inapp_opt_in: boolean
-          sms_opt_in: boolean
           updated_at: string
           user_id: string
         }
@@ -758,7 +757,6 @@ export type Database = {
           created_at?: string
           email_opt_in?: boolean
           inapp_opt_in?: boolean
-          sms_opt_in?: boolean
           updated_at?: string
           user_id: string
         }
@@ -766,45 +764,8 @@ export type Database = {
           created_at?: string
           email_opt_in?: boolean
           inapp_opt_in?: boolean
-          sms_opt_in?: boolean
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      otp_codes: {
-        Row: {
-          attempts: number
-          code: string
-          created_at: string
-          expires_at: string
-          id: string
-          mode: string
-          phone: string
-          used: boolean
-          used_at: string | null
-        }
-        Insert: {
-          attempts?: number
-          code: string
-          created_at?: string
-          expires_at: string
-          id?: string
-          mode: string
-          phone: string
-          used?: boolean
-          used_at?: string | null
-        }
-        Update: {
-          attempts?: number
-          code?: string
-          created_at?: string
-          expires_at?: string
-          id?: string
-          mode?: string
-          phone?: string
-          used?: boolean
-          used_at?: string | null
         }
         Relationships: []
       }

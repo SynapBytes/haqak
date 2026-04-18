@@ -29,7 +29,7 @@ Both variables are **optional** — when `VITE_POSTHOG_KEY` is absent (e.g., loc
 
 | Event name | When | Properties |
 |---|---|---|
-| `login_success` | User completes OTP and signs in | — |
+| `login_success` | User signs in successfully | — |
 | `login_failure` | Login attempt throws an error | — |
 | `signup_success` | New account is created | `role` (`citizen` \| `mp`) |
 | `signup_failure` | Signup attempt throws an error | `role` |

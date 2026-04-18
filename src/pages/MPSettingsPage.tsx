@@ -36,7 +36,6 @@ const MPSettingsPage = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [notificationPrefs, setNotificationPrefs] = useState({
     inapp_opt_in: true,
-    sms_opt_in: true,
     email_opt_in: true,
   });
   const [bank, setBank] = useState<BankForm>({
@@ -65,7 +64,7 @@ const MPSettingsPage = () => {
           .maybeSingle(),
         supabase
           .from("notification_preferences")
-          .select("inapp_opt_in, sms_opt_in, email_opt_in")
+          .select("inapp_opt_in, email_opt_in")
           .eq("user_id", user.id)
           .maybeSingle(),
         supabase
@@ -88,7 +87,6 @@ const MPSettingsPage = () => {
       if (prefsRes.data) {
         setNotificationPrefs({
           inapp_opt_in: prefsRes.data.inapp_opt_in ?? true,
-          sms_opt_in: prefsRes.data.sms_opt_in ?? true,
           email_opt_in: prefsRes.data.email_opt_in ?? true,
         });
       }
@@ -260,12 +258,6 @@ const MPSettingsPage = () => {
               onClick={() => setNotificationPrefs((p) => ({ ...p, inapp_opt_in: !p.inapp_opt_in }))}
             >
               داخل التطبيق
-            </Button>
-            <Button
-              variant={notificationPrefs.sms_opt_in ? "default" : "outline"}
-              onClick={() => setNotificationPrefs((p) => ({ ...p, sms_opt_in: !p.sms_opt_in }))}
-            >
-              SMS
             </Button>
             <Button
               variant={notificationPrefs.email_opt_in ? "default" : "outline"}

@@ -93,7 +93,7 @@ const AdminRenominationPanel = () => {
           event: "renomination_approved",
           title: "إعلان رسمي من الإدارة",
           body: message,
-          channels: ["sms", "email"],
+          channels: ["email"],
           target: {
             roles: ["citizen"],
             center_id: request.center_id,

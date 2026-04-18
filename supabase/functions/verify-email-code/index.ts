@@ -40,14 +40,14 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceKey = await getSecret("SUPABASE_SERVICE_ROLE_KEY");
-    const OTP_HMAC_SECRET = await getSecret("OTP_HMAC_SECRET");
+    const EMAIL_CODE_HMAC_SECRET = await getSecret("EMAIL_CODE_HMAC_SECRET");
 
     validateProductionSecrets({
       SUPABASE_SERVICE_ROLE_KEY: serviceKey,
-      OTP_HMAC_SECRET: OTP_HMAC_SECRET,
+      EMAIL_CODE_HMAC_SECRET: EMAIL_CODE_HMAC_SECRET,
     });
 
-    if (!supabaseUrl || !serviceKey || !OTP_HMAC_SECRET) {
+    if (!supabaseUrl || !serviceKey || !EMAIL_CODE_HMAC_SECRET) {
       return new Response(JSON.stringify({ error: "Server configuration error" }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
     }
 
@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
     }
 
     const expected = await hmacSha256Hex(
-      OTP_HMAC_SECRET,
+      EMAIL_CODE_HMAC_SECRET,
       `${user.id}:${normalizedEmail}:${code}:${verificationRow.expires_at}`,
     );
 

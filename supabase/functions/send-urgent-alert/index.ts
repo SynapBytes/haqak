@@ -257,10 +257,10 @@ Deno.serve(async (req) => {
     const mpIds = mps?.map((m) => m.user_id) || [];
     const adminIds = admins?.map((a) => a.user_id) || [];
 
-    // SMS delivery is deprecated in favor of email/in-app channels.
+    // Direct message delivery is deprecated in favor of email/in-app channels.
     const recipientsCount = mpIds.length + adminIds.length;
     if (recipientsCount > 0) {
-      console.info("urgent_alert_sms_deprecated", { recipients: recipientsCount });
+      console.info("urgent_alert_direct_delivery_deprecated", { recipients: recipientsCount });
     }
 
     // Update alert with notified users

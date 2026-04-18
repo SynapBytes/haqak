@@ -37,9 +37,8 @@ const CitizenProfile = () => {
   const [emailInput, setEmailInput] = useState("");
   const [emailCode, setEmailCode] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
-  const [phoneVerified, setPhoneVerified] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<"unverified" | "pending" | "verified" | "rejected">("unverified");
-  const [notificationPrefs, setNotificationPrefs] = useState({ inapp_opt_in: true, sms_opt_in: true, email_opt_in: true });
+  const [notificationPrefs, setNotificationPrefs] = useState({ inapp_opt_in: true, email_opt_in: true });
   const [emailSending, setEmailSending] = useState(false);
   const [emailVerifying, setEmailVerifying] = useState(false);
   const [prefsSaving, setPrefsSaving] = useState(false);
@@ -50,7 +49,7 @@ const CitizenProfile = () => {
       setLoading(true);
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("full_name, phone, avatar_url, is_approved, email, pending_email, email_verified, phone_verified, verification_status")
+        .select("full_name, phone, avatar_url, is_approved, email, pending_email, email_verified, verification_status")
         .eq("user_id", user.id)
         .single();
 
@@ -62,19 +61,17 @@ const CitizenProfile = () => {
         setProfileEmail(profileData.email ?? "");
         setPendingEmail(profileData.pending_email ?? "");
         setEmailVerified(profileData.email_verified ?? false);
-        setPhoneVerified(profileData.phone_verified ?? false);
         setVerificationStatus((profileData.verification_status ?? "unverified") as "unverified" | "pending" | "verified" | "rejected");
       }
 
       const { data: prefs } = await supabase
         .from("notification_preferences")
-        .select("inapp_opt_in, sms_opt_in, email_opt_in")
+        .select("inapp_opt_in, email_opt_in")
         .eq("user_id", user.id)
         .maybeSingle();
       if (prefs) {
         setNotificationPrefs({
           inapp_opt_in: prefs.inapp_opt_in ?? true,
-          sms_opt_in: prefs.sms_opt_in ?? true,
           email_opt_in: prefs.email_opt_in ?? true,
         });
       }
@@ -136,15 +133,11 @@ const CitizenProfile = () => {
 
   const handleSave = async () => {
     if (!user) return;
-    if (!/^01[0-9]{9}$/.test(phone)) {
-      toast.error(t("profile.phone_invalid"));
-      return;
-    }
     setSaving(true);
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: sanitizeText(fullName), phone: sanitizeText(phone), phone_verified: false })
+        .update({ full_name: sanitizeText(fullName), phone: sanitizeText(phone) })
         .eq("user_id", user.id);
       if (error) throw error;
       toast.success(t("profile.saved"));
@@ -303,9 +296,6 @@ const CitizenProfile = () => {
             <span className={`px-2 py-1 rounded-full ${emailVerified ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
               البريد {emailVerified ? "موثق" : "غير موثق"}
             </span>
-            <span className={`px-2 py-1 rounded-full ${phoneVerified ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
-              الهاتف {phoneVerified ? "موثق" : "غير موثق"}
-            </span>
           </div>
         </motion.div>
 
@@ -426,15 +416,6 @@ const CitizenProfile = () => {
                 </Button>
                 <Button
                   type="button"
-                  variant={notificationPrefs.sms_opt_in ? "default" : "outline"}
-                  onClick={() => saveNotificationPreferences({ ...notificationPrefs, sms_opt_in: !notificationPrefs.sms_opt_in })}
-                  disabled={prefsSaving}
-                  className="h-10"
-                >
-                  SMS
-                </Button>
-                <Button
-                  type="button"
                   variant={notificationPrefs.email_opt_in ? "default" : "outline"}
                   onClick={() => saveNotificationPreferences({ ...notificationPrefs, email_opt_in: !notificationPrefs.email_opt_in })}
                   disabled={prefsSaving}
@@ -447,7 +428,7 @@ const CitizenProfile = () => {
 
             <Button
               onClick={handleSave}
-              disabled={saving || !fullName || !phone}
+              disabled={saving || !fullName}
               className="w-full gap-2.5 bg-gradient-to-l from-accent to-info text-white hover:opacity-90 h-12 rounded-xl font-semibold shadow-lg shadow-accent/20 mt-2"
             >
               {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}

@@ -13,7 +13,7 @@ describe("isNetworkFailureMessage", () => {
 
   it("does not classify application/auth errors as network failures", () => {
     expect(isNetworkFailureMessage("Invalid login credentials")).toBe(false);
-    expect(isNetworkFailureMessage("OTP invalid")).toBe(false);
+    expect(isNetworkFailureMessage("Verification code invalid")).toBe(false);
     expect(isNetworkFailureMessage("Too many requests")).toBe(false);
     expect(isNetworkFailureMessage("User already registered")).toBe(false);
   });

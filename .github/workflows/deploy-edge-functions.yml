@@ -3,7 +3,7 @@ name: Deploy Supabase Edge Functions
 # Deploys request-email-verification and verify-email-code Edge Functions on every push to main and on
 # manual dispatch.  Only these two functions are deployed — never a blanket
 # "deploy all" — so an unrelated function with a compile error cannot block the
-# OTP endpoints from going live.
+# verification endpoints from going live.
 #
 # Required GitHub repository secrets (Settings → Secrets → Actions):
 #   SUPABASE_ACCESS_TOKEN  — Personal access token from https://app.supabase.com/account/tokens
@@ -133,7 +133,7 @@ jobs:
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
 
       - name: Smoke test — request-email-verification reachable
-        id: smoke_send_otp
+        id: smoke_request_email_verification
         shell: bash
         run: |
           set -euo pipefail
@@ -165,7 +165,7 @@ jobs:
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
 
       - name: Smoke test — verify-email-code reachable
-        id: smoke_verify_otp
+        id: smoke_verify_email_code
         shell: bash
         run: |
           set -euo pipefail
@@ -203,8 +203,8 @@ jobs:
           PROJECT_URL="https://${SUPABASE_PROJECT_ID}.supabase.co"
           DEPLOY_SEND_OUTCOME="${{ steps.deploy_request_email_verification.outcome }}"
           DEPLOY_VERIFY_OUTCOME="${{ steps.deploy_verify_email_code.outcome }}"
-          SMOKE_SEND_OUTCOME="${{ steps.smoke_send_otp.outcome }}"
-          SMOKE_VERIFY_OUTCOME="${{ steps.smoke_verify_otp.outcome }}"
+          SMOKE_SEND_OUTCOME="${{ steps.smoke_request_email_verification.outcome }}"
+          SMOKE_VERIFY_OUTCOME="${{ steps.smoke_verify_email_code.outcome }}"
           {
             echo "## 🚀 Edge Functions Deployment"
             echo ""

@@ -51,7 +51,6 @@
 | `notification_preferences` | 20260409000000_sprint2_identity_and_unified_notifications.sql | yes | no | 4 | high |
 | `notifications` | 20260319025918_ccc4e7fe-b145-453a-bcfe-baba0742934f.sql | yes | no | 12 | high |
 | `official_documents` | 20260328060800_official_docs_responses.sql | yes | no | 2 | standard |
-| `otp_codes` | 20260328060000_add_otp_codes_table.sql, 20260402005200_a9d3391f-25e0-4e30-bd52-e94cb604994e.sql | yes | yes | 4 | high |
 | `outbound_email_tasks` | 20260410000000_sprint3_5_mp_engagement.sql | yes | no | 3 | standard |
 | `poll_votes` | 20260410000000_sprint3_5_mp_engagement.sql | yes | no | 2 | standard |
 | `polls` | 20260410000000_sprint3_5_mp_engagement.sql | yes | no | 4 | standard |
@@ -69,8 +68,6 @@
 | `project_votes` | 20260328060900_project_proposals_crowdfunding.sql | yes | no | 2 | standard |
 | `push_subscriptions` | 20260320012205_173dfcc3-0376-4248-a4a6-fbddf59d6f48.sql | yes | no | 5 | standard |
 | `rate_limit_logs` | 20260325120100_create_rate_limit_logs_table.sql, 20260330010300_rate_limits.sql, 20260402005200_a9d3391f-25e0-4e30-bd52-e94cb604994e.sql | yes | yes | 5 | high |
-| `sms_notifications` | 20260328060100_advanced_features.sql | yes | no | 2 | high |
-| `sms_tracking_links` | 20260328060100_advanced_features.sql | yes | no | 2 | standard |
 | `submission_attempts` | 20260325130200_add_submission_tracking.sql | yes | yes | 5 | high |
 | `urgent_issue_alerts` | 20260328060100_advanced_features.sql | yes | no | 3 | standard |
 | `user_roles` | 20260319024649_8e71a53f-0626-4244-b434-e826edfefc68.sql | yes | no | 7 | high |
@@ -122,7 +119,7 @@
 
 - **anon**: receives explicit read grants on selected public profiles view (`mp_public_profiles`), no broad table grants.
 - **authenticated**: access is primarily policy-driven (RLS on tables), plus explicit execute/select grants for selected safe functions/views.
-- **service_role**: privileged operational role for OTP/rate-limit/captcha/audit flows via dedicated policies and function grants.
+- **service_role**: privileged operational role for verification/rate-limit/captcha/audit flows via dedicated policies and function grants.
 - **postgres**: function execution grants remain for internal privileged paths.
 
 ## Rationale for minimal-change migration
