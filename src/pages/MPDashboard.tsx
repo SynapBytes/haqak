@@ -34,6 +34,7 @@ import MPEngagementPanel from "@/components/MPEngagementPanel";
 import MPPublicPostsManager from "@/components/MPPublicPostsManager";
 import type { Issue } from "@/components/IssueCard";
 import type { IssueStatus } from "@/components/StatusBadge";
+import { IssueGridSkeleton } from "@/components/ListSkeletons";
 
 interface ActionLog {
   id: string;
@@ -65,6 +66,7 @@ const MPDashboard = () => {
   const [newStatus, setNewStatus] = useState<IssueStatus>("received");
   const [chatIssue, setChatIssue] = useState<Issue | null>(null);
   const [mpResponses, setMpResponses] = useState<MPResponse[]>([]);
+  const [responsesState, setResponsesState] = useState<"loading" | "ready" | "empty" | "coming-soon">("empty");
 
   const categories = [
     { key: "all", label: t("categories.all") },
@@ -146,7 +148,7 @@ const MPDashboard = () => {
           status: d.status as Issue["status"],
           category: d.category,
           location: d.location,
-          timeAgo: new Date(d.created_at).toLocaleDateString("ar-EG"),
+          timeAgo: d.created_at,
           issue_type: (d.issue_type || "individual") as Issue["issue_type"],
           is_flagged: d.is_flagged || false,
           citizen_confirmed: d.citizen_confirmed || false,
@@ -188,8 +190,29 @@ const MPDashboard = () => {
   const loading = issuesQuery.isLoading || profileQuery.isLoading;
 
   const fetchResponses = async (issueId: string) => {
-    // mp_responses table not yet created
-    setMpResponses([]);
+    setResponsesState("loading");
+    const { data, error } = await supabase
+      .from("issue_actions")
+      .select("id, note, created_at")
+      .eq("issue_id", issueId)
+      .eq("action_type", "official_response")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      setMpResponses([]);
+      setResponsesState("coming-soon");
+      return;
+    }
+
+    const responses = (data ?? [])
+      .filter((item) => typeof item.note === "string" && item.note.trim().length > 0)
+      .map((item) => ({
+        id: item.id,
+        response_text: item.note as string,
+        created_at: item.created_at,
+      }));
+    setMpResponses(responses);
+    setResponsesState(responses.length > 0 ? "ready" : "empty");
   };
 
   const openIssueDetail = (issue: Issue) => {
@@ -267,6 +290,14 @@ const MPDashboard = () => {
 
   const handleAddOfficialResponse = async () => {
     await addOfficialResponseMutation.mutateAsync();
+  };
+
+  const clearFilters = () => {
+    setSelectedCategory("all");
+    setSelectedStatus("all");
+    setSelectedType("all");
+    setSelectedPriority("all");
+    setSearchQuery("");
   };
 
   const filteredIssues = issues.filter((issue) => {
@@ -406,10 +437,7 @@ const MPDashboard = () => {
 
           <TabsContent value="list" className="space-y-8">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <Loader2 className="w-10 h-10 animate-spin text-accent mb-4" />
-                <p className="text-muted-foreground">{t("common.loading")}</p>
-              </div>
+              <IssueGridSkeleton />
             ) : issuesQuery.isError ? (
               <div className="text-center py-16 bg-card/30 border border-dashed border-border/50 rounded-3xl">
                 <h3 className="text-lg font-medium text-foreground">{t("common.error")}</h3>
@@ -508,14 +536,30 @@ const MPDashboard = () => {
                     <IssueCard
                       issue={issue}
                       onClick={() => openIssueDetail(issue)}
-                      isMPView
                     />
                   </motion.div>
                 ))}
               </AnimatePresence>
             </div>
 
-            {filteredIssues.length === 0 && (
+            {filteredIssues.length === 0 && totalIssues > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-20 bg-gradient-to-br from-card/80 to-muted/30 border border-dashed border-border/50 rounded-3xl"
+              >
+                <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Search className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">لا توجد نتائج مطابقة للفلاتر الحالية</h3>
+                <p className="text-muted-foreground mb-5">جرّب تعديل الفلاتر أو إعادة تعيينها لعرض جميع الشكاوى.</p>
+                <Button variant="outline" onClick={clearFilters} className="rounded-xl">
+                  إعادة تعيين الفلاتر
+                </Button>
+              </motion.div>
+            )}
+
+            {filteredIssues.length === 0 && totalIssues === 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -602,11 +646,17 @@ const MPDashboard = () => {
                       <div className="bg-card border border-border/50 rounded-3xl p-6 space-y-6">
                         <div className="flex items-center justify-between">
                           <h3 className="font-bold text-foreground">الردود الرسمية والمتابعة</h3>
-                          <Badge className="bg-success/10 text-success border-success/20">موثق</Badge>
+                          {responsesState === "coming-soon" ? (
+                            <Badge className="bg-warning/10 text-warning border-warning/20">قريبًا</Badge>
+                          ) : (
+                            <Badge className="bg-success/10 text-success border-success/20">موثق</Badge>
+                          )}
                         </div>
 
                         <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
-                          {mpResponses.length > 0 ? (
+                          {responsesState === "loading" ? (
+                            <div className="text-center py-8 text-muted-foreground text-sm">جارٍ تحميل الردود...</div>
+                          ) : mpResponses.length > 0 ? (
                             mpResponses.map((res) => (
                               <div key={res.id} className="bg-muted/30 p-4 rounded-2xl border border-border/30 relative group">
                                 <p className="text-sm text-foreground mb-2 font-medium">{res.response_text}</p>
@@ -630,6 +680,8 @@ const MPDashboard = () => {
                                 </div>
                               </div>
                             ))
+                          ) : responsesState === "coming-soon" ? (
+                            <div className="text-center py-8 text-muted-foreground text-sm">ميزة عرض الردود الرسمية الكاملة ستكون متاحة قريبًا.</div>
                           ) : (
                             <div className="text-center py-8 text-muted-foreground text-sm">لا توجد ردود رسمية حتى الآن</div>
                           )}

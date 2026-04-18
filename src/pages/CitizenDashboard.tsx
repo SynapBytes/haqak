@@ -37,6 +37,7 @@ import { hashFile } from "@/lib/fileIntegrityService";
 import { dispatchNotification } from "@/lib/notifications";
 import { ATTACHMENTS_BUCKET, buildIssueAttachmentPath, uploadIssueAttachment } from "@/lib/storage";
 import { analytics } from "@/lib/analytics";
+import { IssueGridSkeleton } from "@/components/ListSkeletons";
 import {
   isUuidString,
   normalizeClassifyIssueResponse,
@@ -72,6 +73,7 @@ const CitizenDashboard = () => {
   const [longitude, setLongitude] = useState<number | null>(null);
   const [reputation, setReputation] = useState({ points: 0, rank: "مواطن جديد" });
   const [mpResponses, setMpResponses] = useState<{ id: string; response_text: string; created_at: string; [key: string]: unknown }[]>([]);
+  const [responsesState, setResponsesState] = useState<"loading" | "ready" | "empty" | "coming-soon">("empty");
   const INTEGRITY_INVOKE_FAILED = "invoke_failed";
 
   const isFormValid = title.trim() !== "" && 
@@ -98,7 +100,7 @@ const CitizenDashboard = () => {
           status: d.status as Issue["status"],
           category: d.category,
           location: d.location,
-          timeAgo: new Date(d.created_at).toLocaleDateString("ar-EG"),
+          timeAgo: d.created_at,
           issue_type: ((row.issue_type as string) || "individual") as "collective" | "individual",
           is_flagged: (row.is_flagged as boolean) || false,
           citizen_confirmed: (row.citizen_confirmed as boolean) || false,
@@ -142,8 +144,29 @@ const CitizenDashboard = () => {
   const loading = issuesQuery.isLoading;
 
   const fetchResponses = async (issueId: string) => {
-    // mp_responses table not yet created
-    setMpResponses([]);
+    setResponsesState("loading");
+    const { data, error } = await supabase
+      .from("issue_actions")
+      .select("id, note, created_at")
+      .eq("issue_id", issueId)
+      .eq("action_type", "official_response")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      setMpResponses([]);
+      setResponsesState("coming-soon");
+      return;
+    }
+
+    const responses = (data ?? [])
+      .filter((item) => typeof item.note === "string" && item.note.trim().length > 0)
+      .map((item) => ({
+        id: item.id,
+        response_text: item.note as string,
+        created_at: item.created_at,
+      }));
+    setMpResponses(responses);
+    setResponsesState(responses.length > 0 ? "ready" : "empty");
   };
 
   useEffect(() => {
@@ -462,8 +485,8 @@ const CitizenDashboard = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-x-hidden">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.03, 0.06, 0.03] }} transition={{ duration: 10, repeat: Infinity }} className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-accent blur-3xl" />
-        <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.03, 0.06, 0.03] }} transition={{ duration: 12, repeat: Infinity, delay: 1 }} className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-primary blur-3xl" />
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full blur-3xl" style={{ background: "radial-gradient(circle, hsl(var(--accent) / 0.08) 0%, transparent 70%)" }} />
+        <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full blur-3xl" style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.08) 0%, transparent 70%)" }} />
       </div>
 
       <AppHeader />
@@ -521,10 +544,7 @@ const CitizenDashboard = () => {
 
             <TabsContent value="issues" className="space-y-6">
               {loading ? (
-                <div className="flex flex-col items-center justify-center py-20">
-                  <Loader2 className="w-10 h-10 animate-spin text-accent mb-4" />
-                  <p className="text-muted-foreground">{t("common.loading")}</p>
-                </div>
+                <IssueGridSkeleton />
               ) : issuesQuery.isError ? (
                 <div className="text-center py-20 bg-card/30 border border-dashed border-border/50 rounded-3xl">
                   <h3 className="text-xl font-semibold text-foreground mb-2">{t("common.error")}</h3>
@@ -750,11 +770,20 @@ const CitizenDashboard = () => {
                     <div className="bg-card border border-border/50 rounded-3xl p-6 space-y-6">
                       <div className="flex items-center justify-between">
                         <h3 className="font-bold text-foreground">الردود الرسمية من النائب</h3>
-                        <Badge className="bg-success/10 text-success border-success/20">موثق</Badge>
+                        {responsesState === "coming-soon" ? (
+                          <Badge className="bg-warning/10 text-warning border-warning/20">قريبًا</Badge>
+                        ) : (
+                          <Badge className="bg-success/10 text-success border-success/20">موثق</Badge>
+                        )}
                       </div>
 
                       <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                        {mpResponses.length > 0 ? (
+                        {responsesState === "loading" ? (
+                          <div className="text-center py-12 space-y-3">
+                            <Clock className="w-10 h-10 text-muted-foreground/30 mx-auto" />
+                            <p className="text-muted-foreground text-sm">جارٍ تحميل الردود الرسمية...</p>
+                          </div>
+                        ) : mpResponses.length > 0 ? (
                           mpResponses.map((res) => (
                             <div key={res.id} className="bg-muted/30 p-4 rounded-2xl border border-border/30">
                               <p className="text-sm text-foreground mb-4 font-medium">{res.response_text}</p>
@@ -778,6 +807,11 @@ const CitizenDashboard = () => {
                               </div>
                             </div>
                           ))
+                        ) : responsesState === "coming-soon" ? (
+                          <div className="text-center py-12 space-y-3">
+                            <Clock className="w-10 h-10 text-muted-foreground/30 mx-auto" />
+                            <p className="text-muted-foreground text-sm">ميزة الردود الرسمية الكاملة ستكون متاحة قريبًا.</p>
+                          </div>
                         ) : (
                           <div className="text-center py-12 space-y-3">
                             <Clock className="w-10 h-10 text-muted-foreground/30 mx-auto" />
