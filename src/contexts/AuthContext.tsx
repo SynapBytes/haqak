@@ -35,6 +35,8 @@ interface AuthContextValue {
   profile: Profile | null;
   role: AppRole | null;
   loading: boolean;
+  profileLoading: boolean;
+  refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -44,6 +46,8 @@ const AuthContext = createContext<AuthContextValue>({
   profile: null,
   role: null,
   loading: true,
+  profileLoading: true,
+  refreshProfile: async () => {},
   signOut: async () => {},
 });
 
@@ -53,9 +57,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const lastFetchedUserIdRef = useRef<string | null>(null);
 
   const fetchProfileAndRole = useCallback(async (userId: string) => {
+    setProfileLoading(true);
     try {
       const [profileRes, roleRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
@@ -97,6 +103,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         error,
         { showToast: false, extras: { boundary: "auth.fetchProfileAndRole", user_id: userId } },
       );
+    } finally {
+      setProfileLoading(false);
     }
   }, []);
 
@@ -112,6 +120,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } else {
         lastFetchedUserIdRef.current = null;
+        setProfileLoading(false);
       }
       setLoading(false);
     };
@@ -138,6 +147,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         lastFetchedUserIdRef.current = null;
         setProfile(null);
         setRole(null);
+        setProfileLoading(false);
       }
       setLoading(false);
     });
@@ -164,11 +174,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setProfile(null);
     setRole(null);
+    setProfileLoading(false);
     lastFetchedUserIdRef.current = null;
   };
 
+  const refreshProfile = useCallback(async () => {
+    if (!user?.id) return;
+    await fetchProfileAndRole(user.id);
+  }, [fetchProfileAndRole, user?.id]);
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, role, loading, signOut }}>
+    <AuthContext.Provider value={{ session, user, profile, role, loading, profileLoading, refreshProfile, signOut }}>
       {children}
     </AuthContext.Provider>
   );

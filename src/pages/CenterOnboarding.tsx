@@ -31,7 +31,7 @@ const FALLBACK_CENTERS: Center[] = LOCAL_CENTERS.map((lc) => ({
 }));
 
 const CenterOnboarding = () => {
-  const { user, role, profile } = useAuth();
+  const { user, role, profile, refreshProfile } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [centers, setCenters] = useState<Center[]>([]);
@@ -63,6 +63,11 @@ const CenterOnboarding = () => {
       .order("district_ar", { ascending: true });
 
     if (error || !data?.length) {
+      if (error) {
+        console.error("Failed to load centers from Supabase", error);
+      } else {
+        console.error("Failed to load centers from Supabase: no rows returned");
+      }
       // Failed or empty table: fall back to the local dataset so the
       // dropdowns are still usable.  On save we will re-query Supabase
       // for the UUID using the selected governorate + district pair.
@@ -112,12 +117,13 @@ const CenterOnboarding = () => {
 
   const onSave = async () => {
     if (!user || !centerId || !governorate) return;
+    const selectedCenter = filteredCenters.find(
+      (c) => (usingFallback ? c.district_en : c.id) === centerId,
+    );
 
     // Validate that the selected center actually belongs to the selected
     // governorate before sending anything to the server.
-    const isConsistent = filteredCenters.some(
-      (c) => (usingFallback ? c.district_en : c.id) === centerId,
-    );
+    const isConsistent = !!selectedCenter;
     if (!isConsistent) {
       toast.error(t("center_onboarding.save_error"));
       return;
@@ -137,6 +143,11 @@ const CenterOnboarding = () => {
         .maybeSingle();
 
       if (lookupError || !centerData?.id) {
+        if (lookupError) {
+          console.error("Failed to resolve fallback center ID from Supabase", lookupError);
+        } else {
+          console.error("Failed to resolve fallback center ID from Supabase: no matching row");
+        }
         toast.error(t("center_onboarding.save_error"));
         setSaving(false);
         return;
@@ -146,13 +157,20 @@ const CenterOnboarding = () => {
 
     const { error } = await supabase
       .from("profiles")
-      .update({ center_id: resolvedCenterId })
+      .update({
+        center_id: resolvedCenterId,
+        governorate: selectedCenter?.governorate_ar ?? governorate,
+        district: selectedCenter?.district_ar ?? null,
+        center: selectedCenter?.district_ar ?? null,
+      })
       .eq("user_id", user.id);
     if (error) {
+      console.error("Failed to save onboarding center to profile", error);
       toast.error(error.message || t("center_onboarding.save_error"));
       setSaving(false);
       return;
     }
+    await refreshProfile();
     toast.success(t("center_onboarding.saved"));
     navigate(role === "mp" ? "/mp" : "/citizen", { replace: true });
   };
@@ -194,6 +212,7 @@ const CenterOnboarding = () => {
                   setGovernorate(value);
                   setCenterId("");
                 }}
+                disabled={saving}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t("center_onboarding.governorate")} />
@@ -207,7 +226,7 @@ const CenterOnboarding = () => {
                 </SelectContent>
               </Select>
 
-              <Select value={centerId} onValueChange={setCenterId} disabled={!governorate}>
+              <Select value={centerId} onValueChange={setCenterId} disabled={!governorate || saving}>
                 <SelectTrigger>
                   <SelectValue placeholder={t("center_onboarding.center")} />
                 </SelectTrigger>

@@ -46,9 +46,9 @@ function ProtectedRoute({
   requiredRole?: AppRole;
   allowMissingCenter?: boolean;
 }) {
-  const { session, role, loading, profile } = useAuth();
+  const { session, role, loading, profileLoading, profile } = useAuth();
   const { t } = useTranslation();
-  if (loading) return <PageLoader />;
+  if (loading || profileLoading) return <PageLoader />;
   if (!session) return <Navigate to="/auth" replace />;
   if (requiredRole === "admin" && role !== "admin") return <Navigate to="/" replace />;
   if (requiredRole === "moderator" && role !== "moderator" && role !== "admin") return <Navigate to="/" replace />;
