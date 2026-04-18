@@ -255,16 +255,32 @@ const Auth = () => {
   };
 
   const getRoleRedirect = async (userId: string): Promise<string> => {
-    const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).single();
-    if (data?.role === "admin") return "/admin";
-    if (data?.role === "mp") {
-      const { data: profile } = await supabase.from("profiles").select("is_approved").eq("user_id", userId).single();
-      if (!profile?.is_approved) {
-        return "/mp-pending";
+    try {
+      const [{ data: roleData, error: roleError }, { data: profileData, error: profileError }] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
+        supabase.from("profiles").select("is_approved").eq("user_id", userId).maybeSingle(),
+      ]);
+
+      if (roleError) {
+        throw roleError;
       }
-      return "/mp";
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      if (roleData?.role === "admin") return "/admin";
+      if (roleData?.role === "mp") {
+        if (!profileData?.is_approved) {
+          return "/mp-pending";
+        }
+        return "/mp";
+      }
+      return "/citizen";
+    } catch (error) {
+      console.error("Failed to resolve role redirect", error);
+      return "/citizen";
     }
-    return "/citizen";
   };
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
