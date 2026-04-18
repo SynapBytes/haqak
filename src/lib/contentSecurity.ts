@@ -216,6 +216,8 @@ export function censorText(text: string): string {
   return censored;
 }
 
+// Backward-compatible alias for existing callers that may still import the old
+// intent name while migration to `censorText` is completed.
 export const redactOffensiveContent = censorText;
 
 /**

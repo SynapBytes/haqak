@@ -295,6 +295,7 @@
     "open_chat": "Open Chat",
     "ai_summary": "AI Summary",
     "attach_files": "Attach images or files",
+    "add_image": "Add image",
     "first_issue_btn": "Submit your first issue",
     "error_submit": "Error submitting issue",
     "loading": "Loading...",
@@ -310,6 +311,7 @@
     "legal_assistant": "Legal Assistant",
     "mobile_app": "Haqak Mobile App",
     "engagement": "Polls & Announcements",
+    "captcha": "Human verification (CAPTCHA)",
     "loading_responses": "Loading official responses...",
     "responses_coming_soon": "Full official responses view will be available soon."
   },

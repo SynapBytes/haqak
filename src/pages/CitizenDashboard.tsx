@@ -382,10 +382,10 @@ const CitizenDashboard = () => {
         } else if (classifyError) {
           handleClientError(
             {
-                code: "issue.classify.invoke_failed",
-                message: t("dashboard.ai_unavailable"),
-                retryable: true,
-              },
+              code: "issue.classify.invoke_failed",
+              message: t("dashboard.ai_unavailable"),
+              retryable: true,
+            },
             classifyError,
             { showToast: false, extras: { boundary: "classify-issue.invoke" } },
           );
@@ -645,9 +645,7 @@ const CitizenDashboard = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center px-1">
-                    <label className="text-sm font-semibold text-foreground">{t("dashboard.description")}</label>
-                  </div>
+                  <label className="text-sm font-semibold text-foreground px-1">{t("dashboard.description")}</label>
                   <Textarea placeholder={t("dashboard.description_placeholder")} value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-[150px] rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-accent resize-none p-4" />
                 </div>
 
@@ -674,7 +672,7 @@ const CitizenDashboard = () => {
                     {files.length < 5 && (
                       <button type="button" onClick={() => fileInputRef.current?.click()} className="aspect-square rounded-2xl border-2 border-dashed border-border hover:border-accent hover:bg-accent/5 transition-all flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-accent">
                         <ImagePlus className="w-8 h-8" />
-                        <span className="text-xs font-medium">{t("dashboard.attach_files")}</span>
+                        <span className="text-xs font-medium">{t("dashboard.add_image")}</span>
                       </button>
                     )}
                   </div>
@@ -689,7 +687,7 @@ const CitizenDashboard = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <p className="text-sm font-semibold text-foreground px-1">CAPTCHA</p>
+                  <p className="text-sm font-semibold text-foreground px-1">{t("dashboard.captcha")}</p>
                   <TurnstileCaptcha onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
                 </div>
 
