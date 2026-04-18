@@ -23,6 +23,7 @@ import type { Database } from "@/integrations/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sanitizeText } from "@/lib/sanitize";
 import SeoHead from "@/components/SeoHead";
+import ImageWithFallback from "@/components/ui/ImageWithFallback";
 
 type ExtendedPublicTables = Database["public"]["Tables"] & {
   contributions: {
@@ -564,10 +565,10 @@ const Support = () => {
                     <Shield className="w-4 h-4 text-[#D4AF84]" />
                   </div>
                   <div className="flex flex-wrap gap-3 items-center">
-                    <img src="/payment-methods/visa.svg"       alt="Visa"       className="h-7 opacity-70 hover:opacity-100 transition-opacity" />
-                    <img src="/payment-methods/mastercard.svg" alt="Mastercard" className="h-7 opacity-70 hover:opacity-100 transition-opacity" />
-                    <img src="/payment-methods/fawry.svg"      alt="Fawry"      className="h-7 opacity-70 hover:opacity-100 transition-opacity" />
-                    <img src="/payment-methods/instapay.svg"   alt="Instapay"   className="h-7 opacity-70 hover:opacity-100 transition-opacity" />
+                    <ImageWithFallback src="/payment-methods/visa.svg" fallbackSrc="/placeholder.svg" alt="Visa" loading="lazy" decoding="async" className="h-7 opacity-70 hover:opacity-100 transition-opacity" />
+                    <ImageWithFallback src="/payment-methods/mastercard.svg" fallbackSrc="/placeholder.svg" alt="Mastercard" loading="lazy" decoding="async" className="h-7 opacity-70 hover:opacity-100 transition-opacity" />
+                    <ImageWithFallback src="/payment-methods/fawry.svg" fallbackSrc="/placeholder.svg" alt="Fawry" loading="lazy" decoding="async" className="h-7 opacity-70 hover:opacity-100 transition-opacity" />
+                    <ImageWithFallback src="/payment-methods/instapay.svg" fallbackSrc="/placeholder.svg" alt="Instapay" loading="lazy" decoding="async" className="h-7 opacity-70 hover:opacity-100 transition-opacity" />
                   </div>
                   <p className="text-xs text-[#9A9A9A] flex items-center gap-1.5 font-light">
                     <Lock className="w-3 h-3 text-[#D4AF84]" />
@@ -603,7 +604,7 @@ const Support = () => {
                 <div className="flex items-center gap-4">
                   <SectionHeader title={t("contribute.contributors_list")} />
                   <Link
-                    to="#"
+                    to="#transparency-charter"
                     className="hidden md:flex items-center gap-1.5 text-xs text-[#8A6A3A] hover:text-[#D4AF84] transition-colors"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
@@ -632,7 +633,7 @@ const Support = () => {
                   </div>
                 )}
 
-                <div className="flex items-start gap-3 p-4 rounded-xl bg-[#F8F5F0] border border-[#EDE8E0]">
+                <div id="transparency-charter" className="flex items-start gap-3 p-4 rounded-xl bg-[#F8F5F0] border border-[#EDE8E0]">
                   <Lock className="w-4 h-4 text-[#D4AF84] flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-[#6A6A6A] leading-relaxed">{t("contribute.transparency_desc")}</p>
                 </div>

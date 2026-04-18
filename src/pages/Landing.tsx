@@ -30,6 +30,7 @@ import { analytics } from "@/lib/analytics";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getEnabledSocialLinks, type SocialPlatform } from "@/config/socialLinks";
 import SeoHead from "@/components/SeoHead";
+import { isValidEmail, normalizeEmail } from "@/lib/emailValidation";
 
 type SocialIconConfig = {
   id: SocialPlatform;
@@ -336,18 +337,41 @@ const HeroInfoWindow = ({ opened, ropeDropped }: { opened: boolean; ropeDropped:
 };
 
 /* ─── Support Form ─── */
-const SupportForm = () => {
+export const SupportForm = () => {
   const { t } = useTranslation();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [website, setWebsite] = useState("");
+  const normalizedEmail = useMemo(() => normalizeEmail(email), [email]);
+  const hasValidEmail = isValidEmail(normalizedEmail);
+
+  useEffect(() => {
+    if (!email.trim()) {
+      setEmailError("");
+      return;
+    }
+    setEmailError(hasValidEmail ? "" : t("support.email_invalid"));
+  }, [email, hasValidEmail, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim()) {
+      setEmailError(t("support.email_required"));
+      analytics.track("contact_form_validation_failed", { reason: "email_required" });
+      toast.error(t("support.fill_all"));
+      return;
+    }
+    if (!hasValidEmail) {
+      setEmailError(t("support.email_invalid"));
+      analytics.track("contact_form_validation_failed", { reason: "invalid_email" });
+      toast.error(t("support.email_invalid"));
+      return;
+    }
     if (!name.trim() || !email.trim() || !message.trim()) {
       toast.error(t("support.fill_all"));
       return;
@@ -361,7 +385,7 @@ const SupportForm = () => {
       const { data: submitData, error: submitError } = await supabase.functions.invoke("submit-contact-message", {
         body: {
           name,
-          email,
+          email: normalizedEmail,
           message,
           captchaToken,
           website,
@@ -374,11 +398,15 @@ const SupportForm = () => {
           toast.error(t("support.rate_limit"));
         } else if (errorCode === "spam_detected") {
           toast.error(t("support.spam_detected"));
+        } else if (errorCode === "invalid_email") {
+          setEmailError(t("support.email_invalid"));
+          toast.error(t("support.email_invalid"));
         } else if (errorCode === "captcha_invalid" || errorCode === "captcha_failed") {
           toast.error(t("support.captcha_failed"));
         } else {
           toast.error(t("support.submit_failed"));
         }
+        analytics.track("contact_form_submit_failed", { code: errorCode || "unknown" });
         setSending(false);
         return;
       }
@@ -389,17 +417,20 @@ const SupportForm = () => {
         await supabase.from("notifications").insert({
           user_id: session.user.id,
           title: `${t("support.contact_us")}: ${name}`,
-          message: `${t("support.name")}: ${name} (${email})\n\n${message}`,
+          message: `${t("support.name")}: ${name} (${normalizedEmail})\n\n${message}`,
         });
       }
+      analytics.track("contact_form_submitted", { authenticated: !!session?.user });
       toast.success(t("support.sent_success"));
       setName("");
       setEmail("");
+      setEmailError("");
       setMessage("");
       setWebsite("");
       setSent(true);
       setTimeout(() => setSent(false), 5000);
     } catch {
+      analytics.track("contact_form_submit_fallback_mailto");
       window.location.href = `mailto:${APP_CONFIG.SUPPORT_EMAIL}?subject=${encodeURIComponent(`${t("support.contact_us")}: ${name}`)}&body=${encodeURIComponent(message)}`;
       toast.success(t("support.opening_email"));
     } finally {
@@ -457,7 +488,14 @@ const SupportForm = () => {
             placeholder={t("support.email_placeholder")}
             dir="ltr"
             className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all"
+            aria-invalid={!!emailError}
+            aria-describedby={emailError ? "support-email-error" : undefined}
           />
+          {emailError && (
+            <p id="support-email-error" role="alert" className="mt-2 text-xs text-destructive">
+              {emailError}
+            </p>
+          )}
         </div>
       </div>
       <div>
@@ -485,7 +523,7 @@ const SupportForm = () => {
       <TurnstileCaptcha onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
       <Button
         type="submit"
-        disabled={sending || !captchaToken}
+        disabled={sending || !captchaToken || !name.trim() || !message.trim() || !hasValidEmail}
         className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90 h-12 text-base font-semibold rounded-xl shadow-lg shadow-accent"
       >
         {sending ? t("support.sending") : t("support.send")}

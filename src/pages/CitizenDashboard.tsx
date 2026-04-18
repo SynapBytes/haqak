@@ -47,6 +47,8 @@ import {
 } from "@/lib/boundaryAdapters";
 import { handleClientError } from "@/lib/errors";
 import { ISSUE_CATEGORY_KEYS, normalizeIssueCategory, type IssueCategoryKey } from "@/lib/issueCategories";
+import CitizenComplaintTimeline from "@/components/CitizenComplaintTimeline";
+import { APP_CONFIG } from "@/lib/config";
 
 const categoryKeys = ISSUE_CATEGORY_KEYS;
 
@@ -589,6 +591,10 @@ const CitizenDashboard = () => {
             </motion.div>
           ))}
         </div>
+
+        {APP_CONFIG.FEATURES.ENABLE_CITIZEN_TIMELINE && (
+          <CitizenComplaintTimeline issue={issues[0] ? { id: issues[0].id, status: issues[0].status, title: issues[0].title } : undefined} />
+        )}
 
 <Tabs defaultValue="issues" className="space-y-8">
             <TabsList className="bg-card/50 backdrop-blur-sm border-accent/20 p-1">

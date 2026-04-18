@@ -36,6 +36,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [mode, setMode] = useState<AuthMode>("login");
+  const [loginRoleHint, setLoginRoleHint] = useState<"citizen" | "mp">("citizen");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -388,7 +389,12 @@ const Auth = () => {
   const isForgot = mode === "forgot-password";
 
   const modeConfig = {
-    login: { title: t("auth.login_title"), subtitle: t("auth.login_subtitle"), icon: LogIn, gradient: "from-accent to-info" },
+    login: {
+      title: loginRoleHint === "mp" ? t("auth.login_mp_title") : t("auth.login_citizen_title"),
+      subtitle: loginRoleHint === "mp" ? t("auth.login_mp_subtitle") : t("auth.login_citizen_subtitle"),
+      icon: loginRoleHint === "mp" ? ShieldCheck : LogIn,
+      gradient: loginRoleHint === "mp" ? "from-warning to-accent" : "from-accent to-info",
+    },
     "signup-citizen": { title: t("auth.signup_citizen_title"), subtitle: t("auth.signup_citizen_subtitle"), icon: User, gradient: "from-primary to-accent" },
     "signup-mp": { title: t("auth.signup_mp_title"), subtitle: t("auth.signup_mp_subtitle"), icon: ShieldCheck, gradient: "from-warning to-accent" },
     "forgot-password": { title: t("auth.forgot_title"), subtitle: t("auth.forgot_subtitle"), icon: KeyRound, gradient: "from-accent to-primary" },
@@ -476,6 +482,43 @@ const Auth = () => {
               {title}
             </motion.h1>
             <p className="text-muted-foreground text-sm">{subtitle}</p>
+            {mode === "login" && (
+              <div className="mt-4 flex flex-col items-center gap-2">
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">{t("auth.login_role_hint")}</span>
+                <div role="radiogroup" aria-label={t("auth.login_role_hint")} className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 p-1">
+                  <Button
+                    type="button"
+                    variant={loginRoleHint === "citizen" ? "default" : "ghost"}
+                    size="sm"
+                    role="radio"
+                    aria-checked={loginRoleHint === "citizen"}
+                    onClick={() => {
+                      setLoginRoleHint("citizen");
+                      analytics.track("login_role_hint_selected", { role: "citizen" });
+                    }}
+                    className="gap-1.5 rounded-lg"
+                  >
+                    <User className="w-3.5 h-3.5" />
+                    {t("auth.login_as_citizen")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={loginRoleHint === "mp" ? "default" : "ghost"}
+                    size="sm"
+                    role="radio"
+                    aria-checked={loginRoleHint === "mp"}
+                    onClick={() => {
+                      setLoginRoleHint("mp");
+                      analytics.track("login_role_hint_selected", { role: "mp" });
+                    }}
+                    className="gap-1.5 rounded-lg"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    {t("auth.login_as_mp")}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           <motion.div layout className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl overflow-hidden">

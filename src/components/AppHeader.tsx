@@ -6,6 +6,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "./NotificationBell";
 import { useEffect, useState } from "react";
+import ImageWithFallback from "@/components/ui/ImageWithFallback";
 
 type SignInCTAProps = { label: string; className?: string; fullWidth?: boolean; onClick?: () => void };
 
@@ -73,16 +74,18 @@ const AppHeader = () => {
         <Link to="/" className="flex items-center gap-3 group">
           <picture className="flex items-center">
             <source srcSet="/haqak-logo.webp" type="image/webp" />
-            <img
+            <ImageWithFallback
               src="/haqak-logo.png"
+              fallbackSrc="/logo-haqak.svg"
               alt="HAQAK logo"
               className="h-8 md:h-9 w-8 md:w-9 drop-shadow-sm transition-transform duration-200 group-hover:scale-[1.04]"
             />
           </picture>
           <picture className="h-8 md:h-9 flex items-center">
             <source srcSet="/haqak-wordmark.webp" type="image/webp" />
-            <img
+            <ImageWithFallback
               src="/haqak-wordmark.png"
+              fallbackSrc="/haqak-logo.png"
               alt={t("app_name")}
               className="h-8 md:h-9 w-auto drop-shadow-sm transition-transform duration-200 group-hover:scale-[1.02]"
             />
@@ -174,7 +177,11 @@ const AppHeader = () => {
               <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                 <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
                   {safeAvatarUrl ? (
-                    <img src={safeAvatarUrl} alt={profile.full_name || t("nav.my_account")} className="w-full h-full object-cover" />
+                    <ImageWithFallback
+                      src={safeAvatarUrl}
+                      alt={profile.full_name || t("nav.my_account")}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <span className="text-xs font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
                   )}
@@ -223,7 +230,11 @@ const AppHeader = () => {
               <div className="flex items-center gap-2 pb-3 mb-2 border-b border-border">
                 <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
                   {safeAvatarUrl ? (
-                    <img src={safeAvatarUrl} alt={profile.full_name || t("nav.my_account")} className="w-full h-full object-cover" />
+                    <ImageWithFallback
+                      src={safeAvatarUrl}
+                      alt={profile.full_name || t("nav.my_account")}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <span className="text-xs font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
                   )}
