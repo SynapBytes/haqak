@@ -530,7 +530,7 @@ const CitizenDashboard = () => {
                   <h3 className="text-xl font-semibold text-foreground mb-2">{t("common.error")}</h3>
                   <p className="text-muted-foreground max-w-md mx-auto">{t("auth.error_network")}</p>
                   <Button onClick={() => issuesQuery.refetch()} variant="outline" className="mt-6 rounded-xl">
-                    {t("common.try_again")}
+                    {t("common.retry")}
                   </Button>
                 </div>
               ) : issues.length > 0 ? (

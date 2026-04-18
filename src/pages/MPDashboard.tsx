@@ -393,7 +393,7 @@ const MPDashboard = () => {
                 <h3 className="text-lg font-medium text-foreground">{t("common.error")}</h3>
                 <p className="text-muted-foreground">{t("auth.error_network")}</p>
                 <Button onClick={() => issuesQuery.refetch()} variant="outline" className="mt-4 rounded-xl">
-                  {t("common.try_again")}
+                  {t("common.retry")}
                 </Button>
               </div>
             ) : (

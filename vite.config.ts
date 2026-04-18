@@ -28,7 +28,6 @@ export default defineConfig(({ mode }) => ({
           if (id.includes("node_modules/recharts")) return "recharts";
           if (id.includes("node_modules/@tanstack/react-query")) return "react-query";
           if (id.includes("node_modules/react") || id.includes("node_modules/react-dom")) return "react-vendor";
-          if (id.includes("node_modules")) return "vendor";
           return undefined;
         },
       },

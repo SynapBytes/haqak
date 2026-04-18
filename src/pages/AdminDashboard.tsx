@@ -321,8 +321,8 @@ const AdminDashboard = () => {
   });
 
   const pendingVerifications = useMemo(
-    () => verifications.filter((v) => v.status === "pending"),
-    [verifications],
+    () => (verificationsQuery.data ?? []).filter((v) => v.status === "pending"),
+    [verificationsQuery.data],
   );
 
   const handleOpenVerification = async (verification: IdentityVerificationRow) => {
