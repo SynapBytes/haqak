@@ -13,6 +13,7 @@ describe("emailValidation", () => {
 
   it("rejects invalid email formats", () => {
     expect(isValidEmail("invalid-email")).toBe(false);
+    // Single-label domains are intentionally rejected to enforce routable email format.
     expect(isValidEmail("user@localhost")).toBe(false);
     expect(isValidEmail("user@.com")).toBe(false);
   });

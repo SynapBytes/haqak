@@ -550,6 +550,7 @@ const CitizenDashboard = () => {
     { label: t("dashboard.resolved"), value: issues.filter(i => i.status === 'resolved').length, icon: CheckCircle2, color: "text-success", bg: "bg-success/10" },
     { label: t("dashboard.in_progress"), value: issues.filter(i => i.status === 'in-progress').length, icon: Clock, color: "text-info", bg: "bg-info/10" },
   ];
+  const latestIssue = issues[0];
 
   return (
     <div className="min-h-screen bg-background relative overflow-x-hidden">
@@ -593,7 +594,7 @@ const CitizenDashboard = () => {
         </div>
 
         {APP_CONFIG.FEATURES.ENABLE_CITIZEN_TIMELINE && (
-          <CitizenComplaintTimeline issue={issues[0] ? { id: issues[0].id, status: issues[0].status, title: issues[0].title } : undefined} />
+          <CitizenComplaintTimeline issue={latestIssue ? { id: latestIssue.id, status: latestIssue.status, title: latestIssue.title } : undefined} />
         )}
 
 <Tabs defaultValue="issues" className="space-y-8">

@@ -1,4 +1,4 @@
-import { ImgHTMLAttributes, useMemo, useState } from "react";
+import { ImgHTMLAttributes, useState } from "react";
 
 type ImageWithFallbackProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> & {
   src: string;
@@ -14,15 +14,14 @@ const ImageWithFallback = ({
 }: ImageWithFallbackProps) => {
   const [failed, setFailed] = useState(false);
   const resolvedSrc = failed ? fallbackSrc : src;
-  const resolvedAlt = useMemo(() => alt || "Image", [alt]);
 
   return (
     <img
       {...props}
       src={resolvedSrc}
-      alt={resolvedAlt}
+      alt={alt ?? ""}
       onError={(event) => {
-        if (!failed) {
+        if (!failed && src !== fallbackSrc) {
           setFailed(true);
         }
         onError?.(event);

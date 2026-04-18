@@ -5,7 +5,7 @@ export type FAQSearchItem = {
   answer: string;
 };
 
-const ARABIC_DIACRITICS = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]/g;
+const ARABIC_DIACRITICS_AND_MARKS = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]/g;
 
 const SYNONYMS: Record<string, string[]> = {
   complaint: ["issue", "problem", "بلاغ", "شكوى", "شكوي"],
@@ -17,7 +17,7 @@ const SYNONYMS: Record<string, string[]> = {
 
 const normalizeArabic = (input: string) =>
   input
-    .replace(ARABIC_DIACRITICS, "")
+    .replace(ARABIC_DIACRITICS_AND_MARKS, "")
     .replace(/[إأآ]/g, "ا")
     .replace(/ى/g, "ي")
     .replace(/ة/g, "ه");

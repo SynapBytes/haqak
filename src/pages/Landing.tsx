@@ -347,7 +347,7 @@ export const SupportForm = () => {
   const [sent, setSent] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [website, setWebsite] = useState("");
-  const normalizedEmail = useMemo(() => normalizeEmail(email), [email]);
+  const normalizedEmail = normalizeEmail(email);
   const hasValidEmail = isValidEmail(normalizedEmail);
 
   useEffect(() => {
@@ -372,7 +372,7 @@ export const SupportForm = () => {
       toast.error(t("support.email_invalid"));
       return;
     }
-    if (!name.trim() || !email.trim() || !message.trim()) {
+    if (!name.trim() || !message.trim()) {
       toast.error(t("support.fill_all"));
       return;
     }

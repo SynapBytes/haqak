@@ -48,10 +48,13 @@ const FaqCenter = () => {
 
   useEffect(() => {
     if (normalized.length < 2) return;
-    analytics.track("faq_search_performed", {
-      query_length: normalized.length,
-      result_count: filtered.length,
-    });
+    const timeoutId = window.setTimeout(() => {
+      analytics.track("faq_search_performed", {
+        query_length: normalized.length,
+        result_count: filtered.length,
+      });
+    }, 300);
+    return () => window.clearTimeout(timeoutId);
   }, [filtered.length, normalized]);
 
   const faqSchema = {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
@@ -39,6 +39,8 @@ const Auth = () => {
   const [loginRoleHint, setLoginRoleHint] = useState<"citizen" | "mp">("citizen");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const citizenRoleRef = useRef<HTMLButtonElement | null>(null);
+  const mpRoleRef = useRef<HTMLButtonElement | null>(null);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -404,6 +406,18 @@ const Auth = () => {
 
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const handleLoginRoleHintKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+    event.preventDefault();
+    const nextRole = loginRoleHint === "citizen" ? "mp" : "citizen";
+    setLoginRoleHint(nextRole);
+    analytics.track("login_role_hint_selected", { role: nextRole });
+    if (nextRole === "citizen") {
+      citizenRoleRef.current?.focus();
+    } else {
+      mpRoleRef.current?.focus();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -487,30 +501,36 @@ const Auth = () => {
                 <span className="text-xs uppercase tracking-wide text-muted-foreground">{t("auth.login_role_hint")}</span>
                 <div role="radiogroup" aria-label={t("auth.login_role_hint")} className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 p-1">
                   <Button
+                    ref={citizenRoleRef}
                     type="button"
                     variant={loginRoleHint === "citizen" ? "default" : "ghost"}
                     size="sm"
                     role="radio"
                     aria-checked={loginRoleHint === "citizen"}
+                    tabIndex={loginRoleHint === "citizen" ? 0 : -1}
                     onClick={() => {
                       setLoginRoleHint("citizen");
                       analytics.track("login_role_hint_selected", { role: "citizen" });
                     }}
+                    onKeyDown={handleLoginRoleHintKeyDown}
                     className="gap-1.5 rounded-lg"
                   >
                     <User className="w-3.5 h-3.5" />
                     {t("auth.login_as_citizen")}
                   </Button>
                   <Button
+                    ref={mpRoleRef}
                     type="button"
                     variant={loginRoleHint === "mp" ? "default" : "ghost"}
                     size="sm"
                     role="radio"
                     aria-checked={loginRoleHint === "mp"}
+                    tabIndex={loginRoleHint === "mp" ? 0 : -1}
                     onClick={() => {
                       setLoginRoleHint("mp");
                       analytics.track("login_role_hint_selected", { role: "mp" });
                     }}
+                    onKeyDown={handleLoginRoleHintKeyDown}
                     className="gap-1.5 rounded-lg"
                   >
                     <ShieldCheck className="w-3.5 h-3.5" />
