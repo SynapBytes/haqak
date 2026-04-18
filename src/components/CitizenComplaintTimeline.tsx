@@ -67,7 +67,7 @@ const CitizenComplaintTimeline = ({ issue }: { issue?: TimelineIssue }) => {
         ) : (
           <>
             <IssueProgressTracker status={trackerStatus} />
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
               {CANONICAL_TIMELINE_STATUSES.map((status) => (
                 <div
                   key={status}

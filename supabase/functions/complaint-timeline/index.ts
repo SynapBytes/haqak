@@ -58,6 +58,16 @@ const normalizeActionStatus = (actionType: string): CanonicalStatus | null => {
   return null;
 };
 
+const resolveActor = (
+  actorUserId: string | null | undefined,
+  issueOwnerId: string,
+  assignedMpId: string | null,
+): "citizen" | "mp" | "system" => {
+  if (actorUserId && actorUserId === issueOwnerId) return "citizen";
+  if (actorUserId && assignedMpId && actorUserId === assignedMpId) return "mp";
+  return "system";
+};
+
 Deno.serve(async (req) => {
   const origin = req.headers.get("Origin");
   const cors = buildCorsHeaders(origin, true);
@@ -158,7 +168,7 @@ Deno.serve(async (req) => {
     rawEvents.push({
       status,
       timestamp: row.changed_at,
-      actor: row.changed_by === issue.user_id ? "citizen" : row.changed_by === issue.assigned_mp_id ? "mp" : "system",
+      actor: resolveActor(row.changed_by, issue.user_id, issue.assigned_mp_id),
       note: row.note,
     });
   }
@@ -169,7 +179,7 @@ Deno.serve(async (req) => {
     rawEvents.push({
       status,
       timestamp: row.created_at,
-      actor: row.user_id === issue.user_id ? "citizen" : row.user_id === issue.assigned_mp_id ? "mp" : "system",
+      actor: resolveActor(row.user_id, issue.user_id, issue.assigned_mp_id),
       note: row.note,
     });
   }
@@ -203,4 +213,3 @@ Deno.serve(async (req) => {
     cors,
   );
 });
-

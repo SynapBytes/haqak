@@ -44,6 +44,10 @@ const STATUS_ALIAS_MAP: Record<string, ComplaintTimelineStatus> = {
   archived: "closed",
 };
 
+// Keep this map in sync with the edge-function normalizer.
+// It intentionally exists client-side too so tests can validate fallback normalization
+// without requiring edge runtime imports.
+
 export const normalizeComplaintTimelineStatus = (rawStatus: string | null | undefined): ComplaintTimelineStatus | null => {
   if (!rawStatus) return null;
   const normalized = rawStatus.trim().toLowerCase().replace(/\s+/g, "_");
@@ -72,4 +76,3 @@ export const fetchComplaintTimeline = async (issueId: string): Promise<FetchTime
 
   return { events, isPartial };
 };
-
