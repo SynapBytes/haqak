@@ -3,6 +3,7 @@ import {
   ComplaintTimelineEventSchema,
   ComplaintTimelineResponseSchema,
   type ComplaintTimelineEvent,
+  type ComplaintTimelineStatus,
 } from "@/lib/schemas/boundary";
 
 export const CANONICAL_TIMELINE_STATUSES = [
@@ -12,9 +13,7 @@ export const CANONICAL_TIMELINE_STATUSES = [
   "in_progress",
   "resolved",
   "closed",
-] as const;
-
-export type ComplaintTimelineStatus = (typeof CANONICAL_TIMELINE_STATUSES)[number];
+] as const satisfies readonly ComplaintTimelineStatus[];
 
 const STATUS_ALIAS_MAP: Record<string, ComplaintTimelineStatus> = {
   submitted: "submitted",

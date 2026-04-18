@@ -22,10 +22,14 @@ const mapTimelineStatusToTrackerStatus = (status: string | undefined) => {
 
 const CitizenComplaintTimeline = ({ issue }: { issue?: TimelineIssue }) => {
   const { t, i18n } = useTranslation();
+  const issueId = issue?.id;
   const timelineQuery = useQuery({
-    queryKey: ["complaint-timeline", issue?.id],
-    enabled: !!issue?.id,
-    queryFn: () => fetchComplaintTimeline(issue!.id),
+    queryKey: ["complaint-timeline", issueId],
+    enabled: !!issueId,
+    queryFn: () => {
+      if (!issueId) return Promise.resolve({ events: [], isPartial: true });
+      return fetchComplaintTimeline(issueId);
+    },
   });
 
   const timelineEvents = timelineQuery.data?.events ?? [];
@@ -86,7 +90,10 @@ const CitizenComplaintTimeline = ({ issue }: { issue?: TimelineIssue }) => {
             ) : (
               <div className="space-y-2" aria-live="polite">
                 {timelineEvents.map((event, index) => (
-                  <div key={`${event.status}-${event.timestamp}-${index}`} className="rounded-lg border border-border/40 p-3">
+                  <div
+                    key={`${event.status}-${event.timestamp}-${event.actor}-${event.note ?? ""}`}
+                    className="rounded-lg border border-border/40 p-3"
+                  >
                     <p className="text-sm font-medium">{t(`dashboard.timeline_${event.status}`)}</p>
                     <p className="text-xs text-muted-foreground">
                       {t(`dashboard.timeline_actor_${event.actor}`, { defaultValue: event.actor })} • {formatEventTime(event.timestamp)}
