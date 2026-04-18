@@ -3,6 +3,7 @@ import {
   AttachmentMetadataSchema,
   CaptchaResponseSchema,
   ClassifyIssueResponseSchema,
+  ComplaintTimelineResponseSchema,
   IdentityVerificationSchema,
   UuidStringSchema,
   VerifyUploadIntegrityResponseSchema,
@@ -11,6 +12,7 @@ import {
 export const parseCaptchaResponse = (input: unknown) => CaptchaResponseSchema.parse(input);
 export const parseClassifyIssueResponse = (input: unknown) => ClassifyIssueResponseSchema.parse(input);
 export const parseVerifyUploadIntegrityResponse = (input: unknown) => VerifyUploadIntegrityResponseSchema.parse(input);
+export const parseComplaintTimelineResponse = (input: unknown) => ComplaintTimelineResponseSchema.parse(input);
 
 export const safeParseAttachmentRows = (input: unknown) => z.array(AttachmentMetadataSchema).safeParse(input);
 export const safeParseIdentityVerificationRows = (input: unknown) =>

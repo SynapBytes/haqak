@@ -8,23 +8,14 @@ The following flags are now available in `src/lib/config.ts`:
 - `VITE_ENABLE_NOTIFICATIONS_V2` (default: `false`)
 - `VITE_ENABLE_FAQ_SMART_SEARCH` (default: `true`)
 
-## Citizen timeline scaffold
+## Citizen timeline implementation status
 
-- UI scaffold: `src/components/CitizenComplaintTimeline.tsx`
-- Integration point: `src/pages/CitizenDashboard.tsx` (guarded by flag)
-- API contract (required):
-  - `GET /complaints/:id/timeline`
-  - Response:
-    ```json
-    [
-      {
-        "status": "submitted|under_review|assigned|in_progress|resolved|closed",
-        "timestamp": "ISO-8601",
-        "actor": "string",
-        "note": "string|null"
-      }
-    ]
-    ```
+- UI: `src/components/CitizenComplaintTimeline.tsx` now reads real data.
+- Integration point remains `src/pages/CitizenDashboard.tsx` behind `VITE_ENABLE_CITIZEN_TIMELINE`.
+- Backend endpoint:
+  - `GET /functions/v1/complaint-timeline?issueId=<uuid>`
+  - `POST /functions/v1/complaint-timeline` with `{ issueId }`
+- Contract details + sample payload: `docs/complaint-timeline-api.md`.
 
 ## Notification service scaffold
 
