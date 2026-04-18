@@ -15,6 +15,7 @@ analytics.init();
 const RUNTIME_RECOVERY_KEY = "app:runtime-recovery-attempted";
 const RECOVERY_ATTEMPTED_VALUE = "1";
 const RECOVERY_FLAG_CLEAR_DELAY_MS = 3000;
+const IS_DEVELOPMENT = import.meta.env.DEV;
 let recoveryAttemptedInMemory = false;
 
 const clearRecoveryFlag = () => {
@@ -87,6 +88,11 @@ createRoot(rootElement).render(
           <p style={{ color: "#999", fontSize: "0.85rem", maxWidth: "480px" }}>
             يرجى التواصل مع مسؤول النظام للتحقق من إعدادات البيئة.
           </p>
+          {IS_DEVELOPMENT ? (
+            <p style={{ color: "#999", fontSize: "0.85rem", maxWidth: "480px", marginTop: "0.5rem" }}>
+              Missing VITE_SUPABASE_URL or ANON_KEY
+            </p>
+          ) : null}
         </div>
       ) : (
         <App />

@@ -79,8 +79,11 @@ describe("supabaseConfigError derivation logic", () => {
    * importing the module (which would attempt to call createClient).
    */
   function deriveConfigError(url: string | undefined, key: string | undefined): string | null {
-    return !url || !key
-      ? "Missing Supabase configuration: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set."
+    const missing: string[] = [];
+    if (!url?.trim()) missing.push("VITE_SUPABASE_URL");
+    if (!key?.trim()) missing.push("VITE_SUPABASE_ANON_KEY");
+    return missing.length > 0
+      ? `Missing Supabase configuration: ${missing.join(", ")} must be set.`
       : null;
   }
 
@@ -92,7 +95,7 @@ describe("supabaseConfigError derivation logic", () => {
     expect(deriveConfigError(undefined, "anon-key-value")).not.toBeNull();
   });
 
-  it("returns an error string when SUPABASE_PUBLISHABLE_KEY is missing", () => {
+  it("returns an error string when SUPABASE_ANON_KEY is missing", () => {
     expect(deriveConfigError("https://abc.supabase.co", undefined)).not.toBeNull();
   });
 
