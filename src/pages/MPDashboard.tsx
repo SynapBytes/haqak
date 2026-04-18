@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import AppHeader from "@/components/AppHeader";
 import IssueCard from "@/components/IssueCard";
@@ -47,23 +48,22 @@ interface MPResponse {
   created_at: string;
 }
 
+const escapeSupabaseFilterValue = (value: string) =>
+  value.replace(/[%(),]/g, " ").replace(/\s+/g, " ").trim();
+
 const MPDashboard = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState<"all" | IssueStatus>("all");
   const [selectedType, setSelectedType] = useState<"all" | "individual" | "collective">("all");
   const [selectedPriority, setSelectedPriority] = useState<"all" | "urgent" | "humanitarian" | "normal">("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [issues, setIssues] = useState<Issue[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [actionNote, setActionNote] = useState("");
   const [newStatus, setNewStatus] = useState<IssueStatus>("received");
-  const [actionLogs, setActionLogs] = useState<ActionLog[]>([]);
-  const [updating, setUpdating] = useState(false);
   const [chatIssue, setChatIssue] = useState<Issue | null>(null);
-  const [centerCitizensCount, setCenterCitizensCount] = useState<number>(0);
   const [mpResponses, setMpResponses] = useState<MPResponse[]>([]);
 
   const categories = [
@@ -78,32 +78,42 @@ const MPDashboard = () => {
     { key: "أخرى", label: t("categories.other") },
   ];
 
-  const fetchIssues = async () => {
-    let mpGovernorate: string | null = null;
-    if (user) {
-      const { data: mpProfile } = await supabase
+  const profileQuery = useQuery({
+    queryKey: ["mp-profile-scope", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("profiles")
         .select("governorate, constituency")
-        .eq("user_id", user.id)
-        .single();
-      if (mpProfile) {
-        mpGovernorate = mpProfile.governorate;
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const issuesQuery = useQuery({
+    queryKey: ["mp-issues", user?.id, profileQuery.data?.governorate ?? null, profileQuery.data?.constituency ?? null],
+    enabled: !!user && !profileQuery.isLoading,
+    queryFn: async () => {
+      const conditions = [`assigned_mp_id.eq.${user!.id}`, "assigned_mp_id.is.null"];
+      const mpGovernorate = profileQuery.data?.governorate;
+      const mpConstituency = profileQuery.data?.constituency;
+      if (mpGovernorate) {
+        conditions.push(`location.ilike.%${escapeSupabaseFilterValue(mpGovernorate)}%`);
       }
-    }
+      if (mpConstituency) {
+        conditions.push(`location.ilike.%${escapeSupabaseFilterValue(mpConstituency)}%`);
+      }
 
-    const query = supabase.from("issues").select("*").order("created_at", { ascending: false });
-    const { data } = await query;
-    
-    if (data) {
-      const filtered = mpGovernorate
-        ? data.filter((d) => 
-            d.location?.includes(mpGovernorate!) || 
-            d.assigned_mp_id === user?.id ||
-            !d.assigned_mp_id
-          )
-        : data;
+      const { data, error } = await supabase
+        .from("issues")
+        .select("*")
+        .or(conditions.join(","))
+        .order("created_at", { ascending: false });
+      if (error) throw error;
 
-      setIssues(filtered.map((d) => {
+      return (data ?? []).map((d) => {
         const row = d as Record<string, unknown>;
         return {
           id: d.id,
@@ -121,21 +131,39 @@ const MPDashboard = () => {
           ai_summary: d.ai_summary || undefined,
           priority: ((row.priority as string) || "normal") as Issue["priority"],
           user_id: d.user_id,
-        };
-      }));
-    }
-    setLoading(false);
-  };
+        } satisfies Issue;
+      });
+    },
+  });
 
-  useEffect(() => {
-    fetchIssues();
-    fetchCenterAggregate();
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  const centerAggregateQuery = useQuery({
+    queryKey: ["mp-center-citizens-count", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_mp_center_citizens_count");
+      if (error) throw error;
+      return Number(data ?? 0);
+    },
+  });
 
-  const fetchActionLogs = async (issueId: string) => {
-    const { data } = await supabase.from("issue_actions").select("*").eq("issue_id", issueId).order("created_at", { ascending: false });
-    if (data) setActionLogs(data);
-  };
+  const actionLogsQuery = useQuery({
+    queryKey: ["mp-issue-actions", selectedIssue?.id],
+    enabled: !!selectedIssue,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("issue_actions")
+        .select("*")
+        .eq("issue_id", selectedIssue!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as ActionLog[];
+    },
+  });
+
+  const issues = issuesQuery.data ?? [];
+  const actionLogs = actionLogsQuery.data ?? [];
+  const centerCitizensCount = centerAggregateQuery.data ?? 0;
+  const loading = issuesQuery.isLoading || profileQuery.isLoading;
 
   const fetchResponses = async (issueId: string) => {
     // mp_responses table not yet created
@@ -146,19 +174,12 @@ const MPDashboard = () => {
     setSelectedIssue(issue);
     setNewStatus(issue.status);
     setActionNote("");
-    fetchActionLogs(issue.id);
     fetchResponses(issue.id);
   };
 
-  const fetchCenterAggregate = async () => {
-    const { data } = await supabase.rpc("get_mp_center_citizens_count");
-    setCenterCitizensCount(Number(data ?? 0));
-  };
-
-  const handleUpdateStatus = async () => {
-    if (!selectedIssue || !user) return;
-    setUpdating(true);
-    try {
+  const updateStatusMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedIssue || !user) return;
       const { error } = await supabase.from("issues").update({
         status: newStatus, mp_notes: actionNote || undefined, assigned_mp_id: user.id,
       }).eq("id", selectedIssue.id);
@@ -180,21 +201,27 @@ const MPDashboard = () => {
           status: statusLabel,
         });
       }
-
+    },
+    onSuccess: async () => {
       toast.success(t("mp_dashboard.status_updated"));
       setSelectedIssue(null);
-      fetchIssues();
-    } catch (err) {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["mp-issues", user?.id] }),
+        queryClient.invalidateQueries({ queryKey: ["mp-issue-actions"] }),
+      ]);
+    },
+    onError: (err) => {
       toast.error(err instanceof Error ? err.message : t("mp_dashboard.error_update"));
-    } finally {
-      setUpdating(false);
-    }
+    },
+  });
+
+  const handleUpdateStatus = async () => {
+    await updateStatusMutation.mutateAsync();
   };
 
-  const handleAddOfficialResponse = async () => {
-    if (!selectedIssue || !user || !actionNote) return;
-    setUpdating(true);
-    try {
+  const addOfficialResponseMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedIssue || !user || !actionNote) return;
       // mp_responses table not yet created – use issue_actions as alternative
       await supabase.from("issue_actions").insert({
         issue_id: selectedIssue.id,
@@ -202,15 +229,22 @@ const MPDashboard = () => {
         action_type: "official_response",
         note: actionNote,
       });
-      
+    },
+    onSuccess: async () => {
       toast.success("تم إرسال الرد الرسمي بنجاح");
-      fetchResponses(selectedIssue.id);
+      if (selectedIssue) {
+        fetchResponses(selectedIssue.id);
+      }
       setActionNote("");
-    } catch (err) {
+      await queryClient.invalidateQueries({ queryKey: ["mp-issue-actions"] });
+    },
+    onError: () => {
       toast.error("فشل إرسال الرد");
-    } finally {
-      setUpdating(false);
-    }
+    },
+  });
+
+  const handleAddOfficialResponse = async () => {
+    await addOfficialResponseMutation.mutateAsync();
   };
 
   const filteredIssues = issues.filter((issue) => {
@@ -349,6 +383,21 @@ const MPDashboard = () => {
           </TabsContent>
 
           <TabsContent value="list" className="space-y-8">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <Loader2 className="w-10 h-10 animate-spin text-accent mb-4" />
+                <p className="text-muted-foreground">{t("common.loading")}</p>
+              </div>
+            ) : issuesQuery.isError ? (
+              <div className="text-center py-16 bg-card/30 border border-dashed border-border/50 rounded-3xl">
+                <h3 className="text-lg font-medium text-foreground">{t("common.error")}</h3>
+                <p className="text-muted-foreground">{t("auth.error_network")}</p>
+                <Button onClick={() => issuesQuery.refetch()} variant="outline" className="mt-4 rounded-xl">
+                  {t("common.try_again")}
+                </Button>
+              </div>
+            ) : (
+              <>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -456,6 +505,8 @@ const MPDashboard = () => {
                 <h3 className="text-lg font-medium text-foreground">{t("mp_dashboard.no_issues")}</h3>
                 <p className="text-muted-foreground">{t("mp_dashboard.no_issues_desc")}</p>
               </motion.div>
+            )}
+              </>
             )}
           </TabsContent>
         </Tabs>
@@ -572,7 +623,7 @@ const MPDashboard = () => {
                           <div className="flex gap-3">
                             <Button
                               onClick={handleAddOfficialResponse}
-                              disabled={updating || !actionNote}
+                              disabled={addOfficialResponseMutation.isPending || !actionNote}
                               className="flex-1 bg-accent hover:bg-accent/90 rounded-xl gap-2"
                             >
                               <Send className="w-4 h-4" />
@@ -586,7 +637,7 @@ const MPDashboard = () => {
                                 ))}
                               </SelectContent>
                             </Select>
-                            <Button onClick={handleUpdateStatus} disabled={updating} variant="outline" className="rounded-xl">تحديث الحالة</Button>
+                            <Button onClick={handleUpdateStatus} disabled={updateStatusMutation.isPending} variant="outline" className="rounded-xl">تحديث الحالة</Button>
                           </div>
                         </div>
                       </div>

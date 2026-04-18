@@ -10,9 +10,6 @@ export default defineConfig(({ mode }) => ({
     host: "0.0.0.0",
     port: 8080,
     hmr: {
-      protocol: "ws",
-      host: "8080-i8a1lm6pwyyjjist72jta-c2a2b1bd.sg1.manus.computer",
-      clientPort: 443,
       overlay: false,
     },
     headers: {
@@ -25,8 +22,14 @@ export default defineConfig(({ mode }) => ({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ["react", "react-dom"],
+        manualChunks(id) {
+          if (id.includes("node_modules/framer-motion")) return "framer-motion";
+          if (id.includes("node_modules/leaflet") || id.includes("node_modules/react-leaflet")) return "leaflet";
+          if (id.includes("node_modules/recharts")) return "recharts";
+          if (id.includes("node_modules/@tanstack/react-query")) return "react-query";
+          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom")) return "react-vendor";
+          if (id.includes("node_modules")) return "vendor";
+          return undefined;
         },
       },
     },

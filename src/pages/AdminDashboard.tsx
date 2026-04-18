@@ -1,4 +1,5 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
@@ -66,9 +67,8 @@ interface IdentityVerificationRow {
 
 const AdminDashboard = () => {
   const { t } = useTranslation();
-  const [users, setUsers] = useState<UserWithRole[]>([]);
-  const [issues, setIssues] = useState<IssueRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const PAGE_SIZE = 25;
   const [searchQuery, setSearchQuery] = useState("");
   const [issueSearchQuery, setIssueSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"users" | "issues" | "analytics" | "verifications" | "renomination" | "banks">("users");
@@ -79,50 +79,45 @@ const AdminDashboard = () => {
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [banningUser, setBanningUser] = useState<string | null>(null);
-  const [centerCounts, setCenterCounts] = useState<
-    Array<{
-      center_id: string | null;
-      governorate: string | null;
-      district: string | null;
-      citizens: number;
-      mps: number;
-      verified_citizens: number;
-      verified_mps: number;
-    }>
-  >([]);
+  const [usersPage, setUsersPage] = useState(1);
+  const [issuesPage, setIssuesPage] = useState(1);
   const [filterCenterId, setFilterCenterId] = useState<string>("all");
-  const [verifications, setVerifications] = useState<IdentityVerificationRow[]>([]);
   const [selectedVerification, setSelectedVerification] = useState<IdentityVerificationRow | null>(null);
   const [frontSignedUrl, setFrontSignedUrl] = useState<string | null>(null);
   const [backSignedUrl, setBackSignedUrl] = useState<string | null>(null);
   const [verificationDecisionLoading, setVerificationDecisionLoading] = useState(false);
 
-  const fetchData = async () => {
-    setLoading(true);
-    const [profilesRes, rolesRes, issuesRes, verificationsRes] = await Promise.all([
-      supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-      supabase.from("user_roles").select("*"),
-      supabase.from("issues").select("*").order("created_at", { ascending: false }),
-      supabase
-        .from("identity_verifications")
-        .select("id, user_id, role, status, id_front_path, id_back_path, extracted_fields_json, submitted_at, decided_at, rejection_reason")
-        .order("submitted_at", { ascending: false }),
-    ]);
-    if (profilesRes.data && rolesRes.data) {
+  const usersQuery = useQuery({
+    queryKey: ["admin-users", usersPage],
+    queryFn: async () => {
+      const from = (usersPage - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const profilesRes = await supabase
+        .from("profiles")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (profilesRes.error) throw profilesRes.error;
+
+      const userIds = (profilesRes.data ?? []).map((p) => p.user_id);
       const rolesByUser = new Map<string, AppRole[]>();
-      rolesRes.data.forEach((r: UserRoleRow) => {
-        const existing = rolesByUser.get(r.user_id) ?? [];
-        rolesByUser.set(r.user_id, [...existing, r.role as AppRole]);
-      });
-      const usersWithRole = profilesRes.data.map((p) => {
-          const roles = rolesByUser.get(p.user_id) ?? [];
-          return { ...p, role: resolvePrimaryRole(roles) };
+      if (userIds.length > 0) {
+        const rolesRes = await supabase.from("user_roles").select("*").in("user_id", userIds);
+        if (rolesRes.error) throw rolesRes.error;
+        (rolesRes.data ?? []).forEach((r: UserRoleRow) => {
+          const existing = rolesByUser.get(r.user_id) ?? [];
+          rolesByUser.set(r.user_id, [...existing, r.role as AppRole]);
         });
-      setUsers(usersWithRole);
+      }
+
+      const usersWithRole = ((profilesRes.data ?? []) as UserProfile[]).map((p) => {
+        const roles = rolesByUser.get(p.user_id) ?? [];
+        return { ...p, role: resolvePrimaryRole(roles) } as UserWithRole;
+      });
 
       const grouped = new Map<
         string,
-        { center_id: string | null; governorate: string | null; district: string | null; citizens: number; mps: number }
+        { center_id: string | null; governorate: string | null; district: string | null; citizens: number; mps: number; verified_citizens: number; verified_mps: number }
       >();
       usersWithRole.forEach((u) => {
         if (!u.governorate || !u.district) return;
@@ -142,22 +137,47 @@ const AdminDashboard = () => {
         if (u.role === "citizen" && u.verification_status === "verified") row.verified_citizens += 1;
         grouped.set(key, row);
       });
-      setCenterCounts(
-        Array.from(grouped.values()).sort((a, b) => {
-          if ((a.governorate ?? "") !== (b.governorate ?? "")) {
-            return (a.governorate ?? "").localeCompare(b.governorate ?? "", "en");
-          }
-          return (a.district ?? "").localeCompare(b.district ?? "", "en");
-        }),
-      );
-    }
-    if (issuesRes.data) setIssues(issuesRes.data);
-    if (verificationsRes.data) {
-      const parsedVerifications = safeParseIdentityVerificationRows(verificationsRes.data);
-      if (parsedVerifications.success) {
-        setVerifications(parsedVerifications.data as unknown as IdentityVerificationRow[]);
-      } else {
-        setVerifications([]);
+
+      const centerCounts = Array.from(grouped.values()).sort((a, b) => {
+        if ((a.governorate ?? "") !== (b.governorate ?? "")) {
+          return (a.governorate ?? "").localeCompare(b.governorate ?? "", "en");
+        }
+        return (a.district ?? "").localeCompare(b.district ?? "", "en");
+      });
+
+      return {
+        users: usersWithRole,
+        centerCounts,
+        total: profilesRes.count ?? 0,
+      };
+    },
+  });
+
+  const issuesQuery = useQuery({
+    queryKey: ["admin-issues", issuesPage],
+    queryFn: async () => {
+      const from = (issuesPage - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const { data, error, count } = await supabase
+        .from("issues")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (error) throw error;
+      return { issues: (data ?? []) as IssueRow[], total: count ?? 0 };
+    },
+  });
+
+  const verificationsQuery = useQuery({
+    queryKey: ["admin-verifications"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("identity_verifications")
+        .select("id, user_id, role, status, id_front_path, id_back_path, extracted_fields_json, submitted_at, decided_at, rejection_reason")
+        .order("submitted_at", { ascending: false });
+      if (error) throw error;
+      const parsedVerifications = safeParseIdentityVerificationRows(data ?? []);
+      if (!parsedVerifications.success) {
         handleClientError(
           {
             code: "admin.verifications.invalid_shape",
@@ -167,29 +187,58 @@ const AdminDashboard = () => {
           parsedVerifications.error,
           { showToast: false, extras: { boundary: "identity_verifications.select" } },
         );
+        return [] as IdentityVerificationRow[];
       }
-    }
-    setLoading(false);
+      return parsedVerifications.data as unknown as IdentityVerificationRow[];
+    },
+  });
+
+  const users = usersQuery.data?.users ?? [];
+  const issues = issuesQuery.data?.issues ?? [];
+  const centerCounts = usersQuery.data?.centerCounts ?? [];
+  const verifications = verificationsQuery.data ?? [];
+  const usersTotal = usersQuery.data?.total ?? 0;
+  const issuesTotal = issuesQuery.data?.total ?? 0;
+  const usersTotalPages = Math.max(1, Math.ceil(usersTotal / PAGE_SIZE));
+  const issuesTotalPages = Math.max(1, Math.ceil(issuesTotal / PAGE_SIZE));
+  const loading = usersQuery.isLoading || issuesQuery.isLoading || verificationsQuery.isLoading;
+
+  const fetchData = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
+      queryClient.invalidateQueries({ queryKey: ["admin-issues"] }),
+      queryClient.invalidateQueries({ queryKey: ["admin-verifications"] }),
+    ]);
   };
 
-  useEffect(() => { fetchData(); }, []);
-
-  const handleApproveMP = async (userId: string, approve: boolean) => {
-    setApproving(userId);
-    const { error } = await supabase.from("profiles").update({ is_approved: approve }).eq("user_id", userId);
-    if (error) {
-      toast.error(t("admin_dashboard.error"));
-    } else {
-      toast.success(approve ? t("admin_dashboard.mp_approved") : t("admin_dashboard.mp_revoked"));
-      analytics.track(approve ? "admin_approved_mp" : "admin_rejected_mp");
+  const approveMpMutation = useMutation({
+    mutationFn: async ({ userId, approve }: { userId: string; approve: boolean }) => {
+      const { error } = await supabase.from("profiles").update({ is_approved: approve }).eq("user_id", userId);
+      if (error) throw error;
       await dispatchNotification({
         recipients: [userId],
         event: "admin_decision",
         reason: approve ? "approved" : "rejected",
       });
-      fetchData();
+      return { userId, approve };
+    },
+    onSuccess: async ({ approve }) => {
+      toast.success(approve ? t("admin_dashboard.mp_approved") : t("admin_dashboard.mp_revoked"));
+      analytics.track(approve ? "admin_approved_mp" : "admin_rejected_mp");
+      await fetchData();
+    },
+    onError: () => {
+      toast.error(t("admin_dashboard.error"));
+    },
+  });
+
+  const handleApproveMP = async (userId: string, approve: boolean) => {
+    setApproving(userId);
+    try {
+      await approveMpMutation.mutateAsync({ userId, approve });
+    } finally {
+      setApproving(null);
     }
-    setApproving(null);
   };
 
   const handleRoleChange = async (userId: string, newRole: AppRole) => {
@@ -673,6 +722,30 @@ const AdminDashboard = () => {
               )}
             </div>
 
+            <div className="flex items-center justify-between gap-3 mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setUsersPage((p) => Math.max(1, p - 1))}
+                disabled={usersPage <= 1}
+                className="rounded-lg"
+              >
+                السابق
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                صفحة {usersPage} من {usersTotalPages} • {usersTotal} مستخدم
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setUsersPage((p) => Math.min(usersTotalPages, p + 1))}
+                disabled={usersPage >= usersTotalPages}
+                className="rounded-lg"
+              >
+                التالي
+              </Button>
+            </div>
+
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-5 mb-6">
               <div className="flex items-center gap-2 mb-4">
                 <MapPin className="w-4 h-4 text-accent" />
@@ -846,6 +919,30 @@ const AdminDashboard = () => {
                   <p className="text-muted-foreground font-medium text-sm">{t("mp_dashboard.no_results")}</p>
                 </div>
               )}
+            </div>
+
+            <div className="flex items-center justify-between gap-3 mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIssuesPage((p) => Math.max(1, p - 1))}
+                disabled={issuesPage <= 1}
+                className="rounded-lg"
+              >
+                السابق
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                صفحة {issuesPage} من {issuesTotalPages} • {issuesTotal} بلاغ
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIssuesPage((p) => Math.min(issuesTotalPages, p + 1))}
+                disabled={issuesPage >= issuesTotalPages}
+                className="rounded-lg"
+              >
+                التالي
+              </Button>
             </div>
           </>
         ) : (

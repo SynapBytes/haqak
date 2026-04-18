@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
@@ -47,6 +48,7 @@ const categoryKeys = ["water", "roads", "public_facilities", "health", "sanitati
 
 const CitizenDashboard = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { csrfToken, csrfHeader, rotate: rotateCsrf } = useCsrfToken();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -61,8 +63,6 @@ const CitizenDashboard = () => {
   const [location, setLocation] = useState("");
   const [issueType, setIssueType] = useState<"individual" | "collective">("individual");
   const [submitting, setSubmitting] = useState(false);
-  const [issues, setIssues] = useState<Issue[]>([]);
-  const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [chatIssue, setChatIssue] = useState<Issue | null>(null);
@@ -79,16 +79,17 @@ const CitizenDashboard = () => {
                       category !== "" && 
                       location.trim() !== "";
 
-  const fetchIssues = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("issues")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (data) {
-      setIssues(data.map((d) => {
+  const issuesQuery = useQuery({
+    queryKey: ["citizen-issues", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("issues")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      const mapped = (data ?? []).map((d) => {
         const row = d as Record<string, unknown>;
         return {
           id: d.id,
@@ -106,22 +107,49 @@ const CitizenDashboard = () => {
           resolution_rating: row.resolution_rating as number | undefined,
           refined_title: row.refined_title as string | undefined,
           refined_description: row.refined_description as string | undefined,
-        };
-      }));
-    }
-    
-    // reputation columns not yet in profiles table – use defaults
-    setReputation({ points: 0, rank: "مواطن جديد" });
-    
-    setLoading(false);
-  };
+        } satisfies Issue;
+      });
+      return mapped;
+    },
+  });
+
+  const createIssueMutation = useMutation({
+    mutationFn: async (payload: {
+      user_id: string;
+      title: string;
+      description: string;
+      refined_title: string;
+      refined_description: string;
+      category: string;
+      location: string;
+      issue_type: "individual" | "collective";
+      ai_summary: string | null;
+      priority: string;
+      assigned_mp_id?: string;
+      latitude?: number;
+      longitude?: number;
+    }) => {
+      const { data, error } = await supabase.from("issues").insert(payload).select("id").single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["citizen-issues", user?.id] });
+    },
+  });
+
+  const issues = issuesQuery.data ?? [];
+  const loading = issuesQuery.isLoading;
 
   const fetchResponses = async (issueId: string) => {
     // mp_responses table not yet created
     setMpResponses([]);
   };
 
-  useEffect(() => { fetchIssues(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    // reputation columns not yet in profiles table – use defaults
+    setReputation({ points: 0, rank: "مواطن جديد" });
+  }, [issues.length]);
 
   useEffect(() => {
     if (mpIdParam && mpNameParam) {
@@ -352,7 +380,7 @@ const CitizenDashboard = () => {
         return;
       }
 
-      const { data: insertedIssue, error } = await supabase.from("issues").insert({
+      const insertedIssue = await createIssueMutation.mutateAsync({
         user_id: user.id,
         title: finalTitle,
         description: finalDescription,
@@ -366,9 +394,7 @@ const CitizenDashboard = () => {
         ...(assignedMpId ? { assigned_mp_id: assignedMpId } : {}),
         ...(latitude ? { latitude } : {}),
         ...(longitude ? { longitude } : {}),
-      }).select("id").single();
-      
-      if (error) throw error;
+      });
 
       if (files.length > 0) {
         await uploadFiles(insertedIssue.id);
@@ -408,7 +434,7 @@ const CitizenDashboard = () => {
       setAssignedMpName(null);
       setCaptchaToken(null);
       rotateCsrf();
-      fetchIssues();
+      await queryClient.invalidateQueries({ queryKey: ["citizen-issues", user.id] });
     } catch (err: unknown) {
       analytics.track("issue_submission_failed");
       handleClientError(
@@ -498,6 +524,14 @@ const CitizenDashboard = () => {
                 <div className="flex flex-col items-center justify-center py-20">
                   <Loader2 className="w-10 h-10 animate-spin text-accent mb-4" />
                   <p className="text-muted-foreground">{t("common.loading")}</p>
+                </div>
+              ) : issuesQuery.isError ? (
+                <div className="text-center py-20 bg-card/30 border border-dashed border-border/50 rounded-3xl">
+                  <h3 className="text-xl font-semibold text-foreground mb-2">{t("common.error")}</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">{t("auth.error_network")}</p>
+                  <Button onClick={() => issuesQuery.refetch()} variant="outline" className="mt-6 rounded-xl">
+                    {t("common.try_again")}
+                  </Button>
                 </div>
               ) : issues.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
