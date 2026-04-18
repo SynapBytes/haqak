@@ -33,6 +33,15 @@ CREATE TABLE IF NOT EXISTS public.rate_limit_logs (
   request_timestamp timestamp with time zone NOT NULL DEFAULT now()
 );
 
+-- Reconcile older rate_limit_logs variant (identifier/action/attempted_at)
+-- so index creation below does not fail on existing deployments.
+ALTER TABLE IF EXISTS public.rate_limit_logs
+  ADD COLUMN IF NOT EXISTS user_id uuid,
+  ADD COLUMN IF NOT EXISTS request_path text,
+  ADD COLUMN IF NOT EXISTS response_status integer,
+  ADD COLUMN IF NOT EXISTS ip_address text,
+  ADD COLUMN IF NOT EXISTS request_timestamp timestamp with time zone NOT NULL DEFAULT now();
+
 -- Enable RLS
 ALTER TABLE IF EXISTS public.rate_limit_logs ENABLE ROW LEVEL SECURITY;
 

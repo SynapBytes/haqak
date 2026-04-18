@@ -35,7 +35,7 @@ Add these in: **Settings → Secrets and variables → Actions → New repositor
 | Secret | Required | Description |
 |--------|----------|-------------|
 | `VITE_SUPABASE_URL` | ✅ | Supabase project URL |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | ✅ | Supabase anon/publishable key |
+| `VITE_SUPABASE_ANON_KEY` | ✅ | Supabase anon/publishable key |
 | `VITE_TURNSTILE_SITE_KEY` | Optional | Cloudflare Turnstile site key |
 | `VITE_VAPID_PUBLIC_KEY` | Optional | Web Push VAPID public key |
 
@@ -65,7 +65,7 @@ Add these in: **Settings → Secrets and variables → Actions → New repositor
 
 4. **Add GitHub Secrets**
    - Repository → **Settings → Secrets and variables → Actions → New repository secret**
-   - Add `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and optionally `VITE_TURNSTILE_SITE_KEY`, `VITE_VAPID_PUBLIC_KEY`
+   - Add `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and optionally `VITE_TURNSTILE_SITE_KEY`, `VITE_VAPID_PUBLIC_KEY`
 
 5. **Trigger the first deploy**
    - Push any commit to `main`, or go to **Actions → Build and Deploy to GitHub Pages → Run workflow**

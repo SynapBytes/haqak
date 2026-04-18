@@ -53,7 +53,7 @@ following secrets (these are injected into the Vite build at deploy time):
 | Secret Name | Value |
 |-------------|-------|
 | `VITE_SUPABASE_URL` | `https://wfuofurgkswotwuzosdd.supabase.co` |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | *(new anon/public key from Supabase Dashboard → Settings → API)* |
+| `VITE_SUPABASE_ANON_KEY` | *(new anon/public key from Supabase Dashboard → Settings → API)* |
 
 ### Unchanged secrets (verify these are still set)
 
