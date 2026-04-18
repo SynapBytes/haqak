@@ -9,6 +9,7 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can view their own notifications" ON public.notifications;
 DROP POLICY IF EXISTS "Users can mark their own notifications read" ON public.notifications;
+DROP POLICY IF EXISTS "Users can update their own notifications" ON public.notifications;
 DROP POLICY IF EXISTS "Users can delete their own notifications" ON public.notifications;
 DROP POLICY IF EXISTS "Service role can manage notifications" ON public.notifications;
 DROP POLICY IF EXISTS "Admins can view all notifications" ON public.notifications;
