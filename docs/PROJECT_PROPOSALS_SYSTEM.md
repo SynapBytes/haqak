@@ -265,7 +265,6 @@ const { data, error } = await supabase.functions.invoke('refine-project-proposal
 - **Push Notifications**: إشعارات المتصفح الفورية
 - **In-App Notifications**: إشعارات داخل التطبيق
 - **Email**: بريد إلكتروني للتحديثات المهمة
-- **SMS**: رسائل نصية للتحديثات الحرجة
 
 ---
 

@@ -11,8 +11,8 @@ This overview documents the core civic workflow tables used by the app. All tabl
 - **issue_status_history** — Automatic audit trail of status transitions (`old_status`, `new_status`, `changed_by`, `changed_at`). Triggered on any status change in `issues` and readable by the same participants who can view the issue.
 - **audit_logs** — Append-only audit trail with `action`, `entity_type`, `entity_id`, `old_values`, `new_values`, and status/error context. Inserts are only allowed from the service role or trusted SECURITY DEFINER triggers; reads are limited to admins and moderators. Triggers capture role changes, profile approvals, issue status transitions, and moderation toggles on comments.
 - **identity_verifications** — National ID verification workflow table (`pending`/`verified`/`rejected`) with front/back storage paths, OCR provider metadata, extracted fields JSON, reviewer decision timestamps, and rejection reason. Owners and admins can view; admin approval/rejection drives final verification status.
-- **notification_preferences** — Per-user channel preferences (`inapp_opt_in`, `sms_opt_in`, `email_opt_in`) used by the unified dispatch pipeline before any external delivery.
-- **notification_deliveries** — Delivery attempts per notification and channel (`inapp`/`sms`/`email`) including provider message ID and error details for auditing and troubleshooting.
+- **notification_preferences** — Per-user channel preferences (`inapp_opt_in`, `email_opt_in`) used by the unified dispatch pipeline before any external delivery.
+- **notification_deliveries** — Delivery attempts per notification and channel (`inapp`/`email`) including provider message ID and error details for auditing and troubleshooting.
 - **notifications** (extended) — Unified in-app notifications now use `target_user_id`, `body`, `data_json`, and `read_at` while retaining legacy fields for backward compatibility.
 
 These tables are designed to support moderation, auditability, and future analytics while remaining minimal for the MVP.

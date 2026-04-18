@@ -185,7 +185,7 @@ const MPEngagementPanel = () => {
         event: "poll_published",
         title: "استطلاع جديد من نائب دائرتك",
         body: title,
-        channels: ["sms", "email"],
+        channels: ["email"],
         target: {
           roles: ["citizen"],
           center_id: centerId,
@@ -280,7 +280,7 @@ const MPEngagementPanel = () => {
         event: "announcement_published",
         title: "إعلان رسمي جديد في دائرتك",
         body: title,
-        channels: ["sms", "email"],
+        channels: ["email"],
         target: {
           roles: ["citizen"],
           center_id: centerId,

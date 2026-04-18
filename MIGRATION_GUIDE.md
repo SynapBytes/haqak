@@ -84,7 +84,7 @@ and set the following:
 # Or use the CLI:
 supabase secrets set --project-ref wfuofurgkswotwuzosdd \
   SUPABASE_SERVICE_ROLE_KEY=<your_service_role_key> \
-  OTP_HMAC_SECRET=<your_otp_hmac_secret> \
+  EMAIL_CODE_HMAC_SECRET=<your_email_code_hmac_secret> \
   GEMINI_API_KEY=<your_gemini_api_key> \
   TURNSTILE_SECRET_KEY=<your_turnstile_secret_key> \
   RESEND_API_KEY=<your_resend_api_key> \
@@ -93,9 +93,9 @@ supabase secrets set --project-ref wfuofurgkswotwuzosdd \
   ALLOWED_ORIGINS=https://haqak.org,https://www.haqak.org
 ```
 
-> **Note about `OTP_HMAC_SECRET`:** This secret is used to HMAC-sign OTP tokens
-> *before* storing them in the database. It is completely separate from the OTP
-> email/SMS codes that users receive — Supabase Auth handles OTP delivery
+> **Note about `EMAIL_CODE_HMAC_SECRET`:** This secret is used to HMAC-sign email verification tokens
+> *before* storing them in the database. It is completely separate from the email verification
+> email verification codes that users receive — Supabase Auth handles email delivery
 > independently via the Auth settings in the Dashboard.
 
 ---
@@ -172,7 +172,7 @@ Expected:
 After completing all steps, verify the application is working:
 
 1. **Frontend loads** — open the app and confirm no Supabase config errors.
-2. **Authentication** — sign up / sign in works and OTP emails are delivered.
+2. **Authentication** — sign up / sign in works and email verification flows are delivered.
 3. **Edge Functions** — submit a form or trigger a function and check the logs:
    ```
    supabase functions logs --project-ref wfuofurgkswotwuzosdd
@@ -202,8 +202,8 @@ Keep a copy of previous environment values in secure secret managers only
 | File | Change |
 |------|--------|
 | `supabase/config.toml` | Updated `project_id` to `wfuofurgkswotwuzosdd` |
-| `.env.example` | Updated Supabase URL, anon key reference, project ID, and clarified OTP/Gemini comments |
-| `supabase/functions/.env.example` | Updated Supabase URL, anon key reference, and clarified OTP comment |
+| `.env.example` | Updated Supabase URL, anon key reference, project ID, and clarified email-code HMAC/Gemini comments |
+| `supabase/functions/.env.example` | Updated Supabase URL, anon key reference, and clarified email-code HMAC comment |
 
 > **Note:** `package.json` required no changes — it already uses wildcard
 > patterns (`*.supabase.co`) and contains no hardcoded project IDs.

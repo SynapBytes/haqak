@@ -22,8 +22,4 @@ The following flags are now available in `src/lib/config.ts`:
 - Abstraction: `src/lib/notificationService.ts`
 - Providers:
   - Web push via existing edge-function flow
-  - SMS stub interface ready for provider adapter
-- SMS provider contract required:
-  - `POST /notifications/sms`
-  - body: `{ recipientId, title, body, issueId?, status? }`
-  - auth/secret handled server-side only
+  - In-app/email channels through `dispatch-notification`

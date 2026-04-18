@@ -16,9 +16,9 @@ type NotificationEvent =
   | "renomination_request_submitted"
   | "project_refund_threshold_met";
 
-type DeliveryChannel = "inapp" | "sms" | "email";
+type DeliveryChannel = "inapp" | "email";
 type RoleTarget = "citizen" | "mp" | "admin";
-type LegacyChannel = "email" | "sms" | "push";
+type LegacyChannel = "email" | "push";
 
 interface DispatchRequest {
   recipients?: string[];
@@ -48,12 +48,9 @@ interface NotificationContent {
 
 interface RecipientProfile {
   user_id: string;
-  phone: string | null;
-  contact_phone: string | null;
   center_id: string | null;
   email: string | null;
   email_verified: boolean;
-  phone_verified: boolean;
 }
 
 interface RecipientRoleRow {
@@ -452,20 +449,19 @@ Deno.serve(async (req) => {
 
     const { data: recipientProfilesRaw } = await supabase
       .from("profiles")
-      .select("user_id, phone, contact_phone, center_id, email, email_verified, phone_verified")
+      .select("user_id, center_id, email, email_verified")
       .in("user_id", recipients);
     const recipientProfiles = (recipientProfilesRaw ?? []) as RecipientProfile[];
     const profileByUser = new Map(recipientProfiles.map((p) => [p.user_id, p]));
 
     const { data: recipientPrefsRaw } = await supabase
       .from("notification_preferences")
-      .select("user_id, sms_opt_in, email_opt_in, inapp_opt_in")
+      .select("user_id, email_opt_in, inapp_opt_in")
       .in("user_id", recipients);
     const prefsByUser = new Map(
       (recipientPrefsRaw ?? []).map((p) => [
         p.user_id,
         {
-          sms_opt_in: p.sms_opt_in ?? true,
           email_opt_in: p.email_opt_in ?? true,
           inapp_opt_in: p.inapp_opt_in ?? true,
         },
@@ -478,7 +474,6 @@ Deno.serve(async (req) => {
 
     for (const recipient of recipients) {
       const pref = prefsByUser.get(recipient) ?? {
-        sms_opt_in: true,
         email_opt_in: true,
         inapp_opt_in: true,
       };
@@ -529,7 +524,6 @@ Deno.serve(async (req) => {
       const recipientProfile = profileByUser.get(recipient);
       const recipientOutcome: Record<DeliveryChannel, unknown> = {
         inapp: { status: "sent" },
-        sms: { status: "skipped", reason: "not_requested" },
         email: { status: "skipped", reason: "not_requested" },
       };
 

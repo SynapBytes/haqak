@@ -23,7 +23,7 @@ interface DispatchOptions {
   actorName?: string;
   message?: string;
   reason?: string;
-  channels?: ("email" | "sms" | "push")[];
+  channels?: ("email" | "push")[];
   target?: {
     roles?: NotificationRoleTarget[];
     center_id?: string;

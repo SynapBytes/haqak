@@ -49,16 +49,16 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceKey = await getSecret("SUPABASE_SERVICE_ROLE_KEY");
-    const OTP_HMAC_SECRET = await getSecret("OTP_HMAC_SECRET");
+    const EMAIL_CODE_HMAC_SECRET = await getSecret("EMAIL_CODE_HMAC_SECRET");
     const RESEND_API_KEY = await getSecret("RESEND_API_KEY");
     const RESEND_FROM_EMAIL = await getSecret("RESEND_FROM_EMAIL") ?? "team@haqak.org";
 
     validateProductionSecrets({
       SUPABASE_SERVICE_ROLE_KEY: serviceKey,
-      OTP_HMAC_SECRET: OTP_HMAC_SECRET,
+      EMAIL_CODE_HMAC_SECRET: EMAIL_CODE_HMAC_SECRET,
     });
 
-    if (!supabaseUrl || !serviceKey || !OTP_HMAC_SECRET) {
+    if (!supabaseUrl || !serviceKey || !EMAIL_CODE_HMAC_SECRET) {
       return new Response(JSON.stringify({ error: "Server configuration error" }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
     }
 
@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
 
     const code = generateCode();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    const codeHash = await hmacSha256Hex(OTP_HMAC_SECRET, `${user.id}:${normalizedEmail}:${code}:${expiresAt}`);
+    const codeHash = await hmacSha256Hex(EMAIL_CODE_HMAC_SECRET, `${user.id}:${normalizedEmail}:${code}:${expiresAt}`);
 
     await supabase.from("email_verification_codes").insert({
       user_id: user.id,

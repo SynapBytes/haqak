@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.2';
 const DEFAULT_RATE_LIMIT_WINDOW_MINUTES = 1;
 const DEFAULT_RATE_LIMIT_MAX = 100;
 
-// Tighter limits for sensitive OTP / auth paths
+// Tighter limits for sensitive verification/auth paths
 const SENSITIVE_PATHS = ["/auth", "/request-email-verification", "/verify-email-code", "/verify-captcha"];
 const SENSITIVE_RATE_LIMIT_MAX = 10;
 const SENSITIVE_WINDOW_MINUTES = 1;
@@ -29,7 +29,7 @@ export class RateLimitError extends Error {
  * DB-backed rate limiter for Supabase Edge Functions.
  *
  * Keys requests by (userId, path) AND (ipAddress, path) to handle both
- * authenticated and anonymous scenarios.  Sensitive paths (OTP, auth) use
+ * authenticated and anonymous scenarios.  Sensitive verification/auth paths use
  * tighter limits automatically unless overridden via `options`.
  *
  * Throws `RateLimitError` when the limit is exceeded, so callers can return

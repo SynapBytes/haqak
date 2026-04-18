@@ -9,11 +9,11 @@
  * Usage:
  *   import { getSecret } from "../_shared/secrets.ts";
  *
- *   const otpSecret = await getSecret("OTP_HMAC_SECRET");
- *   if (!otpSecret) { ... handle missing secret ... }
+ *   const emailCodeSecret = await getSecret("EMAIL_CODE_HMAC_SECRET");
+ *   if (!emailCodeSecret) { ... handle missing secret ... }
  *
  * Vault setup (one-time):
- *   1. supabase vault add --name OTP_HMAC_SECRET --value "$(openssl rand -hex 32)"
+ *   1. supabase vault add --name EMAIL_CODE_HMAC_SECRET --value "$(openssl rand -hex 32)"
  *   2. Grant SELECT on vault.decrypted_secrets to service_role (done by default).
  *   3. Set SUPABASE_VAULT_ENABLED=true in edge-function secrets.
  *   4. See docs/SECURITY_SECRET_ROTATION.md for the complete guide.
