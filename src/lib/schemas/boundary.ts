@@ -84,9 +84,37 @@ export const IdentityVerificationSchema = z
   })
   .strict();
 
+export const ComplaintTimelineStatusSchema = z.enum([
+  "submitted",
+  "under_review",
+  "assigned",
+  "in_progress",
+  "resolved",
+  "closed",
+]);
+
+export const ComplaintTimelineEventSchema = z
+  .object({
+    status: ComplaintTimelineStatusSchema,
+    timestamp: z.string().datetime(),
+    actor: z.string().min(1),
+    note: z.string().nullable().optional(),
+  })
+  .strict();
+
+export const ComplaintTimelineResponseSchema = z
+  .object({
+    issueId: UuidStringSchema,
+    events: z.array(ComplaintTimelineEventSchema),
+  })
+  .strict();
+
 export type AuthProfile = z.infer<typeof AuthProfileSchema>;
 export type ClassifyIssueResponse = z.infer<typeof ClassifyIssueResponseSchema>;
 export type VerifyUploadIntegrityResponse = z.infer<typeof VerifyUploadIntegrityResponseSchema>;
 export type CaptchaResponse = z.infer<typeof CaptchaResponseSchema>;
 export type AttachmentMetadata = z.infer<typeof AttachmentMetadataSchema>;
 export type IdentityVerification = z.infer<typeof IdentityVerificationSchema>;
+export type ComplaintTimelineStatus = z.infer<typeof ComplaintTimelineStatusSchema>;
+export type ComplaintTimelineEvent = z.infer<typeof ComplaintTimelineEventSchema>;
+export type ComplaintTimelineResponse = z.infer<typeof ComplaintTimelineResponseSchema>;
