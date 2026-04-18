@@ -72,7 +72,7 @@ const CitizenDashboard = () => {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
-  const [reputation, setReputation] = useState({ points: 0, rank: "مواطن جديد" });
+  const [reputation, setReputation] = useState<{ points: number; rank: string } | null>(null);
   const [mpResponses, setMpResponses] = useState<{ id: string; response_text: string; created_at: string; [key: string]: unknown }[]>([]);
   const [responsesState, setResponsesState] = useState<"loading" | "ready" | "empty" | "coming-soon">("empty");
   const INTEGRITY_INVOKE_FAILED = "invoke_failed";
@@ -171,9 +171,33 @@ const CitizenDashboard = () => {
   };
 
   useEffect(() => {
-    // reputation columns not yet in profiles table – use defaults
-    setReputation({ points: 0, rank: "مواطن جديد" });
-  }, []);
+    let isMounted = true;
+    const fetchReputation = async () => {
+      if (!user?.id) {
+        if (isMounted) setReputation(null);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("reputation_points, reputation_rank")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!isMounted || error || !data) {
+        if (isMounted) setReputation(null);
+        return;
+      }
+      const row = data as Record<string, unknown>;
+      const points = typeof row.reputation_points === "number" ? row.reputation_points : null;
+      const rank = typeof row.reputation_rank === "string" && row.reputation_rank.trim().length > 0
+        ? row.reputation_rank
+        : null;
+      setReputation(points !== null && rank ? { points, rank } : null);
+    };
+    void fetchReputation();
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     if (mpIdParam && mpNameParam) {
@@ -375,10 +399,45 @@ const CitizenDashboard = () => {
 
           finalTitle = normalizedClassify.title;
           finalDescription = normalizedClassify.description;
-          finalCategory = normalizeIssueCategory(normalizedClassify.category);
+          const aiSuggestedCategory = normalizeIssueCategory(normalizedClassify.category);
+          const aiSuggestedPriority = normalizedClassify.priority;
+          const userSelectedCategory = category || "other";
+          const userSelectedPriority = "normal";
+          const classificationChanged =
+            aiSuggestedCategory !== userSelectedCategory ||
+            aiSuggestedPriority !== userSelectedPriority;
+
+          if (classificationChanged) {
+            const acceptAiClassification = window.confirm(
+              t("dashboard.ai_classification_confirm", {
+                category: aiSuggestedCategory,
+                priority: aiSuggestedPriority,
+                defaultValue: `AI classified your issue as "${aiSuggestedCategory}" with "${aiSuggestedPriority}" priority. Apply this classification?`,
+              }),
+            );
+            if (!acceptAiClassification) {
+              toast.info(
+                t("dashboard.ai_classification_rejected", {
+                  defaultValue: "AI classification was skipped. Your selected/default classification will be used.",
+                }),
+              );
+            } else {
+              toast.success(
+                t("dashboard.ai_classification_applied", {
+                  category: aiSuggestedCategory,
+                  priority: aiSuggestedPriority,
+                  defaultValue: `AI classification applied: ${aiSuggestedCategory} (${aiSuggestedPriority}).`,
+                }),
+              );
+            }
+            finalCategory = acceptAiClassification ? aiSuggestedCategory : userSelectedCategory;
+            priority = acceptAiClassification ? aiSuggestedPriority : userSelectedPriority;
+          } else {
+            finalCategory = aiSuggestedCategory;
+            priority = aiSuggestedPriority;
+          }
           finalIssueType = normalizedClassify.issueType;
           aiSummary = normalizedClassify.aiSummary;
-          priority = normalizedClassify.priority;
         } else if (classifyError) {
           handleClientError(
             {
@@ -429,6 +488,8 @@ const CitizenDashboard = () => {
         recipients: [user.id],
         issueId: insertedIssue.id,
         event: "issue_submitted",
+        csrfHeader,
+        csrfToken,
       });
 
       if (assignedMpId) {
@@ -437,6 +498,8 @@ const CitizenDashboard = () => {
           issueId: insertedIssue.id,
           event: "issue_assigned",
           actorName: senderName || undefined,
+          csrfHeader,
+          csrfToken,
         });
       }
 
@@ -497,7 +560,7 @@ const CitizenDashboard = () => {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-bold text-foreground">{t("dashboard.title")}</h1>
-              <ReputationBadge points={reputation.points} rank={reputation.rank} />
+              {reputation && <ReputationBadge points={reputation.points} rank={reputation.rank} />}
             </div>
             <p className="text-muted-foreground">{t("dashboard.subtitle")}</p>
           </div>

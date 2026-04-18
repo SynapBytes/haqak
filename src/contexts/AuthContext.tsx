@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 import { AppRole, resolvePrimaryRole } from "@/constants/roles";
@@ -53,8 +53,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const lastFetchedUserIdRef = useRef<string | null>(null);
 
-  const fetchProfileAndRole = async (userId: string) => {
+  const fetchProfileAndRole = useCallback(async (userId: string) => {
     try {
       const [profileRes, roleRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
@@ -97,7 +98,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         { showToast: false, extras: { boundary: "auth.fetchProfileAndRole", user_id: userId } },
       );
     }
-  };
+  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -105,7 +106,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        await fetchProfileAndRole(s.user.id);
+        if (lastFetchedUserIdRef.current !== s.user.id) {
+          lastFetchedUserIdRef.current = s.user.id;
+          await fetchProfileAndRole(s.user.id);
+        }
+      } else {
+        lastFetchedUserIdRef.current = null;
       }
       setLoading(false);
     };
@@ -118,8 +124,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        await fetchProfileAndRole(s.user.id);
+        if (lastFetchedUserIdRef.current !== s.user.id) {
+          lastFetchedUserIdRef.current = s.user.id;
+          await fetchProfileAndRole(s.user.id);
+        }
       } else {
+        lastFetchedUserIdRef.current = null;
         setProfile(null);
         setRole(null);
       }
@@ -127,7 +137,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [fetchProfileAndRole]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -148,6 +158,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setProfile(null);
     setRole(null);
+    lastFetchedUserIdRef.current = null;
   };
 
   return (

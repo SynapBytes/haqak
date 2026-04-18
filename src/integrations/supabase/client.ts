@@ -3,22 +3,22 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
 /** Non-null when Supabase env vars are missing; checked by main.tsx at bootstrap. */
 export const supabaseConfigError: string | null =
-  !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY
-    ? "Missing Supabase configuration: VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY must be set."
+  !SUPABASE_URL || !SUPABASE_ANON_KEY
+    ? "Missing Supabase configuration: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set."
     : null;
 
 // Use placeholder values when config is missing so createClient doesn't throw
 // at module load time; the app will show a config-error screen instead.
 export const supabase = createClient<Database>(
   SUPABASE_URL || "https://placeholder.supabase.co",
-  SUPABASE_PUBLISHABLE_KEY || "placeholder-key",
+  SUPABASE_ANON_KEY || "placeholder-key",
   {
     auth: {
       storage: localStorage,

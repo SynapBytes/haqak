@@ -62,7 +62,7 @@ www → synapbytes.github.io
 
 **Frontend (GitHub Secrets):**
 - `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_SUPABASE_ANON_KEY`
 - `VITE_TURNSTILE_SITE_KEY`
 - `VITE_VAPID_PUBLIC_KEY`
 - `VITE_ENV=production`

@@ -80,7 +80,7 @@ describe("supabaseConfigError derivation logic", () => {
    */
   function deriveConfigError(url: string | undefined, key: string | undefined): string | null {
     return !url || !key
-      ? "Missing Supabase configuration: VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY must be set."
+      ? "Missing Supabase configuration: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set."
       : null;
   }
 
@@ -107,7 +107,7 @@ describe("supabaseConfigError derivation logic", () => {
   it("error message mentions both required variable names", () => {
     const msg = deriveConfigError(undefined, undefined) ?? "";
     expect(msg).toContain("VITE_SUPABASE_URL");
-    expect(msg).toContain("VITE_SUPABASE_PUBLISHABLE_KEY");
+    expect(msg).toContain("VITE_SUPABASE_ANON_KEY");
   });
 });
 

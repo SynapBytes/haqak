@@ -58,6 +58,8 @@ const Auth = () => {
   const [isFormValid, setIsFormValid] = useState(false);
   const [signupSuccessful, setSignupSuccessful] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const isCaptchaRequired = !!APP_CONFIG.TURNSTILE_SITE_KEY;
+  const hasValidCaptcha = !isCaptchaRequired || !!turnstileToken;
 
   const passwordHasNumber = useMemo(() => /\d/.test(password), [password]);
   const passwordHasLetter = useMemo(() => /[a-zA-Z\u0600-\u06FF]/.test(password), [password]);
@@ -117,11 +119,11 @@ const Auth = () => {
       const emailValid = EMAIL_REGEX.test(email.trim());
 
       if (mode === "login") {
-        return emailValid && password.length > 0;
+        return emailValid && password.length > 0 && hasValidCaptcha;
       }
 
       if (mode === "forgot-password") {
-        return emailValid;
+        return emailValid && hasValidCaptcha;
       }
 
       if (mode === "signup-citizen" || mode === "signup-mp") {
@@ -140,7 +142,7 @@ const Auth = () => {
             nationalId.length === 14 &&
             validateEgyptianId(nationalId) &&
             nationalIdError === "";
-          return commonValid && nationalIdValid && geoValid;
+          return commonValid && nationalIdValid && geoValid && hasValidCaptcha;
         }
 
         const mpGeoValid =
@@ -160,7 +162,7 @@ const Auth = () => {
 
         const displayNameValid = displayName.trim().length > 0;
 
-        return commonValid && mpGeoValid && membershipValid && displayNameValid;
+        return commonValid && mpGeoValid && membershipValid && displayNameValid && hasValidCaptcha;
       }
 
       return false;
@@ -185,6 +187,7 @@ const Auth = () => {
     governorateError,
     districtError,
     electoralError,
+    hasValidCaptcha,
   ]);
 
   useEffect(() => {
@@ -244,8 +247,8 @@ const Auth = () => {
   };
 
   const switchMode = (nextMode: AuthMode) => {
-    setMode(nextMode);
     resetForm();
+    setMode(nextMode);
   };
 
   const translateError = (msg: string): string => {
@@ -296,6 +299,10 @@ const Auth = () => {
       toast.error(t("auth.form_invalid"));
       return;
     }
+    if (isCaptchaRequired && !turnstileToken) {
+      toast.error(t("support.fill_all_captcha"));
+      return;
+    }
 
     const trimmedEmail = email.trim().toLowerCase();
     const signupRole = mode === "signup-mp" ? "mp" : "citizen";
@@ -323,7 +330,7 @@ const Auth = () => {
         if (error) throw error;
 
         toast.success(t("auth.reset_link_sent"));
-        setTurnstileToken(null);
+        switchMode("login");
         return;
       }
 
@@ -362,7 +369,7 @@ const Auth = () => {
       resetForm();
       setTimeout(() => {
         setSignupSuccessful(false);
-        setMode("login");
+        switchMode("login");
       }, 3000);
     } catch (err: unknown) {
       if (mode === "login") {
@@ -736,7 +743,7 @@ const Auth = () => {
 
                 <Button
                   type="submit"
-                  disabled={!isFormValid || loading || (!!APP_CONFIG.TURNSTILE_SITE_KEY && !turnstileToken)}
+                  disabled={!isFormValid || loading}
                   className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
                   size="lg"
                 >

@@ -153,7 +153,7 @@ Add these in: **Settings → Secrets and variables → Actions**
 
 ```
 VITE_SUPABASE_URL
-VITE_SUPABASE_PUBLISHABLE_KEY
+VITE_SUPABASE_ANON_KEY
 VITE_TURNSTILE_SITE_KEY
 VITE_VAPID_PUBLIC_KEY
 ```
@@ -163,7 +163,7 @@ VITE_VAPID_PUBLIC_KEY
 ```bash
 # Supabase
 VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=eyJ...
+VITE_SUPABASE_ANON_KEY=eyJ...
 
 # Cloudflare Turnstile
 VITE_TURNSTILE_SITE_KEY=1x...
