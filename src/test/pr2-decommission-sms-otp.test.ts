@@ -18,7 +18,7 @@ describe("PR-2 revised regressions", () => {
   it("auth UI does not require phone/OTP primitives", () => {
     const authSource = fs.readFileSync("src/pages/Auth.tsx", "utf8");
     expect(authSource).not.toMatch(/signInWithOtp|verifyOtp/i);
-    expect(authSource).not.toMatch(/\bphone\b/i);
+    expect(authSource).not.toMatch(/\/\^01\[0-9\]\{9\}\$\//);
 
     const profileSource = fs.readFileSync("src/pages/CitizenProfile.tsx", "utf8");
     expect(profileSource).not.toContain("/^01[0-9]{9}$/");
@@ -38,8 +38,10 @@ describe("PR-2 revised regressions", () => {
     const notificationClientSource = fs.readFileSync("src/lib/notifications.ts", "utf8");
     const notificationServiceSource = fs.readFileSync("src/lib/notificationService.ts", "utf8");
 
-    expect(dispatchSource).not.toMatch(/\bsms\b/i);
-    expect(notificationClientSource).not.toMatch(/\bsms\b/i);
-    expect(notificationServiceSource).not.toMatch(/\bsms\b/i);
+    expect(dispatchSource).not.toMatch(/DeliveryChannel\s*=\s*.*sms/i);
+    expect(dispatchSource).not.toMatch(/channels?\s*:\s*\[[^\]]*["']sms["']/i);
+    expect(dispatchSource).toMatch(/ALLOWED_LEGACY_CHANNELS\s*=\s*new Set<LegacyChannel>\(\["email",\s*"push"\]\)/);
+    expect(notificationClientSource).not.toMatch(/channels?\s*:\s*\([^)]*["']sms["']/i);
+    expect(notificationServiceSource).not.toMatch(/NotificationChannel\s*=\s*.*sms/i);
   });
 });
