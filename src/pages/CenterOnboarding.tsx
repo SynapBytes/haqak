@@ -123,7 +123,9 @@ const CenterOnboarding = () => {
 
     // Validate that the selected center actually belongs to the selected
     // governorate before sending anything to the server.
-    const isConsistent = !!selectedCenter;
+    const isConsistent = filteredCenters.some(
+      (c) => (usingFallback ? c.district_en : c.id) === centerId,
+    );
     if (!isConsistent) {
       toast.error(t("center_onboarding.save_error"));
       return;
@@ -226,7 +228,7 @@ const CenterOnboarding = () => {
                 </SelectContent>
               </Select>
 
-              <Select value={centerId} onValueChange={setCenterId} disabled={!governorate || saving}>
+              <Select value={centerId} onValueChange={setCenterId} disabled={!governorate}>
                 <SelectTrigger>
                   <SelectValue placeholder={t("center_onboarding.center")} />
                 </SelectTrigger>
