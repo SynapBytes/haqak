@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import { getIssueCategoryLabel } from "@/lib/issueCategories";
+import IssueProgressTracker, { mapIssueStatusToTrackerStatus } from "./IssueProgressTracker";
 
 export interface Issue {
   id: string;
@@ -138,6 +139,7 @@ const IssueCard = ({ issue, onClick }: IssueCardProps) => {
           {issue.issue_type === "collective" ? t("issue_card.collective") : t("issue_card.individual")}
         </span>
       </div>
+      <IssueProgressTracker status={mapIssueStatusToTrackerStatus(issue.status)} compact className="mt-4" />
     </motion.div>
   );
 };

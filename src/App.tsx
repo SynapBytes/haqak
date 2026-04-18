@@ -30,6 +30,8 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const GeniusEnhancements = lazy(() => import("./pages/GeniusEnhancements"));
 const Careers = lazy(() => import("./pages/Careers"));
 const Support = lazy(() => import("./pages/Support"));
+const SuccessStories = lazy(() => import("./pages/SuccessStories"));
+const FaqCenter = lazy(() => import("./pages/FaqCenter"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -99,6 +101,8 @@ function App() {
                   <Route path="/terms" element={<TermsOfService />} />
                   <Route path="/careers" element={<Careers />} />
                   <Route path="/support" element={<Support />} />
+                  <Route path="/success-stories" element={<SuccessStories />} />
+                  <Route path="/faq" element={<FaqCenter />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

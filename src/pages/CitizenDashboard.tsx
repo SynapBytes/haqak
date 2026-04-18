@@ -38,6 +38,8 @@ import { dispatchNotification } from "@/lib/notifications";
 import { ATTACHMENTS_BUCKET, buildIssueAttachmentPath, uploadIssueAttachment } from "@/lib/storage";
 import { analytics } from "@/lib/analytics";
 import { IssueGridSkeleton } from "@/components/ListSkeletons";
+import IssueProgressTracker, { mapIssueStatusToTrackerStatus } from "@/components/IssueProgressTracker";
+import SeoHead from "@/components/SeoHead";
 import {
   isUuidString,
   normalizeClassifyIssueResponse,
@@ -549,6 +551,7 @@ const CitizenDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-x-hidden">
+      <SeoHead title={t("seo.citizen_dashboard_title")} description={t("seo.citizen_dashboard_description")} path="/citizen" />
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full blur-3xl" style={{ background: "radial-gradient(circle, hsl(var(--accent) / 0.08) 0%, transparent 70%)" }} />
         <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full blur-3xl" style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.08) 0%, transparent 70%)" }} />
@@ -795,6 +798,9 @@ const CitizenDashboard = () => {
               </div>
 
               <div className="overflow-y-auto p-8 space-y-10">
+                <div className="bg-card border border-border/50 rounded-3xl p-5">
+                  <IssueProgressTracker status={mapIssueStatusToTrackerStatus(selectedIssue.status)} />
+                </div>
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-accent/5 p-6 rounded-2xl border border-accent/10">
                   <div>
                     <h3 className="font-bold text-foreground">توليد نسخة رسمية للطباعة</h3>

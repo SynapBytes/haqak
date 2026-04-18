@@ -5,6 +5,9 @@
     "my_issues": "My Issues",
     "mps": "MPs",
     "my_account": "My Account",
+    "support": "Support",
+    "success_stories": "Success Stories",
+    "faq": "FAQ",
     "mp_dashboard": "MP Dashboard",
     "mp_settings": "MP Settings",
     "admin": "Admin",
@@ -95,7 +98,11 @@
     "opening_email": "Opening email client...",
     "contact_us": "Contact Us",
     "fill_all_captcha": "Please fill in all fields and complete the CAPTCHA",
-    "captcha_failed": "CAPTCHA verification failed. Please try again."
+    "captcha_failed": "CAPTCHA verification failed. Please try again.",
+    "rate_limit": "Too many attempts. Please wait and try again.",
+    "spam_detected": "Unable to submit the form. Please verify your input.",
+    "submit_failed": "Unable to send your message right now. Please try again.",
+    "website_honeypot": "Leave this field empty"
   },
   "partners": {
     "title": "In Partnership With",
@@ -765,5 +772,118 @@
         "content": "For inquiries about the terms or to report a violation, contact us: admin@haqak.org. For technical support: support@haqak.org. For partnerships: team@haqak.org. We commit to responding within 48 business hours."
       }
     ]
+  },
+  "issue_tracker": {
+    "received": "Received",
+    "under_review": "Under review",
+    "routed_to_mp": "Routed to MP",
+    "in_resolution": "In resolution",
+    "resolved": "Resolved",
+    "current_status": "Current status"
+  },
+  "seo": {
+    "landing_title": "Haqak | Civic platform with the Egyptian Parliament",
+    "landing_description": "Submit citizen complaints and track resolution progress with Egyptian MPs through Haqak.",
+    "support_title": "Support & Contributions | Haqak",
+    "support_description": "Contact Haqak support or contribute to improve citizen issue resolution.",
+    "citizen_dashboard_title": "Citizen Dashboard | Haqak",
+    "citizen_dashboard_description": "Track citizen complaints and resolution status step by step on Haqak.",
+    "success_stories_title": "Success Stories | Haqak",
+    "success_stories_description": "Real outcomes showing solved citizen issues through coordinated follow-up.",
+    "faq_title": "Help Center & FAQ | Haqak",
+    "faq_description": "Clear answers about legal use, security, accounts, and complaint submission."
+  },
+  "success_stories": {
+    "title": "Success Stories",
+    "subtitle": "Real examples of issues resolved through the platform",
+    "governorate": "Governorate",
+    "duration": "Time to resolution",
+    "authority": "Follow-up authority",
+    "before": "Before",
+    "after": "After",
+    "load_more": "Load more",
+    "story_1": {
+      "title": "Main street lighting restored",
+      "governorate": "Cairo",
+      "duration": "6 days",
+      "authority": "Governorate Electricity Company",
+      "before": "Complete night-time blackout",
+      "after": "Poles reactivated and faulty units replaced"
+    },
+    "story_2": {
+      "title": "Sewage overflow resolved",
+      "governorate": "Giza",
+      "duration": "4 days",
+      "authority": "Water and Sanitation Company",
+      "before": "Standing water blocked residents",
+      "after": "Drain cleared, line repaired, and road restored"
+    },
+    "story_3": {
+      "title": "Local clinic service resumed",
+      "governorate": "Minya",
+      "duration": "11 days",
+      "authority": "Health Directorate",
+      "before": "Facility stopped receiving cases",
+      "after": "Service resumed with duty staff"
+    },
+    "story_4": {
+      "title": "Student transport schedule improved",
+      "governorate": "Alexandria",
+      "duration": "8 days",
+      "authority": "Governorate Transport Office",
+      "before": "Daily congestion and delays",
+      "after": "Extra lines added and schedules adjusted"
+    },
+    "story_5": {
+      "title": "Waste removed around a school",
+      "governorate": "Sharqia",
+      "duration": "3 days",
+      "authority": "Local Administrative Unit",
+      "before": "Garbage accumulation and health risks",
+      "after": "Waste removed with recurring cleanup schedule"
+    },
+    "story_6": {
+      "title": "Internal road subsidence fixed",
+      "governorate": "Assiut",
+      "duration": "9 days",
+      "authority": "Roads Authority",
+      "before": "Road dip blocked movement and safety",
+      "after": "Subsidence treated and road resurfaced"
+    }
+  },
+  "faq": {
+    "title": "Help Center",
+    "subtitle": "Organized answers to the most common questions",
+    "search_placeholder": "Search questions...",
+    "categories": {
+      "legal": "Legal",
+      "platform": "Platform usage",
+      "security": "Security",
+      "accounts": "Accounts"
+    },
+    "q1": {
+      "question": "Is Haqak an official government service?",
+      "answer": "No. Haqak is an independent civic platform that facilitates communication between citizens and MPs."
+    },
+    "q2": {
+      "question": "How do I submit a new complaint?",
+      "answer": "Sign in, fill in the issue details, set the location, and submit your request."
+    },
+    "q3": {
+      "question": "How is my data protected?",
+      "answer": "We use layered security controls and minimize sensitive details in logs."
+    },
+    "q4": {
+      "question": "What if I forget my password?",
+      "answer": "Use the password reset option from the sign-in page."
+    },
+    "q5": {
+      "question": "Can I track complaint progress step by step?",
+      "answer": "Yes. The platform shows a clear progress pipeline from receipt to resolution."
+    },
+    "q6": {
+      "question": "Can I update my account details later?",
+      "answer": "Yes. You can update your basic profile data from the account page."
+    }
   }
 }

@@ -20,31 +20,29 @@ import {
   Phone, MapPin, Building2, Award, TrendingUp, Mail, Send,
   Rocket, Target, Heart, Sparkles, Scale, FileText
 } from "lucide-react";
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { APP_CONFIG } from "@/lib/config";
-import { parseCaptchaResponse } from "@/lib/boundaryAdapters";
-import { handleClientError } from "@/lib/errors";
 import { analytics } from "@/lib/analytics";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { getEnabledSocialLinks, type SocialPlatform } from "@/config/socialLinks";
+import SeoHead from "@/components/SeoHead";
 
-type SocialLink = {
-  id: string;
+type SocialIconConfig = {
+  id: SocialPlatform;
   name: string;
-  href: string;
   color: string;
   iconPath: string;
   iconViewBox: string;
 };
 
-const SOCIAL_LINKS: readonly SocialLink[] = [
+const SOCIAL_ICONS: readonly SocialIconConfig[] = [
   {
     id: "x",
     name: "X (Twitter)",
-    href: "https://x.com/HaqakOfficial",
     color: "#000000",
     iconPath:
       "M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8l164.9-188.5L26.2 48H172.8l100.5 132.9L389.2 48Zm-24.8 373.8h39.1L151.6 88h-42l254.8 333.8Z",
@@ -53,7 +51,6 @@ const SOCIAL_LINKS: readonly SocialLink[] = [
   {
     id: "facebook",
     name: "Facebook",
-    href: "https://www.facebook.com/HaqakOfficial",
     color: "#1877F2",
     iconPath:
       "M504 256C504 119 393 8 256 8S8 119 8 256c0 123.8 90.7 226.4 209.3 245V327.7h-63V256h63v-54.6c0-62.2 37-96.6 93.7-96.6 27.1 0 55.4 4.8 55.4 4.8v61h-31.2c-30.8 0-40.4 19.1-40.4 38.7V256h68.8l-11 71.7h-57.8V501C413.3 482.4 504 379.8 504 256z",
@@ -62,7 +59,6 @@ const SOCIAL_LINKS: readonly SocialLink[] = [
   {
     id: "linkedin",
     name: "LinkedIn",
-    href: "https://www.linkedin.com/company/haqakofficial",
     color: "#0A66C2",
     iconPath:
       "M416 32H96C60.7 32 32 60.7 32 96v320c0 35.3 28.7 64 64 64h320c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64zM181.8 416h-62.3V215.4h62.3V416zm-31.1-228c-20 0-36.1-16.1-36.1-36.1s16.1-36.1 36.1-36.1 36.1 16.1 36.1 36.1-16.2 36.1-36.1 36.1zM416 416h-62.2V318c0-23.4-.5-53.5-32.6-53.5-32.7 0-37.7 25.5-37.7 51.8V416h-62.2V215.4h59.7v27.4h.8c8.3-15.7 28.7-32.3 59.1-32.3 63.2 0 74.9 41.6 74.9 95.7V416z",
@@ -348,6 +344,7 @@ const SupportForm = () => {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [website, setWebsite] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -361,40 +358,32 @@ const SupportForm = () => {
     }
     setSending(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data: captchaData, error: captchaError } = await supabase.functions.invoke("verify-captcha", {
-        body: JSON.stringify({ token: captchaToken }),
+      const { data: submitData, error: submitError } = await supabase.functions.invoke("submit-contact-message", {
+        body: {
+          name,
+          email,
+          message,
+          captchaToken,
+          website,
+        },
       });
 
-      if (captchaError) {
-        handleClientError(
-          { code: "support.captcha.invoke_failed", message: t("support.captcha_failed"), retryable: true },
-          captchaError,
-          { showToast: false, extras: { boundary: "landing.support.verify-captcha" } },
-        );
-        toast.error(t("support.captcha_failed"));
+      if (submitError || !submitData?.valid) {
+        const errorCode = submitData?.error;
+        if (errorCode === "rate_limit") {
+          toast.error(t("support.rate_limit"));
+        } else if (errorCode === "spam_detected") {
+          toast.error(t("support.spam_detected"));
+        } else if (errorCode === "captcha_invalid" || errorCode === "captcha_failed") {
+          toast.error(t("support.captcha_failed"));
+        } else {
+          toast.error(t("support.submit_failed"));
+        }
         setSending(false);
         return;
       }
 
-      let parsedCaptcha: { valid: boolean; error?: string; score?: number };
-      try {
-        parsedCaptcha = parseCaptchaResponse(captchaData);
-      } catch (parseError) {
-        handleClientError(
-          { code: "support.captcha.invalid_response", message: t("support.captcha_failed"), retryable: true },
-          parseError,
-          { showToast: false, extras: { boundary: "landing.support.verify-captcha.parse" } },
-        );
-        toast.error(t("support.captcha_failed"));
-        setSending(false);
-        return;
-      }
-      if (!parsedCaptcha.valid) {
-        toast.error(t("support.captcha_failed"));
-        setSending(false);
-        return;
-      }
+      const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.user) {
         await supabase.from("notifications").insert({
@@ -407,6 +396,7 @@ const SupportForm = () => {
       setName("");
       setEmail("");
       setMessage("");
+      setWebsite("");
       setSent(true);
       setTimeout(() => setSent(false), 5000);
     } catch {
@@ -480,6 +470,18 @@ const SupportForm = () => {
           className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all resize-none"
         />
       </div>
+      <div className="hidden" aria-hidden="true">
+        <label htmlFor="website">{t("support.website_honeypot")}</label>
+        <input
+          id="website"
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+        />
+      </div>
       <TurnstileCaptcha onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
       <Button
         type="submit"
@@ -529,8 +531,21 @@ const Landing = () => {
     { name: t("partners.citizens"), icon: Heart },
   ];
 
+  const socialLinks = useMemo(
+    () =>
+      getEnabledSocialLinks()
+        .map((entry) => {
+          const icon = SOCIAL_ICONS.find((item) => item.id === entry.id);
+          if (!icon) return null;
+          return { ...icon, href: entry.href };
+        })
+        .filter((item): item is (SocialIconConfig & { href: string }) => Boolean(item)),
+    [],
+  );
+
   return (
     <div className="relative min-h-screen bg-background overflow-x-hidden selection:bg-accent/20 selection:text-accent">
+      <SeoHead title={t("seo.landing_title")} description={t("seo.landing_description")} path="/" />
       <AppHeader />
       <DecorativeBackground />
       
@@ -871,7 +886,26 @@ const Landing = () => {
 
       <footer className="relative border-t border-border py-12 bg-card/30">
         <FooterDecorations isDark={isDark} />
-        <div className="container px-4 text-center">
+        <div className="container px-4 text-center space-y-5">
+          {socialLinks.length > 0 && (
+            <div className="flex items-center justify-center gap-3 flex-wrap" data-testid="landing-social-links">
+              {socialLinks.map((link) => (
+                <a
+                  key={link.id}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={link.name}
+                  title={link.name}
+                  className={socialIconClassName}
+                >
+                  <svg aria-hidden="true" viewBox={link.iconViewBox} className="h-5 w-5" fill={link.color}>
+                    <path d={link.iconPath} />
+                  </svg>
+                </a>
+              ))}
+            </div>
+          )}
           <p className="text-sm text-muted-foreground">{t("footer.rights")}</p>
         </div>
       </footer>
