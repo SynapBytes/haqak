@@ -9,9 +9,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import {
   Search, MapPin, Building2, TrendingUp, CheckCircle2, Users,
-  Loader2, ChevronLeft, Shield, BarChart3, Eye, SendHorizonal
+  ChevronLeft, Shield, BarChart3, Eye, SendHorizonal
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { UserCardGridSkeleton } from "@/components/ListSkeletons";
 
 interface MPItem {
   user_id: string;
@@ -131,10 +132,7 @@ const MPsDirectory = () => {
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 className="w-10 h-10 animate-spin text-accent" />
-            <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
-          </div>
+          <UserCardGridSkeleton />
         ) : filtered.length === 0 ? (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-3xl text-center py-16 px-6">
             <div className="w-16 h-16 rounded-3xl bg-muted flex items-center justify-center mx-auto mb-4">

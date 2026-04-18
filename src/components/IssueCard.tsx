@@ -3,6 +3,8 @@ import StatusBadge, { type IssueStatus } from "./StatusBadge";
 import { MapPin, Clock, Users, User, Flag, CheckCircle2, AlertTriangle, Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
+import { formatDistanceToNow } from "date-fns";
+import { ar, enUS } from "date-fns/locale";
 
 export interface Issue {
   id: string;
@@ -26,16 +28,20 @@ export interface Issue {
 interface IssueCardProps {
   issue: Issue;
   onClick?: () => void;
-  isMPView?: boolean;
-  citizenPhone?: string;
 }
 
 const IssueCard = ({ issue, onClick }: IssueCardProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   // Use refined title if available, otherwise use original
   const displayTitle = issue.refined_title || issue.title;
   const displayDescription = issue.refined_description || issue.description;
+  const issueDate = new Date(issue.timeAgo);
+  const timeLocale = i18n.language.startsWith("ar") ? ar : enUS;
+  const displayTime =
+    Number.isNaN(issueDate.getTime())
+      ? issue.timeAgo
+      : formatDistanceToNow(issueDate, { addSuffix: true, locale: timeLocale });
   
   return (
     <motion.div
@@ -94,7 +100,7 @@ const IssueCard = ({ issue, onClick }: IssueCardProps) => {
         </div>
         <span className="text-muted-foreground text-xs flex items-center gap-1.5 bg-muted/50 rounded-lg px-2.5 py-1 whitespace-nowrap">
           <Clock className="w-3 h-3" />
-          {issue.timeAgo}
+          {displayTime}
         </span>
       </div>
       

@@ -18,6 +18,7 @@
  */
 const CENTURY_BASE_YEARS: Record<number, number> = { 1: 1800, 2: 1900, 3: 2000 };
 const NATIONAL_ID_LENGTH = 14;
+const FOREIGN_BIRTH_GOVERNORATE_CODES = new Set([88]);
 
 export const validateEgyptianId = (id: string, currentTimestamp: number = Date.now()): boolean => {
   // Keep only digits
@@ -64,8 +65,9 @@ export const validateEgyptianId = (id: string, currentTimestamp: number = Date.n
     return false;
   }
 
-  // Validate governorate code (01-29)
-  if (governorate < 1 || governorate > 29) {
+  const isEgyptianGovernorate = governorate >= 1 && governorate <= 29;
+  const isForeignBirthCode = FOREIGN_BIRTH_GOVERNORATE_CODES.has(governorate);
+  if (!isEgyptianGovernorate && !isForeignBirthCode) {
     return false;
   }
 
@@ -145,10 +147,12 @@ export const validateEgyptianIdWithReason = (
     return { valid: false, reason: "تاريخ الميلاد في المستقبل — تحقق من صحة الأرقام" };
   }
 
-  if (governorate < 1 || governorate > 29) {
+  const isEgyptianGovernorate = governorate >= 1 && governorate <= 29;
+  const isForeignBirthCode = FOREIGN_BIRTH_GOVERNORATE_CODES.has(governorate);
+  if (!isEgyptianGovernorate && !isForeignBirthCode) {
     return {
       valid: false,
-      reason: `كود المحافظة غير صحيح (${governorate}) — يجب أن يكون بين 01 و 29`,
+      reason: `كود المحافظة غير صحيح (${governorate}) — يجب أن يكون بين 01 و 29 أو 88`,
     };
   }
 
@@ -220,6 +224,7 @@ export const extractEgyptianIdInfo = (id: string) => {
     27: "حلوان",
     28: "السادس من أكتوبر",
     29: "الشروق",
+    88: "خارج مصر",
   };
 
   const governorate = governorateMap[governorateCode] || "غير معروفة";
@@ -232,7 +237,7 @@ export const extractEgyptianIdInfo = (id: string) => {
     governorate,
     governorateCode,
     gender,
-    isEgyptian: true,
+    isEgyptian: !FOREIGN_BIRTH_GOVERNORATE_CODES.has(governorateCode),
   };
 };
 

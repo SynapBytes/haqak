@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "./NotificationBell";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type SignInCTAProps = { label: string; className?: string; fullWidth?: boolean; onClick?: () => void };
 
@@ -27,6 +27,10 @@ const AppHeader = () => {
   const { theme, toggleTheme } = useTheme();
   const { t, i18n } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const isActive = (path: string) => location.pathname === path;
 

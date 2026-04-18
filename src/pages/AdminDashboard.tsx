@@ -27,6 +27,7 @@ import AdminRenominationPanel from "@/components/AdminRenominationPanel";
 import AdminBankVerificationPanel from "@/components/AdminBankVerificationPanel";
 import { safeParseIdentityVerificationRows } from "@/lib/boundaryAdapters";
 import { handleClientError } from "@/lib/errors";
+import { UserRowListSkeleton } from "@/components/ListSkeletons";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type IssueRow = Database["public"]["Tables"]["issues"]["Row"];
@@ -483,10 +484,14 @@ const AdminDashboard = () => {
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 className="w-10 h-10 animate-spin text-accent" />
-            <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
-          </div>
+          activeTab === "users" || activeTab === "issues" ? (
+            <UserRowListSkeleton />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <Loader2 className="w-10 h-10 animate-spin text-accent" />
+              <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
+            </div>
+          )
         ) : activeTab === "analytics" ? (
           <AnalyticsDashboard />
         ) : activeTab === "banks" ? (

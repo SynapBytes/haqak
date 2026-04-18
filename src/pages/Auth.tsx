@@ -59,7 +59,6 @@ const Auth = () => {
   const [signupSuccessful, setSignupSuccessful] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
-  const membershipNumberRegex = MEMBERSHIP_NUMBER_REGEX;
   const passwordHasNumber = useMemo(() => /\d/.test(password), [password]);
   const passwordHasLetter = useMemo(() => /[a-zA-Z\u0600-\u06FF]/.test(password), [password]);
   const governorateOptions = useMemo(() => getGovernorateOptions(), []);
@@ -98,7 +97,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (registrationNumber && mode === "signup-mp") {
-      if (!membershipNumberRegex.test(registrationNumber)) {
+      if (!MEMBERSHIP_NUMBER_REGEX.test(registrationNumber)) {
         setMembershipNumberError(t("auth.membership_number_invalid"));
       } else {
         const num = parseInt(registrationNumber, 10);
@@ -111,7 +110,7 @@ const Auth = () => {
     } else {
       setMembershipNumberError("");
     }
-  }, [registrationNumber, mode, t, membershipNumberRegex]);
+  }, [registrationNumber, mode, t]);
 
   useEffect(() => {
     const validateForm = () => {
@@ -154,7 +153,7 @@ const Auth = () => {
 
         const membershipValid =
           registrationNumber.length > 0 &&
-          membershipNumberRegex.test(registrationNumber) &&
+          MEMBERSHIP_NUMBER_REGEX.test(registrationNumber) &&
           parseInt(registrationNumber, 10) >= 1 &&
           parseInt(registrationNumber, 10) <= MAX_MEMBERSHIP_NUMBER &&
           membershipNumberError === "";
@@ -186,7 +185,6 @@ const Auth = () => {
     governorateError,
     districtError,
     electoralError,
-    membershipNumberRegex,
   ]);
 
   useEffect(() => {
@@ -236,10 +234,18 @@ const Auth = () => {
     setNationalId("");
     setEmailError("");
     setNationalIdError("");
+    setMembershipNumberError("");
     setGovernorateError("");
     setDistrictError("");
     setElectoralError("");
+    setIsFormValid(false);
+    setShowPassword(false);
     setTurnstileToken(null);
+  };
+
+  const switchMode = (nextMode: AuthMode) => {
+    setMode(nextMode);
+    resetForm();
   };
 
   const translateError = (msg: string): string => {
@@ -488,9 +494,11 @@ const Auth = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
                     className={cn(emailError && "border-destructive")}
+                    aria-invalid={!!emailError}
+                    aria-describedby={emailError ? "auth-email-error" : undefined}
                   />
                   {emailError && (
-                    <p className="text-xs text-destructive flex items-center gap-1">
+                    <p id="auth-email-error" role="alert" className="text-xs text-destructive flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" />
                       {emailError}
                     </p>
@@ -566,9 +574,11 @@ const Auth = () => {
                       disabled={loading}
                       maxLength={14}
                       className={nationalIdError ? "border-destructive" : ""}
+                      aria-invalid={!!nationalIdError}
+                      aria-describedby={nationalIdError ? "auth-national-id-error" : undefined}
                     />
                     {nationalIdError && (
-                      <p className="text-xs text-destructive flex items-center gap-1">
+                      <p id="auth-national-id-error" role="alert" className="text-xs text-destructive flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
                         {nationalIdError}
                       </p>
@@ -598,7 +608,7 @@ const Auth = () => {
                         }}
                         disabled={loading}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger aria-invalid={!!governorateError} aria-describedby={governorateError ? "auth-governorate-error" : undefined}>
                           <SelectValue placeholder={t("auth.select_governorate")} />
                         </SelectTrigger>
                         <SelectContent>
@@ -608,7 +618,7 @@ const Auth = () => {
                         </SelectContent>
                       </Select>
                       {governorateError && (
-                        <p className="text-sm text-destructive flex items-center gap-1">
+                        <p id="auth-governorate-error" role="alert" className="text-sm text-destructive flex items-center gap-1">
                           <AlertCircle className="w-4 h-4" />
                           {governorateError}
                         </p>
@@ -629,7 +639,7 @@ const Auth = () => {
                           }}
                           disabled={loading || districtOptions.length === 0}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger aria-invalid={!!districtError} aria-describedby={districtError ? "auth-district-error" : undefined}>
                             <SelectValue placeholder={t("auth.select_district")} />
                           </SelectTrigger>
                           <SelectContent>
@@ -639,7 +649,7 @@ const Auth = () => {
                           </SelectContent>
                         </Select>
                         {districtError && (
-                          <p className="text-sm text-destructive flex items-center gap-1">
+                          <p id="auth-district-error" role="alert" className="text-sm text-destructive flex items-center gap-1">
                             <AlertCircle className="w-4 h-4" />
                             {districtError}
                           </p>
@@ -675,7 +685,7 @@ const Auth = () => {
                         onValueChange={setElectoralDistrict}
                         disabled={loading || !governorate}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger aria-invalid={!!electoralError} aria-describedby={electoralError ? "auth-electoral-error" : undefined}>
                           <SelectValue placeholder={t("auth.select_electoral_district")} />
                         </SelectTrigger>
                         <SelectContent>
@@ -687,7 +697,7 @@ const Auth = () => {
                         </SelectContent>
                       </Select>
                       {electoralError && (
-                        <p className="text-sm text-destructive flex items-center gap-1">
+                        <p id="auth-electoral-error" role="alert" className="text-sm text-destructive flex items-center gap-1">
                           <AlertCircle className="w-4 h-4" />
                           {electoralError}
                         </p>
@@ -706,9 +716,11 @@ const Auth = () => {
                         onChange={(e) => setRegistrationNumber(e.target.value.replace(/\D/g, "").slice(0, 4))}
                         disabled={loading}
                         className={membershipNumberError ? "border-destructive" : ""}
+                        aria-invalid={!!membershipNumberError}
+                        aria-describedby={membershipNumberError ? "auth-membership-number-error" : undefined}
                       />
                       {membershipNumberError && (
-                        <p className="text-sm text-destructive flex items-center gap-1">
+                        <p id="auth-membership-number-error" role="alert" className="text-sm text-destructive flex items-center gap-1">
                           <AlertCircle className="w-4 h-4" />
                           {membershipNumberError}
                         </p>
@@ -745,8 +757,7 @@ const Auth = () => {
                         type="button"
                         variant="ghost"
                         onClick={() => {
-                          setMode("forgot-password");
-                          resetForm();
+                          switchMode("forgot-password");
                         }}
                         className="w-full text-sm"
                       >
@@ -756,8 +767,7 @@ const Auth = () => {
                         type="button"
                         variant="outline"
                         onClick={() => {
-                          setMode("signup-citizen");
-                          resetForm();
+                          switchMode("signup-citizen");
                         }}
                         className="w-full"
                       >
@@ -767,8 +777,7 @@ const Auth = () => {
                         type="button"
                         variant="outline"
                         onClick={() => {
-                          setMode("signup-mp");
-                          resetForm();
+                          switchMode("signup-mp");
                         }}
                         className="w-full"
                       >
@@ -781,8 +790,7 @@ const Auth = () => {
                       type="button"
                       variant="ghost"
                       onClick={() => {
-                        setMode("login");
-                        resetForm();
+                        switchMode("login");
                       }}
                       className="w-full text-sm"
                     >
