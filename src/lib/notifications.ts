@@ -35,7 +35,6 @@ interface DispatchOptions {
   body?: string;
   data_json?: Record<string, unknown>;
   csrfToken?: string;
-  csrfHeader?: string;
 }
 
 export async function dispatchNotification(options: DispatchOptions) {
@@ -44,7 +43,7 @@ export async function dispatchNotification(options: DispatchOptions) {
     const { error } = await supabase.functions.invoke("dispatch-notification", {
       body: options,
       headers: {
-        [options.csrfHeader ?? CSRF_HEADER]: options.csrfToken ?? getOrCreateToken(),
+        [CSRF_HEADER]: options.csrfToken ?? getOrCreateToken(),
       },
     });
     if (error) {

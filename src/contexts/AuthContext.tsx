@@ -124,7 +124,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        if (lastFetchedUserIdRef.current !== s.user.id) {
+        const shouldRefetchProfileAndRole =
+          lastFetchedUserIdRef.current !== s.user.id ||
+          event === "SIGNED_IN" ||
+          event === "TOKEN_REFRESHED" ||
+          event === "USER_UPDATED";
+
+        if (shouldRefetchProfileAndRole) {
           lastFetchedUserIdRef.current = s.user.id;
           await fetchProfileAndRole(s.user.id);
         }

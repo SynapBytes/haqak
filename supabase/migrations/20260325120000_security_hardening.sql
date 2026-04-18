@@ -7,6 +7,7 @@
 REVOKE ALL ON SCHEMA public FROM public;
 GRANT USAGE ON SCHEMA public TO authenticated;
 GRANT USAGE ON SCHEMA public TO anon;
+GRANT USAGE ON SCHEMA public TO service_role;
 
 -- Example: Restrict access to specific tables (safe if table may not exist)
 DO $$

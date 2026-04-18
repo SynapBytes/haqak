@@ -191,6 +191,7 @@ const CitizenDashboard = () => {
       const rank = typeof row.reputation_rank === "string" && row.reputation_rank.trim().length > 0
         ? row.reputation_rank
         : null;
+      if (!isMounted) return;
       setReputation(points !== null && rank ? { points, rank } : null);
     };
     void fetchReputation();
