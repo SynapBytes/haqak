@@ -78,3 +78,85 @@ describe("Egypt centers seed data", () => {
   });
 });
 
+describe("get_center_members RPC – security contract", () => {
+  const migSql = fs.readFileSync(
+    "supabase/migrations/20260418200000_get_center_members_rpc.sql",
+    "utf8",
+  );
+
+  it("migration file exists and is non-empty", () => {
+    expect(migSql.length).toBeGreaterThan(0);
+  });
+
+  it("function is SECURITY DEFINER so clients cannot bypass RLS", () => {
+    expect(migSql).toContain("SECURITY DEFINER");
+  });
+
+  it("center_id is resolved server-side from auth.uid() – no client-supplied center", () => {
+    // The function must look up center_id from the profiles table using
+    // auth.uid(), never accepting a center UUID as a parameter.
+    expect(migSql).toContain("auth.uid()");
+    expect(migSql).toContain("profiles");
+    // No centerId / center_id parameter in the function signature
+    expect(migSql).not.toMatch(/FUNCTION\s+public\.get_center_members\s*\([^)]*center_id/i);
+  });
+
+  it("hard per-page cap of 50 rows prevents bulk data exfiltration", () => {
+    expect(migSql).toContain("LEAST(p_limit, 50)");
+  });
+
+  it("caller is excluded from their own center member list", () => {
+    // The WHERE clause must exclude the calling user.
+    expect(migSql).toContain("auth.uid()");
+    expect(migSql).toContain("<> auth.uid()");
+  });
+
+  it("GRANT is restricted to authenticated role only", () => {
+    expect(migSql).toContain("TO authenticated");
+    expect(migSql).toContain("REVOKE ALL");
+  });
+});
+
+describe("CenterMembersList component – security properties", () => {
+  const source = fs.readFileSync("src/components/CenterMembersList.tsx", "utf8");
+
+  it("calls get_center_members RPC (not a raw profiles query)", () => {
+    expect(source).toContain('rpc("get_center_members"');
+  });
+
+  it("does not pass a center_id parameter from the client to the RPC", () => {
+    // Verify the only parameters passed are pagination (p_limit, p_offset)
+    // and NOT a caller-supplied center_id.
+    expect(source).not.toContain("center_id:");
+  });
+
+  it("does not render sensitive fields (phone, national_id)", () => {
+    expect(source).not.toContain("national_id");
+    // "phone" must not appear as a field name rendered in the template
+    expect(source).not.toContain("{member.phone}");
+    expect(source).not.toContain("{member.email}");
+  });
+});
+
+describe("Auth page – already-authenticated redirect", () => {
+  const source = fs.readFileSync("src/pages/Auth.tsx", "utf8");
+
+  it("redirects already-authenticated users away from /auth on mount", () => {
+    // The useEffect that calls getSession() and navigates must be present.
+    expect(source).toContain("getSession");
+    expect(source).toContain("getRoleRedirect");
+  });
+
+  it("getRoleRedirect is a module-level function (not duplicated inside component)", () => {
+    // Count occurrences of the function declaration.
+    const matches = source.match(/function getRoleRedirect/g);
+    expect(matches).not.toBeNull();
+    expect(matches!.length).toBe(1);
+  });
+
+  it("post-signup auto-redirects when Supabase returns a session immediately", () => {
+    // When email confirmation is disabled, signUp returns a session.
+    // The Auth page should detect signupData.session and navigate directly.
+    expect(source).toContain("signupData.session");
+  });
+});

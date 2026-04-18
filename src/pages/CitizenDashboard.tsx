@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Smartphone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import CitizenEngagementPanel from "@/components/CitizenEngagementPanel";
+import CenterMembersList from "@/components/CenterMembersList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Plus, X, Send, Loader2, ImagePlus, MessageCircle, AlertCircle, Clock, CheckCircle2, Mic, MapPin, ShieldCheck, FileText } from "lucide-react";
+import { Plus, X, Send, Loader2, ImagePlus, MessageCircle, AlertCircle, Clock, CheckCircle2, Mic, MapPin, ShieldCheck, FileText, Users } from "lucide-react";
 import type { Issue } from "@/components/IssueCard";
 import LocationPicker from "@/components/LocationPicker";
 import { useTranslation } from "react-i18next";
@@ -615,6 +616,10 @@ const CitizenDashboard = () => {
                 <FileText className="w-4 h-4" />
                 {t("dashboard.engagement")}
               </TabsTrigger>
+              <TabsTrigger value="center-members" className="gap-2 data-[state=active]:bg-accent">
+                <Users className="w-4 h-4" />
+                {t("center_members.title")}
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="issues" className="space-y-6">
@@ -658,6 +663,14 @@ const CitizenDashboard = () => {
 
             <TabsContent value="engagement">
               <CitizenEngagementPanel />
+            </TabsContent>
+
+            <TabsContent value="center-members" className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">{t("center_members.title")}</h2>
+                <p className="text-sm text-muted-foreground">{t("center_members.subtitle")}</p>
+              </div>
+              <CenterMembersList />
             </TabsContent>
           </Tabs>
       </main>

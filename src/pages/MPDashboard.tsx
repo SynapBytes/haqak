@@ -6,6 +6,7 @@ import IssueCard from "@/components/IssueCard";
 import ChatDrawer from "@/components/ChatDrawer";
 import OfficialDocumentGenerator from "@/components/OfficialDocumentGenerator";
 import AttachmentManager from "@/components/AttachmentManager";
+import CenterMembersList from "@/components/CenterMembersList";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -386,6 +387,10 @@ const MPDashboard = () => {
                 <FileText className="w-4 h-4" />
                 منشورات عامة
               </TabsTrigger>
+              <TabsTrigger value="center-members" className="gap-2 data-[state=active]:bg-accent">
+                <Users className="w-4 h-4" />
+                {t("center_members.title")}
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -427,6 +432,14 @@ const MPDashboard = () => {
 
           <TabsContent value="public-posts">
             <MPPublicPostsManager />
+          </TabsContent>
+
+          <TabsContent value="center-members" className="space-y-4">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">{t("center_members.title")}</h2>
+              <p className="text-sm text-muted-foreground">{t("center_members.subtitle")}</p>
+            </div>
+            <CenterMembersList />
           </TabsContent>
 
           <TabsContent value="list" className="space-y-8">
