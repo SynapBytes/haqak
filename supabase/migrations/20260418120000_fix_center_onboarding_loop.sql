@@ -112,10 +112,7 @@ FROM (
 ) AS x(name_en, name_ar)
 WHERE NOT EXISTS (SELECT 1 FROM public.governorates g WHERE g.name_en = x.name_en);
 
-WITH should_seed AS (
-  SELECT NOT EXISTS (SELECT 1 FROM public.centers) AS run_seed
-),
-seed(governorate_en, governorate_ar, district_en, district_ar) AS (
+WITH seed(governorate_en, governorate_ar, district_en, district_ar) AS (
   VALUES
     ('Cairo', 'القاهرة', 'Nasr City', 'مدينة نصر'),
     ('Cairo', 'القاهرة', 'New Cairo', 'القاهرة الجديدة'),
@@ -176,7 +173,6 @@ seed(governorate_en, governorate_ar, district_en, district_ar) AS (
 INSERT INTO public.centers (governorate_en, governorate_ar, district_en, district_ar)
 SELECT s.governorate_en, s.governorate_ar, s.district_en, s.district_ar
 FROM seed s
-JOIN should_seed ss ON ss.run_seed
 ON CONFLICT (governorate_en, district_en) DO NOTHING;
 
 UPDATE public.centers c
@@ -226,22 +222,4 @@ ON public.profiles
 FOR UPDATE
 TO authenticated
 USING (auth.uid() = user_id)
-WITH CHECK (
-  auth.uid() = user_id
-  AND (
-    is_approved IS NOT DISTINCT FROM (
-      SELECT p2.is_approved
-      FROM public.profiles p2
-      WHERE p2.user_id = auth.uid()
-    )
-    OR has_role(auth.uid(), 'admin'::app_role)
-  )
-  AND (
-    banned_until IS NOT DISTINCT FROM (
-      SELECT p3.banned_until
-      FROM public.profiles p3
-      WHERE p3.user_id = auth.uid()
-    )
-    OR has_role(auth.uid(), 'admin'::app_role)
-  )
-);
+WITH CHECK (auth.uid() = user_id);

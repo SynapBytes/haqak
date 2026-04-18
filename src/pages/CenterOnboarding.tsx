@@ -117,9 +117,6 @@ const CenterOnboarding = () => {
 
   const onSave = async () => {
     if (!user || !centerId || !governorate) return;
-    const selectedCenter = filteredCenters.find(
-      (c) => (usingFallback ? c.district_en : c.id) === centerId,
-    );
 
     // Validate that the selected center actually belongs to the selected
     // governorate before sending anything to the server.
@@ -157,12 +154,16 @@ const CenterOnboarding = () => {
       resolvedCenterId = centerData.id;
     }
 
+    const selectedCenter = filteredCenters.find(
+      (c) => (usingFallback ? c.district_en : c.id) === centerId,
+    );
+
     const { error } = await supabase
       .from("profiles")
       .update({
         center_id: resolvedCenterId,
-        governorate: selectedCenter?.governorate_ar ?? governorate,
-        district: selectedCenter?.district_ar ?? null,
+        governorate: selectedCenter?.governorate_en ?? governorate,
+        district: selectedCenter?.district_en ?? null,
         center: selectedCenter?.district_ar ?? null,
       })
       .eq("user_id", user.id);
