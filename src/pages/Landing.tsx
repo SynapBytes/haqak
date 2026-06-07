@@ -924,7 +924,7 @@ const Landing = () => {
 
       <footer className="relative border-t border-border py-12 bg-card/30">
         <FooterDecorations isDark={isDark} />
-        <div className="container px-4 text-center space-y-5">
+        <div className="container px-4 text-center space-y-8">
           {socialLinks.length > 0 && (
             <div className="flex items-center justify-center gap-3 flex-wrap" data-testid="landing-social-links">
               {socialLinks.map((link) => (
@@ -944,6 +944,31 @@ const Landing = () => {
               ))}
             </div>
           )}
+          
+          {/* Crafted By Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="flex flex-col items-center justify-center gap-3 pt-6 border-t border-border/40"
+          >
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">{t("footer.crafted_by") || "CRAFTED BY"}</p>
+            <motion.a
+              href="https://capsorix.tech"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center transition-transform duration-300 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded-lg p-1"
+              whileHover={{ y: -2 }}
+              title="Visit Capsorix - Website Creator"
+            >
+              <img 
+                src="/capsorix-logo.svg" 
+                alt="Capsorix" 
+                className="h-12 w-auto opacity-80 hover:opacity-100 transition-opacity duration-300 filter drop-shadow-sm"
+              />
+            </motion.a>
+          </motion.div>
+          
           <p className="text-sm text-muted-foreground">{t("footer.rights")}</p>
         </div>
       </footer>
