@@ -952,13 +952,15 @@ const Landing = () => {
             viewport={{ once: true }}
             className="flex flex-col items-center justify-center gap-3 pt-6 border-t border-border/40"
           >
-            <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">{t("footer.crafted_by") || "CRAFTED BY"}</p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
+              {t("footer.crafted_by", { defaultValue: "CRAFTED BY" })}
+            </p>
             <motion.a
               href="https://capsorix.tech"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center transition-transform duration-300 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded-lg p-1"
-              whileHover={{ y: -2 }}
+              className="inline-flex items-center justify-center transition-transform duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded-lg p-1"
+              whileHover={{ y: -2, scale: 1.05 }}
               title="Visit Capsorix - Website Creator"
             >
               <img 
