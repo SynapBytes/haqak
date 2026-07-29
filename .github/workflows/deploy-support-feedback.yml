@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "supabase/functions/support-feedback/**"
+      - "supabase/functions/support-feedback-worker/**"
       - ".github/workflows/deploy-support-feedback.yml"
   workflow_dispatch:
 
@@ -17,7 +18,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy support-feedback
+    name: Deploy support service
     runs-on: ubuntu-latest
 
     steps:
@@ -45,22 +46,28 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Verify standalone function source
+      - name: Verify standalone function sources
         shell: bash
         run: |
           set -euo pipefail
           test -f supabase/functions/support-feedback/index.ts
-          if grep -qE 'from "\.\./(shared|_shared)/' supabase/functions/support-feedback/index.ts; then
-            echo "::error::support-feedback must remain standalone from the legacy Haqak Supabase project."
-            exit 1
-          fi
+          test -f supabase/functions/support-feedback-worker/index.ts
+          for file in \
+            supabase/functions/support-feedback/index.ts \
+            supabase/functions/support-feedback-worker/index.ts
+          do
+            if grep -qE 'from "\.\./(shared|_shared)/' "$file"; then
+              echo "::error::$file must remain standalone from the legacy Haqak Supabase project."
+              exit 1
+            fi
+          done
 
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@b60b5899c73b63a2d2d651b1e90db8d4c9392f51
         with:
           version: 2.84.2
 
-      - name: Deploy public support function
+      - name: Deploy support functions
         shell: bash
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.HAQAK_SUPPORT_SUPABASE_ACCESS_TOKEN }}
@@ -68,6 +75,9 @@ jobs:
         run: |
           set -euo pipefail
           supabase functions deploy support-feedback \
+            --project-ref "$SUPABASE_PROJECT_ID" \
+            --no-verify-jwt
+          supabase functions deploy support-feedback-worker \
             --project-ref "$SUPABASE_PROJECT_ID" \
             --no-verify-jwt
 
@@ -78,7 +88,11 @@ jobs:
           SUPABASE_PROJECT_ID: ${{ secrets.HAQAK_SUPPORT_SUPABASE_PROJECT_ID }}
         run: |
           set -euo pipefail
-          supabase functions list --project-ref "$SUPABASE_PROJECT_ID"
+          FUNCTIONS=$(supabase functions list --project-ref "$SUPABASE_PROJECT_ID")
+          printf '%s\n' "$FUNCTIONS"
+          grep -q "support-feedback" <<<"$FUNCTIONS"
+          grep -q "support-feedback-worker" <<<"$FUNCTIONS"
+
           FUNCTION_URL="https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/support-feedback"
           STATUS=$(curl -sS -o /tmp/support-preflight.txt -w "%{http_code}" \
             -X OPTIONS \
@@ -98,12 +112,12 @@ jobs:
           SUPABASE_PROJECT_ID: ${{ secrets.HAQAK_SUPPORT_SUPABASE_PROJECT_ID }}
         run: |
           {
-            echo "## Haqak isolated support-feedback deployment"
+            echo "## Haqak isolated support service deployment"
             echo ""
             echo "- Project: \`$SUPABASE_PROJECT_ID\`"
-            echo "- Function: \`support-feedback\`"
-            echo "- JWT gateway verification: disabled intentionally for the public form"
+            echo "- Functions: \`support-feedback\`, \`support-feedback-worker\`"
+            echo "- JWT gateway verification: disabled intentionally; each endpoint has custom controls"
             echo "- Public database access: none"
-            echo "- Custom controls: exact-origin CORS, payload cap, strict validation, honeypot, dual-window hashed-IP throttling, idempotency"
-            echo "- Full delivery smoke test: required before UI integration and merge"
+            echo "- Delivery feature flag: controlled inside the service-only runtime configuration"
+            echo "- Full email smoke test: required only after the recipient mailbox is restored"
           } >> "$GITHUB_STEP_SUMMARY"
