@@ -11,6 +11,7 @@ const payload: SupportFeedbackPayload = {
   name: "Haqak Production Test",
   email: "support@haqak.org",
   message: "Controlled support feedback delivery test.",
+  language: "en",
   honeypot: "",
 };
 
@@ -23,8 +24,8 @@ function response(body: unknown, status = 200): Response {
 
 describe("submitSupportFeedback", () => {
   beforeEach(() => {
-    vi.stubEnv("VITE_SUPABASE_URL", "https://example.supabase.co");
-    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "public-anon-key");
+    vi.stubEnv("VITE_SUPPORT_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("VITE_SUPPORT_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
   });
 
   afterEach(() => {
@@ -85,6 +86,19 @@ describe("submitSupportFeedback", () => {
     });
   });
 
+  it("rejects non-canonical references", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        response({ accepted: true, reference: "received", delivery: "sent", duplicate: false }),
+      ),
+    );
+
+    await expect(submitSupportFeedback(payload)).rejects.toMatchObject({
+      code: "INVALID_RECEIPT",
+    });
+  });
+
   it("maps validation failures", async () => {
     vi.stubGlobal(
       "fetch",
@@ -93,7 +107,7 @@ describe("submitSupportFeedback", () => {
           {
             accepted: false,
             code: "INVALID_MESSAGE",
-            message: "Message must be between 10 and 2000 characters.",
+            message: "Message must be between 10 and 4000 characters.",
           },
           422,
         ),
@@ -129,8 +143,8 @@ describe("submitSupportFeedback", () => {
     });
   });
 
-  it("fails before network activity when public configuration is missing", async () => {
-    vi.stubEnv("VITE_SUPABASE_URL", "");
+  it("fails before network activity when isolated public configuration is missing", async () => {
+    vi.stubEnv("VITE_SUPPORT_SUPABASE_URL", "");
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
