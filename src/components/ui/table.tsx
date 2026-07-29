@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto rounded-2xl border border-border/70 bg-card/55 shadow-[inset_0_1px_0_hsl(var(--surface-highlight)/0.4)]">
+    <div className="relative w-full overflow-auto rounded-2xl border border-border/70 bg-card/[0.55] shadow-[inset_0_1px_0_hsl(var(--surface-highlight)/0.4)]">
       <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
     </div>
   ),
@@ -13,7 +13,7 @@ Table.displayName = "Table";
 
 const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
   ({ className, ...props }, ref) => (
-    <thead ref={ref} className={cn("bg-muted/45 [&_tr]:border-b [&_tr]:border-border/70", className)} {...props} />
+    <thead ref={ref} className={cn("bg-muted/[0.45] [&_tr]:border-b [&_tr]:border-border/70", className)} {...props} />
   ),
 );
 TableHeader.displayName = "TableHeader";
@@ -27,7 +27,7 @@ TableBody.displayName = "TableBody";
 
 const TableFooter = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
   ({ className, ...props }, ref) => (
-    <tfoot ref={ref} className={cn("border-t border-border/70 bg-muted/45 font-semibold [&>tr]:last:border-b-0", className)} {...props} />
+    <tfoot ref={ref} className={cn("border-t border-border/70 bg-muted/[0.45] font-semibold [&>tr]:last:border-b-0", className)} {...props} />
   ),
 );
 TableFooter.displayName = "TableFooter";
@@ -37,7 +37,7 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
     <tr
       ref={ref}
       className={cn(
-        "border-b border-border/60 transition-colors data-[state=selected]:bg-accent/[0.08] hover:bg-muted/35",
+        "border-b border-border/60 transition-colors data-[state=selected]:bg-accent/[0.08] hover:bg-muted/[0.35]",
         className,
       )}
       {...props}
