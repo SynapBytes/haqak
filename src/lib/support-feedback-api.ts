@@ -46,18 +46,20 @@ type PublicErrorBody = {
 const REQUEST_TIMEOUT_MS = 12_000;
 const REFERENCE_PATTERN = /^HQK-SUP-\d{8}-[A-F0-9]{12}$/;
 
-function getConfiguration(): { endpoint: string; key: string } {
-  const url = import.meta.env.VITE_SUPPORT_SUPABASE_URL?.trim();
-  const key = import.meta.env.VITE_SUPPORT_SUPABASE_PUBLISHABLE_KEY?.trim();
+// These values are intentionally public and scoped to the isolated Haqak support
+// project. All data access is denied by RLS; the only public operation is the
+// hardened Edge Function endpoint.
+const DEFAULT_SUPPORT_SUPABASE_URL = "https://fpkffdfattidugsrjzey.supabase.co";
+const DEFAULT_SUPPORT_SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_cd5oh-cCZKzSegl1CT6nXg_pH0JTxw1";
 
-  if (!url || !key) {
-    throw new SupportFeedbackApiError(
-      "configuration",
-      "PUBLIC_CONFIG_MISSING",
-      "The secure support service is not configured on this site.",
-      false,
-    );
-  }
+function getConfiguration(): { endpoint: string; key: string } {
+  const url =
+    import.meta.env.VITE_SUPPORT_SUPABASE_URL?.trim() ||
+    DEFAULT_SUPPORT_SUPABASE_URL;
+  const key =
+    import.meta.env.VITE_SUPPORT_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    DEFAULT_SUPPORT_SUPABASE_PUBLISHABLE_KEY;
 
   let parsedUrl: URL;
   try {
@@ -71,7 +73,12 @@ function getConfiguration(): { endpoint: string; key: string } {
     );
   }
 
-  if (parsedUrl.protocol !== "https:" || parsedUrl.pathname !== "/") {
+  if (
+    parsedUrl.protocol !== "https:" ||
+    parsedUrl.pathname !== "/" ||
+    parsedUrl.hostname !== "fpkffdfattidugsrjzey.supabase.co" ||
+    !key.startsWith("sb_publishable_")
+  ) {
     throw new SupportFeedbackApiError(
       "configuration",
       "PUBLIC_CONFIG_INVALID",
