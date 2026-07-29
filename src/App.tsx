@@ -38,7 +38,7 @@ const PageLoader = () => (
     <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,hsl(var(--accent)/0.12),transparent_24rem)]" />
     <div className="relative flex flex-col items-center text-center" role="status" aria-live="polite">
       <div className="relative flex h-24 w-24 items-center justify-center rounded-[1.8rem] border border-border/70 bg-card/75 shadow-[inset_0_1px_0_hsl(var(--surface-highlight)/0.65),0_28px_70px_-38px_hsl(var(--foreground)/0.5)] backdrop-blur-2xl">
-        <span className="absolute -inset-3 animate-pulse rounded-[2.2rem] border border-accent/15" />
+        <span className="absolute -inset-3 animate-pulse rounded-[2.2rem] border border-accent/[0.15]" />
         <img src="/haqak-logo.webp" alt="" className="h-12 w-12 object-contain" />
       </div>
       <div className="mt-6 h-1 w-32 overflow-hidden rounded-full bg-muted">
