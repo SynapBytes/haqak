@@ -5,8 +5,6 @@ on:
     branches: ["main"]
     paths:
       - "supabase/functions/support-feedback/**"
-      - "supabase/functions/shared/**"
-      - "supabase/functions/_shared/**"
       - ".github/workflows/deploy-support-feedback.yml"
   workflow_dispatch:
 
@@ -14,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy-support-feedback-production
+  group: deploy-haqak-support-feedback-production
   cancel-in-progress: false
 
 jobs:
@@ -23,22 +21,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Validate required deployment secrets
+      - name: Validate isolated deployment credentials
         shell: bash
         env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.HAQAK_SUPPORT_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.HAQAK_SUPPORT_SUPABASE_PROJECT_ID }}
         run: |
           set -euo pipefail
           missing=()
-          [ -n "$SUPABASE_ACCESS_TOKEN" ] || missing+=("SUPABASE_ACCESS_TOKEN")
-          [ -n "$SUPABASE_PROJECT_ID" ] || missing+=("SUPABASE_PROJECT_ID")
+          [ -n "$SUPABASE_ACCESS_TOKEN" ] || missing+=("HAQAK_SUPPORT_SUPABASE_ACCESS_TOKEN")
+          [ -n "$SUPABASE_PROJECT_ID" ] || missing+=("HAQAK_SUPPORT_SUPABASE_PROJECT_ID")
           if [ ${#missing[@]} -gt 0 ]; then
             echo "::error::Missing required GitHub secret(s): ${missing[*]}"
             exit 1
           fi
-          if [ "$SUPABASE_PROJECT_ID" != "wfuofurgkswotwuzosdd" ]; then
-            echo "::error::SUPABASE_PROJECT_ID does not match the documented Haqak production project."
+          if [ "$SUPABASE_PROJECT_ID" != "fpkffdfattidugsrjzey" ]; then
+            echo "::error::Refusing deployment: project ID is not the isolated haqak-production project."
             exit 1
           fi
 
@@ -47,14 +45,15 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Verify function sources
+      - name: Verify standalone function source
         shell: bash
         run: |
           set -euo pipefail
           test -f supabase/functions/support-feedback/index.ts
-          test -f supabase/functions/shared/cors.ts
-          test -f supabase/functions/shared/rate-limiter.ts
-          test -f supabase/functions/_shared/secrets.ts
+          if grep -qE 'from "\.\./(shared|_shared)/' supabase/functions/support-feedback/index.ts; then
+            echo "::error::support-feedback must remain standalone from the legacy Haqak Supabase project."
+            exit 1
+          fi
 
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@b60b5899c73b63a2d2d651b1e90db8d4c9392f51
@@ -64,19 +63,19 @@ jobs:
       - name: Deploy public support function
         shell: bash
         env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.HAQAK_SUPPORT_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.HAQAK_SUPPORT_SUPABASE_PROJECT_ID }}
         run: |
           set -euo pipefail
           supabase functions deploy support-feedback \
             --project-ref "$SUPABASE_PROJECT_ID" \
             --no-verify-jwt
 
-      - name: Confirm deployment and CORS preflight
+      - name: Confirm deployment and exact-origin CORS
         shell: bash
         env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.HAQAK_SUPPORT_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.HAQAK_SUPPORT_SUPABASE_PROJECT_ID }}
         run: |
           set -euo pipefail
           supabase functions list --project-ref "$SUPABASE_PROJECT_ID"
@@ -96,14 +95,15 @@ jobs:
       - name: Deployment summary
         shell: bash
         env:
-          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          SUPABASE_PROJECT_ID: ${{ secrets.HAQAK_SUPPORT_SUPABASE_PROJECT_ID }}
         run: |
           {
-            echo "## Haqak support-feedback deployment"
+            echo "## Haqak isolated support-feedback deployment"
             echo ""
             echo "- Project: \`$SUPABASE_PROJECT_ID\`"
             echo "- Function: \`support-feedback\`"
             echo "- JWT gateway verification: disabled intentionally for the public form"
-            echo "- Custom controls: exact-origin CORS, strict validation, honeypot, hashed-IP throttling, idempotency"
-            echo "- Full delivery smoke test: must be completed using the operations runbook"
+            echo "- Public database access: none"
+            echo "- Custom controls: exact-origin CORS, payload cap, strict validation, honeypot, dual-window hashed-IP throttling, idempotency"
+            echo "- Full delivery smoke test: required before UI integration and merge"
           } >> "$GITHUB_STEP_SUMMARY"
