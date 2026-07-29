@@ -24,7 +24,10 @@ function response(body: unknown, status = 200): Response {
 
 describe("submitSupportFeedback", () => {
   beforeEach(() => {
-    vi.stubEnv("VITE_SUPPORT_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv(
+      "VITE_SUPPORT_SUPABASE_URL",
+      "https://fpkffdfattidugsrjzey.supabase.co",
+    );
     vi.stubEnv("VITE_SUPPORT_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
   });
 
@@ -143,12 +146,14 @@ describe("submitSupportFeedback", () => {
     });
   });
 
-  it("fails before network activity when isolated public configuration is missing", async () => {
-    vi.stubEnv("VITE_SUPPORT_SUPABASE_URL", "");
+  it("rejects an override that points outside the isolated support project", async () => {
+    vi.stubEnv("VITE_SUPPORT_SUPABASE_URL", "https://example.supabase.co");
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(submitSupportFeedback(payload)).rejects.toBeInstanceOf(SupportFeedbackApiError);
+    await expect(submitSupportFeedback(payload)).rejects.toBeInstanceOf(
+      SupportFeedbackApiError,
+    );
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
