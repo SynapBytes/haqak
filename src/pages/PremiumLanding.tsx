@@ -64,13 +64,13 @@ const CivicConsole = () => {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,hsl(var(--accent)/0.2),transparent_35%),radial-gradient(circle_at_90%_100%,hsl(var(--info)/0.16),transparent_40%)]" />
           <div className="relative flex items-center justify-between border-b border-white/10 pb-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.08]"><Scale className="h-5 w-5 text-accent" /></div>
-              <div><p className="text-[0.65rem] font-semibold tracking-[0.2em] text-white/45">HAQAK CIVIC SYSTEM</p><p className="mt-1 text-sm font-semibold text-white">{t("hero.welcome_title")}</p></div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.15] bg-white/[0.08]"><Scale className="h-5 w-5 text-accent" /></div>
+              <div><p className="text-[0.65rem] font-semibold tracking-[0.2em] text-white/[0.45]">HAQAK CIVIC SYSTEM</p><p className="mt-1 text-sm font-semibold text-white">{t("hero.welcome_title")}</p></div>
             </div>
             <span className="flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-[0.65rem] font-bold text-emerald-100"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />SECURE</span>
           </div>
           <div className="relative py-7">
-            <p className="text-xs text-white/45">{t("hero.welcome_sub")}</p>
+            <p className="text-xs text-white/[0.45]">{t("hero.welcome_sub")}</p>
             <h3 className="mt-2 text-xl font-bold leading-snug text-white sm:text-2xl">{t("hero.from_citizen")}</h3>
             <div className="mt-7 grid gap-3">
               {flow.map((item, index) => (
@@ -82,13 +82,13 @@ const CivicConsole = () => {
                   className="flex items-center gap-4 rounded-2xl border border-white/[0.09] bg-white/[0.055] p-4"
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#102b3a]"><item.icon className="h-5 w-5 text-accent" /></div>
-                  <div className="flex-1"><p className="text-[0.62rem] tracking-[0.16em] text-white/35">0{index + 1}</p><p className="mt-0.5 text-sm font-semibold text-white/90">{item.label}</p></div>
+                  <div className="flex-1"><p className="text-[0.62rem] tracking-[0.16em] text-white/[0.35]">0{index + 1}</p><p className="mt-0.5 text-sm font-semibold text-white/90">{item.label}</p></div>
                   <CheckCircle2 className="h-4 w-4 text-emerald-300/80" />
                 </motion.div>
               ))}
             </div>
           </div>
-          <div className="relative flex justify-between border-t border-white/10 pt-5 text-[0.65rem] tracking-[0.12em] text-white/35"><span>PRIVACY-BY-DESIGN</span><span>DIRECT CONNECTION</span></div>
+          <div className="relative flex justify-between border-t border-white/10 pt-5 text-[0.65rem] tracking-[0.12em] text-white/[0.35]"><span>PRIVACY-BY-DESIGN</span><span>DIRECT CONNECTION</span></div>
         </div>
       </div>
       <div className="premium-surface absolute -bottom-7 left-4 hidden rounded-2xl p-4 shadow-xl sm:flex lg:-left-8">
@@ -136,7 +136,7 @@ const PremiumLanding = () => {
                 </div>
                 <div className="mt-10 grid max-w-xl gap-3 text-sm text-muted-foreground sm:grid-cols-3">
                   {[{ icon: LockKeyhole, label: t("features.privacy") }, { icon: Network, label: t("features.realtime") }, { icon: Scale, label: t("features.review") }].map((item) => (
-                    <div key={item.label} className="flex items-center gap-2 rounded-xl border border-border/65 bg-card/50 px-3 py-3"><item.icon className="h-4 w-4 text-accent" /><span className="truncate font-medium">{item.label}</span></div>
+                    <div key={item.label} className="flex items-center gap-2 rounded-xl border border-border/[0.65] bg-card/50 px-3 py-3"><item.icon className="h-4 w-4 text-accent" /><span className="truncate font-medium">{item.label}</span></div>
                   ))}
                 </div>
               </motion.div>
@@ -145,7 +145,7 @@ const PremiumLanding = () => {
           </div>
         </section>
 
-        <section className="border-y border-border/70 bg-card/45 py-6">
+        <section className="border-y border-border/70 bg-card/[0.45] py-6">
           <div className="container grid gap-3 px-5 sm:grid-cols-3 sm:gap-0 sm:px-8">
             {[{ icon: Building2, label: t("partners.mps") }, { icon: HeartHandshake, label: t("partners.civil_society") }, { icon: Users, label: t("partners.citizens") }].map((item, index) => (
               <div key={item.label} className={`flex items-center justify-center gap-3 py-2 text-sm font-semibold text-muted-foreground ${index ? "sm:border-r" : ""}`}><item.icon className="h-4 w-4 text-accent" />{item.label}</div>
@@ -161,11 +161,11 @@ const PremiumLanding = () => {
           </div>
         </section>
 
-        <section className="relative overflow-hidden border-y border-border/60 bg-card/35 py-24 sm:py-28 lg:py-36">
+        <section className="relative overflow-hidden border-y border-border/60 bg-card/[0.35] py-24 sm:py-28 lg:py-36">
           <div className="premium-grid absolute inset-0 opacity-[0.12]" />
           <div className="container relative px-5 sm:px-8"><Reveal><Heading badge={t("features.badge")} title={t("features.title")} description={t("features.subtitle")} /></Reveal>
             <div className="mx-auto mt-16 grid max-w-6xl gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {features.map((feature, index) => <Reveal key={feature.title} delay={(index % 3) * 0.06}><article className="premium-surface group h-full rounded-[1.8rem] p-7 transition-all duration-500 hover:-translate-y-1 hover:border-accent/30"><div className="flex items-center justify-between"><div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border/70 bg-background/70 text-accent"><feature.icon className="h-6 w-6" /></div><span className="text-xs font-bold tracking-[0.2em] text-muted-foreground/55">0{index + 1}</span></div><h3 className="mt-7 text-xl font-bold">{feature.title}</h3><p className="mt-3 text-sm leading-7 text-muted-foreground">{feature.description}</p></article></Reveal>)}
+              {features.map((feature, index) => <Reveal key={feature.title} delay={(index % 3) * 0.06}><article className="premium-surface group h-full rounded-[1.8rem] p-7 transition-all duration-500 hover:-translate-y-1 hover:border-accent/30"><div className="flex items-center justify-between"><div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border/70 bg-background/70 text-accent"><feature.icon className="h-6 w-6" /></div><span className="text-xs font-bold tracking-[0.2em] text-muted-foreground/[0.55]">0{index + 1}</span></div><h3 className="mt-7 text-xl font-bold">{feature.title}</h3><p className="mt-3 text-sm leading-7 text-muted-foreground">{feature.description}</p></article></Reveal>)}
             </div>
           </div>
         </section>
@@ -177,16 +177,16 @@ const PremiumLanding = () => {
           </div>
         </section>
 
-        <section className="border-t border-border/60 bg-card/35 py-20">
-          <div className="container px-5 sm:px-8"><Reveal><div className="relative mx-auto max-w-6xl overflow-hidden rounded-[2.25rem] bg-primary px-6 py-14 text-center text-primary-foreground"><div className="premium-grid absolute inset-0 opacity-15" /><div className="relative mx-auto max-w-3xl"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.08] text-accent"><Scale className="h-6 w-6" /></div><h2 className="mt-7 text-3xl font-bold text-white sm:text-4xl">{t("cta.title")}</h2><p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-white/65 sm:text-lg">{t("cta.subtitle")}</p><Link to="/auth" className="mt-8 inline-flex"><Button className="h-14 rounded-2xl bg-white px-8 font-bold text-primary hover:bg-white/90">{t("cta.button")}<ArrowLeft className="h-4 w-4" /></Button></Link></div></div></Reveal></div>
+        <section className="border-t border-border/60 bg-card/[0.35] py-20">
+          <div className="container px-5 sm:px-8"><Reveal><div className="relative mx-auto max-w-6xl overflow-hidden rounded-[2.25rem] bg-primary px-6 py-14 text-center text-primary-foreground"><div className="premium-grid absolute inset-0 opacity-[0.15]" /><div className="relative mx-auto max-w-3xl"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.15] bg-white/[0.08] text-accent"><Scale className="h-6 w-6" /></div><h2 className="mt-7 text-3xl font-bold text-white sm:text-4xl">{t("cta.title")}</h2><p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-white/[0.65] sm:text-lg">{t("cta.subtitle")}</p><Link to="/auth" className="mt-8 inline-flex"><Button className="h-14 rounded-2xl bg-white px-8 font-bold text-primary hover:bg-white/90">{t("cta.button")}<ArrowLeft className="h-4 w-4" /></Button></Link></div></div></Reveal></div>
         </section>
       </main>
 
-      <footer className="border-t border-border/65 bg-card/35 py-10">
+      <footer className="border-t border-border/[0.65] bg-card/[0.35] py-10">
         <div className="container flex flex-col items-center justify-between gap-7 px-5 sm:px-8 md:flex-row">
           <div className="flex items-center gap-3"><img src="/haqak-logo.webp" alt="HAQAK" className="h-9 w-9" /><div><p className="text-sm font-bold">{t("app_name")}</p><p className="text-xs text-muted-foreground">{t("footer.rights")}</p></div></div>
           <nav className="flex flex-wrap justify-center gap-5 text-sm text-muted-foreground"><Link to="/privacy">{t("footer.privacy")}</Link><Link to="/terms">{t("footer.terms")}</Link><Link to="/careers">{t("footer.careers")}</Link><Link to="/support">{t("footer.support")}</Link></nav>
-          <a href="https://capsorix.tech" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-xl border border-border/65 bg-background/65 px-4 py-2.5"><span className="text-[0.62rem] font-semibold tracking-[0.16em] text-muted-foreground">{t("footer.crafted_by")}</span><img src="/capsorix-logo.svg" alt="Capsorix" className="h-7 w-auto opacity-80" /></a>
+          <a href="https://capsorix.tech" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-xl border border-border/[0.65] bg-background/[0.65] px-4 py-2.5"><span className="text-[0.62rem] font-semibold tracking-[0.16em] text-muted-foreground">{t("footer.crafted_by")}</span><img src="/capsorix-logo.svg" alt="Capsorix" className="h-7 w-auto opacity-80" /></a>
         </div>
       </footer>
     </div>
