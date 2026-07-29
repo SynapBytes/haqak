@@ -80,8 +80,10 @@ const AppHeader = () => {
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
+
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
     return () => {
       document.body.style.overflow = previousOverflow;
     };
@@ -150,8 +152,8 @@ const AppHeader = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-border/65 bg-background/72 shadow-[0_1px_0_hsl(var(--surface-highlight)/0.35)] backdrop-blur-2xl supports-[backdrop-filter]:bg-background/62">
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/24 to-transparent" />
+      <header className="sticky top-0 z-50 border-b border-border/[0.65] bg-background/[0.72] shadow-[0_1px_0_hsl(var(--surface-highlight)/0.35)] backdrop-blur-2xl supports-[backdrop-filter]:bg-background/[0.62]">
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/[0.24] to-transparent" />
         <div className="container flex h-[4.5rem] items-center justify-between gap-4 px-5 sm:px-8 lg:h-20">
           <Link to="/" className="group flex shrink-0 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
             <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-card/70 shadow-[inset_0_1px_0_hsl(var(--surface-highlight)/0.65),0_12px_30px_-22px_hsl(var(--foreground)/0.45)] backdrop-blur-xl transition-transform duration-300 group-hover:-translate-y-0.5">
@@ -210,7 +212,7 @@ const AppHeader = () => {
                 className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-all ${
                   isActive(item.to)
                     ? "bg-accent/[0.08] text-accent"
-                    : "text-muted-foreground hover:bg-card/65 hover:text-foreground"
+                    : "text-muted-foreground hover:bg-card/[0.65] hover:text-foreground"
                 }`}
               >
                 {item.icon && <item.icon className="h-4 w-4" />}
@@ -234,9 +236,9 @@ const AppHeader = () => {
               <div className="hidden items-center gap-2.5 md:flex">
                 <Link
                   to="/profile"
-                  className="flex items-center gap-2.5 rounded-xl border border-transparent p-1.5 pe-3 transition-all hover:border-border/70 hover:bg-card/65"
+                  className="flex items-center gap-2.5 rounded-xl border border-transparent p-1.5 pe-3 transition-all hover:border-border/70 hover:bg-card/[0.65]"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl border border-accent/15 bg-accent/[0.08]">
+                  <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl border border-accent/[0.15] bg-accent/[0.08]">
                     {safeAvatarUrl ? (
                       <ImageWithFallback
                         src={safeAvatarUrl}
@@ -294,8 +296,8 @@ const AppHeader = () => {
               className="absolute inset-x-4 top-[5.25rem] max-h-[calc(100vh-6.5rem)] overflow-y-auto rounded-[1.75rem] border border-border/70 bg-card/90 p-4 shadow-[0_35px_100px_-45px_hsl(var(--foreground)/0.6)] backdrop-blur-2xl sm:inset-x-8"
             >
               {session && (
-                <div className="mb-4 flex items-center gap-3 rounded-2xl border border-border/65 bg-background/55 p-3">
-                  <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-accent/15 bg-accent/[0.08]">
+                <div className="mb-4 flex items-center gap-3 rounded-2xl border border-border/[0.65] bg-background/[0.55] p-3">
+                  <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-accent/[0.15] bg-accent/[0.08]">
                     {safeAvatarUrl ? (
                       <ImageWithFallback
                         src={safeAvatarUrl}
@@ -322,16 +324,16 @@ const AppHeader = () => {
                     className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
                       isActive(item.to)
                         ? "bg-accent/[0.1] text-accent"
-                        : "text-muted-foreground hover:bg-background/65 hover:text-foreground"
+                        : "text-muted-foreground hover:bg-background/[0.65] hover:text-foreground"
                     }`}
                   >
-                    {item.icon ? <item.icon className="h-4.5 w-4.5" /> : <span className="h-1.5 w-1.5 rounded-full bg-accent/65" />}
+                    {item.icon ? <item.icon className="h-[18px] w-[18px]" /> : <span className="h-1.5 w-1.5 rounded-full bg-accent/[0.65]" />}
                     {item.label}
                   </Link>
                 ))}
               </nav>
 
-              <div className="mt-4 border-t border-border/65 pt-4">
+              <div className="mt-4 border-t border-border/[0.65] pt-4">
                 {session ? (
                   <Button
                     variant="outline"
