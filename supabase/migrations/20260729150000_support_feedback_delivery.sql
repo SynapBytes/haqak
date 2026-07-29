@@ -1,5 +1,11 @@
 -- Forward-only delivery metadata for Haqak support feedback.
 -- Existing rows are preserved and marked as legacy; no content is rewritten.
+--
+-- Deployment safety: the legacy anonymous INSERT policy is intentionally kept
+-- during the staged rollout so the currently deployed browser form does not
+-- break between migration, function deployment and frontend deployment. Remove
+-- that policy only in a separate post-verification migration after the live UI
+-- has been proven to use the Edge Function successfully.
 
 ALTER TABLE public.feedbacks
   ADD COLUMN IF NOT EXISTS public_reference TEXT,
@@ -44,7 +50,3 @@ CREATE UNIQUE INDEX IF NOT EXISTS feedbacks_submission_id_unique
 
 CREATE INDEX IF NOT EXISTS feedbacks_delivery_status_created_at_idx
   ON public.feedbacks (delivery_status, created_at DESC);
-
--- The browser must no longer write support messages directly. The Edge Function
--- persists with the service role after validation, throttling and honeypot checks.
-DROP POLICY IF EXISTS "Anyone can insert a feedback" ON public.feedbacks;
