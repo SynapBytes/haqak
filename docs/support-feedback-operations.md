@@ -61,7 +61,7 @@ supabase link --project-ref "$PROJECT_REF"
 supabase db push --linked
 ```
 
-The migration is forward-only. It preserves existing feedback rows, marks them as `legacy`, adds traceability and delivery-state columns, and removes the anonymous browser-insert policy only after the Edge Function path is ready.
+The migration is forward-only. It preserves existing feedback rows, marks them as `legacy`, and adds traceability and delivery-state columns. It intentionally keeps the legacy anonymous INSERT policy during the staged rollout so the currently deployed UI does not break before the Edge Function and new frontend are live.
 
 Verify:
 
@@ -171,7 +171,7 @@ Confirm:
 
 The UI must not display success for a malformed `2xx` response. Failed or ambiguous attempts must retain the same client-generated UUID for a safe retry.
 
-## Final website verification
+## Final website verification and lockdown
 
 After the frontend integration is deployed:
 
@@ -181,5 +181,12 @@ After the frontend integration is deployed:
 4. Confirm the UI displays the canonical `HQK-SUP-...` reference.
 5. Confirm the same reference and provider ID in Supabase and Resend.
 6. Confirm delivery in `support@haqak.org`.
+7. Only after the live UI succeeds, apply and commit a separate hardening migration:
 
-Do not claim production readiness until the direct function test and the deployed UI test both pass.
+```sql
+DROP POLICY IF EXISTS "Anyone can insert a feedback" ON public.feedbacks;
+```
+
+8. Re-test the live UI after the policy removal and confirm direct anonymous table inserts are rejected while the Edge Function continues to work.
+
+Do not claim production readiness until the direct function test, deployed UI test and post-lockdown UI test all pass.
