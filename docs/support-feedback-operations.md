@@ -1,145 +1,88 @@
 # Haqak support feedback delivery — production runbook
 
-## Architecture and isolation
+## Current operating state
 
-The feedback box shown after the contribution flow at `https://haqak.org/support` uses a dedicated delivery service. It does not share the main Haqak Supabase database and it does not use any Capsorix infrastructure.
+The support-message delivery service is deployed in **queue mode** because the `support@haqak.org` mailbox subscription is currently inactive.
+
+- New messages are validated, rate-limited, stored and assigned a canonical reference.
+- Email delivery is intentionally disabled with `delivery_enabled = false`.
+- No email is attempted while the mailbox is inactive, preventing bounces and sender-reputation damage.
+- A protected worker runs every 10 minutes and performs a safe no-op while delivery is disabled.
+- When the mailbox is renewed, enabling one database flag will allow the worker to dispatch queued messages automatically.
+
+Do not claim that queued messages were delivered by email. The current receipt state is `delivery: delayed`.
+
+## Isolation boundary
 
 - Supabase organization: `Haqak`
 - Supabase project: `haqak-production`
 - Project ref: `fpkffdfattidugsrjzey`
 - Project URL: `https://fpkffdfattidugsrjzey.supabase.co`
 - Region: `eu-central-1`
+- Resend account/workspace: Haqak-only
 - Sender domain: `mail.haqak.org`
 - Sender address: `Haqak Support <support@mail.haqak.org>`
-- Recipient mailbox: `support@haqak.org`
+- Intended recipient after mailbox renewal: `support@haqak.org`
 
-Never use the Capsorix Supabase organization, `mail.capsorix.tech`, a Capsorix Resend key, or the legacy Haqak Supabase project for this delivery path.
+Never use the Capsorix Supabase organization/project, `mail.capsorix.tech`, a Capsorix Resend key, or the legacy Haqak Supabase project for this delivery path.
 
-The existing Haqak application continues using its current Supabase project for authentication, contributions and all other features. Only feedback-message acceptance and notification use the isolated project.
+The existing Haqak application continues using its current Supabase project for authentication, contributions and all other features. Only the support-message path uses the isolated project.
 
-## Current operating mode
+## Resend state
 
-The recipient mailbox subscription is currently inactive. Production runtime is therefore deliberately configured as:
+`mail.haqak.org` is verified with:
 
-```text
-delivery_enabled = false
-```
+- region `eu-west-1`;
+- sending enabled;
+- receiving disabled;
+- open tracking disabled;
+- click tracking disabled;
+- TLS enforced;
+- sending-only API key restricted to `mail.haqak.org`.
 
-In this mode:
-
-1. the browser request is validated and rate-limited;
-2. a canonical `HQK-SUP-YYYYMMDD-XXXXXXXXXXXX` reference is generated;
-3. the message is stored with `delivery_status = pending` and `delivery_error_code = MAILBOX_INACTIVE`;
-4. the API returns an accepted delayed receipt;
-5. no Resend request is attempted, preventing bounces and sender-reputation damage.
-
-The success copy used by the contribution page states that the words reached Haqak; it does not claim that an email has already been delivered.
+`RESEND_API_KEY` must exist only in the Edge Function secrets for `haqak-production`. Never place it in GitHub, repository files or a `VITE_` variable.
 
 ## Database model
 
-`public.support_feedback_messages` stores one row per client-generated UUID and records:
+`public.support_feedback_messages` stores:
 
-- canonical public reference;
-- external contribution UUID without a cross-project foreign key;
+- canonical `HQK-SUP-YYYYMMDD-XXXXXXXXXXXX` reference;
+- client-generated UUID idempotency key;
+- optional legacy contribution UUID without a cross-project foreign key;
 - visitor name, email and message;
 - HMAC-hashed request fingerprint, never a raw IP address;
-- delivery status, provider ID, timestamps and safe error code;
-- retry attempt count and next-attempt timestamp.
+- queue and delivery state;
+- attempt count, retry time, provider ID and safe error code.
 
 `public.support_feedback_rate_limits` provides atomic dual-window throttling.
 
-`public.support_feedback_runtime_config` is a service-only singleton containing:
+`public.support_feedback_runtime_config` contains the operational flag, fixed sender/recipient and internally generated worker/rate-limit values.
 
-- delivery feature flag;
-- sender and recipient addresses;
-- database-generated 64-character rate-limit salt;
-- database-generated worker token.
-
-All three tables use RLS and FORCE RLS, expose no anon/authenticated policies, and revoke browser table privileges.
+All service tables use RLS and FORCE RLS. Browser roles have no direct policies or table privileges.
 
 ## Edge Functions
 
 ### `support-feedback`
 
-Public gateway verification is disabled intentionally because the form is available without authentication. The function implements:
+Public gateway endpoint with `verify_jwt=false` because unauthenticated visitors may use the form. It implements:
 
-- exact-origin CORS for `https://haqak.org` and `https://www.haqak.org`;
-- 16 KiB request cap;
-- strict UUID, email and length validation;
+- exact-origin CORS for `haqak.org` and `www.haqak.org`;
+- 16 KiB body cap;
+- UUID, email and length validation;
 - honeypot handling;
-- HMAC-hashed IP rate limiting;
+- HMAC-hashed IP fingerprinting;
 - limits of 5 requests per 10 minutes and 20 per 24 hours;
-- UUID idempotency;
+- durable idempotency;
 - canonical receipts;
-- queue-only behavior while delivery is disabled;
-- fixed recipient and validated Reply-To after activation;
-- Resend idempotency keys and safe provider error codes.
+- queue persistence before any email attempt.
+
+When delivery is disabled it returns HTTP 202 with `delivery: delayed` and `code: MAILBOX_INACTIVE`.
 
 ### `support-feedback-worker`
 
-The worker is protected by a private database-generated token and is invoked every 10 minutes by `pg_cron` through `pg_net`.
+Internal worker protected by a generated token stored in the service database. `pg_cron` calls it every 10 minutes.
 
-While delivery is disabled it returns a no-op response and claims no queue rows. After activation it claims pending/failed rows with `FOR UPDATE SKIP LOCKED`, sends batches through Resend, and retries failures with bounded backoff.
-
-## Resend configuration
-
-Haqak uses a separate Resend account/workspace.
-
-- Domain: `mail.haqak.org`
-- Status: verified
-- Region: `eu-west-1`
-- Sending: enabled
-- Receiving: disabled
-- Open tracking: disabled
-- Click tracking: disabled
-- TLS: enforced
-- API key: `haqak-support-production`
-- Permission: sending only
-- Domain restriction: `mail.haqak.org`
-
-The only private Edge Function secret required is:
-
-```text
-RESEND_API_KEY=<Haqak domain-restricted sending token>
-```
-
-Do not place this token in GitHub, source code, a `VITE_` variable or the database migration history.
-
-## Frontend migration bridge
-
-The main Haqak Supabase client installs `createSupportAwareFetch`.
-
-The adapter intercepts only `POST /rest/v1/feedbacks` from the existing contribution feedback box and translates it into a call to the isolated `support-feedback` function. Every other request continues unchanged to the legacy Haqak project.
-
-The bridge:
-
-- generates a client submission UUID;
-- persists it in session storage across ambiguous retries;
-- hashes the legacy payload to avoid storing message text in the storage key;
-- accepts only a canonical receipt before returning legacy insert success;
-- preserves the message on validation, network, timeout or service failure;
-- exposes the canonical reference and delivery mode as response headers.
-
-The isolated project URL and publishable key are public frontend configuration pinned in `support-feedback-api.ts`. Database access remains denied by RLS; the key grants no direct table access.
-
-## Verified queue-mode tests
-
-A controlled queue-only request succeeded with reference:
-
-```text
-HQK-SUP-20260729-ACCAFE5987CC
-```
-
-The stored row had:
-
-```text
-delivery_status = pending
-delivery_error_code = MAILBOX_INACTIVE
-attempt_count = 0
-email_sent_at = null
-```
-
-The worker smoke test returned HTTP 200:
+While `delivery_enabled=false`, the expected response is:
 
 ```json
 {
@@ -151,49 +94,57 @@ The worker smoke test returned HTTP 200:
 }
 ```
 
-The cron job `haqak_support_feedback_dispatch` is active on `*/10 * * * *`.
+## Frontend bridge
 
-## Mailbox-restoration procedure
+The existing `Support.tsx` remains unchanged to minimise regression risk. The legacy insert to `/rest/v1/feedbacks` is intercepted by `createSupportAwareFetch` and redirected to the isolated Edge Function.
 
-Do not activate delivery merely because the sender domain is verified. First restore the actual `support@haqak.org` mailbox subscription and confirm that it can receive normal external mail.
+Every other request made by the primary Supabase client continues unchanged to the legacy Haqak backend.
 
-Then:
+The bridge:
 
-1. confirm `RESEND_API_KEY` exists in the `haqak-production` Edge Function secrets;
-2. delete the controlled test row `HQK-SUP-20260729-ACCAFE5987CC` so it is never delivered as a real message;
-3. send one controlled Resend test to `support@haqak.org` and confirm receipt;
-4. set `delivery_enabled = true` in `support_feedback_runtime_config`;
-5. invoke `support-feedback-worker` once and confirm each queued row receives a provider ID and sent timestamp;
-6. verify idempotency by replaying one submission UUID;
-7. monitor Resend delivery status and Supabase logs.
+- intercepts only POST requests to `/rest/v1/feedbacks`;
+- derives a deterministic payload fingerprint;
+- stores a UUID in session storage for safe retry;
+- clears the UUID only after a canonical receipt;
+- returns a PostgREST-compatible 201 response to the existing UI;
+- preserves the retry identifier on timeout, network or service failure.
 
-Activation SQL, after steps 1–3 pass:
+The public project URL and publishable key are intentionally embedded as browser configuration. RLS denies browser access to service tables.
 
-```sql
-update public.support_feedback_runtime_config
-set delivery_enabled = true,
-    updated_at = now()
-where singleton = true;
-```
+## Tested state
 
-Rollback is immediate and does not discard queued messages:
+Completed:
 
-```sql
-update public.support_feedback_runtime_config
-set delivery_enabled = false,
-    updated_at = now()
-where singleton = true;
-```
+- verified Resend DNS records;
+- direct queue-mode POST returned HTTP 202;
+- exactly one database row was created;
+- row state is `pending` with `MAILBOX_INACTIVE`;
+- worker direct test returned HTTP 200 with zero processed/sent/failed;
+- scheduled worker has continued returning HTTP 200 every 10 minutes;
+- security advisor reports no warnings, only intentional INFO notices for service-only RLS tables.
 
-## Rollout restrictions
+Not yet possible:
 
-Keep PR #49 as Draft until:
+- real email delivery test, because the recipient mailbox is inactive;
+- public website rollout, because GitHub-hosted runners currently terminate before starting any steps;
+- end-to-end mailbox verification.
 
-- the Resend secret is stored in Supabase;
-- source-level tests and a production build complete outside the currently blocked GitHub Actions runners;
-- the public deployment route is confirmed;
-- the live feedback box is tested in a private browser session;
-- the canonical reference appears in the isolated database;
-- after mailbox renewal, one end-to-end email is confirmed in Supabase, Resend and the mailbox.
+## Mailbox renewal procedure
 
-Do not merge merely because the backend functions are active. The public website remains unchanged until the reviewed branch is built and deployed.
+After `support@haqak.org` is renewed:
+
+1. Confirm the mailbox can receive a normal external email.
+2. Keep the website queue enabled; do not delete pending rows.
+3. Set `delivery_enabled = true` in the singleton runtime-config row.
+4. Invoke the worker once manually.
+5. Confirm the queued smoke-test message becomes `sent` with a provider ID and timestamp.
+6. Confirm Resend delivery and actual mailbox receipt.
+7. Leave the 10-minute worker schedule active for future retries.
+
+If delivery fails, immediately set `delivery_enabled=false` and inspect the safe error code before retrying.
+
+## Deployment restriction
+
+Both Edge Functions and all migrations are pinned to project ref `fpkffdfattidugsrjzey`. The deployment workflow must refuse every other project ref.
+
+Keep PR #49 as Draft until the frontend can be built, reviewed and deployed, and until the renewed mailbox passes a real delivery test.
