@@ -4,6 +4,7 @@ export type SupportFeedbackPayload = {
   name: string;
   email: string;
   message: string;
+  language: string;
   honeypot: string;
 };
 
@@ -43,10 +44,11 @@ type PublicErrorBody = {
 };
 
 const REQUEST_TIMEOUT_MS = 12_000;
+const REFERENCE_PATTERN = /^HQK-SUP-\d{8}-[A-F0-9]{12}$/;
 
 function getConfiguration(): { endpoint: string; key: string } {
-  const url = import.meta.env.VITE_SUPABASE_URL?.trim();
-  const key = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
+  const url = import.meta.env.VITE_SUPPORT_SUPABASE_URL?.trim();
+  const key = import.meta.env.VITE_SUPPORT_SUPABASE_PUBLISHABLE_KEY?.trim();
 
   if (!url || !key) {
     throw new SupportFeedbackApiError(
@@ -69,7 +71,7 @@ function getConfiguration(): { endpoint: string; key: string } {
     );
   }
 
-  if (parsedUrl.protocol !== "https:") {
+  if (parsedUrl.protocol !== "https:" || parsedUrl.pathname !== "/") {
     throw new SupportFeedbackApiError(
       "configuration",
       "PUBLIC_CONFIG_INVALID",
@@ -100,7 +102,7 @@ function isReceipt(value: unknown): value is SupportFeedbackReceipt {
   return (
     record.accepted === true &&
     typeof record.reference === "string" &&
-    record.reference.trim().length >= 8 &&
+    REFERENCE_PATTERN.test(record.reference) &&
     (record.delivery === "sent" || record.delivery === "delayed") &&
     typeof record.duplicate === "boolean"
   );
@@ -120,7 +122,7 @@ function publicError(value: unknown): { code: string; message: string } {
 function mapHttpError(status: number, value: unknown): SupportFeedbackApiError {
   const error = publicError(value);
 
-  if (status === 422) {
+  if (status === 413 || status === 422) {
     return new SupportFeedbackApiError("validation", error.code, error.message, false);
   }
   if (status === 429) {
@@ -160,7 +162,7 @@ export async function submitSupportFeedback(
       throw new SupportFeedbackApiError(
         "timeout",
         "REQUEST_TIMEOUT",
-        "The request timed out. Your message is still preserved for a safe retry.",
+        "The request timed out. Your message is preserved for a safe retry.",
         true,
       );
     }
@@ -168,7 +170,7 @@ export async function submitSupportFeedback(
     throw new SupportFeedbackApiError(
       "network",
       "NETWORK_ERROR",
-      "The support service could not be reached. Your message is still preserved for a safe retry.",
+      "The support service could not be reached. Your message is preserved for a safe retry.",
       true,
     );
   } finally {
