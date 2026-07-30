@@ -2,7 +2,8 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#07151d" />
     <link rel="icon" type="image/png" href="/haqak-logo.png">
     <link rel="preload" as="image" href="/haqak-logo.webp" type="image/webp" fetchpriority="high">
     <link rel="preload" as="image" href="/haqak-wordmark.webp" type="image/webp" fetchpriority="high">
@@ -10,24 +11,21 @@
     <meta name="description" content="منصة حقك للتواصل المدني تربط المواطنين مباشرة بأعضاء مجلس النواب المصري لتقديم المشكلات ومتابعة الحلول بأمان وشفافية.">
     <meta name="keywords" content="Civic Communication, Egyptian Parliament Connection, citizen platform, MPs, حقك, منصة حقك, تواصل النواب, خدمات المواطنين">
     <meta name="author" content="حقك" />
-    
+
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://haqak.org/" />
     <meta property="og:site_name" content="حقك" />
     <meta property="og:image" content="https://haqak.org/haqak-wordmark.png">
+    <meta property="og:title" content="حقك | Civic Communication Platform">
+    <meta property="og:description" content="منصة حقك للتواصل المدني تربط المواطنين بأعضاء مجلس النواب المصري لتقديم المشكلات ومتابعة الحلول بأمان وشفافية.">
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@haqak_org" />
     <meta name="twitter:image" content="https://haqak.org/haqak-wordmark.png">
-    <meta property="og:title" content="حقك | Civic Communication Platform">
     <meta name="twitter:title" content="حقك | Civic Communication Platform">
-    <meta property="og:description" content="منصة حقك للتواصل المدني تربط المواطنين بأعضاء مجلس النواب المصري لتقديم المشكلات ومتابعة الحلول بأمان وشفافية.">
     <meta name="twitter:description" content="منصة حقك للتواصل المدني تربط المواطنين بأعضاء مجلس النواب المصري لتقديم المشكلات ومتابعة الحلول بأمان وشفافية.">
-  
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    <!-- SPA path restore for GitHub Pages: decodes the ?/ redirect set by 404.html -->
-    <!-- Reference: https://github.com/rafgraph/spa-github-pages -->
     <script>
       (function (l) {
         if (l.search[1] === '/') {
@@ -37,7 +35,8 @@
             .map(function (s) { return s.replace(/~and~/g, '&'); })
             .join('?');
           window.history.replaceState(
-            null, null,
+            null,
+            null,
             (l.pathname.endsWith('/') ? l.pathname.slice(0, -1) : l.pathname) + decoded + l.hash
           );
         }
@@ -45,67 +44,202 @@
     </script>
 
     <style>
+      :root { color-scheme: light dark; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; background: #07151d; }
+      body.splash-lock { overflow: hidden; }
+
       #haqak-splash {
         position: fixed;
         inset: 0;
         z-index: 999999;
-        background-color: #000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: grid;
+        place-items: center;
         overflow: hidden;
-        transition: opacity 0.8s ease-in-out;
-      }
-      .splash-container {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-      }
-      .splash-asset {
-        position: absolute;
-        max-width: 280px;
-        width: 70%;
-        height: auto;
-        opacity: 0;
-        transform: scale(0.95);
-        filter: blur(10px);
-        transition: all 1s cubic-bezier(0.22, 1, 0.36, 1);
-      }
-      .splash-asset.active {
+        isolation: isolate;
+        color: #f7f0df;
+        background:
+          radial-gradient(circle at 50% 42%, rgba(202, 159, 77, 0.12), transparent 24rem),
+          radial-gradient(circle at 18% 12%, rgba(79, 166, 178, 0.09), transparent 28rem),
+          linear-gradient(145deg, #07151d 0%, #0a202b 48%, #061119 100%);
         opacity: 1;
-        transform: scale(1);
-        filter: blur(0px);
+        visibility: visible;
+        transition: opacity .68s cubic-bezier(.22,1,.36,1), visibility .68s;
       }
-      .splash-asset.fade-out {
-        opacity: 0;
-        transform: scale(1.05);
-        filter: blur(10px);
-      }
-      .splash-glow {
+
+      #haqak-splash::before {
+        content: '';
         position: absolute;
-        width: 400px;
-        height: 400px;
-        background: radial-gradient(circle, rgba(255, 80, 0, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
-        border-radius: 50%;
+        inset: -20%;
+        z-index: -3;
+        background: conic-gradient(from 180deg at 50% 50%, transparent, rgba(202,159,77,.045), transparent 28%, rgba(82,164,177,.04), transparent 65%);
+        animation: splash-orbit 18s linear infinite;
+      }
+
+      #haqak-splash::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 5;
         pointer-events: none;
+        opacity: .24;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.075'/%3E%3C/svg%3E");
+        mix-blend-mode: soft-light;
+      }
+
+      #haqak-splash.is-exiting { opacity: 0; visibility: hidden; }
+
+      .splash-grid {
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+        opacity: .13;
+        background-image:
+          linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+        background-size: 58px 58px;
+        -webkit-mask-image: radial-gradient(ellipse at center, black 22%, transparent 74%);
+        mask-image: radial-gradient(ellipse at center, black 22%, transparent 74%);
+      }
+
+      .splash-stage {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        width: min(88vw, 480px);
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      .splash-emblem {
+        position: relative;
+        display: grid;
+        width: 132px;
+        height: 132px;
+        place-items: center;
+        opacity: 0;
+        transform: translateY(12px) scale(.88);
+        transition: opacity .65s ease, transform 1s cubic-bezier(.16,1,.3,1);
+      }
+
+      .is-entered .splash-emblem { opacity: 1; transform: translateY(0) scale(1); }
+
+      .splash-ring,
+      .splash-ring::before,
+      .splash-ring::after {
+        position: absolute;
+        inset: 0;
+        border: 1px solid rgba(210,171,94,.25);
+        border-radius: 999px;
+        content: '';
+      }
+
+      .splash-ring { animation: splash-ring 4.4s ease-in-out infinite; }
+      .splash-ring::before { inset: 10px; border-color: rgba(91,170,181,.2); animation: splash-ring 4.4s 1.1s ease-in-out infinite reverse; }
+      .splash-ring::after { inset: 22px; border-color: rgba(255,255,255,.09); }
+
+      .splash-logo {
+        position: relative;
+        z-index: 2;
+        width: 74px;
+        height: 74px;
+        object-fit: contain;
+        filter: drop-shadow(0 18px 30px rgba(0,0,0,.42));
+      }
+
+      .splash-brand {
+        width: min(250px, 66vw);
+        height: auto;
+        margin-top: 22px;
+        opacity: 0;
+        transform: translateY(10px);
+        filter: drop-shadow(0 10px 22px rgba(0,0,0,.28));
+        transition: opacity .62s .22s ease, transform .8s .22s cubic-bezier(.22,1,.36,1);
+      }
+
+      .is-entered .splash-brand { opacity: .96; transform: translateY(0); }
+
+      .splash-kicker {
+        margin: 18px 0 0;
+        color: rgba(241,235,220,.46);
+        font: 600 9px/1.5 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: .26em;
+        opacity: 0;
+        transform: translateY(6px);
+        transition: opacity .55s .48s ease, transform .65s .48s ease;
+      }
+
+      .is-entered .splash-kicker { opacity: 1; transform: translateY(0); }
+
+      .splash-progress {
+        position: relative;
+        width: min(230px, 58vw);
+        height: 2px;
+        margin-top: 28px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255,255,255,.09);
+      }
+
+      .splash-progress::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, transparent, #d1a657 30%, #78b4bd 72%, transparent);
+        transform: translateX(-110%);
+        animation: splash-progress 1.35s .25s cubic-bezier(.65,0,.35,1) infinite;
+      }
+
+      .splash-status {
+        min-height: 18px;
+        margin-top: 12px;
+        color: rgba(241,235,220,.34);
+        font: 500 10px/1.6 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: .08em;
+      }
+
+      .splash-status::before { content: 'تهيئة التجربة الآمنة'; }
+      .is-ready .splash-status::before { content: 'جاهز'; color: rgba(155,220,192,.72); }
+      .is-ready .splash-progress::after { animation: none; transform: translateX(0); background: linear-gradient(90deg, #d1a657, #78b4bd); }
+
+      @keyframes splash-orbit { to { transform: rotate(360deg); } }
+      @keyframes splash-ring { 0%,100% { transform: scale(.92); opacity: .45; } 50% { transform: scale(1.08); opacity: .9; } }
+      @keyframes splash-progress { 0% { transform: translateX(-110%); } 100% { transform: translateX(110%); } }
+
+      @media (max-width: 480px) {
+        .splash-emblem { width: 112px; height: 112px; }
+        .splash-logo { width: 62px; height: 62px; }
+        .splash-kicker { letter-spacing: .18em; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #haqak-splash::before,
+        .splash-ring,
+        .splash-ring::before,
+        .splash-progress::after { animation: none !important; }
+        .splash-emblem, .splash-brand, .splash-kicker { opacity: 1; transform: none; transition: none; }
       }
     </style>
-</head>
+  </head>
 
-  <body style="background-color: #000;">
-    <div id="haqak-splash">
-      <div class="splash-glow"></div>
-      <div class="splash-container">
-        <img id="splash-logo" src="/assets/splash/logo.png" class="splash-asset" alt="Logo">
-        <img id="splash-brand" src="/assets/splash/brand.png" class="splash-asset" alt="Brand">
+  <body class="splash-lock" style="background-color:#07151d;">
+    <div id="haqak-splash" role="status" aria-live="polite" aria-label="جاري تحميل منصة حقك">
+      <div class="splash-grid" aria-hidden="true"></div>
+      <div class="splash-stage">
+        <div class="splash-emblem" aria-hidden="true">
+          <span class="splash-ring"></span>
+          <img src="/assets/splash/logo.png" class="splash-logo" alt="">
+        </div>
+        <img src="/assets/splash/brand.png" class="splash-brand" alt="حقك">
+        <p class="splash-kicker">CIVIC COMMUNICATION INFRASTRUCTURE</p>
+        <div class="splash-progress" aria-hidden="true"></div>
+        <div class="splash-status"></div>
       </div>
     </div>
 
     <script src="/splash.js" defer></script>
-
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

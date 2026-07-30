@@ -1,14 +1,40 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  Building2,
+  Globe2,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Moon,
+  ShieldCheck,
+  Sun,
+  User,
+  Users,
+  X,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, LogIn, LogOut, Menu, X, MessageSquare, ShieldCheck, Sun, Moon, User, Users, Globe } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useTranslation } from "react-i18next";
 import NotificationBell from "./NotificationBell";
-import { useEffect, useState } from "react";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 
-type SignInCTAProps = { label: string; className?: string; fullWidth?: boolean; onClick?: () => void };
+type SignInCTAProps = {
+  label: string;
+  className?: string;
+  fullWidth?: boolean;
+  onClick?: () => void;
+};
+
+type NavItem = {
+  to: string;
+  label: string;
+  icon?: React.ComponentType<{ className?: string }>;
+};
 
 const AVATAR_PATH_PREFIX = "/storage/v1/object/public/avatars/";
 
@@ -31,9 +57,10 @@ const SignInCTAButton = ({ label, className, fullWidth = false, onClick }: SignI
   <Link to="/auth" className={className} onClick={onClick}>
     <Button
       size="sm"
-      className={`gap-2 bg-accent text-accent-foreground hover:bg-accent/90 shadow-md ${fullWidth ? "w-full justify-start" : ""}`}
+      className={`premium-cta h-10 gap-2 rounded-xl px-4 font-bold ${fullWidth ? "w-full justify-center" : ""}`}
     >
-      <LogIn className="w-4 h-4" /> {label}
+      <LogIn className="h-4 w-4" />
+      {label}
     </Button>
   </Link>
 );
@@ -51,6 +78,17 @@ const AppHeader = () => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileMenuOpen]);
+
   const isActive = (path: string) => location.pathname === path;
 
   const handleSignOut = async () => {
@@ -62,231 +100,266 @@ const AppHeader = () => {
     const newLang = i18n.language === "ar" ? "en" : "ar";
     i18n.changeLanguage(newLang);
   };
-  // Language change side-effects (dir/lang/localStorage) are handled globally in src/i18n/index.ts
 
-  const getLangLabel = () => {
-    return i18n.language === "ar" ? t("nav.switch_to_english") : t("nav.switch_to_arabic");
-  };
+  const getLangLabel = () =>
+    i18n.language === "ar" ? t("nav.switch_to_english") : t("nav.switch_to_arabic");
+
+  const publicItems: NavItem[] = [
+    { to: "/success-stories", label: t("nav.success_stories") },
+    { to: "/faq", label: t("nav.faq") },
+    { to: "/support", label: t("nav.support") },
+  ];
+
+  const privateItems: NavItem[] = session
+    ? [
+        { to: "/citizen", label: t("nav.my_issues"), icon: MessageSquare },
+        { to: "/mps", label: t("nav.mps"), icon: Users },
+        { to: "/profile", label: t("nav.my_account"), icon: User },
+      ]
+    : [];
+
+  if (session && (role === "mp" || role === "admin")) {
+    privateItems.push({ to: "/mp", label: t("nav.mp_dashboard"), icon: LayoutDashboard });
+  }
+
+  if (session && role === "mp") {
+    privateItems.push({ to: "/mp/settings", label: t("nav.mp_settings"), icon: Building2 });
+  }
+
+  if (session && role === "admin") {
+    privateItems.push({ to: "/admin", label: t("nav.admin"), icon: ShieldCheck });
+  }
+
+  const HeaderIconButton = ({
+    onClick,
+    label,
+    children,
+  }: {
+    onClick: () => void;
+    label: string;
+    children: React.ReactNode;
+  }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-muted-foreground transition-all duration-200 hover:border-border/70 hover:bg-card/70 hover:text-foreground"
+      aria-label={label}
+      title={label}
+    >
+      {children}
+    </button>
+  );
 
   return (
-    <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50">
-      <div className="container flex items-center justify-between h-14 md:h-16 px-4">
-        <Link to="/" className="flex items-center gap-3 group">
-          <picture className="flex items-center">
-            <source srcSet="/haqak-logo.webp" type="image/webp" />
-            <ImageWithFallback
-              src="/haqak-logo.png"
-              fallbackSrc="/logo-haqak.svg"
-              alt="HAQAK logo"
-              className="h-8 md:h-9 w-8 md:w-9 drop-shadow-sm transition-transform duration-200 group-hover:scale-[1.04]"
-            />
-          </picture>
-          <picture className="h-8 md:h-9 flex items-center">
-            <source srcSet="/haqak-wordmark.webp" type="image/webp" />
-            <ImageWithFallback
-              src="/haqak-wordmark.png"
-              fallbackSrc="/haqak-logo.png"
-              alt={t("app_name")}
-              className="h-8 md:h-9 w-auto drop-shadow-sm transition-transform duration-200 group-hover:scale-[1.02]"
-            />
-          </picture>
-          <span className="sr-only">{t("app_name")}</span>
-        </Link>
-
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-1">
-          <Link to="/support">
-            <Button variant={isActive("/support") ? "secondary" : "ghost"} size="sm">
-              {t("nav.support")}
-            </Button>
-          </Link>
-          <Link to="/success-stories">
-            <Button variant={isActive("/success-stories") ? "secondary" : "ghost"} size="sm">
-              {t("nav.success_stories")}
-            </Button>
-          </Link>
-          <Link to="/faq">
-            <Button variant={isActive("/faq") ? "secondary" : "ghost"} size="sm">
-              {t("nav.faq")}
-            </Button>
-          </Link>
-          {session && (
-            <>
-              <Link to="/citizen">
-                <Button variant={isActive("/citizen") ? "secondary" : "ghost"} size="sm" className="gap-2">
-                  <MessageSquare className="w-4 h-4" /> {t("nav.my_issues")}
-                </Button>
-              </Link>
-              <Link to="/mps">
-                <Button variant={isActive("/mps") ? "secondary" : "ghost"} size="sm" className="gap-2">
-                  <Users className="w-4 h-4" /> {t("nav.mps")}
-                </Button>
-              </Link>
-              <Link to="/profile">
-                <Button variant={isActive("/profile") ? "secondary" : "ghost"} size="sm" className="gap-2">
-                  <User className="w-4 h-4" /> {t("nav.my_account")}
-                </Button>
-              </Link>
-              {(role === "mp" || role === "admin") && (
-                <Link to="/mp">
-                  <Button variant={isActive("/mp") ? "secondary" : "ghost"} size="sm" className="gap-2">
-                    <LayoutDashboard className="w-4 h-4" /> {t("nav.mp_dashboard")}
-                  </Button>
-                </Link>
-              )}
-              {role === "mp" && (
-                <Link to="/mp/settings">
-                  <Button variant={isActive("/mp/settings") ? "secondary" : "ghost"} size="sm" className="gap-2">
-                    <User className="w-4 h-4" /> {t("nav.mp_settings")}
-                  </Button>
-                </Link>
-              )}
-              {role === "admin" && (
-                <Link to="/admin">
-                  <Button variant={isActive("/admin") ? "secondary" : "ghost"} size="sm" className="gap-2">
-                    <ShieldCheck className="w-4 h-4" /> {t("nav.admin")}
-                  </Button>
-                </Link>
-              )}
-            </>
-          )}
-        </nav>
-
-        <div className="flex items-center gap-1.5">
-          {/* Language Switcher */}
-          <button
-            onClick={toggleLang}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            aria-label={getLangLabel()}
-            title={i18n.language === "ar" ? "English" : "العربية"}
-          >
-            <Globe className="w-[18px] h-[18px]" />
-          </button>
-          <button
-            onClick={toggleTheme}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            aria-label={t("nav.toggle_theme")}
-            title={t("nav.toggle_theme")}
-          >
-            {theme === "dark" ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
-          </button>
-          {session && <NotificationBell />}
-
-          {session ? (
-            <div className="hidden md:flex items-center gap-3">
-              <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
-                  {safeAvatarUrl ? (
-                    <ImageWithFallback
-                      src={safeAvatarUrl}
-                      alt={profile.full_name || t("nav.my_account")}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-xs font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
-                  )}
-                </div>
-                <span className="text-sm text-muted-foreground max-w-[120px] truncate">{profile?.full_name || t("nav.my_account")}</span>
-              </Link>
-              <Button variant="outline" size="sm" className="gap-2" onClick={handleSignOut}>
-                <LogOut className="w-4 h-4" /> {t("nav.logout")}
-              </Button>
+    <>
+      <header className="sticky top-0 z-50 border-b border-border/[0.65] bg-background/[0.72] shadow-[0_1px_0_hsl(var(--surface-highlight)/0.35)] backdrop-blur-2xl supports-[backdrop-filter]:bg-background/[0.62]">
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/[0.24] to-transparent" />
+        <div className="container flex h-[4.5rem] items-center justify-between gap-4 px-5 sm:px-8 lg:h-20">
+          <Link to="/" className="group flex shrink-0 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+            <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-card/70 shadow-[inset_0_1px_0_hsl(var(--surface-highlight)/0.65),0_12px_30px_-22px_hsl(var(--foreground)/0.45)] backdrop-blur-xl transition-transform duration-300 group-hover:-translate-y-0.5">
+              <picture className="flex items-center">
+                <source srcSet="/haqak-logo.webp" type="image/webp" />
+                <ImageWithFallback
+                  src="/haqak-logo.png"
+                  fallbackSrc="/logo-haqak.svg"
+                  alt="HAQAK logo"
+                  className="h-7 w-7 object-contain"
+                />
+              </picture>
             </div>
-          ) : (
-            <SignInCTAButton label={t("nav.login")} className="hidden md:block" />
-          )}
+            <div className="hidden sm:block">
+              <picture className="flex h-7 items-center">
+                <source srcSet="/haqak-wordmark.webp" type="image/webp" />
+                <ImageWithFallback
+                  src="/haqak-wordmark.png"
+                  fallbackSrc="/haqak-logo.png"
+                  alt={t("app_name")}
+                  className="h-7 w-auto object-contain"
+                />
+              </picture>
+              <p className="mt-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.19em] text-muted-foreground/70">
+                CIVIC COMMUNICATION
+              </p>
+            </div>
+            <span className="sr-only">{t("app_name")}</span>
+          </Link>
 
-          <button
-            className="md:hidden p-2 text-muted-foreground hover:text-foreground"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? t("nav.close_menu") : t("nav.open_menu")}
-            aria-expanded={mobileMenuOpen}
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
-      </div>
+          <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
+            {publicItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`relative rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors ${
+                  isActive(item.to) ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {item.label}
+                {isActive(item.to) && (
+                  <motion.span
+                    layoutId="header-active-route"
+                    className="absolute inset-x-3 -bottom-[1.22rem] h-px bg-accent shadow-[0_0_12px_hsl(var(--accent)/0.7)]"
+                  />
+                )}
+              </Link>
+            ))}
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-t border-border bg-card px-4 py-3 space-y-2 animate-fade-in">
-          <Link to="/support" onClick={() => setMobileMenuOpen(false)}>
-            <Button variant={isActive("/support") ? "secondary" : "ghost"} size="sm" className="w-full justify-start">
-              {t("nav.support")}
-            </Button>
-          </Link>
-          <Link to="/success-stories" onClick={() => setMobileMenuOpen(false)}>
-            <Button variant={isActive("/success-stories") ? "secondary" : "ghost"} size="sm" className="w-full justify-start">
-              {t("nav.success_stories")}
-            </Button>
-          </Link>
-          <Link to="/faq" onClick={() => setMobileMenuOpen(false)}>
-            <Button variant={isActive("/faq") ? "secondary" : "ghost"} size="sm" className="w-full justify-start">
-              {t("nav.faq")}
-            </Button>
-          </Link>
-          {session ? (
-            <>
-              <div className="flex items-center gap-2 pb-3 mb-2 border-b border-border">
-                <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
-                  {safeAvatarUrl ? (
-                    <ImageWithFallback
-                      src={safeAvatarUrl}
-                      alt={profile.full_name || t("nav.my_account")}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-xs font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
-                  )}
-                </div>
-                <span className="text-sm text-foreground font-medium">{profile?.full_name || t("nav.my_account")}</span>
+            {session && <span className="mx-2 h-5 w-px bg-border/80" />}
+
+            {privateItems.slice(0, 3).map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-all ${
+                  isActive(item.to)
+                    ? "bg-accent/[0.08] text-accent"
+                    : "text-muted-foreground hover:bg-card/[0.65] hover:text-foreground"
+                }`}
+              >
+                {item.icon && <item.icon className="h-4 w-4" />}
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            <HeaderIconButton onClick={toggleLang} label={getLangLabel()}>
+              <Globe2 className="h-[18px] w-[18px]" />
+            </HeaderIconButton>
+
+            <HeaderIconButton onClick={toggleTheme} label={t("nav.toggle_theme")}>
+              {theme === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+            </HeaderIconButton>
+
+            {session && <NotificationBell />}
+
+            {session ? (
+              <div className="hidden items-center gap-2.5 md:flex">
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-2.5 rounded-xl border border-transparent p-1.5 pe-3 transition-all hover:border-border/70 hover:bg-card/[0.65]"
+                >
+                  <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl border border-accent/[0.15] bg-accent/[0.08]">
+                    {safeAvatarUrl ? (
+                      <ImageWithFallback
+                        src={safeAvatarUrl}
+                        alt={profile?.full_name || t("nav.my_account")}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-xs font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
+                    )}
+                  </div>
+                  <span className="max-w-[118px] truncate text-xs font-semibold text-foreground">
+                    {profile?.full_name || t("nav.my_account")}
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all hover:bg-destructive/10 hover:text-destructive"
+                  aria-label={t("nav.logout")}
+                  title={t("nav.logout")}
+                >
+                  <LogOut className="h-[18px] w-[18px]" />
+                </button>
               </div>
-              <Link to="/citizen" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant={isActive("/citizen") ? "secondary" : "ghost"} size="sm" className="w-full justify-start gap-2">
-                  <MessageSquare className="w-4 h-4" /> {t("nav.my_issues")}
-                </Button>
-              </Link>
-              <Link to="/mps" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant={isActive("/mps") ? "secondary" : "ghost"} size="sm" className="w-full justify-start gap-2">
-                  <Users className="w-4 h-4" /> {t("nav.mps")}
-                </Button>
-              </Link>
-              <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant={isActive("/profile") ? "secondary" : "ghost"} size="sm" className="w-full justify-start gap-2">
-                  <User className="w-4 h-4" /> {t("nav.my_account")}
-                </Button>
-              </Link>
-              {(role === "mp" || role === "admin") && (
-                <Link to="/mp" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant={isActive("/mp") ? "secondary" : "ghost"} size="sm" className="w-full justify-start gap-2">
-                    <LayoutDashboard className="w-4 h-4" /> {t("nav.mp_dashboard")}
-                  </Button>
-                </Link>
-              )}
-              {role === "mp" && (
-                <Link to="/mp/settings" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant={isActive("/mp/settings") ? "secondary" : "ghost"} size="sm" className="w-full justify-start gap-2">
-                    <User className="w-4 h-4" /> {t("nav.mp_settings")}
-                  </Button>
-                </Link>
-              )}
-              {role === "admin" && (
-                <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant={isActive("/admin") ? "secondary" : "ghost"} size="sm" className="w-full justify-start gap-2">
-                    <ShieldCheck className="w-4 h-4" /> {t("nav.admin")}
-                  </Button>
-                </Link>
-              )}
-              <Button variant="outline" size="sm" className="w-full justify-start gap-2 mt-2" onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}>
-                <LogOut className="w-4 h-4" /> {t("nav.logout")}
-              </Button>
-            </>
-          ) : (
-            <SignInCTAButton label={t("nav.login")} className="block" fullWidth onClick={() => setMobileMenuOpen(false)} />
-          )}
+            ) : (
+              <SignInCTAButton label={t("nav.login")} className="hidden md:block" />
+            )}
+
+            <button
+              type="button"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all hover:bg-card/70 hover:text-foreground lg:hidden"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              aria-label={mobileMenuOpen ? t("nav.close_menu") : t("nav.open_menu")}
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
-      )}
-    </header>
+      </header>
+
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-xl lg:hidden"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: -14, scale: 0.985 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.99 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute inset-x-4 top-[5.25rem] max-h-[calc(100vh-6.5rem)] overflow-y-auto rounded-[1.75rem] border border-border/70 bg-card/90 p-4 shadow-[0_35px_100px_-45px_hsl(var(--foreground)/0.6)] backdrop-blur-2xl sm:inset-x-8"
+            >
+              {session && (
+                <div className="mb-4 flex items-center gap-3 rounded-2xl border border-border/[0.65] bg-background/[0.55] p-3">
+                  <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-accent/[0.15] bg-accent/[0.08]">
+                    {safeAvatarUrl ? (
+                      <ImageWithFallback
+                        src={safeAvatarUrl}
+                        alt={profile?.full_name || t("nav.my_account")}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-sm font-bold text-accent">{(profile?.full_name || "م").charAt(0)}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-foreground">{profile?.full_name || t("nav.my_account")}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{role || t("nav.my_account")}</p>
+                  </div>
+                </div>
+              )}
+
+              <nav className="grid gap-1" aria-label="Mobile navigation">
+                {[...publicItems, ...privateItems].map((item) => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+                      isActive(item.to)
+                        ? "bg-accent/[0.1] text-accent"
+                        : "text-muted-foreground hover:bg-background/[0.65] hover:text-foreground"
+                    }`}
+                  >
+                    {item.icon ? <item.icon className="h-[18px] w-[18px]" /> : <span className="h-1.5 w-1.5 rounded-full bg-accent/[0.65]" />}
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+
+              <div className="mt-4 border-t border-border/[0.65] pt-4">
+                {session ? (
+                  <Button
+                    variant="outline"
+                    className="h-11 w-full gap-2 rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => {
+                      handleSignOut();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {t("nav.logout")}
+                  </Button>
+                ) : (
+                  <SignInCTAButton
+                    label={t("nav.login")}
+                    className="block"
+                    fullWidth
+                    onClick={() => setMobileMenuOpen(false)}
+                  />
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
