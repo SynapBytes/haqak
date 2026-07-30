@@ -1,0 +1,137 @@
+@layer base {
+  :root {
+    --background: 42 38% 98%;
+    --foreground: 204 52% 12%;
+    --card: 42 45% 99%;
+    --card-foreground: 204 52% 12%;
+    --popover: 42 45% 99%;
+    --popover-foreground: 204 52% 12%;
+    --primary: 203 57% 15%;
+    --primary-foreground: 42 40% 98%;
+    --secondary: 190 18% 92%;
+    --secondary-foreground: 203 57% 15%;
+    --muted: 40 17% 92%;
+    --muted-foreground: 202 14% 40%;
+    --accent: 38 55% 48%;
+    --accent-foreground: 203 57% 10%;
+    --border: 201 18% 84%;
+    --input: 201 18% 84%;
+    --ring: 38 55% 48%;
+    --radius: 0.95rem;
+    --sidebar-background: 42 40% 98%;
+    --sidebar-foreground: 204 52% 12%;
+    --sidebar-primary: 203 57% 15%;
+    --sidebar-primary-foreground: 42 40% 98%;
+    --sidebar-accent: 190 18% 92%;
+    --sidebar-accent-foreground: 203 57% 15%;
+    --sidebar-border: 201 18% 84%;
+    --sidebar-ring: 38 55% 48%;
+    --warning: 35 90% 48%;
+    --warning-foreground: 203 57% 10%;
+    --success: 158 58% 36%;
+    --success-foreground: 0 0% 100%;
+    --info: 190 55% 42%;
+    --info-foreground: 0 0% 100%;
+    --status-received: 196 62% 42%;
+    --status-in-progress: 35 90% 48%;
+    --status-resolved: 158 58% 36%;
+    --surface-highlight: 0 0% 100%;
+    --surface-shadow: 203 57% 10%;
+  }
+
+  .dark {
+    --background: 205 55% 5%;
+    --foreground: 42 30% 94%;
+    --card: 204 46% 8%;
+    --card-foreground: 42 30% 94%;
+    --popover: 204 46% 8%;
+    --popover-foreground: 42 30% 94%;
+    --primary: 189 34% 74%;
+    --primary-foreground: 205 55% 7%;
+    --secondary: 202 32% 13%;
+    --secondary-foreground: 42 30% 94%;
+    --muted: 202 30% 13%;
+    --muted-foreground: 198 13% 67%;
+    --accent: 39 57% 58%;
+    --accent-foreground: 205 55% 6%;
+    --border: 199 24% 18%;
+    --input: 199 24% 18%;
+    --ring: 39 57% 58%;
+    --sidebar-background: 205 52% 7%;
+    --sidebar-foreground: 42 30% 94%;
+    --sidebar-primary: 39 57% 58%;
+    --sidebar-primary-foreground: 205 55% 6%;
+    --sidebar-accent: 202 30% 13%;
+    --sidebar-accent-foreground: 42 30% 94%;
+    --sidebar-border: 199 24% 18%;
+    --sidebar-ring: 39 57% 58%;
+    --surface-highlight: 196 32% 18%;
+    --surface-shadow: 205 72% 2%;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    background: hsl(var(--background));
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    font-family: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+    text-rendering: optimizeLegibility;
+    background-image:
+      radial-gradient(circle at 10% -5%, hsl(var(--accent) / 0.075), transparent 28rem),
+      radial-gradient(circle at 92% 14%, hsl(var(--info) / 0.055), transparent 30rem);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  p { text-wrap: pretty; }
+  a, button, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+  button, [role='button'] { touch-action: manipulation; }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    color: hsl(var(--foreground));
+    background: hsl(var(--accent) / 0.22);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--accent) / 0.45) transparent;
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background: hsl(var(--accent) / 0.42);
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--accent) / 0.62);
+    background-clip: padding-box;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

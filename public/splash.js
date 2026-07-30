@@ -1,42 +1,66 @@
 (function () {
-  const logo = document.getElementById("splash-logo");
-  const brand = document.getElementById("splash-brand");
   const splash = document.getElementById("haqak-splash");
+  const root = document.getElementById("root");
 
-  if (!logo || !brand || !splash) return;
+  if (!splash || !root) return;
 
-  // Stage 1: Show Logo
-  setTimeout(() => {
-    logo.classList.add("active");
-  }, 100);
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const startedAt = performance.now();
+  const minimumDuration = reduceMotion ? 180 : 1350;
+  const maximumDuration = 5200;
+  let appReady = root.childElementCount > 0;
+  let windowReady = document.readyState === "complete";
+  let removed = false;
 
-  // Stage 2: Transition to Brand
-  setTimeout(() => {
-    logo.classList.remove("active");
-    logo.classList.add("fade-out");
-    setTimeout(() => {
-      brand.classList.add("active");
-    }, 400);
-  }, 2000);
+  document.body.classList.add("splash-lock");
+  requestAnimationFrame(() => splash.classList.add("is-entered"));
 
-  // Stage 3: Exit Splash
-  setTimeout(() => {
-    brand.classList.remove("active");
-    brand.classList.add("fade-out");
-    setTimeout(() => {
-      splash.style.opacity = "0";
-      setTimeout(() => {
-        splash.remove();
-        document.body.style.backgroundColor = "";
-      }, 800);
-    }, 400);
-  }, 4200);
+  const cleanup = () => {
+    if (removed) return;
+    removed = true;
+    splash.remove();
+    document.body.classList.remove("splash-lock");
+    document.body.style.backgroundColor = "";
+  };
 
-  // Safety: Ensure splash is removed even if something fails
-  setTimeout(() => {
-    if (splash.isConnected) {
-      splash.remove();
-      document.body.style.backgroundColor = "";
+  const exit = () => {
+    if (removed || splash.classList.contains("is-exiting")) return;
+
+    const elapsed = performance.now() - startedAt;
+    const delay = Math.max(0, minimumDuration - elapsed);
+
+    window.setTimeout(() => {
+      splash.classList.add("is-ready");
+      window.setTimeout(() => {
+        splash.classList.add("is-exiting");
+        window.setTimeout(cleanup, reduceMotion ? 80 : 720);
+      }, reduceMotion ? 30 : 220);
+    }, delay);
+  };
+
+  const maybeExit = () => {
+    if (appReady && windowReady) exit();
+  };
+
+  const observer = new MutationObserver(() => {
+    if (root.childElementCount > 0) {
+      appReady = true;
+      observer.disconnect();
+      maybeExit();
     }
-  }, 6000);
+  });
+
+  observer.observe(root, { childList: true });
+
+  window.addEventListener(
+    "load",
+    () => {
+      windowReady = true;
+      maybeExit();
+    },
+    { once: true },
+  );
+
+  window.setTimeout(exit, maximumDuration);
+  window.setTimeout(cleanup, maximumDuration + 1200);
 })();

@@ -2,6 +2,8 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import "./premium-theme.css";
+import "./premium-components.css";
 import "./i18n";
 import { analytics } from "@/lib/analytics";
 import { initSentry } from "@/lib/sentry";
@@ -98,5 +100,5 @@ createRoot(rootElement).render(
         <App />
       )}
     </AppErrorBoundary>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
